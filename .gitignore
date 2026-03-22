@@ -1,0 +1,26 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET
+**/bin/
+**/obj/
+*.pdb
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Local environment
+frontend/.env
+frontend/.env.local
+backend/fookbase.API/appsettings.Local.json
+
+# Local tooling / temp
+.dotnet/
+.buildtmp/
+
