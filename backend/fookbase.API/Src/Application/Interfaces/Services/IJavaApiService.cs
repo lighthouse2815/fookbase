@@ -27,4 +27,43 @@ public interface IJavaApiService
     Task<JavaApiCallResult<LoginResponseDto>> LoginAsync(
         LoginRequestDto request,
         CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenNotLoginAsync(
+        OtpRequestDto request,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> SendResetPasswordOtpWhenNotLoginAsync(
+        OtpRequestDto request,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> SendResetPasswordOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyEmailOtpWhenNotLoginAsync(
+        VerifyOtpRequestDto request,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyEmailOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyResetPasswordOtpWhenNotLoginAsync(
+        VerifyOtpRequestDto request,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyResetPasswordOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<MessageResponseDto>> ResetPasswordAsync(
+        string resetToken,
+        ResetPasswordRequestDto request,
+        CancellationToken cancellationToken = default);
 }

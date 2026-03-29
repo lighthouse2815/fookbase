@@ -56,8 +56,204 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<LoginResponseDto>(result, "Login failed.");
         }
 
+        result.Data.Token = NormalizeAccessToken(result.Data.Token);
         SetAccessTokenCookie(result.Data.Token);
+        SetUserIdCookie(result.Data.UserId);
         return StatusCode(result.StatusCode, ApiResponse<LoginResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("otp/send/verify-email")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendVerifyEmailOtpWhenNotLogin(
+        [FromBody] OtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _javaApiService.SendVerifyEmailOtpWhenNotLoginAsync(request, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send verify email OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("me/otp/send/verify-email")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendVerifyEmailOtpWhenLogin(
+        CancellationToken cancellationToken)
+    {
+        var accessToken = ExtractAccessToken();
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+        }
+
+        var result = await _javaApiService.SendVerifyEmailOtpWhenLoginAsync(accessToken, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send verify email OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("otp/send/reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendResetPasswordOtpWhenNotLogin(
+        [FromBody] OtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _javaApiService.SendResetPasswordOtpWhenNotLoginAsync(request, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send reset password OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("me/otp/send/reset-password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendResetPasswordOtpWhenLogin(
+        CancellationToken cancellationToken)
+    {
+        var accessToken = ExtractAccessToken();
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+        }
+
+        var result = await _javaApiService.SendResetPasswordOtpWhenLoginAsync(accessToken, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send reset password OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("otp/verify/email")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyEmailOtpWhenNotLogin(
+        [FromBody] VerifyOtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _javaApiService.VerifyEmailOtpWhenNotLoginAsync(request, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify email OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("me/otp/verify/email")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyEmailOtpWhenLogin(
+        [FromBody] VerifyOtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = ExtractAccessToken();
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+        }
+
+        var result = await _javaApiService.VerifyEmailOtpWhenLoginAsync(request, accessToken, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify email OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("otp/verify/password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyResetPasswordOtpWhenNotLogin(
+        [FromBody] VerifyOtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _javaApiService.VerifyResetPasswordOtpWhenNotLoginAsync(request, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify reset password OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("me/otp/verify/password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyResetPasswordOtpWhenLogin(
+        [FromBody] VerifyOtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = ExtractAccessToken();
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+        }
+
+        var result = await _javaApiService.VerifyResetPasswordOtpWhenLoginAsync(request, accessToken, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify reset password OTP failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<MessageResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<MessageResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<MessageResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<MessageResponseDto>>> ResetPassword(
+        [FromHeader(Name = "X-Reset-Token")] string? resetToken,
+        [FromBody] ResetPasswordRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(resetToken))
+        {
+            return BadRequest(ApiResponse<MessageResponseDto>.Fail("X-Reset-Token header is required."));
+        }
+
+        var result = await _javaApiService.ResetPasswordAsync(resetToken, request, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<MessageResponseDto>(result, "Reset password failed.");
+        }
+
+        return StatusCode(result.StatusCode, ApiResponse<MessageResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("logout")]
@@ -66,6 +262,7 @@ public class AuthController : ControllerBase
     public ActionResult Logout()
     {
         Response.Cookies.Delete(AuthCookieConstants.AccessTokenCookieName, CreateAuthCookieOptions());
+        Response.Cookies.Delete(AuthCookieConstants.UserIdCookieName, CreateAuthCookieOptions());
         return NoContent();
     }
 
@@ -82,8 +279,27 @@ public class AuthController : ControllerBase
         return StatusCode(statusCode, ApiResponse<T>.Fail(error));
     }
 
+    private string? ExtractAccessToken()
+    {
+        var authorizationHeader = Request.Headers.Authorization.ToString();
+        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return authorizationHeader["Bearer ".Length..].Trim();
+        }
+
+        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
+            && !string.IsNullOrWhiteSpace(cookieToken))
+        {
+            return cookieToken;
+        }
+
+        return null;
+    }
+
     private void SetAccessTokenCookie(string token)
     {
+        token = NormalizeAccessToken(token);
+
         if (string.IsNullOrWhiteSpace(token))
         {
             return;
@@ -128,5 +344,34 @@ public class AuthController : ControllerBase
         {
             return null;
         }
+    }
+
+    private static string NormalizeAccessToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return string.Empty;
+        }
+
+        var normalized = token.Trim();
+        const string bearerPrefix = "Bearer ";
+
+        if (normalized.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized[bearerPrefix.Length..].Trim();
+        }
+
+        return normalized;
+    }
+
+    private void SetUserIdCookie(Guid userId)
+    {
+        if (userId == Guid.Empty)
+        {
+            return;
+        }
+
+        var cookieOptions = CreateAuthCookieOptions();
+        Response.Cookies.Append(AuthCookieConstants.UserIdCookieName, userId.ToString(), cookieOptions);
     }
 }

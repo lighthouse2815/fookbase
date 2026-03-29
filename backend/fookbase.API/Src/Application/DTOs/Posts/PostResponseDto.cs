@@ -1,10 +1,12 @@
 namespace InteractHub.Api.Application.DTOs.Posts;
 
-public class PostResponseDto
+public record PostResponseDto
 {
     public Guid Id { get; init; }
 
     public Guid UserId { get; init; }
+
+    public PostAuthorDto Author { get; init; } = new();
 
     public string Content { get; init; } = string.Empty;
 

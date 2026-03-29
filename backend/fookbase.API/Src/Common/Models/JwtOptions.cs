@@ -12,6 +12,8 @@ public sealed class JwtOptions
 
     public bool ValidateAudience { get; init; } = false;
 
+    public bool ValidateIssuerSigningKey { get; init; } = false;
+
     public string SecretKey { get; init; } = "dang_dep_trai_sieu_cap_vip_pro_2k5_2026!!!";
 
     public int ExpirationMinutes { get; init; } = 60;

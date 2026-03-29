@@ -76,6 +76,86 @@ public class JavaApiService : IJavaApiService
         return PostAsync<LoginResponseDto>(path, request, cancellationToken);
     }
 
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenNotLoginAsync(
+        OtpRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthSendVerifyEmailOtpWhenNotLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthSendVerifyEmailOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, payload: null, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendResetPasswordOtpWhenNotLoginAsync(
+        OtpRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthSendResetPasswordOtpWhenNotLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendResetPasswordOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthSendResetPasswordOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, payload: null, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyEmailOtpWhenNotLoginAsync(
+        VerifyOtpRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthVerifyEmailOtpWhenNotLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyEmailOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthVerifyEmailOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyResetPasswordOtpWhenNotLoginAsync(
+        VerifyOtpRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthVerifyResetPasswordOtpWhenNotLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyResetPasswordOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthVerifyResetPasswordOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<MessageResponseDto>> ResetPasswordAsync(
+        string resetToken,
+        ResetPasswordRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthResetPasswordPathTemplate);
+        var additionalHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["X-Reset-Token"] = resetToken
+        };
+
+        return PostAsync<MessageResponseDto>(path, request, cancellationToken, additionalHeaders: additionalHeaders);
+    }
+
     private async Task<T?> GetAsync<T>(string relativePath, string? accessToken, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
@@ -113,12 +193,33 @@ public class JavaApiService : IJavaApiService
 
     private async Task<JavaApiCallResult<T>> PostAsync<T>(
         string relativePath,
-        object payload,
-        CancellationToken cancellationToken)
+        object? payload,
+        CancellationToken cancellationToken,
+        string? accessToken = null,
+        IReadOnlyDictionary<string, string>? additionalHeaders = null)
     {
         try
         {
-            using var response = await _httpClient.PostAsJsonAsync(relativePath, payload, SerializerOptions, cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Post, relativePath);
+            if (payload is not null)
+            {
+                request.Content = JsonContent.Create(payload, options: SerializerOptions);
+            }
+
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            if (additionalHeaders is not null)
+            {
+                foreach (var (key, value) in additionalHeaders)
+                {
+                    request.Headers.TryAddWithoutValidation(key, value);
+                }
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
             var responseStatusCode = (int)response.StatusCode;
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -162,6 +263,16 @@ public class JavaApiService : IJavaApiService
                 StatusCodes.Status504GatewayTimeout,
                 "Java auth API timed out.");
         }
+        catch (JsonException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Java API auth call returned malformed payload. Path: {Path}",
+                relativePath);
+            return JavaApiCallResult<T>.Failure(
+                StatusCodes.Status502BadGateway,
+                "Java auth API returned malformed payload.");
+        }
         catch (HttpRequestException exception)
         {
             _logger.LogError(exception, "Java API auth call failed due to transport error. Path: {Path}", relativePath);
@@ -190,7 +301,12 @@ public class JavaApiService : IJavaApiService
 
             if (root.TryGetProperty("result", out var resultElement))
             {
-                return DeserializeElement<T>(resultElement);
+                // Some Java endpoints return { "result": "<message>" } where "result" is a real field,
+                // not an envelope wrapper. Only unwrap when "result" itself is a complex payload.
+                if (resultElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                {
+                    return DeserializeElement<T>(resultElement);
+                }
             }
         }
 

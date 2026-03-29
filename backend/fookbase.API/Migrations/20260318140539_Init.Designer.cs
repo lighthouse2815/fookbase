@@ -348,13 +348,11 @@ namespace fookbase.API.Migrations
                 {
                     b.HasOne("InteractHub.Api.Domain.Entities.Comment", null)
                         .WithMany()
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("CommentId");
 
                     b.HasOne("InteractHub.Api.Domain.Entities.Post", null)
                         .WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("PostId");
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.PostHashtag", b =>

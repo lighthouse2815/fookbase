@@ -2,9 +2,14 @@ import axios from 'axios';
 
 export const getApiErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (axios.isAxiosError(error)) {
-    const message =
-      (error.response?.data as { message?: string; error?: string } | undefined)?.message ??
-      (error.response?.data as { message?: string; error?: string } | undefined)?.error;
+    const payload = error.response?.data as
+      | {
+          message?: string;
+          error?: string;
+          errors?: string[];
+        }
+      | undefined;
+    const message = payload?.message ?? payload?.error ?? payload?.errors?.find(Boolean);
 
     return message ?? fallbackMessage;
   }

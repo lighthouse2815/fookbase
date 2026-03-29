@@ -1,6 +1,6 @@
+using InteractHub.Api.Application.DTOs.Likes;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
@@ -46,7 +46,7 @@ public class PostsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -64,7 +64,7 @@ public class PostsController : ControllerBase
     }
 
     [HttpPut("{postId:guid}")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -81,7 +81,7 @@ public class PostsController : ControllerBase
     }
 
     [HttpDelete("{postId:guid}")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -97,26 +97,27 @@ public class PostsController : ControllerBase
     }
 
     [HttpPost("{postId:guid}/likes")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<object>>> LikePost(Guid postId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> LikePost(Guid postId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
         var state = await _likeService.LikeAsync(postId, userId, cancellationToken);
-        return Ok(ApiResponse<object>.Ok(state));
+        return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
     }
 
     [HttpDelete("{postId:guid}/likes")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<object>>> UnlikePost(Guid postId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> UnlikePost(Guid postId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
         var state = await _likeService.UnlikeAsync(postId, userId, cancellationToken);
-        return Ok(ApiResponse<object>.Ok(state));
+        return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
     }
 }
+

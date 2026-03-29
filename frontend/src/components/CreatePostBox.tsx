@@ -7,7 +7,7 @@ import type { User } from '../types/user';
 interface CreatePostBoxProps {
   currentUser: User;
   isSubmitting?: boolean;
-  onCreatePost: (content: string) => Promise<void> | void;
+  onCreatePost: (content: string) => Promise<boolean> | boolean;
 }
 
 export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost }: CreatePostBoxProps) => {
@@ -21,8 +21,11 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
       return;
     }
 
-    await onCreatePost(trimmed);
-    setContent('');
+    const isCreated = await onCreatePost(trimmed);
+
+    if (isCreated) {
+      setContent('');
+    }
   };
 
   return (

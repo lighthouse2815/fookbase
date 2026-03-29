@@ -12,7 +12,7 @@ import { getApiErrorMessage } from '../../utils/apiError';
 interface LoginFormValues {
   username: string;
   password: string;
-  // rememberMe: boolean;
+  rememberMe: boolean;
 }
 
 const identifierPattern = /^([a-zA-Z0-9._-]{3,}|[\w.-]+@[\w-]+\.[\w.-]{2,})$/;
@@ -22,6 +22,12 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
+  const locationState = location.state as
+    | {
+        from?: { pathname?: string };
+        message?: string;
+      }
+    | null;
 
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
@@ -35,7 +41,7 @@ export const LoginPage = () => {
     defaultValues: {
       username: '',
       password: '',
-      // rememberMe: true,
+      rememberMe: true,
     },
   });
 
@@ -47,7 +53,7 @@ export const LoginPage = () => {
     try {
       setApiError(undefined);
       await login(data);
-      const destination = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/';
+      const destination = locationState?.from?.pathname ?? '/';
       navigate(destination, { replace: true });
     } catch (error) {
       setApiError(getApiErrorMessage(error, t('auth.loginError')));
@@ -70,6 +76,12 @@ export const LoginPage = () => {
           </Link>
         }
       >
+        {locationState?.message ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {locationState.message}
+          </div>
+        ) : null}
+
         <InputField
           label={t('auth.identifier')}
           placeholder={t('auth.identifier')}
@@ -105,16 +117,21 @@ export const LoginPage = () => {
           }
         />
 
-        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-            {...register('username')}
-          />
-          {t('auth.rememberMe')}
-        </label>
+        <div className="flex items-center justify-between gap-4">
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              {...register('rememberMe')}
+            />
+            {t('auth.rememberMe')}
+          </label>
+
+          <Link className="text-sm font-medium text-brand-600 hover:text-brand-700" to="/forgot-password">
+            {t('auth.forgotPassword')}
+          </Link>
+        </div>
       </AuthForm>
     </div>
   );
 };
-

@@ -24,7 +24,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("me")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CurrentUserResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<CurrentUserResponseDto>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<CurrentUserResponseDto>), StatusCodes.Status503ServiceUnavailable)]
@@ -113,3 +113,4 @@ public class UsersController : ControllerBase
         return $"https://i.pravatar.cc/150?u={userId}";
     }
 }
+

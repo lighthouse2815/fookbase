@@ -182,14 +182,12 @@ namespace fookbase.API.Migrations
                         name: "FK_Notification_Comment_CommentId",
                         column: x => x.CommentId,
                         principalTable: "Comment",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Notification_Post_PostId",
                         column: x => x.PostId,
                         principalTable: "Post",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(

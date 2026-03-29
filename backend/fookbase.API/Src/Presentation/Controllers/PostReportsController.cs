@@ -11,7 +11,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/post-reports")]
-[Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+[Authorize]
 public class PostReportsController : ControllerBase
 {
     private readonly IPostReportService _postReportService;

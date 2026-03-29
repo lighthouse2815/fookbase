@@ -5,6 +5,7 @@ using InteractHub.Api.Application.Mappers;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
 
@@ -15,19 +16,22 @@ public class CommentService : ICommentService
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CommentService> _logger;
 
     public CommentService(
         ICommentRepository commentRepository,
         IPostRepository postRepository,
         IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<CommentService> logger)
     {
         _commentRepository = commentRepository;
         _postRepository = postRepository;
         _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<PagedResult<CommentResponseDto>> GetByPostIdAsync(Guid postId, PaginationQuery query, CancellationToken cancellationToken)
@@ -38,8 +42,22 @@ public class CommentService : ICommentService
             ?? throw new NotFoundException("Post not found.");
 
         var (items, totalCount) = await _commentRepository.GetPagedByPostIdAsync(post.Id, query.Page, query.PageSize, cancellationToken);
+        var authors = await ResolveAuthorsAsync(items.Select(comment => comment.UserId), cancellationToken);
 
-        var mappedItems = items.Select(static comment => comment.ToResponseDto()).ToList();
+        var mappedItems = items
+            .Select(comment =>
+            {
+                var dto = comment.ToResponseDto();
+                dto = dto with
+                {
+                    Author = authors.TryGetValue(comment.UserId, out var author)
+                        ? author
+                        : CreateFallbackAuthor(comment.UserId)
+                };
+
+                return dto;
+            })
+            .ToList();
 
         return PagedResult<CommentResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -49,7 +67,8 @@ public class CommentService : ICommentService
         var comment = await _commentRepository.GetByIdAsync(commentId, cancellationToken)
             ?? throw new NotFoundException("Comment not found.");
 
-        return comment.ToResponseDto();
+        var dto = comment.ToResponseDto();
+        return dto with { Author = await ResolveAuthorAsync(comment.UserId, cancellationToken) };
     }
 
     public async Task<CommentResponseDto> CreateAsync(Guid userId, CreateCommentRequestDto request, CancellationToken cancellationToken)
@@ -92,7 +111,8 @@ public class CommentService : ICommentService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return comment.ToResponseDto();
+        var dto = comment.ToResponseDto();
+        return dto with { Author = await ResolveAuthorAsync(comment.UserId, cancellationToken) };
     }
 
     public async Task<CommentResponseDto> UpdateAsync(
@@ -112,7 +132,8 @@ public class CommentService : ICommentService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return comment.ToResponseDto();
+        var dto = comment.ToResponseDto();
+        return dto with { Author = await ResolveAuthorAsync(comment.UserId, cancellationToken) };
     }
 
     public async Task DeleteAsync(Guid commentId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
@@ -134,6 +155,88 @@ public class CommentService : ICommentService
         {
             throw new ForbiddenException(error);
         }
+    }
+
+    private async Task<Dictionary<Guid, CommentAuthorDto>> ResolveAuthorsAsync(
+        IEnumerable<Guid> userIds,
+        CancellationToken cancellationToken)
+    {
+        var distinctUserIds = userIds.Distinct().ToList();
+        if (distinctUserIds.Count == 0)
+        {
+            return new Dictionary<Guid, CommentAuthorDto>();
+        }
+
+        var tasks = distinctUserIds.Select(async userId =>
+            new KeyValuePair<Guid, CommentAuthorDto>(userId, await ResolveAuthorAsync(userId, cancellationToken)));
+
+        var results = await Task.WhenAll(tasks);
+        return results.ToDictionary(pair => pair.Key, pair => pair.Value);
+    }
+
+    private async Task<CommentAuthorDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userTask = _javaApiService.GetUserById(userId, cancellationToken: cancellationToken);
+            var profileTask = _javaApiService.GetProfileByUserId(userId, cancellationToken: cancellationToken);
+
+            await Task.WhenAll(userTask, profileTask);
+
+            var user = userTask.Result;
+            var profile = profileTask.Result;
+            var username = Normalize(user?.Username) ?? "user";
+            var displayName = Normalize(profile?.DisplayName)
+                ?? Normalize(profile?.FullName)
+                ?? username;
+
+            return new CommentAuthorDto
+            {
+                Id = userId,
+                Username = username,
+                DisplayName = displayName,
+                AvatarUrl = Normalize(profile?.AvatarUrl) ?? BuildDefaultAvatarUrl(userId)
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Falling back to default comment author for user {UserId} while loading comments.",
+                userId);
+
+            return CreateFallbackAuthor(userId);
+        }
+    }
+
+    private static CommentAuthorDto CreateFallbackAuthor(Guid userId)
+    {
+        return new CommentAuthorDto
+        {
+            Id = userId,
+            Username = "user",
+            DisplayName = "user",
+            AvatarUrl = BuildDefaultAvatarUrl(userId)
+        };
+    }
+
+    private static string? Normalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
+    }
+
+    private static string BuildDefaultAvatarUrl(Guid userId)
+    {
+        return $"https://i.pravatar.cc/150?u={userId}";
     }
 
 }

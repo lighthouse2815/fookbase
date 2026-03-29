@@ -3,10 +3,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { authService } from '../services/authService';
 import { userService } from '../services/userService';
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types/auth';
+import type { AuthResponse, LoginRequest, RegisterRequest, RegisterResponse } from '../types/auth';
 import type { User } from '../types/user';
 import { STORAGE_KEYS, storage } from '../utils/storage';
-import { currentUser } from '../data/mockData';
 
 interface AuthContextValue {
   user: User | null;
@@ -14,7 +13,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isInitializing: boolean;
   login: (payload: LoginRequest) => Promise<void>;
-  register: (payload: RegisterRequest) => Promise<boolean>;
+  register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => void;
 }
 
@@ -25,12 +24,12 @@ const mapAuthUserToUser = (payload: AuthResponse['user']): User => ({
   username: payload.username,
   fullName: payload.username,
   email: payload.email,
-  avatarUrl: payload.avatarUrl ?? currentUser.avatarUrl,
+  avatarUrl: payload.avatarUrl ?? `https://i.pravatar.cc/150?u=${payload.id}`,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(storage.getToken());
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(storage.getUser<User>());
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -38,6 +37,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const savedToken = storage.getToken();
 
       if (!savedToken) {
+        storage.clearUser();
+        setUser(null);
         setIsInitializing(false);
         return;
       }
@@ -45,8 +46,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const current = await userService.getCurrentUser();
         setUser(current);
+        storage.setUser(current);
       } catch {
-        setUser(currentUser);
+        const cachedUser = storage.getUser<User>();
+
+        if (cachedUser) {
+          setUser(cachedUser);
+        } else {
+          storage.clearToken();
+          storage.clearUser();
+          localStorage.removeItem(STORAGE_KEYS.rememberMe);
+          setToken(null);
+          setUser(null);
+        }
       } finally {
         setIsInitializing(false);
       }
@@ -62,25 +74,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem(STORAGE_KEYS.rememberMe, String(Boolean(payload.rememberMe)));
 
     setToken(response.token);
-    setUser(mapAuthUserToUser(response.user));
+
+    try {
+      const current = await userService.getCurrentUser();
+      setUser(current);
+      storage.setUser(current);
+    } catch {
+      const fallbackUser = mapAuthUserToUser(response.user);
+      setUser(fallbackUser);
+      storage.setUser(fallbackUser);
+    }
   };
 
   const register = async (payload: RegisterRequest) => {
-    const response = await authService.register(payload);
-
-    if (!response) {
-      return false;
-    }
-
-    storage.setToken(response.token);
-    setToken(response.token);
-    setUser(mapAuthUserToUser(response.user));
-    return true;
+    return authService.register(payload);
   };
 
   const logout = () => {
     void authService.logout().catch(() => undefined);
     storage.clearToken();
+    storage.clearUser();
     localStorage.removeItem(STORAGE_KEYS.rememberMe);
 
     setToken(null);

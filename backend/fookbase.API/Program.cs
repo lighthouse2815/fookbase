@@ -1,5 +1,3 @@
-using System.Text;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
@@ -8,10 +6,10 @@ using InteractHub.Api.Common.Models;
 using InteractHub.Api.Infrastructure.Data;
 using InteractHub.Api.Infrastructure.Repositories;
 using InteractHub.Api.Infrastructure.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using InteractHub.Api.Presentation.Security;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,60 +76,14 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
-var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
-var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey));
-var validateIssuer = jwtOptions.ValidateIssuer && !string.IsNullOrWhiteSpace(jwtOptions.Issuer);
-var validateAudience = jwtOptions.ValidateAudience && !string.IsNullOrWhiteSpace(jwtOptions.Audience);
-
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddAuthentication(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = validateIssuer,
-            ValidIssuer = validateIssuer ? jwtOptions.Issuer : null,
-            ValidateAudience = validateAudience,
-            ValidAudience = validateAudience ? jwtOptions.Audience : null,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = signingKey,
-            ClockSkew = TimeSpan.FromMinutes(1)
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var authorizationHeader = context.Request.Headers.Authorization.ToString();
-                var hasBearerTokenInHeader = authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase);
-
-                if (!hasBearerTokenInHeader
-                    && context.Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
-                    && !string.IsNullOrWhiteSpace(cookieToken))
-                {
-                    context.Token = cookieToken;
-                }
-
-                return Task.CompletedTask;
-            },
-            OnChallenge = async context =>
-            {
-                context.HandleResponse();
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.ContentType = "application/json";
-
-                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail("Unauthorized."));
-            },
-            OnForbidden = async context =>
-            {
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                context.Response.ContentType = "application/json";
-
-                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail("Forbidden."));
-            }
-        };
-    });
+        options.DefaultAuthenticateScheme = "BearerOrCookie";
+        options.DefaultChallengeScheme = "BearerOrCookie";
+        options.DefaultForbidScheme = "BearerOrCookie";
+    })
+    .AddScheme<AuthenticationSchemeOptions, BearerOrCookieAuthenticationHandler>("BearerOrCookie", _ => { });
 
 builder.Services.AddAuthorization();
 
@@ -166,7 +118,7 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         Reference = new OpenApiReference
         {
-            Id = JwtBearerDefaults.AuthenticationScheme,
+            Id = "BearerOrCookie",
             Type = ReferenceType.SecurityScheme
         }
     };

@@ -1,41 +1,106 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { commentService } from '../services/commentService';
 import type { Comment } from '../types/post';
 import type { User } from '../types/user';
+import { getApiErrorMessage } from '../utils/apiError';
 import { formatRelativeTime } from '../utils/date';
 
 interface CommentSectionProps {
+  postId: string;
   initialComments: Comment[];
+  initialCommentCount?: number;
   currentUser: User;
+  onCommentCountChange?: (count: number) => void;
 }
 
-export const CommentSection = ({ initialComments, currentUser }: CommentSectionProps) => {
+const DEFAULT_PAGE_SIZE = 20;
+
+export const CommentSection = ({
+  postId,
+  initialComments,
+  initialCommentCount,
+  currentUser,
+  onCommentCountChange,
+}: CommentSectionProps) => {
   const { t } = useTranslation();
   const [comments, setComments] = useState<Comment[]>(initialComments);
+  const [commentCount, setCommentCount] = useState(initialCommentCount ?? initialComments.length);
   const [draft, setDraft] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAddComment = () => {
+  useEffect(() => {
+    let isActive = true;
+
+    const loadComments = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await commentService.getCommentsByPostId(postId, 1, DEFAULT_PAGE_SIZE);
+
+        if (!isActive) {
+          return;
+        }
+
+        setComments(response.items);
+        setCommentCount(response.totalCount);
+      } catch (loadError) {
+        if (!isActive) {
+          return;
+        }
+
+        setError(getApiErrorMessage(loadError, 'Unable to load comments.'));
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadComments();
+
+    return () => {
+      isActive = false;
+    };
+  }, [postId]);
+
+  useEffect(() => {
+    onCommentCountChange?.(commentCount);
+  }, [commentCount, onCommentCountChange]);
+
+  const handleAddComment = async () => {
     const trimmed = draft.trim();
 
-    if (!trimmed) {
+    if (!trimmed || isSubmitting) {
       return;
     }
 
-    const newComment: Comment = {
-      id: `comment-${Date.now()}`,
-      author: currentUser,
-      content: trimmed,
-      createdAt: new Date().toISOString(),
-    };
+    setIsSubmitting(true);
+    setError(null);
 
-    setComments((previous) => [...previous, newComment]);
-    setDraft('');
+    try {
+      const createdComment = await commentService.createComment(postId, trimmed);
+
+      setComments((previous) => [...previous, createdComment]);
+      setCommentCount((previous) => previous + 1);
+      setDraft('');
+    } catch (submitError) {
+      setError(getApiErrorMessage(submitError, 'Unable to send comment.'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="space-y-3 border-t border-slate-100 pt-3 dark:border-slate-700">
+      {isLoading ? <p className="text-xs text-slate-500 dark:text-slate-400">{t('common.loading')}</p> : null}
+      {error ? <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p> : null}
+
       <div className="space-y-2">
         {comments.map((comment) => (
           <div key={comment.id} className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/40">
@@ -47,19 +112,27 @@ export const CommentSection = ({ initialComments, currentUser }: CommentSectionP
       </div>
 
       <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+        <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover" />
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              void handleAddComment();
+            }
+          }}
           placeholder={t('post.writeComment')}
           className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
         />
         <button
           type="button"
-          onClick={handleAddComment}
-          className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700"
+          onClick={() => void handleAddComment()}
+          disabled={isSubmitting}
+          className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
           <Send size={13} />
-          {t('post.addComment')}
+          {isSubmitting ? t('common.loading') : t('post.addComment')}
         </button>
       </div>
     </div>

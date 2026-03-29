@@ -22,7 +22,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpGet("{userId:guid}")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<ProfileResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<ProfileResponseDto>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<ProfileResponseDto>), StatusCodes.Status503ServiceUnavailable)]
@@ -62,6 +62,10 @@ public class ProfilesController : ControllerBase
                 Username = username,
                 FullName = fullName,
                 AvatarUrl = profile?.AvatarUrl ?? BuildDefaultAvatarUrl(userId),
+                Bio = profile?.Bio,
+                CoverUrl = profile?.CoverUrl,
+                Major = profile?.Major,
+                Year = profile?.Year,
                 FriendsCount = 0,
                 PostsCount = 0
             };
@@ -104,3 +108,4 @@ public class ProfilesController : ControllerBase
         return $"https://i.pravatar.cc/150?u={userId}";
     }
 }
+

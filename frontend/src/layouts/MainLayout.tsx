@@ -8,7 +8,6 @@ import { SidebarLeft } from '../components/SidebarLeft';
 import { SidebarRight } from '../components/SidebarRight';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  currentUser as currentUserMock,
   friendSuggestions as friendSuggestionsMock,
   notificationPreview,
   onlineUsers as onlineUsersMock,
@@ -34,8 +33,6 @@ export const MainLayout = () => {
   const [onlineUsers, setOnlineUsers] = useState<User[]>(onlineUsersMock);
   const [notifications] = useState<NotificationItem[]>(notificationPreview);
 
-  const currentUser = user ?? currentUserMock;
-
   useEffect(() => {
     const loadSidebarData = async () => {
       try {
@@ -54,6 +51,16 @@ export const MainLayout = () => {
 
     void loadSidebarData();
   }, []);
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-600 dark:bg-slate-950 dark:text-slate-300">
+        {t('common.loading')}
+      </div>
+    );
+  }
+
+  const currentUser = user;
 
   const handleAddFriend = async (friendId: string) => {
     try {

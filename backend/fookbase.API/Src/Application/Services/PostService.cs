@@ -6,6 +6,7 @@ using InteractHub.Api.Application.Mappers;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
 
@@ -17,17 +18,20 @@ public class PostService : IPostService
     private readonly IJavaApiService _javaApiService;
     private readonly IHashtagRepository _hashtagRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<PostService> _logger;
 
     public PostService(
         IPostRepository postRepository,
         IJavaApiService javaApiService,
         IHashtagRepository hashtagRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<PostService> logger)
     {
         _postRepository = postRepository;
         _javaApiService = javaApiService;
         _hashtagRepository = hashtagRepository;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<PagedResult<PostResponseDto>> GetPagedAsync(PaginationQuery query, CancellationToken cancellationToken)
@@ -35,8 +39,22 @@ public class PostService : IPostService
         query.Normalize();
 
         var (items, totalCount) = await _postRepository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
+        var authors = await ResolveAuthorsAsync(items.Select(post => post.UserId), cancellationToken);
 
-        var mappedItems = items.Select(static post => post.ToResponseDto()).ToList();
+        var mappedItems = items
+            .Select(post =>
+            {
+                var dto = post.ToResponseDto();
+                dto = dto with
+                {
+                    Author = authors.TryGetValue(post.UserId, out var author)
+                        ? author
+                        : CreateFallbackAuthor(post.UserId)
+                };
+
+                return dto;
+            })
+            .ToList();
 
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -46,7 +64,8 @@ public class PostService : IPostService
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
 
-        return post.ToResponseDto();
+        var dto = post.ToResponseDto();
+        return dto with { Author = await ResolveAuthorAsync(post.UserId, cancellationToken) };
     }
 
     public async Task<PostResponseDto> CreateAsync(Guid userId, CreatePostRequestDto request, CancellationToken cancellationToken)
@@ -81,7 +100,8 @@ public class PostService : IPostService
         await _postRepository.AddAsync(post, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return post.ToResponseDto();
+        var dto = post.ToResponseDto();
+        return dto with { Author = await ResolveAuthorAsync(post.UserId, cancellationToken) };
     }
 
     public async Task<PostResponseDto> UpdateAsync(
@@ -119,7 +139,8 @@ public class PostService : IPostService
         var updated = await _postRepository.GetByIdAsync(post.Id, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
 
-        return updated.ToResponseDto();
+        var dto = updated.ToResponseDto();
+        return dto with { Author = await ResolveAuthorAsync(updated.UserId, cancellationToken) };
     }
 
     public async Task DeleteAsync(Guid postId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
@@ -180,6 +201,87 @@ public class PostService : IPostService
         {
             throw new ForbiddenException(error);
         }
+    }
+
+    private async Task<Dictionary<Guid, PostAuthorDto>> ResolveAuthorsAsync(
+        IEnumerable<Guid> userIds,
+        CancellationToken cancellationToken)
+    {
+        var distinctUserIds = userIds.Distinct().ToList();
+        if (distinctUserIds.Count == 0)
+        {
+            return new Dictionary<Guid, PostAuthorDto>();
+        }
+
+        var tasks = distinctUserIds.Select(async userId =>
+            new KeyValuePair<Guid, PostAuthorDto>(userId, await ResolveAuthorAsync(userId, cancellationToken)));
+
+        var results = await Task.WhenAll(tasks);
+        return results.ToDictionary(pair => pair.Key, pair => pair.Value);
+    }
+
+    private async Task<PostAuthorDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userTask = _javaApiService.GetUserById(userId, cancellationToken: cancellationToken);
+            var profileTask = _javaApiService.GetProfileByUserId(userId, cancellationToken: cancellationToken);
+
+            await Task.WhenAll(userTask, profileTask);
+
+            var user = userTask.Result;
+            var profile = profileTask.Result;
+            var username = Normalize(user?.Username) ?? "user";
+            var displayName = Normalize(profile?.DisplayName)
+                ?? Normalize(profile?.FullName)
+                ?? username;
+
+            return new PostAuthorDto
+            {
+                Id = userId,
+                Username = username,
+                DisplayName = displayName,
+                AvatarUrl = Normalize(profile?.AvatarUrl) ?? BuildDefaultAvatarUrl(userId)
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Falling back to default post author for user {UserId} while loading feed.",
+                userId);
+            return CreateFallbackAuthor(userId);
+        }
+    }
+
+    private static PostAuthorDto CreateFallbackAuthor(Guid userId)
+    {
+        return new PostAuthorDto
+        {
+            Id = userId,
+            Username = "user",
+            DisplayName = "user",
+            AvatarUrl = BuildDefaultAvatarUrl(userId)
+        };
+    }
+
+    private static string? Normalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
+    }
+
+    private static string BuildDefaultAvatarUrl(Guid userId)
+    {
+        return $"https://i.pravatar.cc/150?u={userId}";
     }
 
 }

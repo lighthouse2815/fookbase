@@ -1,12 +1,14 @@
 namespace InteractHub.Api.Application.DTOs.Comments;
 
-public class CommentResponseDto
+public record CommentResponseDto
 {
     public Guid Id { get; init; }
 
     public Guid PostId { get; init; }
 
     public Guid UserId { get; init; }
+
+    public CommentAuthorDto Author { get; init; } = new();
 
     public string Content { get; init; } = string.Empty;
 

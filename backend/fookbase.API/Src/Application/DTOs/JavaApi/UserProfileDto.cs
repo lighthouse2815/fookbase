@@ -15,4 +15,16 @@ public class UserProfileDto
 
     [JsonPropertyName("avatarUrl")]
     public string? AvatarUrl { get; set; }
+
+    [JsonPropertyName("bio")]
+    public string? Bio { get; set; }
+
+    [JsonPropertyName("coverUrl")]
+    public string? CoverUrl { get; set; }
+
+    [JsonPropertyName("major")]
+    public string? Major { get; set; }
+
+    [JsonPropertyName("year")]
+    public string? Year { get; set; }
 }

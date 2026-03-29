@@ -11,7 +11,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/notifications")]
-[Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+[Authorize]
 public class NotificationsController : ControllerBase
 {
     private readonly INotificationService _notificationService;

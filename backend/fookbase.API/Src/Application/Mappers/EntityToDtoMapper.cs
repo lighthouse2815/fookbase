@@ -19,6 +19,13 @@ public static class EntityToDtoMapper
             Id = comment.Id,
             PostId = comment.PostId,
             UserId = comment.UserId,
+            Author = new CommentAuthorDto
+            {
+                Id = comment.UserId,
+                Username = "user",
+                DisplayName = "user",
+                AvatarUrl = $"https://i.pravatar.cc/150?u={comment.UserId}"
+            },
             Content = comment.Content,
             CreatedAt = comment.CreatedAt,
             UpdatedAt = comment.UpdatedAt
@@ -33,6 +40,13 @@ public static class EntityToDtoMapper
         {
             Id = post.Id,
             UserId = post.UserId,
+            Author = new PostAuthorDto
+            {
+                Id = post.UserId,
+                Username = "user",
+                DisplayName = "user",
+                AvatarUrl = $"https://i.pravatar.cc/150?u={post.UserId}"
+            },
             Content = post.Content,
             ImageUrl = post.ImageUrl,
             CreatedAt = post.CreatedAt,

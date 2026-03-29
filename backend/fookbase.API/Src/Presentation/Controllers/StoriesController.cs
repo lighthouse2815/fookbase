@@ -1,6 +1,5 @@
 using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
@@ -55,7 +54,7 @@ public class StoriesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -73,7 +72,7 @@ public class StoriesController : ControllerBase
     }
 
     [HttpPut("{storyId:guid}")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -90,7 +89,7 @@ public class StoriesController : ControllerBase
     }
 
     [HttpDelete("{storyId:guid}")]
-    [Authorize(Roles = AppRoles.User + "," + AppRoles.Admin)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

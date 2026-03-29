@@ -105,12 +105,12 @@ public class AppDbContext : DbContext
             entity.HasOne<Post>()
                 .WithMany()
                 .HasForeignKey(notification => notification.PostId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne<Comment>()
                 .WithMany()
                 .HasForeignKey(notification => notification.CommentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasIndex(notification => notification.UserId);
             entity.HasIndex(notification => notification.IsRead);

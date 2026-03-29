@@ -1,5 +1,15 @@
 import { apiClient } from './apiClient';
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types/auth';
+import type {
+  AuthResponse,
+  LoginRequest,
+  MessageResponse,
+  OtpRequest,
+  OtpVerifyResponse,
+  RegisterRequest,
+  RegisterResponse,
+  ResetPasswordRequest,
+  VerifyOtpRequest,
+} from '../types/auth';
 
 interface RawAuthPayload {
   token?: string;
@@ -19,23 +29,25 @@ interface ApiEnvelope<T> {
   errors?: string[];
 }
 
-const extractAuthPayload = (
-  payload: RawAuthPayload | ApiEnvelope<RawAuthPayload>,
-): RawAuthPayload => {
-  const envelope = payload as ApiEnvelope<RawAuthPayload>;
-
-  if (envelope.data) {
+const extractEnvelopeData = <T>(payload: T | ApiEnvelope<T>): T => {
+  const envelope = payload as ApiEnvelope<T>;
+  if (typeof envelope === 'object' && envelope !== null && 'data' in envelope && envelope.data !== undefined) {
     return envelope.data;
   }
 
-  return payload as RawAuthPayload;
+  return payload as T;
 };
 
-const hasToken = (payload: RawAuthPayload): boolean =>
-  Boolean(payload.token ?? payload.accessToken ?? payload.jwt);
+const normalizeToken = (token: string | undefined): string | undefined => {
+  if (!token) {
+    return undefined;
+  }
+
+  return token.replace(/^Bearer\s+/i, '').trim();
+};
 
 const normalizeAuthPayload = (payload: RawAuthPayload): AuthResponse => {
-  const token = payload.token ?? payload.accessToken ?? payload.jwt;
+  const token = normalizeToken(payload.token ?? payload.accessToken ?? payload.jwt);
 
   if (!token) {
     throw new Error('Missing token in auth response');
@@ -56,19 +68,54 @@ const normalizeAuthPayload = (payload: RawAuthPayload): AuthResponse => {
 export const authService = {
   async login(payload: LoginRequest): Promise<AuthResponse> {
     const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>('/api/auth/login', payload);
-    const authPayload = extractAuthPayload(response.data);
+    const authPayload = extractEnvelopeData(response.data);
     return normalizeAuthPayload(authPayload);
   },
 
-  async register(payload: RegisterRequest): Promise<AuthResponse | null> {
-    const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>('/api/auth/register', payload);
-    const authPayload = extractAuthPayload(response.data);
+  async register(payload: RegisterRequest): Promise<RegisterResponse> {
+    const response = await apiClient.post<RegisterResponse | ApiEnvelope<RegisterResponse>>('/api/auth/register', payload);
+    return extractEnvelopeData(response.data);
+  },
 
-    if (!hasToken(authPayload)) {
-      return null;
-    }
+  async sendVerifyEmailOtpWhenNotLogin(payload: OtpRequest): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/otp/send/verify-email',
+      payload,
+    );
+    return extractEnvelopeData(response.data);
+  },
 
-    return normalizeAuthPayload(authPayload);
+  async verifyEmailOtpWhenNotLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/otp/verify/email',
+      payload,
+    );
+    return extractEnvelopeData(response.data);
+  },
+
+  async sendResetPasswordOtpWhenNotLogin(payload: OtpRequest): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/otp/send/reset-password',
+      payload,
+    );
+    return extractEnvelopeData(response.data);
+  },
+
+  async verifyResetPasswordOtpWhenNotLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/otp/verify/password',
+      payload,
+    );
+    return extractEnvelopeData(response.data);
+  },
+
+  async resetPassword(resetToken: string, payload: ResetPasswordRequest): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse | ApiEnvelope<MessageResponse>>('/api/auth/reset-password', payload, {
+      headers: {
+        'X-Reset-Token': resetToken,
+      },
+    });
+    return extractEnvelopeData(response.data);
   },
 
   async logout(): Promise<void> {
