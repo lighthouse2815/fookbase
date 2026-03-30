@@ -5,9 +5,12 @@ namespace InteractHub.Api.Application.Interfaces.Services;
 
 public interface IPostService
 {
-    Task<PagedResult<PostResponseDto>> GetPagedAsync(PaginationQuery query, CancellationToken cancellationToken);
+    Task<PagedResult<PostResponseDto>> GetPagedAsync(
+        PaginationQuery query,
+        Guid? currentUserId,
+        CancellationToken cancellationToken);
 
-    Task<PostResponseDto> GetByIdAsync(Guid postId, CancellationToken cancellationToken);
+    Task<PostResponseDto> GetByIdAsync(Guid postId, Guid? currentUserId, CancellationToken cancellationToken);
 
     Task<PostResponseDto> CreateAsync(Guid userId, CreatePostRequestDto request, CancellationToken cancellationToken);
 

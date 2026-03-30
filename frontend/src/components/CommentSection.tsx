@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 import { commentService } from '../services/commentService';
 import type { Comment } from '../types/post';
@@ -103,10 +104,20 @@ export const CommentSection = ({
 
       <div className="space-y-2">
         {comments.map((comment) => (
-          <div key={comment.id} className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/40">
-            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{comment.author.fullName}</p>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{comment.content}</p>
-            <p className="mt-1 text-[11px] text-slate-400">{formatRelativeTime(comment.createdAt)}</p>
+          <div key={comment.id} className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/40">
+            <Link to={`/profile/${comment.author.id}`} aria-label={comment.author.fullName} className="inline-flex shrink-0">
+              <img
+                src={comment.author.avatarUrl}
+                alt={comment.author.fullName}
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            </Link>
+
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{comment.author.fullName}</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{comment.content}</p>
+              <p className="mt-1 text-[11px] text-slate-400">{formatRelativeTime(comment.createdAt)}</p>
+            </div>
           </div>
         ))}
       </div>

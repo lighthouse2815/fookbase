@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 
 import { CreatePostBox } from '../components/CreatePostBox';
+import type { CreatePostDraft } from '../components/CreatePostBox';
 import { PostCard } from '../components/PostCard';
 import { StoryList } from '../components/StoryList';
 import { stories } from '../data/mockData';
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
+import { cloudinaryService } from '../services/cloudinaryService';
 import { postService } from '../services/postService';
 import type { Post } from '../types/post';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -52,12 +54,21 @@ export const HomePage = () => {
     void loadPosts(1, true);
   }, [loadPosts]);
 
-  const handleCreatePost = async (content: string) => {
+  const handleCreatePost = async (draft: CreatePostDraft) => {
     setIsSubmitting(true);
     setCreateError(null);
 
     try {
-      const created = await postService.createPost(content);
+      let uploadedMediaUrl: string | undefined;
+
+      if (draft.mediaFile) {
+        uploadedMediaUrl = await cloudinaryService.uploadMedia(draft.mediaFile);
+      }
+
+      const created = await postService.createPost({
+        content: draft.content,
+        imageUrl: uploadedMediaUrl,
+      });
       setFeed((previous) => [created, ...previous]);
       return true;
     } catch (error) {

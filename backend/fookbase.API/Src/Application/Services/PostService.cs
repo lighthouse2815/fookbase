@@ -34,7 +34,10 @@ public class PostService : IPostService
         _logger = logger;
     }
 
-    public async Task<PagedResult<PostResponseDto>> GetPagedAsync(PaginationQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<PostResponseDto>> GetPagedAsync(
+        PaginationQuery query,
+        Guid? currentUserId,
+        CancellationToken cancellationToken)
     {
         query.Normalize();
 
@@ -49,7 +52,8 @@ public class PostService : IPostService
                 {
                     Author = authors.TryGetValue(post.UserId, out var author)
                         ? author
-                        : CreateFallbackAuthor(post.UserId)
+                        : CreateFallbackAuthor(post.UserId),
+                    LikedByCurrentUser = IsLikedByCurrentUser(post, currentUserId)
                 };
 
                 return dto;
@@ -59,13 +63,17 @@ public class PostService : IPostService
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
-    public async Task<PostResponseDto> GetByIdAsync(Guid postId, CancellationToken cancellationToken)
+    public async Task<PostResponseDto> GetByIdAsync(Guid postId, Guid? currentUserId, CancellationToken cancellationToken)
     {
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
 
         var dto = post.ToResponseDto();
-        return dto with { Author = await ResolveAuthorAsync(post.UserId, cancellationToken) };
+        return dto with
+        {
+            Author = await ResolveAuthorAsync(post.UserId, cancellationToken),
+            LikedByCurrentUser = IsLikedByCurrentUser(post, currentUserId)
+        };
     }
 
     public async Task<PostResponseDto> CreateAsync(Guid userId, CreatePostRequestDto request, CancellationToken cancellationToken)
@@ -73,14 +81,18 @@ public class PostService : IPostService
         var user = await _javaApiService.GetUserById(userId, cancellationToken)
             ?? throw new NotFoundException("User not found.");
 
+        var normalizedContent = NormalizePostContent(request.Content);
+        var normalizedMedia = NormalizePostMedia(request.ImageUrl);
+        EnsurePostHasContentOrMedia(normalizedContent, normalizedMedia);
+
         var now = DateTime.UtcNow;
 
         var post = new Post
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            Content = request.Content.Trim(),
-            ImageUrl = request.ImageUrl,
+            Content = normalizedContent,
+            ImageUrl = normalizedMedia,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -101,7 +113,11 @@ public class PostService : IPostService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var dto = post.ToResponseDto();
-        return dto with { Author = await ResolveAuthorAsync(post.UserId, cancellationToken) };
+        return dto with
+        {
+            Author = await ResolveAuthorAsync(post.UserId, cancellationToken),
+            LikedByCurrentUser = IsLikedByCurrentUser(post, userId)
+        };
     }
 
     public async Task<PostResponseDto> UpdateAsync(
@@ -116,8 +132,12 @@ public class PostService : IPostService
 
         EnsureOwnerOrAdmin(post.UserId, userId, isAdmin, "You are not allowed to update this post.");
 
-        post.Content = request.Content.Trim();
-        post.ImageUrl = request.ImageUrl;
+        var normalizedContent = NormalizePostContent(request.Content);
+        var normalizedMedia = NormalizePostMedia(request.ImageUrl);
+        EnsurePostHasContentOrMedia(normalizedContent, normalizedMedia);
+
+        post.Content = normalizedContent;
+        post.ImageUrl = normalizedMedia;
         post.UpdatedAt = DateTime.UtcNow;
 
         var hashtags = await GetOrCreateHashtagsAsync(post.Content, cancellationToken);
@@ -140,7 +160,11 @@ public class PostService : IPostService
             ?? throw new NotFoundException("Post not found.");
 
         var dto = updated.ToResponseDto();
-        return dto with { Author = await ResolveAuthorAsync(updated.UserId, cancellationToken) };
+        return dto with
+        {
+            Author = await ResolveAuthorAsync(updated.UserId, cancellationToken),
+            LikedByCurrentUser = IsLikedByCurrentUser(updated, userId)
+        };
     }
 
     public async Task DeleteAsync(Guid postId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
@@ -282,6 +306,39 @@ public class PostService : IPostService
     private static string BuildDefaultAvatarUrl(Guid userId)
     {
         return $"https://i.pravatar.cc/150?u={userId}";
+    }
+
+    private static bool IsLikedByCurrentUser(Post post, Guid? currentUserId)
+    {
+        if (!currentUserId.HasValue)
+        {
+            return false;
+        }
+
+        return post.Likes.Any(like => like.UserId == currentUserId.Value);
+    }
+
+    private static void EnsurePostHasContentOrMedia(string content, string? media)
+    {
+        if (string.IsNullOrWhiteSpace(content) && string.IsNullOrWhiteSpace(media))
+        {
+            throw new ArgumentException("Post must include text or media.");
+        }
+    }
+
+    private static string NormalizePostContent(string? content)
+    {
+        return content?.Trim() ?? string.Empty;
+    }
+
+    private static string? NormalizePostMedia(string? media)
+    {
+        if (string.IsNullOrWhiteSpace(media))
+        {
+            return null;
+        }
+
+        return media.Trim();
     }
 
 }

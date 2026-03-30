@@ -18,6 +18,8 @@ public record PostResponseDto
 
     public int LikeCount { get; init; }
 
+    public bool LikedByCurrentUser { get; init; }
+
     public int CommentCount { get; init; }
 
     public IReadOnlyList<string> Hashtags { get; init; } = Array.Empty<string>();

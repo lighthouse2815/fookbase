@@ -47,6 +47,11 @@ export interface PaginatedPosts {
   hasMore: boolean;
 }
 
+export interface CreatePostRequest {
+  content: string;
+  imageUrl?: string;
+}
+
 const extractData = <T>(response: ApiEnvelope<T>, fallbackError: string): T => {
   if (!response.data) {
     throw new Error(response.errors?.[0] ?? fallbackError);
@@ -99,8 +104,8 @@ export const postService = {
     };
   },
 
-  async createPost(content: string): Promise<Post> {
-    const response = await apiClient.post<ApiEnvelope<PostPayload>>('/api/posts', { content });
+  async createPost(request: CreatePostRequest): Promise<Post> {
+    const response = await apiClient.post<ApiEnvelope<PostPayload>>('/api/posts', request);
     const created = extractData(response.data, 'Failed to create post');
     return mapPost(created);
   },

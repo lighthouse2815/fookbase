@@ -21,6 +21,7 @@ export const AppRoutes = () => {
           <Route index element={<HomePage />} />
           <Route path="/friends" element={<FriendsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/:userId" element={<ProfilePage />} />
         </Route>
       </Route>
 

@@ -29,7 +29,8 @@ public class PostsController : ControllerBase
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        var posts = await _postService.GetPagedAsync(query, cancellationToken);
+        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+        var posts = await _postService.GetPagedAsync(query, currentUserId, cancellationToken);
         return Ok(ApiResponse<PagedResult<PostResponseDto>>.Ok(posts));
     }
 
@@ -41,7 +42,8 @@ public class PostsController : ControllerBase
         Guid postId,
         CancellationToken cancellationToken)
     {
-        var post = await _postService.GetByIdAsync(postId, cancellationToken);
+        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+        var post = await _postService.GetByIdAsync(postId, currentUserId, cancellationToken);
         return Ok(ApiResponse<PostResponseDto>.Ok(post));
     }
 
