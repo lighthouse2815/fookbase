@@ -1,7 +1,7 @@
 import { House, UserRound, UsersRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { Navbar } from '../components/Navbar';
 import { SidebarLeft } from '../components/SidebarLeft';
@@ -28,10 +28,12 @@ export interface MainLayoutOutletContext {
 export const MainLayout = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   const [suggestions, setSuggestions] = useState<FriendSuggestion[]>(friendSuggestionsMock);
   const [onlineUsers, setOnlineUsers] = useState<User[]>(onlineUsersMock);
   const [notifications] = useState<NotificationItem[]>(notificationPreview);
+  const isFriendsPage = location.pathname.startsWith('/friends');
 
   useEffect(() => {
     const loadSidebarData = async () => {
@@ -76,8 +78,14 @@ export const MainLayout = () => {
     <div className="min-h-screen bg-slate-100 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <Navbar currentUser={currentUser} notifications={notifications} onLogout={logout} />
 
-      <div className="mx-auto grid max-w-[1400px] gap-4 px-3 pb-24 pt-20 sm:px-4 md:grid-cols-[260px_minmax(0,1fr)] md:pb-8 lg:px-6 xl:grid-cols-[260px_minmax(0,1fr)_320px]">
-        <SidebarLeft currentUser={currentUser} />
+      <div
+        className={`mx-auto grid max-w-[1400px] gap-4 px-3 pb-24 pt-20 sm:px-4 md:pb-8 lg:px-6 ${
+          isFriendsPage
+            ? 'md:grid-cols-[minmax(0,1fr)]'
+            : 'md:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_320px]'
+        }`}
+      >
+        {isFriendsPage ? null : <SidebarLeft currentUser={currentUser} />}
 
         <main className="space-y-4">
           <Outlet
@@ -90,12 +98,14 @@ export const MainLayout = () => {
           />
         </main>
 
-        <SidebarRight
-          suggestions={suggestions}
-          onlineUsers={onlineUsers}
-          notifications={notifications}
-          onAddFriend={handleAddFriend}
-        />
+        {isFriendsPage ? null : (
+          <SidebarRight
+            suggestions={suggestions}
+            onlineUsers={onlineUsers}
+            notifications={notifications}
+            onAddFriend={handleAddFriend}
+          />
+        )}
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">

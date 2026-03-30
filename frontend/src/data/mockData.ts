@@ -1,4 +1,4 @@
-import type { FriendSuggestion } from '../types/friendship';
+import type { FriendRequest, FriendSuggestion, FriendUser } from '../types/friendship';
 import type { NotificationItem } from '../types/notification';
 import type { Post, Story } from '../types/post';
 import type { Profile } from '../types/profile';
@@ -49,6 +49,125 @@ export const friendSuggestions: FriendSuggestion[] = [
     avatarUrl: 'https://i.pravatar.cc/150?img=28',
     mutualFriends: 6,
     faculty: 'Information Systems',
+  },
+];
+
+export const receivedFriendRequestsMock: FriendRequest[] = [
+  {
+    id: 'u-201',
+    requestId: 'fr-001',
+    requesterId: 'u-201',
+    addresseeId: currentUser.id,
+    username: 'huyenkieu',
+    fullName: 'Huyen Kieu',
+    avatarUrl: 'https://i.pravatar.cc/150?img=49',
+    mutualFriends: 9,
+    requestedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    faculty: 'Business Informatics',
+  },
+  {
+    id: 'u-202',
+    requestId: 'fr-002',
+    requesterId: 'u-202',
+    addresseeId: currentUser.id,
+    username: 'ductran',
+    fullName: 'Duc Tran',
+    avatarUrl: 'https://i.pravatar.cc/150?img=16',
+    mutualFriends: 4,
+    requestedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    faculty: 'Software Engineering',
+  },
+  {
+    id: 'u-203',
+    requestId: 'fr-003',
+    requesterId: 'u-203',
+    addresseeId: currentUser.id,
+    username: 'thuyduong',
+    fullName: 'Thuy Duong',
+    avatarUrl: 'https://i.pravatar.cc/150?img=29',
+    mutualFriends: 14,
+    requestedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+    faculty: 'Information Systems',
+  },
+];
+
+export const sentFriendRequestsMock: FriendRequest[] = [
+  {
+    id: 'u-204',
+    requestId: 'fr-004',
+    requesterId: currentUser.id,
+    addresseeId: 'u-204',
+    username: 'hoanghai',
+    fullName: 'Hoang Hai',
+    avatarUrl: 'https://i.pravatar.cc/150?img=55',
+    mutualFriends: 3,
+    requestedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    faculty: 'Data Science',
+  },
+  {
+    id: 'u-205',
+    requestId: 'fr-005',
+    requesterId: currentUser.id,
+    addresseeId: 'u-205',
+    username: 'tamnguyen',
+    fullName: 'Tam Nguyen',
+    avatarUrl: 'https://i.pravatar.cc/150?img=38',
+    mutualFriends: 6,
+    requestedAt: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(),
+    faculty: 'Computer Science',
+  },
+];
+
+export const friendsMock: FriendUser[] = [
+  {
+    id: 'u-301',
+    friendshipId: 'f-001',
+    username: 'namle',
+    fullName: 'Nam Le',
+    avatarUrl: 'https://i.pravatar.cc/150?img=60',
+    mutualFriends: 23,
+    friendsCount: 412,
+    faculty: 'Software Engineering',
+    bio: 'Coffee, football, and late-night coding sessions.',
+    since: '2024-09-18T00:00:00.000Z',
+    isOnline: true,
+  },
+  {
+    id: 'u-302',
+    friendshipId: 'f-002',
+    username: 'hatran',
+    fullName: 'Ha Tran',
+    avatarUrl: 'https://i.pravatar.cc/150?img=5',
+    mutualFriends: 18,
+    friendsCount: 276,
+    faculty: 'Information Systems',
+    bio: 'UI lover and digital product enthusiast.',
+    since: '2025-01-11T00:00:00.000Z',
+  },
+  {
+    id: 'u-303',
+    friendshipId: 'f-003',
+    username: 'quocthanh',
+    fullName: 'Quoc Thanh',
+    avatarUrl: 'https://i.pravatar.cc/150?img=36',
+    mutualFriends: 31,
+    friendsCount: 501,
+    faculty: 'Cyber Security',
+    bio: 'Sharing study notes and security tips.',
+    since: '2023-12-22T00:00:00.000Z',
+    isOnline: true,
+  },
+  {
+    id: 'u-304',
+    friendshipId: 'f-004',
+    username: 'myanh',
+    fullName: 'My Anh',
+    avatarUrl: 'https://i.pravatar.cc/150?img=65',
+    mutualFriends: 15,
+    friendsCount: 227,
+    faculty: 'Data Science',
+    bio: 'Photography and machine learning.',
+    since: '2025-03-03T00:00:00.000Z',
   },
 ];
 

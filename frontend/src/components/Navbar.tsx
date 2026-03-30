@@ -24,7 +24,7 @@ export const Navbar = ({ currentUser, notifications, onLogout }: NavbarProps) =>
   const navItems = [
     { key: 'home', icon: House, path: '/' },
     { key: 'friends', icon: UsersRound, path: '/friends' },
-    { key: 'messages', icon: MessageSquareText, path: '/friends' },
+    { key: 'messages', icon: MessageSquareText, path: '/messages' },
   ] as const;
 
   const unreadCount = notifications.filter((item) => !item.isRead).length;
@@ -50,6 +50,7 @@ export const Navbar = ({ currentUser, notifications, onLogout }: NavbarProps) =>
             <NavLink
               key={key}
               to={path}
+              end={path === '/'}
               className={({ isActive }) =>
                 `rounded-xl px-3 py-2 transition ${
                   isActive
@@ -62,11 +63,13 @@ export const Navbar = ({ currentUser, notifications, onLogout }: NavbarProps) =>
               <Icon size={20} />
             </NavLink>
           ))}
+        </nav>
 
+        <div className="relative flex items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => setIsNotificationOpen((current) => !current)}
-            className="relative rounded-xl px-3 py-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="relative rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             title={t('nav.notifications')}
           >
             <Bell size={20} />
@@ -74,9 +77,7 @@ export const Navbar = ({ currentUser, notifications, onLogout }: NavbarProps) =>
               <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500" />
             ) : null}
           </button>
-        </nav>
 
-        <div className="relative flex items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={toggleTheme}
