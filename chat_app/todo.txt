@@ -1,0 +1,8 @@
+1. chuyển sang dung hilt
+2. tách animation
+3. forgot password , có gửi mail code
+4. lưu avatar database 
+5. batch memberCount
+6. Serializable nếu cần truyền dto qua các màn hình, fragment
+7. ap dung dataDirty cho cac fragment de khong goi api lien tuc
+8. doi 3 activity auth thanh 3 fragment dung chung authActivity

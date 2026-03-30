@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/nav_messages">
+
+    <!-- Global Actions for Modal Screens -->
+    <action
+        android:id="@+id/action_global_createGroup"
+        app:destination="@id/createGroupFragment"
+        app:enterAnim="@anim/slide_up"
+        app:exitAnim="@anim/fade_out"
+        app:popEnterAnim="@anim/fade_in"
+        app:popExitAnim="@anim/slide_down"/>
+
+    <action
+        android:id="@+id/action_global_addFriend"
+        app:destination="@id/addFriendFragment"
+        app:enterAnim="@anim/slide_up"
+        app:exitAnim="@anim/fade_out"
+        app:popEnterAnim="@anim/fade_in"
+        app:popExitAnim="@anim/slide_down"/>
+
+    <action
+        android:id="@+id/action_global_userProfile"
+        app:destination="@id/userProfileFragment"
+        app:enterAnim="@anim/slide_up"
+        app:exitAnim="@anim/fade_out"
+        app:popEnterAnim="@anim/fade_in"
+        app:popExitAnim="@anim/slide_down"/>
+
+    <action
+        android:id="@+id/action_global_qrScanner"
+        app:destination="@id/qrScannerFragment"
+        app:enterAnim="@anim/slide_up"
+        app:exitAnim="@anim/fade_out"
+        app:popEnterAnim="@anim/fade_in"
+        app:popExitAnim="@anim/slide_down"/>
+
+    <action
+        android:id="@+id/action_global_chatDetailFragment"
+        app:destination="@id/chatDetailFragment"
+        app:enterAnim="@anim/slide_up"
+        app:exitAnim="@anim/fade_out"
+        app:popEnterAnim="@anim/fade_in"
+        app:popExitAnim="@anim/slide_down"/>
+
+    <action
+        android:id="@+id/action_global_friendRequests"
+        app:destination="@id/friendRequestsFragment"
+        app:enterAnim="@anim/slide_in_left"
+        app:exitAnim="@anim/fade_out"
+        app:popEnterAnim="@anim/fade_in"
+        app:popExitAnim="@anim/slide_out_right"/>
+
+    <!-- Bottom Navigation - Top Level Destinations -->
+    <fragment
+        android:id="@+id/nav_messages"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.MessagesFragment"
+        android:label="Messages">
+        <action
+            android:id="@+id/action_messagesFragment_to_chatDetailFragment"
+            app:destination="@id/chatDetailFragment"
+            app:enterAnim="@anim/slide_up"
+            app:exitAnim="@anim/fade_out"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/slide_down"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_contacts"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.ContactsFragment"
+        android:label="Contacts">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_groups"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.GroupsFragment"
+        android:label="Groups">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.ProfileFragment"
+        android:label="Profile">
+
+    </fragment>
+
+    <!-- Modal/Overlay Fragments -->
+    <fragment
+        android:id="@+id/userProfileFragment"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.UserProfileFragment"
+        android:label="User Profile">
+        <argument
+            android:name="profileType"
+            app:argType="string"/>
+        <argument
+            android:name="userId"
+            app:argType="string"/>
+        <argument
+            android:name="userName"
+            app:argType="string"/>
+        <argument
+            android:name="nickname"
+            app:argType="string"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/createGroupFragment"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.CreateGroupFragment"
+        android:label="Create Group"/>
+
+    <fragment
+        android:id="@+id/addFriendFragment"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.AddFriendFragment"
+        android:label="Add Friend"/>
+
+    <fragment
+        android:id="@+id/friendRequestsFragment"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.FriendRequestsFragment"
+        android:label="Friend Requests"/>
+
+    <fragment
+        android:id="@+id/qrScannerFragment"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.QRScannerFragment"
+        android:label="QR Scanner"/>
+
+    <fragment
+        android:id="@+id/chatDetailFragment"
+        android:name="com.dangngulon.frontend.ui.zola.fragments.ChatDetailFragment"
+        android:label="Chat Detail">
+        <argument
+            android:name="conversationId"
+            app:argType="string"/>
+    </fragment>
+
+</navigation>

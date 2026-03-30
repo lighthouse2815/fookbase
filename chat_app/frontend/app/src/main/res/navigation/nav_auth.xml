@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.dangngulon.frontend.ui.auth.fragments.LoginFragment"
+        android:label="Login" >
+
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/registerFragment"/>
+
+        <action
+            android:id="@+id/action_login_to_forgot"
+            app:destination="@id/forgotPasswordFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.dangngulon.frontend.ui.auth.fragments.RegisterFragment"
+        android:label="Register"/>
+
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.dangngulon.frontend.ui.auth.fragments.ForgotPasswordFragment"
+        android:label="Forgot Password"/>
+
+</navigation>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background -->
+    <path
+        android:pathData="M0,0h48v48h-48z"
+        android:fillColor="#4A6B8A"/>
+    <!-- User icon -->
+    <path
+        android:pathData="M24,24a8,8 0,1 0,0 -16a8,8 0,0 0,0 16z"
+        android:fillColor="#FFFFFF"/>
+    <path
+        android:pathData="M10,44v-4a14,14 0,0 1,28 0v4"
+        android:fillColor="#FFFFFF"/>
+</vector>

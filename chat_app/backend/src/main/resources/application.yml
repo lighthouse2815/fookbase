@@ -1,0 +1,76 @@
+server:
+  servlet:
+    context-path:
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/chat_app?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nguyenhaidang1172005@gmail.com
+    password: njqjxznatvgooblt
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  redis:
+    host: localhost
+    port: 6379
+
+# JWT Config
+jwt:
+  signer-key: dang_dep_trai_sieu_cap_vip_pro_2k5_2026!!!
+  issuer: chat-app
+  access-token-expiration-ms: 900000
+  refresh-token-expiration-ms: 2592000000
+
+auth:
+  refresh-cookie:
+    name: refresh_token
+    path: /
+    secure: true
+    same-site: Lax
+
+# Cloud
+cloudinary:
+  cloud-name: drfhezlyn
+  api-key: 339282683418845
+  api-secret: wmKxvEiEeKAmTR-BmYHlO9F6ugs
+
+google:
+  oauth:
+    client-id: xxx.apps.googleusercontent.com
+
+app:
+  cors:
+    allowed-origin-patterns:
+      - "http://localhost:*"
+      - "http://127.0.0.1:*"
+      - "http://192.168.1.*:*"
+  websocket:
+    allowed-origin-patterns:
+      - "http://localhost:*"
+      - "http://127.0.0.1:*"
+      - "http://192.168.1.*:*"
+
+
+
+
+
+

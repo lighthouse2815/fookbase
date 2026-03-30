@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">chat_app</string>
+
+    <!-- ========== AUTH ACTIVITY ========== -->
+
+    <!-- LoginFragment -->
+    <string name="cd_app_logo">Logo ứng dụng</string>
+    <string name="welcome_back">Chào mừng trở lại!</string>
+    <string name="login_subtitle">Đăng nhập để tiếp tục</string>
+    <string name="hint_username">Tài khoản</string>
+    <string name="hint_password">Mật khẩu</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="action_login">Đăng nhập</string>
+    <string name="login_with_social">Hoặc đăng nhập bằng</string>
+    <string name="cd_login_google">Đăng nhập bằng Google</string>
+    <string name="cd_login_facebook">Đăng nhập bằng Facebook</string>
+    <string name="cd_login_zalo">Đăng nhập bằng Zalo</string>
+    <string name="cd_login_apple">Đăng nhập bằng Apple</string>
+    <string name="no_account">Chưa có tài khoản?</string>
+    <string name="action_register">Đăng ký ngay</string>
+
+    <!-- RegisterFragment -->
+    <string name="register_title">Tạo tài khoản</string>
+    <string name="register_subtitle">Đăng ký để bắt đầu trải nghiệm</string>
+    <string name="hint_last_name">Họ</string>
+    <string name="hint_first_name">Tên</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_phone">Số điện thoại</string>
+    <string name="hint_password_register">Mật khẩu</string>
+    <string name="hint_confirm_password">Xác nhận mật khẩu</string>
+    <string name="password_helper">Tối thiểu 8 ký tự</string>
+    <string name="btn_register">Đăng ký</string>
+    <string name="btn_login">Đăng nhập</string>
+    <string name="terms_prefix">Tôi đồng ý với </string>
+    <string name="terms_title"> Điều khoản sử dụng</string>
+    <string name="or_register_with">Hoặc đăng ký bằng</string>
+    <string name="already_have_account">Đã có tài khoản? </string>
+    <string name="verify_email_success">Xác minh email thành công !</string>
+
+    <!-- ForgotPasswordFragment -->
+    <string name="forgot_title">Quên mật khẩu?</string>
+    <string name="forgot_subtitle">Nhập email để nhận link đặt lại mật khẩu</string>
+    <string name="hint_email_reset">Địa chỉ Email</string>
+    <string name="btn_send_reset">Gửi link đặt lại</string>
+    <string name="reset_password_title">Đặt lại mật khẩu</string>
+    <string name="reset_password_desc">Vui lòng nhập mật khẩu mới cho tài khoản của bạn</string>
+    <string name="new_password_hint">Mật khẩu mới</string>
+    <string name="confirm_password_hint">Xác nhận mật khẩu</string>
+    <string name="reset_password_btn">Đặt lại mật khẩu</string>
+    <string name="reset_success_title">Đặt lại mật khẩu thành công !</string>
+    <string name="reset_success_message">Quay về đăng nhập để trải nghiệm ^^!</string>
+    <string name="otp_title">Xác thực OTP</string>
+    <string name="otp_description">Nhập mã OTP đã được gửi về email</string>
+    <string name="otp_hint">Nhập mã OTP</string>
+    <string name="otp_verify">Xác nhận</string>
+    <string name="otp_resend">Không nhận được? Gửi lại</string>
+    <string name="otp_invalid">OTP không hợp lệ</string>
+    <string name="remember_password">Nhớ mật khẩu? </string>
+    <string name="action_login_forgot_password">Đăng nhập</string>
+    <string name="reset_other_methods">Hoặc thử các cách khác</string>
+    <string name="reset_via_phone">Qua SĐT</string>
+    <string name="reset_support">Hỗ trợ</string>
+    <string name="back_to_login">Đăng nhập</string>
+    <string name="btn_back_to_login">Quay lại đăng nhập</string>
+    <string name="forgot_back_to_form">Quay lại form nhập email</string>
+    <string name="forgot_lock_desc">Quay lại form nhập email</string>
+    <string name="forgot_back">Quay lại form nhập email</string>
+
+    <!-- Auth Common -->
+    <string name="cd_back">Quay lại</string>
+    <string name="cd_logo">Logo</string>
+    <string name="cd_google">Google</string>
+    <string name="cd_facebook">Facebook</string>
+    <string name="cd_zalo">Zalo</string>
+    <string name="password_required">Vui lòng nhập mật khẩu</string>
+    <string name="password_not_match">Mật khẩu xác nhận không khớp</string>
+    <string name="password_too_short">Mật khẩu phải có ít nhất 6 ký tự</string>
+
+    <!-- ========== CHAT APP ACTIVITY ========== -->
+
+    <!-- ChapAppActivity -->
+    <string name="search_hint">Tìm kiếm</string>
+    <string name="search_content_desc">Tìm kiếm</string>
+    <string name="qr_content_desc">Quét mã QR</string>
+    <string name="add_content_desc">Thêm</string>
+
+    <!-- MessagesFragment -->
+    <string name="nav_messages">Tin nhắn</string>
+    <string name="tab_priority">Ưu tiên</string>
+    <string name="tab_other">Khác</string>
+    <string name="no_conversation">Chưa có cuộc trò chuyện nào</string>
+    <string name="filter">Filter</string>
+
+    <!-- ContactsFragment -->
+    <string name="nav_contacts">Liên hệ</string>
+
+    <!-- GroupsFragment -->
+    <string name="nav_groups">Nhóm</string>
+
+    <!-- ProfileFragment -->
+    <string name="nav_profile">Cá nhân</string>
+    <string name="profile_info">Thông tin tài khoản</string>
+    <string name="profile_settings">Cài đặt</string>
+    <string name="profile_privacy">Quyền riêng tư</string>
+    <string name="profile_logout">Đăng xuất</string>
+    <string name="profile_avatar_text">N</string>
+    <string name="profile_name_default">Nguyễn Văn A</string>
+    <string name="profile_view_profile">Xem trang cá nhân</string>
+    <string name="profile_phone_label">Số điện thoại</string>
+    <string name="profile_email_label">Email</string>
+    <string name="profile_dob_label">Ngày sinh</string>
+    <string name="profile_phone_default">+84 123 456 789</string>
+    <string name="profile_email_default">example@email.com</string>
+    <string name="profile_dob_default">01/01/2000</string>
+    <string name="cd_profile_avatar">Ảnh đại diện</string>
+    <string name="cd_profile_chevron">Mũi tên phải</string>
+    <string name="cd_settings_icon">Biểu tượng cài đặt</string>
+    <string name="cd_privacy_icon">Biểu tượng quyền riêng tư</string>
+    <string name="cd_logout_icon">Biểu tượng đăng xuất</string>
+    <string name="cd_loading_overlay">Lớp phủ tải</string>
+
+    <!-- CreateGroupFragment -->
+    <string name="create_group_title">Tạo nhóm</string>
+    <string name="create_group">Tạo nhóm</string>
+    <string name="group_name_hint">Đặt tên nhóm</string>
+    <string name="selected_count">Đã chọn: %1$d</string>
+    <string name="update_avatar_title">Cập nhật hình đại diện</string>
+    <string name="take_photo">Chụp ảnh mới</string>
+    <string name="choose_photo">Chọn ảnh từ điện thoại</string>
+    <string name="please_enter_group_name">Vui lòng đặt tên nhóm</string>
+    <string name="select_min_members">Chọn ít nhất 2 thành viên</string>
+    <string name="group_created">Nhóm \\\"%s\\\" đã được tạo với %d thành viên</string>
+    <string name="cd_camera">Camera</string>
+    <string name="search_phone_hint">Tìm tên hoặc số điện thoại</string>
+    <string name="phone_mode">123</string>
+    <string name="tab_recent">GẦN ĐÂY</string>
+    <string name="tab_contacts">DANH BẠ</string>
+    <string name="cd_next">Next</string>
+    <string name="cd_group_avatar">Ảnh đại diện nhóm</string>
+
+    <!-- AddFriendFragment -->
+    <string name="add_friend">Thêm bạn</string>
+    <string name="qr_scan_description">Quét mã để thêm bạn với tôi</string>
+    <string name="phone_number_hint">Nhập số điện thoại</string>
+    <string name="scan_qr_code">Quét mã QR</string>
+    <string name="suggested_friends">Bạn bè có thể quen</string>
+    <string name="view_sent_requests">Xem lời mời kết bạn đã gửi tại trang Danh Bạ</string>
+    <string name="zalo_card_title">Danh thiếp</string>
+    <string name="back_button_desc">Back</string>
+    <string name="default_user_display_name">Nguyen Hai Dang</string>
+    <string name="zalo_logo_text">Zalo</string>
+    <string name="default_country_code">+84</string>
+    <string name="qr_placeholder_desc">mã qr tạm</string>
+    <string name="qr_scan_icon_desc">icon quét mã qr</string>
+    <string name="suggested_friends_icon_desc">icon gợi ý bạn bè</string>
+    <string name="search_button_desc">Search</string>
+    <string name="phone_number_temp">0987654321</string>
+    <string name="name_temp">Nguyen Hai Dang</string>
+    <string name="button_add_friend">kết bạn</string>
+    <string name="button_send">Nhắn tin</string>
+
+    <!-- UserProfileFragment -->
+    <string name="message">Nhắn tin</string>
+    <string name="edit_profile">Chỉnh sửa trang cá nhân</string>
+    <string name="change_nickname">Đổi tên gợi nhớ</string>
+    <string name="enter_nickname">Nhập tên gợi nhớ</string>
+    <string name="save_upper">LƯU</string>
+    <string name="view_info">Thông tin cá nhân</string>
+    <string name="block_user">Chặn</string>
+    <string name="unfriend">Xoá bạn</string>
+    <string name="no_activity_message">%s chưa có hoạt động nào. Hãy trò chuyện để hiểu nhau hơn.</string>
+    <string name="update_your_status">Cập nhật trạng thái của bạn</string>
+    <string name="profile_cover">Ảnh bìa trang cá nhân</string>
+    <string name="back">Quay lại</string>
+    <string name="call">Gọi điện</string>
+    <string name="more_options">Tùy chọn</string>
+    <string name="play_music">Nút phát nhạc</string>
+    <string name="song_name">name song</string>
+    <string name="change_avatar">Nút thay ảnh đại diện</string>
+    <string name="default_user_name">Nguyen Van A</string>
+    <string name="edit_display_name">Nút sửa displayname</string>
+    <string name="nickname">(Nickname)</string>
+    <string name="add_friend_btn">Nút thêm bạn</string>
+    <string name="icon_messages">Icon nhắn tin</string>
+
+    <!-- ContactFragment -->
+    <string name="icon_contact_empty">icon contact trống</string>
+    <string name="friends">Bạn bè</string>
+    <string name="no_contatcs">Không có bạn bè nào =(</string>
+
+    <!-- item conversation -->
+    <string name="avatar">Hình đại diện cuộc trò chuyện</string>
+
+    <!-- item contact -->
+    <string name="avatar_contact">Hình đại diện bạn bè danh bạ</string>
+
+    <!-- item selectable contact -->
+    <string name="cd_contact_avatar">Ảnh đại diện liên hệ</string>
+    <string name="cd_selected">Đã chọn</string>
+
+    <!-- item selected member -->
+    <string name="cd_selected_member_avatar">Ảnh đại diện cho selected member</string>
+    <string name="cd_remove_button">Remove button</string>
+
+    <!-- Dialog Change Nickname -->
+    <string name="cd_close_button">Close</string>
+    <string name="cd_clear_button">Clear</string>
+    <string name="char_count_format">%1$d/40</string>
+
+    <!-- Common Actions -->
+    <string name="share">Chia sẻ</string>
+    <string name="save">Lưu</string>
+    <string name="options">Tùy chọn</string>
+
+    <!-- Dialog Profile Menu -->
+    <string name="cd_info_icon">View user information</string>
+    <string name="cd_change_nickname_icon">Change nickname</string>
+    <string name="cd_block_icon">Block user</string>
+    <string name="cd_unfriend_icon">Unfriend user</string>
+
+    <!-- Dialog QR Options -->
+    <string name="qr_options_title">Tùy chọn</string>
+    <string name="qr_edit">Chỉnh sửa</string>
+    <string name="qr_change">Đổi mã QR</string>
+    <string name="qr_cancel">Hủy</string>
+
+    <!-- GroupsFragment -->
+    <string name="create_new_group">Tạo nhóm mới</string>
+    <string name="your_groups">Nhóm của bạn</string>
+    <string name="no_conversations_yet">Chưa có cuộc trò chuyện nào</string>
+
+    <!-- Dialog Avatar Picker -->
+    <string name="choose_photo_from_phone">Chọn ảnh từ điện thoại</string>
+    <string name="cd_bottom_sheet_handle">Thanh kéo bottom sheet</string>
+    <string name="cd_emoji_calendar">Lựa chọn avatar biểu tượng lịch</string>
+    <string name="cd_emoji_megaphone">Lựa chọn avatar biểu tượng loa</string>
+    <string name="cd_emoji_checklist">Lựa chọn avatar biểu tượng danh sách</string>
+    <string name="cd_emoji_image">Lựa chọn avatar biểu tượng hình ảnh</string>
+    <string name="cd_emoji_pencil">Lựa chọn avatar biểu tượng bút chì</string>
+    <string name="cd_take_photo_option">Chụp ảnh mới làm avatar</string>
+    <string name="cd_choose_photo_option">Chọn ảnh có sẵn từ điện thoại làm avatar</string>
+
+    <!-- Dialog Add Menu -->
+    <string name="cd_add_friend">Add Friend</string>
+    <string name="cd_create_group">Create Group</string>
+    <string name="cd_create_group_icon">Biểu tượng tạo nhóm mới</string>
+
+    <!-- Dialog QR Fullscreen -->
+    <string name="cd_back_button">Nút quay lại</string>
+    <string name="cd_user_avatar">Ảnh đại diện người dùng</string>
+    <string name="cd_qr_code">Mã QR cá nhân</string>
+    <string name="cd_share_button">Nút chia sẻ mã QR</string>
+    <string name="cd_save_button">Nút lưu mã QR</string>
+    <string name="cd_options_button">Nút tùy chọn</string>
+    <string name="cd_share_icon">Biểu tượng chia sẻ</string>
+    <string name="cd_download_icon">Biểu tượng tải xuống</string>
+    <string name="cd_more_icon">Biểu tượng thêm tùy chọn</string>
+
+    <!-- QR Scanner Fragment -->
+    <string name="back_content_desc">Quay lại</string>
+    <string name="flash_content_desc">Bật/tắt đèn pin</string>
+    <string name="qr_scanner_title">Quét mã QR</string>
+    <string name="qr_scanner_instruction">Đưa mã QR vào khung hình để quét</string>
+    <string name="qr_scanner_subtitle">Mã QR sẽ được nhận dạng tự động</string>
+    <string name="qr_scan_result">Đã quét: %s</string>
+    <string name="camera_permission_required">Cần cấp quyền camera để quét mã QR</string>
+
+    <!-- ========== CHAT DETAIL FRAGMENT ========== -->
+
+    <!-- Chat Detail Fragment -->
+    <string name="cd_chat_avatar">Chat avatar</string>
+    <string name="cd_more_options">More options</string>
+    <string name="cd_voice_call">Voice call</string>
+    <string name="cd_video_call">Video call</string>
+    <string name="cd_emoji_button">Emoji</string>
+    <string name="cd_record_voice_message">Record voice message</string>
+    <string name="cd_open_camera">Open camera</string>
+    <string name="cd_attach_file">Attach file</string>
+    <string name="hint_type_message">Type a message</string>
+
+    <!-- ========== FRIEND REQUESTS FRAGMENT ========== -->
+    
+    <!-- Friend Requests Fragment -->
+    <string name="tab_received">ĐÃ NHẬN</string>
+    <string name="tab_sent">ĐÃ GỬI</string>
+    <string name="btn_reject">từ chối</string>
+    <string name="btn_accept">chấp nhận</string>
+    <string name="settings_coming_soon">Settings coming soon</string>
+    <string name="friend_requests_title">Lời mời kết bạn</string>
+    <string name="empty_received">Không có lời mời nào.</string>
+    <string name="empty_sent">Không có lời mời đã gửi nào.</string>
+    <string name="load_friend_requests_failed">Lấy lời mời kết bạn thất bại</string>
+    <string name="rejected_request">Đã từ chối %s</string>
+    <string name="accepted_request">Đã đồng ý %s</string>
+    <string name="revoked_request">Đã thu hồi lời mời đến %s</string>
+    <string name="btn_cancel">Hủy</string>
+
+</resources>

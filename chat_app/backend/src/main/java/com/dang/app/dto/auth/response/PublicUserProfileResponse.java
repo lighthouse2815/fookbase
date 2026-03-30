@@ -1,0 +1,15 @@
+package com.dang.app.dto.auth.response;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.UUID;
+
+@Data
+@Builder
+public class PublicUserProfileResponse {
+    private UUID userId;
+    private String displayName;
+    private String fullName;
+    private String avatarUrl;
+}
