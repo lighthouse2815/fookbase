@@ -4,9 +4,10 @@ import { useOutletContext } from 'react-router-dom';
 
 import { CreatePostBox } from '../components/CreatePostBox';
 import type { CreatePostDraft } from '../components/CreatePostBox';
+import { CornerToast } from '../components/CornerToast';
 import { PostCard } from '../components/PostCard';
 import { StoryList } from '../components/StoryList';
-import { stories } from '../data/mockData';
+import { useCornerToast } from '../hooks/useCornerToast';
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
 import { cloudinaryService } from '../services/cloudinaryService';
 import { postService } from '../services/postService';
@@ -27,6 +28,7 @@ export const HomePage = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const loadingRef = useRef(false);
+  const { toast, showToast } = useCornerToast();
 
   const loadPosts = useCallback(async (targetPage: number, replace = false) => {
     if (loadingRef.current) {
@@ -83,13 +85,13 @@ export const HomePage = () => {
     <div className="space-y-4">
       <CreatePostBox currentUser={currentUser} isSubmitting={isSubmitting} onCreatePost={handleCreatePost} />
       {createError ? <p className="text-sm text-rose-600 dark:text-rose-400">{createError}</p> : null}
-      <StoryList stories={stories} />
+      <StoryList currentUser={currentUser} onActionToast={showToast} />
 
       <section className="space-y-4">
         <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('home.feedTitle')}</h1>
         {loadError ? <p className="text-sm text-rose-600 dark:text-rose-400">{loadError}</p> : null}
         {feed.map((post) => (
-          <PostCard key={post.id} post={post} currentUser={currentUser} />
+          <PostCard key={post.id} post={post} currentUser={currentUser} onActionToast={showToast} />
         ))}
       </section>
 
@@ -107,6 +109,8 @@ export const HomePage = () => {
           <p className="text-sm text-slate-500 dark:text-slate-400">{t('home.noMorePosts')}</p>
         )}
       </div>
+
+      <CornerToast message={toast?.message ?? null} type={toast?.type} />
     </div>
   );
 };

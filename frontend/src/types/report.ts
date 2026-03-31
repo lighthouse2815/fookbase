@@ -1,0 +1,11 @@
+export interface PostReportItem {
+  id: string;
+  postId: string;
+  reportedByUserId: string;
+  reason: string;
+  status: string;
+  resolvedByUserId?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

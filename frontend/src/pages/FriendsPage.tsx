@@ -1,12 +1,11 @@
 ﻿import clsx from 'clsx';
 import {
+  AlertTriangle,
   Filter,
   House,
   Menu,
-  Moon,
   RefreshCcw,
   Search,
-  Sun,
   UserCheck,
   UserPlus,
   UsersRound,
@@ -20,7 +19,6 @@ import { FriendsPageSkeleton } from '../components/friends/FriendsPageSkeleton';
 import { ProfilePreview } from '../components/friends/ProfilePreview';
 import { SidebarItem } from '../components/friends/SidebarItem';
 import { UserCard } from '../components/friends/UserCard';
-import { useTheme } from '../contexts/ThemeContext';
 import {
   friendSuggestions as fallbackSuggestions,
   friendsMock,
@@ -169,7 +167,6 @@ const sanitizeFriends = (value: unknown, fallback: FriendUser[]) => {
 
 export const FriendsPage = () => {
   const { suggestions: sidebarSuggestions, currentUser } = useOutletContext<MainLayoutOutletContext>();
-  const { theme, toggleTheme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<FriendsTab>('home');
   const [fetchState, setFetchState] = useState<FetchState>('loading');
@@ -184,6 +181,8 @@ export const FriendsPage = () => {
 
   const [friendSearch, setFriendSearch] = useState('');
   const [friendFilter, setFriendFilter] = useState<FriendFilter>('all');
+  const [confirmUnfriendUser, setConfirmUnfriendUser] = useState<FriendUser | null>(null);
+  const [isUnfriendSubmitting, setIsUnfriendSubmitting] = useState(false);
 
   const loadFriendData = useCallback(async () => {
     setFetchState('loading');
@@ -198,10 +197,9 @@ export const FriendsPage = () => {
       friendshipService.getFriends(),
     ]);
 
-    const hadError =
+    const hadCriticalError =
       receivedResult.status === 'rejected' ||
       sentResult.status === 'rejected' ||
-      suggestionsResult.status === 'rejected' ||
       friendsResult.status === 'rejected';
 
     setReceivedRequests(
@@ -231,7 +229,7 @@ export const FriendsPage = () => {
 
     setFriends(sanitizeFriends(friendsResult.status === 'fulfilled' ? friendsResult.value : undefined, friendsMock));
 
-    if (hadError) {
+    if (hadCriticalError) {
       setFetchState('error');
       setErrorMessage('Khong the tai day du du lieu realtime. Trang dang hien thi du lieu du phong.');
       return;
@@ -360,6 +358,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.acceptFriendRequest(requestId);
+      void loadFriendData();
     } catch {
       setFetchState('error');
       setErrorMessage('Da xac nhan o giao dien, nhung chua dong bo thanh cong voi server.');
@@ -371,6 +370,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.deleteFriendRequest(requestId);
+      void loadFriendData();
     } catch {
       setFetchState('error');
       setErrorMessage('Da xoa loi moi o giao dien, nhung chua dong bo thanh cong voi server.');
@@ -394,6 +394,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.cancelSentRequest(requestId);
+      void loadFriendData();
     } catch {
       setFetchState('error');
       setErrorMessage('Da huy loi moi o giao dien, nhung chua dong bo thanh cong voi server.');
@@ -412,32 +413,58 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.sendFriendRequest(userId);
+      void loadFriendData();
     } catch {
       setFetchState('error');
       setErrorMessage('Da gui loi moi o giao dien, nhung chua dong bo thanh cong voi server.');
     }
   };
 
-  const handleUnfriend = async (friendId: string) => {
+  const requestUnfriend = (friendId: string) => {
     const existingFriend = friends.find((friend) => friend.id === friendId);
+    if (!existingFriend) {
+      return;
+    }
 
+    setConfirmUnfriendUser(existingFriend);
+  };
+
+  const closeUnfriendDialog = () => {
+    if (isUnfriendSubmitting) {
+      return;
+    }
+
+    setConfirmUnfriendUser(null);
+  };
+
+  const handleConfirmUnfriend = async () => {
+    if (!confirmUnfriendUser || isUnfriendSubmitting) {
+      return;
+    }
+
+    const existingFriend = confirmUnfriendUser;
+    const friendId = existingFriend.id;
+
+    setIsUnfriendSubmitting(true);
+    setConfirmUnfriendUser(null);
     setFriends((existing) => existing.filter((friend) => friend.id !== friendId));
 
-    if (existingFriend) {
-      setSuggestions((existing) => {
-        if (existing.some((item) => item.id === friendId)) {
-          return existing;
-        }
+    setSuggestions((existing) => {
+      if (existing.some((item) => item.id === friendId)) {
+        return existing;
+      }
 
-        return [toSuggestion(existingFriend), ...existing];
-      });
-    }
+      return [toSuggestion(existingFriend), ...existing];
+    });
 
     try {
       await friendshipService.unfriend(friendId);
+      void loadFriendData();
     } catch {
       setFetchState('error');
       setErrorMessage('Da huy ket ban o giao dien, nhung chua dong bo thanh cong voi server.');
+    } finally {
+      setIsUnfriendSubmitting(false);
     }
   };
 
@@ -464,14 +491,6 @@ export const FriendsPage = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-400 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand-500 dark:hover:text-brand-300"
-            >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </button>
             <button
               type="button"
               onClick={() => void loadFriendData()}
@@ -777,7 +796,7 @@ export const FriendsPage = () => {
                       statusText={friend.isOnline ? 'Dang hoat dong' : 'Ban be'}
                       primaryActionLabel="Nhan tin"
                       secondaryActionLabel="Huy ket ban"
-                      onSecondaryAction={() => void handleUnfriend(friend.id)}
+                      onSecondaryAction={() => requestUnfriend(friend.id)}
                     />
                   ))}
                 </div>
@@ -821,13 +840,62 @@ export const FriendsPage = () => {
             onUnfriend={
               selectedFriend
                 ? () => {
-                    void handleUnfriend(selectedFriend.id);
+                    requestUnfriend(selectedFriend.id);
                   }
                 : undefined
             }
           />
         </div>
       </div>
+
+      {confirmUnfriendUser ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            onClick={closeUnfriendDialog}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
+            aria-label="Dong popup huy ket ban"
+          />
+
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="h-1.5 w-full bg-gradient-to-r from-red-500 via-orange-400 to-amber-400" />
+
+            <div className="space-y-4 p-5 sm:p-6">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300">
+                <AlertTriangle size={22} />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Xac nhan huy ket ban</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  Ban co chac chan muon huy ket ban voi{' '}
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{confirmUnfriendUser.fullName}</span>
+                  ? Sau khi huy, ban se can gui loi moi ket ban lai neu muon ket noi.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={closeUnfriendDialog}
+                  disabled={isUnfriendSubmitting}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700"
+                >
+                  Huy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleConfirmUnfriend()}
+                  disabled={isUnfriendSubmitting}
+                  className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isUnfriendSubmitting ? 'Dang xu ly...' : 'Huy ket ban'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

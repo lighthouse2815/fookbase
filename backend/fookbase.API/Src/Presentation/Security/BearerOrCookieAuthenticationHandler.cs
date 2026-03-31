@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text;
 using System.Text.Json;
+using System.Globalization;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -25,6 +26,13 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        if (TryReadJwtExpiration(accessToken, out var expiresAt)
+            && expiresAt <= DateTimeOffset.UtcNow)
+        {
+            Logger.LogWarning("Auth failed: token expired at {ExpiresAtUtc}.", expiresAt.UtcDateTime);
+            return Task.FromResult(AuthenticateResult.Fail("Token expired."));
         }
 
         if (!TryResolveUserId(accessToken, out var userId))
@@ -157,6 +165,67 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
         }
 
         return false;
+    }
+
+    private static bool TryReadJwtExpiration(string token, out DateTimeOffset expiresAt)
+    {
+        expiresAt = default;
+
+        var tokenParts = token.Split('.');
+        if (tokenParts.Length < 2)
+        {
+            return false;
+        }
+
+        var payloadJson = DecodeBase64Url(tokenParts[1]);
+        if (string.IsNullOrWhiteSpace(payloadJson))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(payloadJson);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            if (!root.TryGetProperty("exp", out var expElement))
+            {
+                return false;
+            }
+
+            long expUnixSeconds;
+            if (expElement.ValueKind == JsonValueKind.Number)
+            {
+                if (!expElement.TryGetInt64(out expUnixSeconds))
+                {
+                    return false;
+                }
+            }
+            else if (expElement.ValueKind == JsonValueKind.String
+                     && long.TryParse(expElement.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out expUnixSeconds))
+            {
+                // parsed from string claim
+            }
+            else
+            {
+                return false;
+            }
+
+            expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnixSeconds);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return false;
+        }
     }
 
     private static string? ResolveRole(string token)

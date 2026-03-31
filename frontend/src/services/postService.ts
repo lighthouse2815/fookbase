@@ -22,7 +22,7 @@ interface PostAuthorPayload {
   avatarUrl?: string | null;
 }
 
-interface PostPayload {
+export interface PostPayload {
   id: string;
   userId: string;
   author?: PostAuthorPayload;
@@ -60,7 +60,7 @@ const extractData = <T>(response: ApiEnvelope<T>, fallbackError: string): T => {
   return response.data;
 };
 
-const mapPost = (payload: PostPayload): Post => {
+export const mapPost = (payload: PostPayload): Post => {
   const authorName = payload.author?.displayName?.trim() || payload.author?.username?.trim() || 'user';
   const authorId = payload.author?.id || payload.userId;
   const username = payload.author?.username?.trim() || 'user';
@@ -108,6 +108,12 @@ export const postService = {
     const response = await apiClient.post<ApiEnvelope<PostPayload>>('/api/posts', request);
     const created = extractData(response.data, 'Failed to create post');
     return mapPost(created);
+  },
+
+  async getPostById(postId: string): Promise<Post> {
+    const response = await apiClient.get<ApiEnvelope<PostPayload>>(`/api/posts/${postId}`);
+    const post = extractData(response.data, 'Failed to load post');
+    return mapPost(post);
   },
 
   async likePost(postId: string): Promise<LikeStatePayload> {

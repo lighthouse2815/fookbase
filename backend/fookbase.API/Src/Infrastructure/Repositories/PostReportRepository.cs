@@ -69,6 +69,11 @@ public class PostReportRepository : IPostReportRepository
             cancellationToken);
     }
 
+    public Task<int> CountByStatusAsync(string status, CancellationToken cancellationToken)
+    {
+        return _context.PostReports.CountAsync(report => report.Status == status, cancellationToken);
+    }
+
     public Task AddAsync(PostReport postReport, CancellationToken cancellationToken)
     {
         return _context.PostReports.AddAsync(postReport, cancellationToken).AsTask();

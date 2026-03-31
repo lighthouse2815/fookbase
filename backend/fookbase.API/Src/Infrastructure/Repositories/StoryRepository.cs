@@ -14,13 +14,23 @@ public class StoryRepository : IStoryRepository
         _context = context;
     }
 
-    public async Task<(IReadOnlyList<Story> Items, int TotalCount)> GetPagedActiveAsync(int page, int pageSize, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<Story> Items, int TotalCount)> GetPagedFeedAsync(
+        IReadOnlyCollection<Guid> userIds,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
+        if (userIds.Count == 0)
+        {
+            return (Array.Empty<Story>(), 0);
+        }
+
         var now = DateTime.UtcNow;
 
         var query = _context.Stories
             .AsNoTracking()
-            .Where(story => story.ExpiresAt > now)
+            .Include(story => story.Views)
+            .Where(story => story.ExpiredAt > now && userIds.Contains(story.UserId))
             .OrderByDescending(story => story.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -32,12 +42,19 @@ public class StoryRepository : IStoryRepository
         return (items, totalCount);
     }
 
-    public async Task<(IReadOnlyList<Story> Items, int TotalCount)> GetPagedByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<Story> Items, int TotalCount)> GetPagedActiveByUserIdAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
+        var now = DateTime.UtcNow;
+
         var query = _context.Stories
             .AsNoTracking()
-            .Where(story => story.UserId == userId)
-            .OrderByDescending(story => story.CreatedAt);
+            .Include(story => story.Views)
+            .Where(story => story.UserId == userId && story.ExpiredAt > now)
+            .OrderBy(story => story.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
@@ -52,17 +69,31 @@ public class StoryRepository : IStoryRepository
     {
         return _context.Stories
             .AsNoTracking()
+            .Include(story => story.Views)
             .FirstOrDefaultAsync(story => story.Id == storyId, cancellationToken);
     }
 
     public Task<Story?> GetByIdForUpdateAsync(Guid storyId, CancellationToken cancellationToken)
     {
         return _context.Stories
+            .Include(story => story.Views)
             .FirstOrDefaultAsync(story => story.Id == storyId, cancellationToken);
+    }
+
+    public Task<bool> HasViewAsync(Guid storyId, Guid viewerId, CancellationToken cancellationToken)
+    {
+        return _context.StoryViews.AnyAsync(
+            storyView => storyView.StoryId == storyId && storyView.ViewerId == viewerId,
+            cancellationToken);
     }
 
     public Task AddAsync(Story story, CancellationToken cancellationToken)
     {
         return _context.Stories.AddAsync(story, cancellationToken).AsTask();
+    }
+
+    public Task AddViewAsync(StoryView storyView, CancellationToken cancellationToken)
+    {
+        return _context.StoryViews.AddAsync(storyView, cancellationToken).AsTask();
     }
 }

@@ -72,6 +72,12 @@ export const authService = {
     return normalizeAuthPayload(authPayload);
   },
 
+  async loginAdmin(payload: LoginRequest): Promise<AuthResponse> {
+    const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>('/api/auth/admin/login', payload);
+    const authPayload = extractEnvelopeData(response.data);
+    return normalizeAuthPayload(authPayload);
+  },
+
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
     const response = await apiClient.post<RegisterResponse | ApiEnvelope<RegisterResponse>>('/api/auth/register', payload);
     return extractEnvelopeData(response.data);
@@ -101,9 +107,24 @@ export const authService = {
     return extractEnvelopeData(response.data);
   },
 
+  async sendResetPasswordOtpWhenLogin(): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/me/otp/send/reset-password',
+    );
+    return extractEnvelopeData(response.data);
+  },
+
   async verifyResetPasswordOtpWhenNotLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
       '/api/auth/otp/verify/password',
+      payload,
+    );
+    return extractEnvelopeData(response.data);
+  },
+
+  async verifyResetPasswordOtpWhenLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/me/otp/verify/password',
       payload,
     );
     return extractEnvelopeData(response.data);

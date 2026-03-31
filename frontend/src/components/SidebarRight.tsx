@@ -11,6 +11,7 @@ interface SidebarRightProps {
   onlineUsers: User[];
   notifications: NotificationItem[];
   onAddFriend?: (id: string) => void;
+  onOpenNotification?: (item: NotificationItem) => void;
 }
 
 export const SidebarRight = ({
@@ -18,6 +19,7 @@ export const SidebarRight = ({
   onlineUsers,
   notifications,
   onAddFriend,
+  onOpenNotification,
 }: SidebarRightProps) => {
   const { t } = useTranslation();
 
@@ -61,8 +63,14 @@ export const SidebarRight = ({
         <ul className="mt-3 space-y-2">
           {notifications.slice(0, 3).map((item) => (
             <li key={item.id} className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/40">
-              <p className="text-sm text-slate-700 dark:text-slate-200">{item.message}</p>
-              <p className="text-xs text-slate-400">{formatRelativeTime(item.createdAt)}</p>
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => onOpenNotification?.(item)}
+              >
+                <p className="text-sm text-slate-700 dark:text-slate-200">{item.message}</p>
+                <p className="text-xs text-slate-400">{formatRelativeTime(item.createdAt)}</p>
+              </button>
             </li>
           ))}
         </ul>

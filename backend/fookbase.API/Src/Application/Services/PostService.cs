@@ -17,6 +17,7 @@ public class PostService : IPostService
     private readonly IPostRepository _postRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly IHashtagRepository _hashtagRepository;
+    private readonly INotificationRepository _notificationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PostService> _logger;
 
@@ -24,12 +25,14 @@ public class PostService : IPostService
         IPostRepository postRepository,
         IJavaApiService javaApiService,
         IHashtagRepository hashtagRepository,
+        INotificationRepository notificationRepository,
         IUnitOfWork unitOfWork,
         ILogger<PostService> logger)
     {
         _postRepository = postRepository;
         _javaApiService = javaApiService;
         _hashtagRepository = hashtagRepository;
+        _notificationRepository = notificationRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -76,7 +79,11 @@ public class PostService : IPostService
         };
     }
 
-    public async Task<PostResponseDto> CreateAsync(Guid userId, CreatePostRequestDto request, CancellationToken cancellationToken)
+    public async Task<PostResponseDto> CreateAsync(
+        Guid userId,
+        CreatePostRequestDto request,
+        string? accessToken,
+        CancellationToken cancellationToken)
     {
         var user = await _javaApiService.GetUserById(userId, cancellationToken)
             ?? throw new NotFoundException("User not found.");
@@ -111,6 +118,12 @@ public class PostService : IPostService
 
         await _postRepository.AddAsync(post, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await TryCreateFriendPostNotificationsAsync(
+            authorUserId: user.Id,
+            postId: post.Id,
+            accessToken: accessToken,
+            cancellationToken: cancellationToken);
 
         var dto = post.ToResponseDto();
         return dto with
@@ -339,6 +352,106 @@ public class PostService : IPostService
         }
 
         return media.Trim();
+    }
+
+    private async Task TryCreateFriendPostNotificationsAsync(
+        Guid authorUserId,
+        Guid postId,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return;
+        }
+
+        try
+        {
+            var contactsResult = await _javaApiService.GetContactsByUserAsync(accessToken, cancellationToken);
+            if (!contactsResult.IsSuccess || contactsResult.Data is null || contactsResult.Data.Count == 0)
+            {
+                return;
+            }
+
+            var friendIds = contactsResult.Data
+                .Select(contact => ParseGuid(contact.UserId))
+                .Where(friendId => friendId.HasValue && friendId.Value != authorUserId)
+                .Select(friendId => friendId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (friendIds.Count == 0)
+            {
+                return;
+            }
+
+            var authorName = await ResolveNotificationActorNameAsync(authorUserId, accessToken, cancellationToken);
+            var now = DateTime.UtcNow;
+
+            foreach (var friendId in friendIds)
+            {
+                await _notificationRepository.AddAsync(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = friendId,
+                    ActorUserId = authorUserId,
+                    PostId = postId,
+                    Type = "FRIEND_POST",
+                    Message = $"{authorName} shared a new post.",
+                    IsRead = false,
+                    CreatedAt = now
+                }, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not create friend-post notifications for post {PostId}.",
+                postId);
+        }
+    }
+
+    private async Task<string> ResolveNotificationActorNameAsync(
+        Guid actorUserId,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var profile = await _javaApiService.GetProfileByUserId(
+                actorUserId,
+                cancellationToken: cancellationToken,
+                accessToken: accessToken);
+
+            var displayName = Normalize(profile?.DisplayName) ?? Normalize(profile?.FullName);
+            if (!string.IsNullOrWhiteSpace(displayName))
+            {
+                return displayName;
+            }
+
+            var user = await _javaApiService.GetUserById(
+                actorUserId,
+                cancellationToken: cancellationToken,
+                accessToken: accessToken);
+
+            return Normalize(user?.Username) ?? "Your friend";
+        }
+        catch
+        {
+            return "Your friend";
+        }
+    }
+
+    private static Guid? ParseGuid(string? value)
+    {
+        return Guid.TryParse(value, out var parsed) ? parsed : null;
     }
 
 }

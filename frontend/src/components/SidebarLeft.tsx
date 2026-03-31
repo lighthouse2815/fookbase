@@ -15,7 +15,7 @@ export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
     { label: t('nav.home'), path: '/', icon: House },
     { label: t('nav.friends'), path: '/friends', icon: UsersRound },
     { label: t('nav.groups'), path: '/friends', icon: UserRound },
-    { label: t('nav.saved'), path: '/profile', icon: Bookmark },
+    { label: t('nav.saved'), path: '/saved', icon: Bookmark },
   ];
 
   return (

@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
@@ -10,6 +11,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/stories")]
+[Authorize]
 public class StoriesController : ControllerBase
 {
     private readonly IStoryService _storyService;
@@ -20,41 +22,59 @@ public class StoriesController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<ApiResponse<PagedResult<StoryResponseDto>>>> GetActiveStories(
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<PagedResult<StoryResponseDto>>>> GetFeedStories(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        var stories = await _storyService.GetActiveAsync(query, cancellationToken);
+        var userId = User.GetUserId();
+        var stories = await _storyService.GetFeedAsync(userId, query, ExtractAccessToken(), cancellationToken);
         return Ok(ApiResponse<PagedResult<StoryResponseDto>>.Ok(stories));
     }
 
     [HttpGet("user/{userId:guid}")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PagedResult<StoryResponseDto>>>> GetStoriesByUser(
         Guid userId,
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        var stories = await _storyService.GetByUserIdAsync(userId, query, cancellationToken);
+        var currentUserId = User.GetUserId();
+        var stories = await _storyService.GetByUserIdAsync(userId, currentUserId, query, cancellationToken);
         return Ok(ApiResponse<PagedResult<StoryResponseDto>>.Ok(stories));
     }
 
     [HttpGet("{storyId:guid}")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<StoryResponseDto>>> GetStoryById(Guid storyId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<StoryResponseDto>>> GetStoryById(
+        Guid storyId,
+        CancellationToken cancellationToken)
     {
-        var story = await _storyService.GetByIdAsync(storyId, cancellationToken);
+        var currentUserId = User.GetUserId();
+        var story = await _storyService.GetByIdAsync(storyId, currentUserId, cancellationToken);
         return Ok(ApiResponse<StoryResponseDto>.Ok(story));
     }
 
+    [HttpPost("upload")]
+    [RequestSizeLimit(60 * 1024 * 1024)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<StoryUploadResponseDto>>> UploadStoryMedia(
+        [FromForm] IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var uploaded = await _storyService.UploadMediaAsync(userId, file, cancellationToken);
+        return Ok(ApiResponse<StoryUploadResponseDto>.Ok(uploaded));
+    }
+
     [HttpPost]
-    [Authorize]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -71,25 +91,18 @@ public class StoriesController : ControllerBase
             ApiResponse<StoryResponseDto>.Ok(created));
     }
 
-    [HttpPut("{storyId:guid}")]
-    [Authorize]
+    [HttpPost("{storyId:guid}/view")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<StoryResponseDto>>> UpdateStory(
-        Guid storyId,
-        [FromBody] UpdateStoryRequestDto request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<object>>> MarkStoryAsViewed(Guid storyId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var updated = await _storyService.UpdateAsync(storyId, userId, User.IsAdmin(), request, cancellationToken);
-        return Ok(ApiResponse<StoryResponseDto>.Ok(updated));
+        await _storyService.MarkAsViewedAsync(storyId, userId, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(new { message = "Story viewed." }));
     }
 
     [HttpDelete("{storyId:guid}")]
-    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -98,7 +111,23 @@ public class StoriesController : ControllerBase
     {
         var userId = User.GetUserId();
         await _storyService.DeleteAsync(storyId, userId, User.IsAdmin(), cancellationToken);
-
         return Ok(ApiResponse<object>.Ok(new { message = "Story deleted." }));
+    }
+
+    private string? ExtractAccessToken()
+    {
+        var authorizationHeader = Request.Headers.Authorization.ToString();
+        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return authorizationHeader["Bearer ".Length..].Trim();
+        }
+
+        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
+            && !string.IsNullOrWhiteSpace(cookieToken))
+        {
+            return cookieToken;
+        }
+
+        return null;
     }
 }

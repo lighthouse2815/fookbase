@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.DTOs.JavaApi;
+using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Http;
@@ -50,6 +51,41 @@ public class JavaApiService : IJavaApiService
         return GetAsync<UserProfileDto>(path, accessToken, cancellationToken);
     }
 
+    public Task<JavaApiCallResult<UserProfilePrivateDto>> GetPrivateProfileByUserIdAsync(
+        Guid userId,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfilePrivateByUserIdPathTemplate, ("userId", userId));
+        return GetResultAsync<UserProfilePrivateDto>(path, accessToken, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<UserProfileOverviewDto>> GetMyProfileOverviewAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileMeOverviewPathTemplate);
+        return GetResultAsync<UserProfileOverviewDto>(path, accessToken, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
+        UpdateMyProfileRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileMeUpdatePathTemplate);
+        return PatchNoContentAsync(path, request, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<UserProfileSearchDto>> SearchProfileByPhoneNumberAsync(
+        string phoneNumber,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileSearchByPhonePathTemplate, ("phoneNumber", phoneNumber));
+        return GetResultAsync<UserProfileSearchDto>(path, accessToken, cancellationToken);
+    }
+
     public async Task<List<FriendshipDto>> GetFriends(
         Guid userId,
         CancellationToken cancellationToken = default,
@@ -58,6 +94,88 @@ public class JavaApiService : IJavaApiService
         var path = BuildPath(_options.FriendsByUserIdPathTemplate, ("userId", userId));
         var friends = await GetAsync<List<FriendshipDto>>(path, accessToken, cancellationToken);
         return friends ?? new List<FriendshipDto>();
+    }
+
+    public async Task<JavaApiCallResult<List<PendingFriendRequesterDto>>> GetPendingRequestersAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerPendingRequestersPathTemplate);
+        var result = await GetResultAsync<List<PendingFriendRequesterDto>>(path, accessToken, cancellationToken);
+
+        if (result.IsSuccess && result.Data is null)
+        {
+            return JavaApiCallResult<List<PendingFriendRequesterDto>>.Success(new List<PendingFriendRequesterDto>(), result.StatusCode);
+        }
+
+        return result;
+    }
+
+    public async Task<JavaApiCallResult<List<ContactDto>>> GetContactsByUserAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerContactsByUserPathTemplate);
+        var result = await GetResultAsync<List<ContactDto>>(path, accessToken, cancellationToken);
+
+        if (result.IsSuccess && result.Data is null)
+        {
+            return JavaApiCallResult<List<ContactDto>>.Success(new List<ContactDto>(), result.StatusCode);
+        }
+
+        return result;
+    }
+
+    public Task<JavaApiCallResult<FriendshipResponseDto>> SendFriendRequestAsync(
+        string userId,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerSendFriendRequestPathTemplate);
+        return PostAsync<FriendshipResponseDto>(
+            path,
+            new { userId, addresseeId = userId },
+            cancellationToken,
+            accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<FriendshipResponseDto>> AcceptFriendRequestAsync(
+        string userId,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerAcceptFriendRequestPathTemplate);
+        return PostAsync<FriendshipResponseDto>(
+            path,
+            new { userId, requestId = userId },
+            cancellationToken,
+            accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<object?>> RejectFriendRequestAsync(
+        string userId,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerRejectFriendRequestPathTemplate);
+        return PostNoContentAsync(
+            path,
+            new { userId, requestId = userId },
+            cancellationToken,
+            accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<object?>> UnfriendAsync(
+        string userId,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerUnfriendPathTemplate);
+        return DeleteNoContentAsync(
+            path,
+            new { userId },
+            cancellationToken,
+            accessToken: accessToken);
     }
 
     public Task<JavaApiCallResult<RegisterResponseDto>> RegisterAsync(
@@ -191,6 +309,83 @@ public class JavaApiService : IJavaApiService
         return DeserializePayload<T>(bodyText);
     }
 
+    private async Task<JavaApiCallResult<T>> GetResultAsync<T>(
+        string relativePath,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
+
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseStatusCode = (int)response.StatusCode;
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = ExtractErrorMessage(body)
+                    ?? $"Java API call to '{relativePath}' failed with status code {responseStatusCode}.";
+
+                _logger.LogWarning(
+                    "Java API call failed. Path: {Path}, StatusCode: {StatusCode}, Body: {Body}",
+                    relativePath,
+                    responseStatusCode,
+                    body);
+
+                return JavaApiCallResult<T>.Failure(responseStatusCode, errorMessage);
+            }
+
+            var data = DeserializePayload<T>(body);
+            if (data is null)
+            {
+                _logger.LogWarning(
+                    "Java API call returned empty response body. Path: {Path}, StatusCode: {StatusCode}",
+                    relativePath,
+                    responseStatusCode);
+
+                return JavaApiCallResult<T>.Failure(
+                    StatusCodes.Status502BadGateway,
+                    "Java API returned an empty response.");
+            }
+
+            return JavaApiCallResult<T>.Success(data, responseStatusCode);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException exception)
+        {
+            _logger.LogError(exception, "Java API call timed out. Path: {Path}", relativePath);
+            return JavaApiCallResult<T>.Failure(
+                StatusCodes.Status504GatewayTimeout,
+                "Java API timed out.");
+        }
+        catch (JsonException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Java API call returned malformed payload. Path: {Path}",
+                relativePath);
+            return JavaApiCallResult<T>.Failure(
+                StatusCodes.Status502BadGateway,
+                "Java API returned malformed payload.");
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogError(exception, "Java API call failed due to transport error. Path: {Path}", relativePath);
+            return JavaApiCallResult<T>.Failure(
+                StatusCodes.Status503ServiceUnavailable,
+                "Java API is unavailable.");
+        }
+    }
+
     private async Task<JavaApiCallResult<T>> PostAsync<T>(
         string relativePath,
         object? payload,
@@ -279,6 +474,240 @@ public class JavaApiService : IJavaApiService
             return JavaApiCallResult<T>.Failure(
                 StatusCodes.Status503ServiceUnavailable,
                 "Java auth API is unavailable.");
+        }
+    }
+
+    private async Task<JavaApiCallResult<object?>> PostNoContentAsync(
+        string relativePath,
+        object? payload,
+        CancellationToken cancellationToken,
+        string? accessToken = null,
+        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, relativePath);
+            if (payload is not null)
+            {
+                request.Content = JsonContent.Create(payload, options: SerializerOptions);
+            }
+
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            if (additionalHeaders is not null)
+            {
+                foreach (var (key, value) in additionalHeaders)
+                {
+                    request.Headers.TryAddWithoutValidation(key, value);
+                }
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseStatusCode = (int)response.StatusCode;
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = ExtractErrorMessage(body)
+                    ?? $"Java API call to '{relativePath}' failed with status code {responseStatusCode}.";
+
+                _logger.LogWarning(
+                    "Java API call failed. Path: {Path}, StatusCode: {StatusCode}, Body: {Body}",
+                    relativePath,
+                    responseStatusCode,
+                    body);
+
+                return JavaApiCallResult<object?>.Failure(responseStatusCode, errorMessage);
+            }
+
+            return JavaApiCallResult<object?>.Success(data: null, responseStatusCode);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException exception)
+        {
+            _logger.LogError(exception, "Java API call timed out. Path: {Path}", relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status504GatewayTimeout,
+                "Java API timed out.");
+        }
+        catch (JsonException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Java API call returned malformed payload. Path: {Path}",
+                relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status502BadGateway,
+                "Java API returned malformed payload.");
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogError(exception, "Java API call failed due to transport error. Path: {Path}", relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status503ServiceUnavailable,
+                "Java API is unavailable.");
+        }
+    }
+
+    private async Task<JavaApiCallResult<object?>> DeleteNoContentAsync(
+        string relativePath,
+        object? payload,
+        CancellationToken cancellationToken,
+        string? accessToken = null,
+        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Delete, relativePath);
+            if (payload is not null)
+            {
+                request.Content = JsonContent.Create(payload, options: SerializerOptions);
+            }
+
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            if (additionalHeaders is not null)
+            {
+                foreach (var (key, value) in additionalHeaders)
+                {
+                    request.Headers.TryAddWithoutValidation(key, value);
+                }
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseStatusCode = (int)response.StatusCode;
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = ExtractErrorMessage(body)
+                    ?? $"Java API call to '{relativePath}' failed with status code {responseStatusCode}.";
+
+                _logger.LogWarning(
+                    "Java API call failed. Path: {Path}, StatusCode: {StatusCode}, Body: {Body}",
+                    relativePath,
+                    responseStatusCode,
+                    body);
+
+                return JavaApiCallResult<object?>.Failure(responseStatusCode, errorMessage);
+            }
+
+            return JavaApiCallResult<object?>.Success(data: null, responseStatusCode);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException exception)
+        {
+            _logger.LogError(exception, "Java API call timed out. Path: {Path}", relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status504GatewayTimeout,
+                "Java API timed out.");
+        }
+        catch (JsonException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Java API call returned malformed payload. Path: {Path}",
+                relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status502BadGateway,
+                "Java API returned malformed payload.");
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogError(exception, "Java API call failed due to transport error. Path: {Path}", relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status503ServiceUnavailable,
+                "Java API is unavailable.");
+        }
+    }
+
+    private async Task<JavaApiCallResult<object?>> PatchNoContentAsync(
+        string relativePath,
+        object? payload,
+        CancellationToken cancellationToken,
+        string? accessToken = null,
+        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Patch, relativePath);
+            if (payload is not null)
+            {
+                request.Content = JsonContent.Create(payload, options: SerializerOptions);
+            }
+
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            if (additionalHeaders is not null)
+            {
+                foreach (var (key, value) in additionalHeaders)
+                {
+                    request.Headers.TryAddWithoutValidation(key, value);
+                }
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseStatusCode = (int)response.StatusCode;
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = ExtractErrorMessage(body)
+                    ?? $"Java API call to '{relativePath}' failed with status code {responseStatusCode}.";
+
+                _logger.LogWarning(
+                    "Java API call failed. Path: {Path}, StatusCode: {StatusCode}, Body: {Body}",
+                    relativePath,
+                    responseStatusCode,
+                    body);
+
+                return JavaApiCallResult<object?>.Failure(responseStatusCode, errorMessage);
+            }
+
+            return JavaApiCallResult<object?>.Success(data: null, responseStatusCode);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException exception)
+        {
+            _logger.LogError(exception, "Java API call timed out. Path: {Path}", relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status504GatewayTimeout,
+                "Java API timed out.");
+        }
+        catch (JsonException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Java API call returned malformed payload. Path: {Path}",
+                relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status502BadGateway,
+                "Java API returned malformed payload.");
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogError(exception, "Java API call failed due to transport error. Path: {Path}", relativePath);
+            return JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status503ServiceUnavailable,
+                "Java API is unavailable.");
         }
     }
 

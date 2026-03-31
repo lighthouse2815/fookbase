@@ -40,6 +40,7 @@ public class LikeService : ILikeService
         if (existingLike is null)
         {
             var now = DateTime.UtcNow;
+            var actorName = string.IsNullOrWhiteSpace(user.Username) ? "Someone" : user.Username.Trim();
 
             await _likeRepository.AddAsync(new Like
             {
@@ -58,7 +59,7 @@ public class LikeService : ILikeService
                     ActorUserId = user.Id,
                     PostId = post.Id,
                     Type = "LIKE",
-                    Message = "Someone liked your post.",
+                    Message = $"{actorName} liked your post.",
                     IsRead = false,
                     CreatedAt = now
                 }, cancellationToken);

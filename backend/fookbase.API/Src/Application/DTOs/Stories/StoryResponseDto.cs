@@ -6,13 +6,19 @@ public class StoryResponseDto
 
     public Guid UserId { get; init; }
 
+    public StoryAuthorDto Author { get; init; } = new();
+
     public string MediaUrl { get; init; } = string.Empty;
 
-    public DateTime ExpiresAt { get; init; }
+    public string MediaType { get; init; } = string.Empty;
+
+    public string? Content { get; init; }
 
     public DateTime CreatedAt { get; init; }
 
-    public DateTime UpdatedAt { get; init; }
+    public DateTime ExpiredAt { get; init; }
 
-    public bool IsExpired { get; init; }
+    public bool IsViewedByCurrentUser { get; init; }
+
+    public int ViewCount { get; init; }
 }

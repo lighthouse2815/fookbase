@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
 
+import { CornerToast } from '../components/CornerToast';
 import { PostCard } from '../components/PostCard';
 import { ProfileHeader } from '../components/ProfileHeader';
+import { useCornerToast } from '../hooks/useCornerToast';
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
 import { postService } from '../services/postService';
 import { profileService } from '../services/profileService';
@@ -48,6 +50,7 @@ export const ProfilePage = () => {
   const targetUserId = userId ?? currentUser.id;
   const [profile, setProfile] = useState<Profile>(() => createFallbackProfile(targetUserId, currentUser));
   const [personalPosts, setPersonalPosts] = useState<Post[]>([]);
+  const { toast, showToast } = useCornerToast();
 
   useEffect(() => {
     setProfile(createFallbackProfile(targetUserId, currentUser));
@@ -107,9 +110,10 @@ export const ProfilePage = () => {
       <ProfileHeader profile={profile} />
       <section className="space-y-4">
         {personalPosts.map((post) => (
-          <PostCard key={post.id} post={post} currentUser={currentUser} />
+          <PostCard key={post.id} post={post} currentUser={currentUser} onActionToast={showToast} />
         ))}
       </section>
+      <CornerToast message={toast?.message ?? null} type={toast?.type} />
     </div>
   );
 };

@@ -2,7 +2,7 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 
 import { storage } from '../utils/storage';
 
-const csharpBaseURL = import.meta.env.VITE_API_BASE_URL ?? 'https://localhost:65104';
+const csharpBaseURL = import.meta.env.VITE_API_BASE_URL ?? 'https://localhost:7000';
 const javaBaseURL = import.meta.env.VITE_JAVA_API_BASE_URL ?? 'http://localhost:8080';
 
 

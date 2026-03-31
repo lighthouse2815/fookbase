@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Story> Stories => Set<Story>();
 
+    public DbSet<StoryView> StoryViews => Set<StoryView>();
+
     public DbSet<Notification> Notifications => Set<Notification>();
 
     public DbSet<Hashtag> Hashtags => Set<Hashtag>();
@@ -24,6 +26,8 @@ public class AppDbContext : DbContext
     public DbSet<PostHashtag> PostHashtags => Set<PostHashtag>();
 
     public DbSet<PostReport> PostReports => Set<PostReport>();
+
+    public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,12 +90,30 @@ public class AppDbContext : DbContext
             entity.HasKey(story => story.Id);
 
             entity.Property(story => story.MediaUrl).HasMaxLength(500).IsRequired();
-            entity.Property(story => story.UpdatedAt).IsRequired();
+            entity.Property(story => story.MediaType).HasMaxLength(20).IsRequired();
+            entity.Property(story => story.Content).HasMaxLength(500);
 
-            entity.HasQueryFilter(story => story.DeletedAt == null);
+            entity.HasQueryFilter(story => !story.IsDeleted);
 
             entity.HasIndex(story => story.UserId);
-            entity.HasIndex(story => story.ExpiresAt);
+            entity.HasIndex(story => story.ExpiredAt);
+        });
+
+        modelBuilder.Entity<StoryView>(entity =>
+        {
+            entity.ToTable("StoryView");
+            entity.HasKey(storyView => storyView.Id);
+
+            entity.Property(storyView => storyView.ViewedAt).IsRequired();
+
+            entity.HasOne(storyView => storyView.Story)
+                .WithMany(story => story.Views)
+                .HasForeignKey(storyView => storyView.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(storyView => storyView.StoryId);
+            entity.HasIndex(storyView => storyView.ViewerId);
+            entity.HasIndex(storyView => new { storyView.StoryId, storyView.ViewerId }).IsUnique();
         });
 
         modelBuilder.Entity<Notification>(entity =>
@@ -165,6 +187,24 @@ public class AppDbContext : DbContext
             entity.HasIndex(report => report.PostId);
             entity.HasIndex(report => report.ReportedByUserId);
             entity.HasIndex(report => report.Status);
+        });
+
+        modelBuilder.Entity<SavedPost>(entity =>
+        {
+            entity.ToTable("SavedPost");
+            entity.HasKey(savedPost => savedPost.Id);
+
+            entity.Property(savedPost => savedPost.CreatedAt).IsRequired();
+
+            entity.HasOne(savedPost => savedPost.Post)
+                .WithMany(post => post.SavedByUsers)
+                .HasForeignKey(savedPost => savedPost.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(savedPost => new { savedPost.UserId, savedPost.PostId }).IsUnique();
+            entity.HasIndex(savedPost => savedPost.UserId);
+            entity.HasIndex(savedPost => savedPost.PostId);
+            entity.HasIndex(savedPost => savedPost.CreatedAt);
         });
     }
 }

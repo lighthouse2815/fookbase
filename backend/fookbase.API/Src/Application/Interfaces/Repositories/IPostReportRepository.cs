@@ -14,6 +14,8 @@ public interface IPostReportRepository
 
     Task<bool> ExistsByPostAndReporterAsync(Guid postId, Guid reporterUserId, CancellationToken cancellationToken);
 
+    Task<int> CountByStatusAsync(string status, CancellationToken cancellationToken);
+
     Task AddAsync(PostReport postReport, CancellationToken cancellationToken);
 
     void Remove(PostReport postReport);

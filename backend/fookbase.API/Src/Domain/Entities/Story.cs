@@ -8,11 +8,15 @@ public class Story
 
     public string MediaUrl { get; set; } = string.Empty;
 
-    public DateTime ExpiresAt { get; set; }
+    public string MediaType { get; set; } = "IMAGE";
+
+    public string? Content { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+    public DateTime ExpiredAt { get; set; }
 
-    public DateTime? DeletedAt { get; set; }
+    public bool IsDeleted { get; set; }
+
+    public ICollection<StoryView> Views { get; set; } = new List<StoryView>();
 }

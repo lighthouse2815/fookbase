@@ -5,10 +5,13 @@ namespace InteractHub.Api.Application.DTOs.Stories;
 public class CreateStoryRequestDto
 {
     [Required]
-    [Url]
     [StringLength(500)]
     public string MediaUrl { get; set; } = string.Empty;
 
     [Required]
-    public DateTime ExpiresAt { get; set; }
+    [StringLength(20, MinimumLength = 3)]
+    public string MediaType { get; set; } = string.Empty;
+
+    [StringLength(500)]
+    public string? Content { get; set; }
 }

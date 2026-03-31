@@ -80,6 +80,7 @@ public class CommentService : ICommentService
             ?? throw new NotFoundException("Post not found.");
 
         var now = DateTime.UtcNow;
+        var actorName = string.IsNullOrWhiteSpace(user.Username) ? "Someone" : user.Username.Trim();
 
         var comment = new Comment
         {
@@ -103,7 +104,7 @@ public class CommentService : ICommentService
                 PostId = post.Id,
                 CommentId = comment.Id,
                 Type = "COMMENT",
-                Message = "Someone commented on your post.",
+                Message = $"{actorName} commented on your post.",
                 IsRead = false,
                 CreatedAt = now
             }, cancellationToken);

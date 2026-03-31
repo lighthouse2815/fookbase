@@ -283,7 +283,7 @@ namespace fookbase.API.Migrations
                     b.ToTable("PostReport", (string)null);
                 });
 
-            modelBuilder.Entity("InteractHub.Api.Domain.Entities.Story", b =>
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.SavedPost", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -292,30 +292,92 @@ namespace fookbase.API.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("MediaUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExpiresAt");
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "PostId")
+                        .IsUnique();
+
+                    b.ToTable("SavedPost", (string)null);
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.Story", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("MediaUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiredAt");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Story", (string)null);
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.StoryView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ViewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ViewerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoryId");
+
+                    b.HasIndex("ViewerId");
+
+                    b.HasIndex("StoryId", "ViewerId")
+                        .IsUnique();
+
+                    b.ToTable("StoryView", (string)null);
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Comment", b =>
@@ -344,11 +406,13 @@ namespace fookbase.API.Migrations
                 {
                     b.HasOne("InteractHub.Api.Domain.Entities.Comment", null)
                         .WithMany()
-                        .HasForeignKey("CommentId");
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("InteractHub.Api.Domain.Entities.Post", null)
                         .WithMany()
-                        .HasForeignKey("PostId");
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.PostHashtag", b =>
@@ -381,6 +445,28 @@ namespace fookbase.API.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.SavedPost", b =>
+                {
+                    b.HasOne("InteractHub.Api.Domain.Entities.Post", "Post")
+                        .WithMany("SavedByUsers")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.StoryView", b =>
+                {
+                    b.HasOne("InteractHub.Api.Domain.Entities.Story", "Story")
+                        .WithMany("Views")
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+                });
+
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Hashtag", b =>
                 {
                     b.Navigation("PostHashtags");
@@ -395,6 +481,13 @@ namespace fookbase.API.Migrations
                     b.Navigation("PostHashtags");
 
                     b.Navigation("Reports");
+
+                    b.Navigation("SavedByUsers");
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.Story", b =>
+                {
+                    b.Navigation("Views");
                 });
 #pragma warning restore 612, 618
         }

@@ -23,4 +23,6 @@ public class Post
     public ICollection<PostHashtag> PostHashtags { get; set; } = new List<PostHashtag>();
 
     public ICollection<PostReport> Reports { get; set; } = new List<PostReport>();
+
+    public ICollection<SavedPost> SavedByUsers { get; set; } = new List<SavedPost>();
 }

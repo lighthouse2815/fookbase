@@ -69,11 +69,20 @@ public static class EntityToDtoMapper
         {
             Id = story.Id,
             UserId = story.UserId,
+            Author = new StoryAuthorDto
+            {
+                Id = story.UserId,
+                Username = "user",
+                DisplayName = "user",
+                AvatarUrl = $"https://i.pravatar.cc/150?u={story.UserId}"
+            },
             MediaUrl = story.MediaUrl,
-            ExpiresAt = story.ExpiresAt,
+            MediaType = story.MediaType,
+            Content = story.Content,
             CreatedAt = story.CreatedAt,
-            UpdatedAt = story.UpdatedAt,
-            IsExpired = story.ExpiresAt <= currentTimeUtc
+            ExpiredAt = story.ExpiredAt,
+            IsViewedByCurrentUser = false,
+            ViewCount = story.Views.Select(view => view.ViewerId).Distinct().Count()
         };
     }
 

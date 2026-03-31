@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
@@ -57,6 +58,37 @@ public class AuthController : ControllerBase
         }
 
         result.Data.Token = NormalizeAccessToken(result.Data.Token);
+        SetAccessTokenCookie(result.Data.Token);
+        SetUserIdCookie(result.Data.UserId);
+        return StatusCode(result.StatusCode, ApiResponse<LoginResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("admin/login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> AdminLogin(
+        [FromBody] LoginRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _javaApiService.LoginAsync(request, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<LoginResponseDto>(result, "Admin login failed.");
+        }
+
+        result.Data.Token = NormalizeAccessToken(result.Data.Token);
+
+        if (!IsAdminToken(result.Data))
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                ApiResponse<LoginResponseDto>.Fail("This account does not have admin permission."));
+        }
+
         SetAccessTokenCookie(result.Data.Token);
         SetUserIdCookie(result.Data.UserId);
         return StatusCode(result.StatusCode, ApiResponse<LoginResponseDto>.Ok(result.Data));
@@ -362,6 +394,38 @@ public class AuthController : ControllerBase
         }
 
         return normalized;
+    }
+
+    private static bool IsAdminToken(LoginResponseDto payload)
+    {
+        if (string.Equals(payload.Role, AppRoles.Admin, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(payload.Token))
+        {
+            return false;
+        }
+
+        try
+        {
+            var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(payload.Token);
+            var roleClaims = jwtToken.Claims
+                .Where(claim =>
+                    claim.Type == ClaimTypes.Role
+                    || claim.Type == "role"
+                    || claim.Type == "roles"
+                    || claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+                    || claim.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role")
+                .Select(claim => claim.Value);
+
+            return roleClaims.Any(role => string.Equals(role, AppRoles.Admin, StringComparison.OrdinalIgnoreCase));
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 
     private void SetUserIdCookie(Guid userId)

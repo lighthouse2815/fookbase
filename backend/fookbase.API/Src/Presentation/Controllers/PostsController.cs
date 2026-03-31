@@ -1,6 +1,7 @@
 using InteractHub.Api.Application.DTOs.Likes;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
@@ -57,7 +58,8 @@ public class PostsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var created = await _postService.CreateAsync(userId, request, cancellationToken);
+        var accessToken = ExtractAccessToken();
+        var created = await _postService.CreateAsync(userId, request, accessToken, cancellationToken);
 
         return CreatedAtAction(
             nameof(GetPostById),
@@ -120,6 +122,23 @@ public class PostsController : ControllerBase
         var userId = User.GetUserId();
         var state = await _likeService.UnlikeAsync(postId, userId, cancellationToken);
         return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
+    }
+
+    private string? ExtractAccessToken()
+    {
+        var authorizationHeader = Request.Headers.Authorization.ToString();
+        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return authorizationHeader["Bearer ".Length..].Trim();
+        }
+
+        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
+            && !string.IsNullOrWhiteSpace(cookieToken))
+        {
+            return cookieToken;
+        }
+
+        return null;
     }
 }
 

@@ -35,6 +35,7 @@ public sealed class GlobalExceptionMiddleware
             ForbiddenException => (StatusCodes.Status403Forbidden, exception.Message),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, exception.Message),
             ArgumentException => (StatusCodes.Status400BadRequest, exception.Message),
+            ServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
         };
 

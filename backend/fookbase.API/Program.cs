@@ -55,6 +55,7 @@ builder.Services.AddScoped<IStoryRepository, StoryRepository>();
 builder.Services.AddScoped<IHashtagRepository, HashtagRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IPostReportRepository, PostReportRepository>();
+builder.Services.AddScoped<ISavedPostRepository, SavedPostRepository>();
 
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
@@ -63,6 +64,8 @@ builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IHashtagService, HashtagService>();
 builder.Services.AddScoped<IPostReportService, PostReportService>();
+builder.Services.AddScoped<ISavedPostService, SavedPostService>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -157,24 +160,71 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-using (var scope = app.Services.CreateScope())
+var migrateOnStartup = builder.Configuration.GetValue("Database:MigrateOnStartup", true);
+var migrationRetryCount = Math.Max(1, builder.Configuration.GetValue("Database:MigrationRetryCount", 5));
+var migrationRetryDelaySeconds = Math.Max(1, builder.Configuration.GetValue("Database:MigrationRetryDelaySeconds", 3));
+var failFastOnMigrationError = builder.Configuration.GetValue<bool?>("Database:FailFastOnMigrationError")
+    ?? !app.Environment.IsDevelopment();
+
+if (migrateOnStartup)
 {
-    try
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    Exception? migrationException = null;
+
+    for (var attempt = 1; attempt <= migrationRetryCount; attempt++)
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        dbContext.Database.Migrate();
+        try
+        {
+            dbContext.Database.Migrate();
+            logger.LogInformation("Database migrations applied successfully on startup.");
+            migrationException = null;
+            break;
+        }
+        catch (Exception exception)
+        {
+            migrationException = exception;
+
+            logger.LogWarning(
+                exception,
+                "Failed to apply database migrations (attempt {Attempt}/{RetryCount}).",
+                attempt,
+                migrationRetryCount);
+
+            if (attempt < migrationRetryCount)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(migrationRetryDelaySeconds));
+            }
+        }
     }
-    catch (Exception exception)
+
+    if (migrationException is not null)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(exception, "Failed to apply database migrations on startup.");
-        throw;
+        if (failFastOnMigrationError)
+        {
+            logger.LogCritical(
+                migrationException,
+                "Database migrations failed after {RetryCount} attempts. Application startup aborted.",
+                migrationRetryCount);
+
+            throw new InvalidOperationException(
+                $"Database migrations failed after {migrationRetryCount} attempts.",
+                migrationException);
+        }
+
+        logger.LogError(
+            migrationException,
+            "Database migrations failed after {RetryCount} attempts. Application will continue to run.",
+            migrationRetryCount);
     }
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("FrontendPolicy");
 app.UseRateLimiter();
 app.UseAuthentication();

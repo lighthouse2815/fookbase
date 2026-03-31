@@ -128,6 +128,14 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
     }
   };
 
+  const handleCancelDraft = () => {
+    setContent('');
+    clearSelectedMedia();
+    setIsIconPickerOpen(false);
+  };
+
+  const hasDraft = Boolean(content.trim() || selectedMediaFile);
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
       <div className="flex items-start gap-3">
@@ -246,14 +254,24 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
             }}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => void handleSubmit()}
-          disabled={isSubmitting || (!content.trim() && !selectedMediaFile)}
-          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {isSubmitting ? t('common.loading') : t('home.postButton')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCancelDraft}
+            disabled={isSubmitting || !hasDraft}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={isSubmitting || !hasDraft}
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? t('common.loading') : t('home.postButton')}
+          </button>
+        </div>
       </div>
     </section>
   );

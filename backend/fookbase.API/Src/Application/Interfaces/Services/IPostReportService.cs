@@ -9,6 +9,8 @@ public interface IPostReportService
 
     Task<PagedResult<PostReportResponseDto>> GetMineAsync(Guid userId, PaginationQuery query, CancellationToken cancellationToken);
 
+    Task<int> GetPendingCountAsync(CancellationToken cancellationToken);
+
     Task<PostReportResponseDto> GetByIdAsync(Guid reportId, Guid userId, bool isAdmin, CancellationToken cancellationToken);
 
     Task<PostReportResponseDto> CreateAsync(Guid userId, CreatePostReportRequestDto request, CancellationToken cancellationToken);

@@ -1,0 +1,20 @@
+using InteractHub.Api.Domain.Entities;
+
+namespace InteractHub.Api.Application.Interfaces.Repositories;
+
+public interface ISavedPostRepository
+{
+    Task<(IReadOnlyList<SavedPost> Items, int TotalCount)> GetPagedByUserAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<SavedPost?> GetByUserAndPostAsync(Guid userId, Guid postId, CancellationToken cancellationToken);
+
+    Task<SavedPost?> GetByUserAndPostForUpdateAsync(Guid userId, Guid postId, CancellationToken cancellationToken);
+
+    Task AddAsync(SavedPost savedPost, CancellationToken cancellationToken);
+
+    void Remove(SavedPost savedPost);
+}

@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+import axios from 'axios';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { authService } from '../services/authService';
@@ -10,9 +11,12 @@ import { STORAGE_KEYS, storage } from '../utils/storage';
 interface AuthContextValue {
   user: User | null;
   token: string | null;
+  roles: string[];
+  isAdmin: boolean;
   isAuthenticated: boolean;
   isInitializing: boolean;
   login: (payload: LoginRequest) => Promise<void>;
+  loginAdmin: (payload: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => void;
 }
@@ -27,10 +31,97 @@ const mapAuthUserToUser = (payload: AuthResponse['user']): User => ({
   avatarUrl: payload.avatarUrl ?? `https://i.pravatar.cc/150?u=${payload.id}`,
 });
 
+const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const paddedBase64 = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    const jsonPayload = decodeURIComponent(
+      atob(paddedBase64)
+        .split('')
+        .map((character) => `%${`00${character.charCodeAt(0).toString(16)}`.slice(-2)}`)
+        .join(''),
+    );
+
+    return JSON.parse(jsonPayload) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeRole = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+};
+
+const extractRolesFromToken = (token: string | null): string[] => {
+  if (!token) {
+    return [];
+  }
+
+  const payload = decodeJwtPayload(token);
+  if (!payload) {
+    return [];
+  }
+
+  const roleKeys = [
+    'role',
+    'roles',
+    'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
+    'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role',
+  ];
+
+  const roles: string[] = [];
+
+  roleKeys.forEach((key) => {
+    const rawValue = payload[key];
+
+    if (Array.isArray(rawValue)) {
+      rawValue.forEach((item) => {
+        const role = normalizeRole(item);
+        if (role) {
+          roles.push(role);
+        }
+      });
+      return;
+    }
+
+    const role = normalizeRole(rawValue);
+    if (role) {
+      roles.push(role);
+    }
+  });
+
+  return Array.from(new Set(roles));
+};
+
+const isUnauthorizedError = (error: unknown): boolean => {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+
+  const statusCode = error.response?.status;
+  return statusCode === 401 || statusCode === 403;
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(storage.getToken());
   const [user, setUser] = useState<User | null>(storage.getUser<User>());
   const [isInitializing, setIsInitializing] = useState(true);
+  const roles = useMemo(() => extractRolesFromToken(token), [token]);
+  const isAdmin = useMemo(
+    () => roles.some((role) => role.toLowerCase() === 'admin'),
+    [roles],
+  );
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -47,7 +138,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const current = await userService.getCurrentUser();
         setUser(current);
         storage.setUser(current);
-      } catch {
+      } catch (error) {
+        if (isUnauthorizedError(error)) {
+          storage.clearToken();
+          storage.clearUser();
+          localStorage.removeItem(STORAGE_KEYS.rememberMe);
+          setToken(null);
+          setUser(null);
+          return;
+        }
+
         const cachedUser = storage.getUser<User>();
 
         if (cachedUser) {
@@ -67,11 +167,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     void bootstrap();
   }, []);
 
-  const login = async (payload: LoginRequest) => {
-    const response = await authService.login(payload);
-
+  const establishSession = async (response: AuthResponse, rememberMe: boolean | undefined) => {
     storage.setToken(response.token);
-    localStorage.setItem(STORAGE_KEYS.rememberMe, String(Boolean(payload.rememberMe)));
+    localStorage.setItem(STORAGE_KEYS.rememberMe, String(Boolean(rememberMe)));
 
     setToken(response.token);
 
@@ -84,6 +182,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(fallbackUser);
       storage.setUser(fallbackUser);
     }
+  };
+
+  const login = async (payload: LoginRequest) => {
+    const response = await authService.login(payload);
+    await establishSession(response, payload.rememberMe);
+  };
+
+  const loginAdmin = async (payload: LoginRequest) => {
+    const response = await authService.loginAdmin(payload);
+    await establishSession(response, payload.rememberMe);
   };
 
   const register = async (payload: RegisterRequest) => {
@@ -104,13 +212,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       user,
       token,
+      roles,
+      isAdmin,
       isAuthenticated: Boolean(token),
       isInitializing,
       login,
+      loginAdmin,
       register,
       logout,
     }),
-    [isInitializing, token, user],
+    [isAdmin, isInitializing, roles, token, user],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

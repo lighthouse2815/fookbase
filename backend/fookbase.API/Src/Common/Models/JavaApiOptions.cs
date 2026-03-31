@@ -10,7 +10,27 @@ public class JavaApiOptions
 
     public string ProfileByUserIdPathTemplate { get; set; } = "profiles/public?userId={userId}";
 
+    public string ProfilePrivateByUserIdPathTemplate { get; set; } = "profiles?userId={userId}";
+
+    public string ProfileMeOverviewPathTemplate { get; set; } = "profiles/me/overview";
+
+    public string ProfileMeUpdatePathTemplate { get; set; } = "profiles/me";
+
+    public string ProfileSearchByPhonePathTemplate { get; set; } = "profiles/search?phoneNumber={phoneNumber}";
+
     public string FriendsByUserIdPathTemplate { get; set; } = "friendships?userId={userId}";
+
+    public string MessengerPendingRequestersPathTemplate { get; set; } = "messenger/friendships/pending-requesters";
+
+    public string MessengerContactsByUserPathTemplate { get; set; } = "messenger/contacts/getByUser";
+
+    public string MessengerSendFriendRequestPathTemplate { get; set; } = "messenger/friendships";
+
+    public string MessengerAcceptFriendRequestPathTemplate { get; set; } = "messenger/friendships/accept";
+
+    public string MessengerRejectFriendRequestPathTemplate { get; set; } = "messenger/friendships/reject";
+
+    public string MessengerUnfriendPathTemplate { get; set; } = "messenger/friendships";
 
     public string AuthRegisterPathTemplate { get; set; } = "auth/register";
 

@@ -6,6 +6,7 @@ using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
 
@@ -21,17 +22,20 @@ public class PostReportService : IPostReportService
     private readonly IPostRepository _postRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<PostReportService> _logger;
 
     public PostReportService(
         IPostReportRepository postReportRepository,
         IPostRepository postRepository,
         IJavaApiService javaApiService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<PostReportService> logger)
     {
         _postReportRepository = postReportRepository;
         _postRepository = postRepository;
         _javaApiService = javaApiService;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<PagedResult<PostReportResponseDto>> GetAllAsync(PaginationQuery query, CancellationToken cancellationToken)
@@ -58,6 +62,11 @@ public class PostReportService : IPostReportService
             query.Page,
             query.PageSize,
             totalCount);
+    }
+
+    public Task<int> GetPendingCountAsync(CancellationToken cancellationToken)
+    {
+        return _postReportRepository.CountByStatusAsync(ReportStatuses.Pending, cancellationToken);
     }
 
     public async Task<PostReportResponseDto> GetByIdAsync(
@@ -122,6 +131,7 @@ public class PostReportService : IPostReportService
         var report = await _postReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
             ?? throw new NotFoundException("Post report not found.");
 
+        var previousStatus = report.Status;
         var normalizedStatus = request.Status.Trim().ToUpperInvariant();
         if (!AllowedResolveStatuses.Contains(normalizedStatus))
         {
@@ -134,6 +144,16 @@ public class PostReportService : IPostReportService
         report.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Admin moderation action. AdminUserId={AdminUserId}, ReportId={ReportId}, PostId={PostId}, ReporterUserId={ReporterUserId}, PreviousStatus={PreviousStatus}, NewStatus={NewStatus}, ResolvedAt={ResolvedAt}.",
+            adminUser.Id,
+            report.Id,
+            report.PostId,
+            report.ReportedByUserId,
+            previousStatus,
+            report.Status,
+            report.ResolvedAt);
 
         return report.ToResponseDto();
     }

@@ -12,7 +12,11 @@ public interface IPostService
 
     Task<PostResponseDto> GetByIdAsync(Guid postId, Guid? currentUserId, CancellationToken cancellationToken);
 
-    Task<PostResponseDto> CreateAsync(Guid userId, CreatePostRequestDto request, CancellationToken cancellationToken);
+    Task<PostResponseDto> CreateAsync(
+        Guid userId,
+        CreatePostRequestDto request,
+        string? accessToken,
+        CancellationToken cancellationToken);
 
     Task<PostResponseDto> UpdateAsync(Guid postId, Guid userId, bool isAdmin, UpdatePostRequestDto request, CancellationToken cancellationToken);
 
