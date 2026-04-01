@@ -82,7 +82,15 @@ export const PostDetailPage = () => {
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Post Notification</p>
       </section>
 
-      <PostCard post={post} currentUser={currentUser} onActionToast={showToast} />
+      <PostCard
+        post={post}
+        currentUser={currentUser}
+        onActionToast={showToast}
+        onPostDeleted={() => {
+          setPost(null);
+          setErrorMessage('Bai viet da duoc xoa.');
+        }}
+      />
       <CornerToast message={toast?.message ?? null} type={toast?.type} />
     </div>
   );

@@ -81,6 +81,10 @@ export const HomePage = () => {
     }
   };
 
+  const handlePostDeleted = (postId: string) => {
+    setFeed((previous) => previous.filter((post) => post.id !== postId));
+  };
+
   return (
     <div className="space-y-4">
       <CreatePostBox currentUser={currentUser} isSubmitting={isSubmitting} onCreatePost={handleCreatePost} />
@@ -91,7 +95,13 @@ export const HomePage = () => {
         <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('home.feedTitle')}</h1>
         {loadError ? <p className="text-sm text-rose-600 dark:text-rose-400">{loadError}</p> : null}
         {feed.map((post) => (
-          <PostCard key={post.id} post={post} currentUser={currentUser} onActionToast={showToast} />
+          <PostCard
+            key={post.id}
+            post={post}
+            currentUser={currentUser}
+            onActionToast={showToast}
+            onPostDeleted={handlePostDeleted}
+          />
         ))}
       </section>
 

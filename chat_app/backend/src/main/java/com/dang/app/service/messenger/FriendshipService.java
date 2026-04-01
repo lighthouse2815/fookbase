@@ -5,6 +5,7 @@ import com.dang.app.utils.enums.FriendshipStatus;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.dto.messenger.request.FriendshipRequest;
+import com.dang.app.dto.messenger.response.FriendSuggestionResponse;
 import com.dang.app.dto.messenger.response.FriendshipResponse;
 import com.dang.app.dto.messenger.response.PendingFriendRequesterResponse;
 import com.dang.app.entity.auth.User;
@@ -15,6 +16,8 @@ import com.dang.app.service.auth.UserProfileService;
 import com.dang.app.utils.mapper.FriendshipMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -205,6 +208,19 @@ public class FriendshipService {
                             friendship.getCreatedAt()
                     );
                 })
+                .toList();
+    }
+
+    public List<FriendSuggestionResponse> getFriendSuggestions(UUID userId, Pageable pageable) {
+        userService.findById(userId);
+
+        int safePage = Math.max(pageable.getPageNumber(), 0);
+        int safeSize = Math.min(Math.max(pageable.getPageSize(), 1), 50);
+        Pageable safePageable = PageRequest.of(safePage, safeSize);
+
+        return friendshipRepository.findFriendSuggestions(userId, safePageable)
+                .stream()
+                .map(friendshipMapper::toFriendSuggestionResponse)
                 .toList();
     }
 

@@ -53,6 +53,13 @@ export const ProfilePage = () => {
   const { toast, showToast } = useCornerToast();
 
   useEffect(() => {
+    setProfile((previous) => ({
+      ...previous,
+      postsCount: personalPosts.length,
+    }));
+  }, [personalPosts.length]);
+
+  useEffect(() => {
     setProfile(createFallbackProfile(targetUserId, currentUser));
 
     const loadProfile = async () => {
@@ -89,28 +96,30 @@ export const ProfilePage = () => {
         const response = await postService.getPosts(1, PROFILE_POSTS_PAGE_SIZE);
         const items = response.items.filter((post) => post.author.id === targetUserId);
         setPersonalPosts(items);
-        setProfile((previous) => ({
-          ...previous,
-          postsCount: items.length,
-        }));
       } catch {
         setPersonalPosts([]);
-        setProfile((previous) => ({
-          ...previous,
-          postsCount: 0,
-        }));
       }
     };
 
     void loadPersonalPosts();
   }, [targetUserId]);
 
+  const handlePostDeleted = (postId: string) => {
+    setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));
+  };
+
   return (
     <div className="space-y-4">
       <ProfileHeader profile={profile} />
       <section className="space-y-4">
         {personalPosts.map((post) => (
-          <PostCard key={post.id} post={post} currentUser={currentUser} onActionToast={showToast} />
+          <PostCard
+            key={post.id}
+            post={post}
+            currentUser={currentUser}
+            onActionToast={showToast}
+            onPostDeleted={handlePostDeleted}
+          />
         ))}
       </section>
       <CornerToast message={toast?.message ?? null} type={toast?.type} />

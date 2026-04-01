@@ -66,6 +66,10 @@ export const SavedPostsPage = () => {
     }
   };
 
+  const handlePostDeleted = (postId: string) => {
+    setSavedPosts((previous) => previous.filter((post) => post.id !== postId));
+  };
+
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
@@ -98,7 +102,12 @@ export const SavedPostsPage = () => {
                 {removingPostId === post.id ? 'Dang bo luu...' : 'Bo luu'}
               </button>
             </div>
-            <PostCard post={post} currentUser={currentUser} onActionToast={showToast} />
+            <PostCard
+              post={post}
+              currentUser={currentUser}
+              onActionToast={showToast}
+              onPostDeleted={handlePostDeleted}
+            />
           </div>
         ))}
       </section>

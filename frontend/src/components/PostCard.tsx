@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, BookmarkPlus, Ellipsis, Flag, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
+import { AlertTriangle, BookmarkPlus, Ellipsis, Flag, MessageCircle, Share2, ThumbsUp, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -17,12 +17,14 @@ interface PostCardProps {
   post: Post;
   currentUser: User;
   onActionToast?: (message: string, type?: 'success' | 'error') => void;
+  onPostDeleted?: (postId: string) => void;
 }
 
-export const PostCard = ({ post, currentUser, onActionToast }: PostCardProps) => {
+export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: PostCardProps) => {
   const { t } = useTranslation();
   const authorProfilePath = `/profile/${post.author.id}`;
   const mediaKind = detectMediaKind(post.imageUrl);
+  const isPostOwner = currentUser.id.trim().toLowerCase() === post.author.id.trim().toLowerCase();
   const [likeCount, setLikeCount] = useState(post.likes);
   const [isLiked, setIsLiked] = useState(Boolean(post.likedByCurrentUser));
   const [isLikeUpdating, setIsLikeUpdating] = useState(false);
@@ -31,8 +33,10 @@ export const PostCard = ({ post, currentUser, onActionToast }: PostCardProps) =>
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSavingPost, setIsSavingPost] = useState(false);
   const [isReportingPost, setIsReportingPost] = useState(false);
+  const [isDeletingPost, setIsDeletingPost] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportReasonError, setReportReasonError] = useState<string | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
@@ -45,10 +49,12 @@ export const PostCard = ({ post, currentUser, onActionToast }: PostCardProps) =>
     setIsCommentsOpen(false);
     setIsPostMenuOpen(false);
     setIsReportDialogOpen(false);
+    setIsDeleteDialogOpen(false);
     setReportReason('');
     setReportReasonError(null);
     setLikeError(null);
     setPostActionError(null);
+    setIsDeletingPost(false);
   }, [post.commentCount, post.comments.length, post.id, post.likedByCurrentUser, post.likes]);
 
   useEffect(() => {
@@ -142,6 +148,29 @@ export const PostCard = ({ post, currentUser, onActionToast }: PostCardProps) =>
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!isPostOwner || isDeletingPost) {
+      return;
+    }
+
+    setIsDeletingPost(true);
+    setPostActionError(null);
+
+    try {
+      await postService.deletePost(post.id);
+      setIsDeleteDialogOpen(false);
+      setIsPostMenuOpen(false);
+      onActionToast?.('Da xoa bai viet', 'success');
+      onPostDeleted?.(post.id);
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Khong the xoa bai viet.');
+      setPostActionError(message);
+      onActionToast?.(message, 'error');
+    } finally {
+      setIsDeletingPost(false);
+    }
+  };
+
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
       <header className="flex items-start gap-3">
@@ -188,6 +217,20 @@ export const PostCard = ({ post, currentUser, onActionToast }: PostCardProps) =>
                 <Flag size={16} />
                 Bao cao
               </button>
+              {isPostOwner ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPostMenuOpen(false);
+                    setIsDeleteDialogOpen(true);
+                  }}
+                  disabled={isDeletingPost}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                >
+                  <Trash2 size={16} />
+                  {isDeletingPost ? 'Dang xoa bai viet...' : 'Xoa bai viet'}
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -329,6 +372,59 @@ export const PostCard = ({ post, currentUser, onActionToast }: PostCardProps) =>
                   className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isReportingPost ? 'Dang gui...' : 'Xac nhan bao cao'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isDeleteDialogOpen ? (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center p-4">
+          <button
+            type="button"
+            onClick={() => {
+              if (isDeletingPost) {
+                return;
+              }
+
+              setIsDeleteDialogOpen(false);
+            }}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
+            aria-label="Dong popup xoa bai viet"
+          />
+
+          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="h-1.5 w-full bg-gradient-to-r from-rose-600 via-rose-500 to-orange-400" />
+
+            <div className="space-y-4 p-5 sm:p-6">
+              <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300">
+                <Trash2 size={24} />
+              </div>
+
+              <div className="text-center">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Xac nhan xoa bai viet</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  Bai viet sau khi xoa se khong the khoi phuc.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  disabled={isDeletingPost}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700"
+                >
+                  Huy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDeletePost()}
+                  disabled={isDeletingPost}
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isDeletingPost ? 'Dang xoa...' : 'Xac nhan xoa'}
                 </button>
               </div>
             </div>

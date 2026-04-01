@@ -20,6 +20,8 @@ public class JavaApiOptions
 
     public string FriendsByUserIdPathTemplate { get; set; } = "friendships?userId={userId}";
 
+    public string UserSuggestionsPathTemplate { get; set; } = "users/suggestions?page={page}&size={size}";
+
     public string MessengerPendingRequestersPathTemplate { get; set; } = "messenger/friendships/pending-requesters";
 
     public string MessengerContactsByUserPathTemplate { get; set; } = "messenger/contacts/getByUser";

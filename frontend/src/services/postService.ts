@@ -125,4 +125,8 @@ export const postService = {
     const response = await apiClient.delete<ApiEnvelope<LikeStatePayload>>(`/api/posts/${postId}/likes`);
     return extractData(response.data, 'Failed to unlike post');
   },
+
+  async deletePost(postId: string): Promise<void> {
+    await apiClient.delete<ApiEnvelope<unknown>>(`/api/posts/${postId}`);
+  },
 };

@@ -1,3 +1,4 @@
+using InteractHub.Api.Application.DTOs.Friendships;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
@@ -58,6 +59,47 @@ public class FriendshipsController : ControllerBase
         }
 
         return StatusCode(result.StatusCode, ApiResponse<List<ContactDto>>.Ok(result.Data));
+    }
+
+    [HttpGet("suggestions")]
+    [ProducesResponseType(typeof(ApiResponse<List<FriendSuggestionResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<FriendSuggestionResponseDto>>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<List<FriendSuggestionResponseDto>>>> GetSuggestions(
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = ExtractAccessToken();
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Unauthorized(ApiResponse<List<FriendSuggestionResponseDto>>.Fail("Unauthorized."));
+        }
+
+        var safePage = page < 0 ? 0 : page;
+        var safePageSize = Math.Clamp(pageSize, 1, 100);
+
+        var result = await _javaApiService.GetFriendSuggestionsAsync(accessToken, safePage, safePageSize, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            var statusCode = result.StatusCode > 0
+                ? result.StatusCode
+                : StatusCodes.Status502BadGateway;
+            var errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                ? "Load friend suggestions failed."
+                : result.ErrorMessage;
+
+            return StatusCode(statusCode, ApiResponse<List<FriendSuggestionResponseDto>>.Fail(errorMessage));
+        }
+
+        var mapped = result.Data
+            .Select((item, index) => MapSuggestion(item, index))
+            .ToList();
+
+        var responseStatusCode = result.StatusCode > 0
+            ? result.StatusCode
+            : StatusCodes.Status200OK;
+
+        return StatusCode(responseStatusCode, ApiResponse<List<FriendSuggestionResponseDto>>.Ok(mapped));
     }
 
     [HttpPost("request")]
@@ -217,6 +259,66 @@ public class FriendshipsController : ControllerBase
         }
 
         return string.Empty;
+    }
+
+    private static FriendSuggestionResponseDto MapSuggestion(FriendSuggestionDto suggestion, int index)
+    {
+        var safeId = string.IsNullOrWhiteSpace(suggestion.Id)
+            ? $"suggestion-{index + 1}"
+            : suggestion.Id.Trim();
+        var fullName = string.IsNullOrWhiteSpace(suggestion.DisplayName)
+            ? "Nguoi dung"
+            : suggestion.DisplayName.Trim();
+        var username = BuildUsername(fullName, safeId, index);
+        var avatarUrl = string.IsNullOrWhiteSpace(suggestion.AvatarUrl)
+            ? $"https://i.pravatar.cc/150?u={safeId}"
+            : suggestion.AvatarUrl.Trim();
+        var mutualFriends = suggestion.MutualFriends < 0
+            ? 0
+            : suggestion.MutualFriends;
+
+        return new FriendSuggestionResponseDto
+        {
+            Id = safeId,
+            Username = username,
+            FullName = fullName,
+            AvatarUrl = avatarUrl,
+            MutualFriends = mutualFriends
+        };
+    }
+
+    private static string BuildUsername(string fullName, string safeId, int index)
+    {
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            var normalized = new string(
+                fullName
+                    .Trim()
+                    .ToLowerInvariant()
+                    .Select((ch, idx) =>
+                    {
+                        if (char.IsLetterOrDigit(ch))
+                        {
+                            return ch;
+                        }
+
+                        return idx > 0 ? '-' : '\0';
+                    })
+                    .Where(ch => ch != '\0')
+                    .ToArray());
+
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                return normalized;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(safeId))
+        {
+            return $"user_{safeId[..Math.Min(8, safeId.Length)]}";
+        }
+
+        return $"user_{index + 1}";
     }
 }
 

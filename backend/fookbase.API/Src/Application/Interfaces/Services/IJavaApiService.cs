@@ -40,6 +40,12 @@ public interface IJavaApiService
         CancellationToken cancellationToken = default,
         string? accessToken = null);
 
+    Task<JavaApiCallResult<List<FriendSuggestionDto>>> GetFriendSuggestionsAsync(
+        string accessToken,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<List<PendingFriendRequesterDto>>> GetPendingRequestersAsync(
         string accessToken,
         CancellationToken cancellationToken = default);

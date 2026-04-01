@@ -96,6 +96,25 @@ public class JavaApiService : IJavaApiService
         return friends ?? new List<FriendshipDto>();
     }
 
+    public async Task<JavaApiCallResult<List<FriendSuggestionDto>>> GetFriendSuggestionsAsync(
+        string accessToken,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var safePage = page < 0 ? 0 : page;
+        var safePageSize = pageSize <= 0 ? 20 : pageSize;
+        var path = BuildPath(_options.UserSuggestionsPathTemplate, ("page", safePage), ("size", safePageSize));
+        var result = await GetResultAsync<List<FriendSuggestionDto>>(path, accessToken, cancellationToken);
+
+        if (result.IsSuccess && result.Data is null)
+        {
+            return JavaApiCallResult<List<FriendSuggestionDto>>.Success(new List<FriendSuggestionDto>(), result.StatusCode);
+        }
+
+        return result;
+    }
+
     public async Task<JavaApiCallResult<List<PendingFriendRequesterDto>>> GetPendingRequestersAsync(
         string accessToken,
         CancellationToken cancellationToken = default)

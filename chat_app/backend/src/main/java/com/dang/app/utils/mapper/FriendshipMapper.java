@@ -1,10 +1,13 @@
 package com.dang.app.utils.mapper;
 
 import com.dang.app.dto.messenger.response.FriendshipResponse;
+import com.dang.app.dto.messenger.response.FriendSuggestionResponse;
 import com.dang.app.dto.messenger.response.PendingFriendRequesterResponse;
 import com.dang.app.entity.messenger.Friendship;
+import com.dang.app.repository.projection.messenger.FriendSuggestionProjection;
 import org.springframework.stereotype.Component;
 
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -45,5 +48,25 @@ public class FriendshipMapper {
                 .isRequester(isRequester)
                 .createdAt(createdAt)
                 .build();
+    }
+
+    public FriendSuggestionResponse toFriendSuggestionResponse(FriendSuggestionProjection projection) {
+        long mutualFriends = projection.getMutualFriends() == null ? 0L : projection.getMutualFriends();
+
+        return FriendSuggestionResponse.builder()
+                .id(toUuid(projection.getId()))
+                .displayName(projection.getDisplayName())
+                .avatarUrl(projection.getAvatarUrl())
+                .mutualFriends(Math.toIntExact(mutualFriends))
+                .build();
+    }
+
+    private UUID toUuid(byte[] bytes) {
+        if (bytes == null || bytes.length != 16) {
+            throw new IllegalStateException("Invalid UUID binary length for friend suggestion");
+        }
+
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        return new UUID(buffer.getLong(), buffer.getLong());
     }
 }

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 import type { FriendSuggestion } from '../types/friendship';
 import type { NotificationItem } from '../types/notification';
@@ -30,7 +31,12 @@ export const SidebarRight = ({
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             {t('sidebar.friendSuggestions')}
           </h2>
-          <button className="text-xs font-medium text-brand-600 dark:text-brand-300">{t('common.viewAll')}</button>
+          <Link
+            to="/friends?tab=suggestions"
+            className="text-xs font-medium text-brand-600 transition hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
+          >
+            {t('common.viewAll')}
+          </Link>
         </div>
         <div className="space-y-2">
           {suggestions.map((suggestion) => (

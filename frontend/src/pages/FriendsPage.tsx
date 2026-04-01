@@ -12,7 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 
 import { FriendRequestCard } from '../components/friends/FriendRequestCard';
 import { FriendsPageSkeleton } from '../components/friends/FriendsPageSkeleton';
@@ -20,7 +20,6 @@ import { ProfilePreview } from '../components/friends/ProfilePreview';
 import { SidebarItem } from '../components/friends/SidebarItem';
 import { UserCard } from '../components/friends/UserCard';
 import {
-  friendSuggestions as fallbackSuggestions,
   friendsMock,
   receivedFriendRequestsMock,
   sentFriendRequestsMock,
@@ -33,6 +32,14 @@ type FriendsTab = 'home' | 'requests' | 'suggestions' | 'friends';
 type FriendFilter = 'all' | 'online' | 'sameFaculty';
 type FetchState = 'loading' | 'success' | 'error';
 type ProfileRelation = 'received' | 'sent' | 'suggestion' | 'friend' | null;
+
+const parseFriendsTab = (value: string | null): FriendsTab => {
+  if (value === 'requests' || value === 'suggestions' || value === 'friends') {
+    return value;
+  }
+
+  return 'home';
+};
 
 const sidebarTabs: Array<{
   id: FriendsTab;
@@ -167,8 +174,9 @@ const sanitizeFriends = (value: unknown, fallback: FriendUser[]) => {
 
 export const FriendsPage = () => {
   const { suggestions: sidebarSuggestions, currentUser } = useOutletContext<MainLayoutOutletContext>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<FriendsTab>('home');
+  const [activeTab, setActiveTab] = useState<FriendsTab>(() => parseFriendsTab(searchParams.get('tab')));
   const [fetchState, setFetchState] = useState<FetchState>('loading');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -187,8 +195,6 @@ export const FriendsPage = () => {
   const loadFriendData = useCallback(async () => {
     setFetchState('loading');
     setErrorMessage(null);
-
-    const suggestionFallback = sidebarSuggestions.length > 0 ? sidebarSuggestions : fallbackSuggestions;
 
     const [receivedResult, sentResult, suggestionsResult, friendsResult] = await Promise.allSettled([
       friendshipService.getReceivedRequests(),
@@ -220,12 +226,10 @@ export const FriendsPage = () => {
       ),
     );
 
-    setSuggestions(
-      sanitizeSuggestions(
-        suggestionsResult.status === 'fulfilled' ? suggestionsResult.value : undefined,
-        suggestionFallback,
-      ),
-    );
+    const resolvedSuggestions = suggestionsResult.status === 'fulfilled'
+      ? suggestionsResult.value
+      : sidebarSuggestions;
+    setSuggestions(sanitizeSuggestions(resolvedSuggestions, []));
 
     setFriends(sanitizeFriends(friendsResult.status === 'fulfilled' ? friendsResult.value : undefined, friendsMock));
 
@@ -241,6 +245,19 @@ export const FriendsPage = () => {
   useEffect(() => {
     void loadFriendData();
   }, [loadFriendData]);
+
+  useEffect(() => {
+    const tabFromQuery = parseFriendsTab(searchParams.get('tab'));
+    setActiveTab((currentTab) => (currentTab === tabFromQuery ? currentTab : tabFromQuery));
+  }, [searchParams]);
+
+  const handleChangeTab = (tab: FriendsTab) => {
+    setActiveTab(tab);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set('tab', tab);
+    setSearchParams(nextSearchParams);
+  };
 
   useEffect(() => {
     if (selectedUserId) {
@@ -565,7 +582,7 @@ export const FriendsPage = () => {
                   active={activeTab === tab.id}
                   count={count}
                   onClick={() => {
-                    setActiveTab(tab.id);
+                    handleChangeTab(tab.id);
                     setIsSidebarOpen(false);
                   }}
                 />

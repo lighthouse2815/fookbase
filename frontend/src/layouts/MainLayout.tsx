@@ -8,7 +8,6 @@ import { SidebarLeft } from '../components/SidebarLeft';
 import { SidebarRight } from '../components/SidebarRight';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  friendSuggestions as friendSuggestionsMock,
   onlineUsers as onlineUsersMock,
 } from '../data/mockData';
 import { friendshipService } from '../services/friendshipService';
@@ -32,7 +31,7 @@ export const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [suggestions, setSuggestions] = useState<FriendSuggestion[]>(friendSuggestionsMock);
+  const [suggestions, setSuggestions] = useState<FriendSuggestion[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<User[]>(onlineUsersMock);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [adminPendingReportCount, setAdminPendingReportCount] = useState(0);
@@ -118,16 +117,20 @@ export const MainLayout = () => {
 
   useEffect(() => {
     const loadSidebarData = async () => {
-      try {
-        const [apiSuggestions, apiOnlineUsers] = await Promise.all([
-          friendshipService.getFriendSuggestions(),
-          userService.getOnlineUsers(),
-        ]);
+      const [suggestionsResult, onlineUsersResult] = await Promise.allSettled([
+        friendshipService.getFriendSuggestions(),
+        userService.getOnlineUsers(),
+      ]);
 
-        setSuggestions(apiSuggestions);
-        setOnlineUsers(apiOnlineUsers);
-      } catch {
-        setSuggestions(friendSuggestionsMock);
+      if (suggestionsResult.status === 'fulfilled') {
+        setSuggestions(suggestionsResult.value);
+      } else {
+        setSuggestions([]);
+      }
+
+      if (onlineUsersResult.status === 'fulfilled') {
+        setOnlineUsers(onlineUsersResult.value);
+      } else {
         setOnlineUsers(onlineUsersMock);
       }
     };
