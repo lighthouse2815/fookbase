@@ -6,6 +6,7 @@ using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -22,15 +23,18 @@ public class JavaApiService : IJavaApiService
     private readonly HttpClient _httpClient;
     private readonly JavaApiOptions _options;
     private readonly ILogger<JavaApiService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public JavaApiService(
         HttpClient httpClient,
         IOptions<JavaApiOptions> options,
-        ILogger<JavaApiService> logger)
+        ILogger<JavaApiService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public Task<UserDto?> GetUserById(
@@ -49,6 +53,15 @@ public class JavaApiService : IJavaApiService
     {
         var path = BuildPath(_options.ProfileByUserIdPathTemplate, ("userId", userId));
         return GetAsync<UserProfileDto>(path, accessToken, cancellationToken);
+    }
+
+    public Task<UserProfileSummaryDto?> GetProfileSummaryByUserId(
+        Guid userId,
+        CancellationToken cancellationToken = default,
+        string? accessToken = null)
+    {
+        var path = BuildPath(_options.ProfileSummaryByUserIdPathTemplate, ("userId", userId));
+        return GetAsync<UserProfileSummaryDto>(path, accessToken, cancellationToken);
     }
 
     public Task<JavaApiCallResult<UserProfilePrivateDto>> GetPrivateProfileByUserIdAsync(
@@ -296,10 +309,11 @@ public class JavaApiService : IJavaApiService
     private async Task<T?> GetAsync<T>(string relativePath, string? accessToken, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
+        var resolvedAccessToken = ResolveAccessToken(accessToken);
 
-        if (!string.IsNullOrWhiteSpace(accessToken))
+        if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolvedAccessToken);
         }
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -336,10 +350,11 @@ public class JavaApiService : IJavaApiService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
+            var resolvedAccessToken = ResolveAccessToken(accessToken);
 
-            if (!string.IsNullOrWhiteSpace(accessToken))
+            if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolvedAccessToken);
             }
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -415,14 +430,15 @@ public class JavaApiService : IJavaApiService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, relativePath);
+            var resolvedAccessToken = ResolveAccessToken(accessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
             }
 
-            if (!string.IsNullOrWhiteSpace(accessToken))
+            if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolvedAccessToken);
             }
 
             if (additionalHeaders is not null)
@@ -506,14 +522,15 @@ public class JavaApiService : IJavaApiService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, relativePath);
+            var resolvedAccessToken = ResolveAccessToken(accessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
             }
 
-            if (!string.IsNullOrWhiteSpace(accessToken))
+            if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolvedAccessToken);
             }
 
             if (additionalHeaders is not null)
@@ -584,14 +601,15 @@ public class JavaApiService : IJavaApiService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Delete, relativePath);
+            var resolvedAccessToken = ResolveAccessToken(accessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
             }
 
-            if (!string.IsNullOrWhiteSpace(accessToken))
+            if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolvedAccessToken);
             }
 
             if (additionalHeaders is not null)
@@ -662,14 +680,15 @@ public class JavaApiService : IJavaApiService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Patch, relativePath);
+            var resolvedAccessToken = ResolveAccessToken(accessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
             }
 
-            if (!string.IsNullOrWhiteSpace(accessToken))
+            if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolvedAccessToken);
             }
 
             if (additionalHeaders is not null)
@@ -819,5 +838,33 @@ public class JavaApiService : IJavaApiService
         }
 
         return path.TrimStart('/');
+    }
+
+    private string? ResolveAccessToken(string? accessToken)
+    {
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            return accessToken.Trim();
+        }
+
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext is null)
+        {
+            return null;
+        }
+
+        var authorizationHeader = httpContext.Request.Headers.Authorization.ToString();
+        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return authorizationHeader["Bearer ".Length..].Trim();
+        }
+
+        if (httpContext.Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
+            && !string.IsNullOrWhiteSpace(cookieToken))
+        {
+            return cookieToken.Trim();
+        }
+
+        return null;
     }
 }

@@ -1,0 +1,44 @@
+🧠 USER CACHE (C# ↔ Java) – NOTE NGẮN GỌN
+🎯 Mục tiêu
+Giảm gọi API sang Java
+Tăng tốc backend C#
+Tránh phụ thuộc runtime vào Java
+📦 1. Nguyên tắc
+Java = nguồn dữ liệu chính (source of truth)
+C# = bản cache tạm
+🧱 2. Thiết kế bảng (C#)
+
+👉 KHÔNG copy full user
+
+UserCache
+{
+    Id,
+    Username,
+    AvatarUrl,
+    IsActive
+}
+
+✔ chỉ lưu data cần
+❌ không lưu password / data nhạy cảm
+
+🔄 3. Flow hoạt động
+🥇 Lần đầu:
+C# gọi API Java
+Lấy user
+Lưu vào UserCache
+🥈 Lần sau:
+Check UserCache
+Có → dùng luôn
+Không → gọi Java
+🔁 4. Đồng bộ dữ liệu
+Cách đơn giản (đủ làm đồ án):
+Sync khi login
+Sync khi không tìm thấy cache
+⚠️ 5. Quy tắc quan trọng
+Cache có thể sai ❗
+Không dùng cache cho logic quan trọng (auth, permission)
+Không update user trực tiếp ở C#
+💀 6. Sai lầm cần tránh
+❌ Copy full bảng user từ Java
+❌ Gọi API Java mỗi request
+❌ Coi C# là nguồn chính

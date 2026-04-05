@@ -10,7 +10,6 @@ public class UserMapper {
     public UserBasicResponse toUserBasicResponse(User user) {
         return UserBasicResponse.builder()
                 .id(user.getId())
-                .username(user.getUsername())
                 .build();
     }
 }

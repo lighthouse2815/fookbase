@@ -5,6 +5,7 @@ import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
 import com.dang.app.entity.messenger.Friendship;
@@ -178,6 +179,7 @@ public class UserProfileService {
         return userProfileMapper.toUserProfileResponse(request.getUserId(), profile, nickName, status);
     }
 
+    // todo sửa , đây là trả về cho trang cá nhân
     public PublicUserProfileResponse getPublicProfileByUserId(UUID userId) {
         UserProfile profile = userProfileRepository.findPublicByUserId(userId)
                 .orElseThrow(() -> {
@@ -191,6 +193,21 @@ public class UserProfileService {
         }
 
         return userProfileMapper.toPublicUserProfileResponse(profile);
+    }
+
+    public UserProfileSummaryResponse getUserProfileSummary(UUID userId) {
+        UserProfile profile = userProfileRepository.findPublicByUserId(userId)
+                .orElseThrow(() -> {
+                    log.warn("Profile summary lookup failed: userId={} not found", userId);
+                    return new BusinessException(ErrorCode.PROFILE_NOT_FOUND);
+                });
+
+        if (profile.getUser() == null || profile.getUser().getDeletedAt() != null) {
+            log.warn("Profile summary lookup failed: userId={} user was deleted", userId);
+            throw new BusinessException(ErrorCode.PROFILE_NOT_FOUND);
+        }
+
+        return userProfileMapper.toUserProfileSummary(profile);
     }
 
 

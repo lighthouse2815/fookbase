@@ -9,6 +9,11 @@ spring:
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -22,6 +27,7 @@ spring:
             enable: true
 
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     show-sql: true

@@ -1,9 +1,11 @@
 using InteractHub.Api.Application.DTOs.Comments;
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Hashtags;
 using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.DTOs.PostReports;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.DTOs.Stories;
+using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 
 namespace InteractHub.Api.Application.Mappers;
@@ -18,13 +20,13 @@ public static class EntityToDtoMapper
         {
             Id = comment.Id,
             PostId = comment.PostId,
+            ParentCommentId = comment.ParentCommentId,
             UserId = comment.UserId,
-            Author = new CommentAuthorDto
+            Author = new AuthorSummaryDto
             {
                 Id = comment.UserId,
-                Username = "user",
-                DisplayName = "user",
-                AvatarUrl = $"https://i.pravatar.cc/150?u={comment.UserId}"
+                DisplayName = "Đăng siu đẹp trai",
+                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(comment.UserId)
             },
             Content = comment.Content,
             CreatedAt = comment.CreatedAt,
@@ -40,12 +42,11 @@ public static class EntityToDtoMapper
         {
             Id = post.Id,
             UserId = post.UserId,
-            Author = new PostAuthorDto
+            Author = new AuthorSummaryDto
             {
                 Id = post.UserId,
-                Username = "user",
                 DisplayName = "user",
-                AvatarUrl = $"https://i.pravatar.cc/150?u={post.UserId}"
+                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(post.UserId)
             },
             Content = post.Content,
             ImageUrl = post.ImageUrl,
@@ -69,12 +70,11 @@ public static class EntityToDtoMapper
         {
             Id = story.Id,
             UserId = story.UserId,
-            Author = new StoryAuthorDto
+            Author = new AuthorSummaryDto
             {
                 Id = story.UserId,
-                Username = "user",
                 DisplayName = "user",
-                AvatarUrl = $"https://i.pravatar.cc/150?u={story.UserId}"
+                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(story.UserId)
             },
             MediaUrl = story.MediaUrl,
             MediaType = story.MediaType,

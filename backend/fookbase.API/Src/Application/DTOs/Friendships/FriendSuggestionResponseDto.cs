@@ -7,9 +7,6 @@ public class FriendSuggestionResponseDto
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
-    [JsonPropertyName("username")]
-    public string Username { get; set; } = string.Empty;
-
     [JsonPropertyName("fullName")]
     public string FullName { get; set; } = string.Empty;
 

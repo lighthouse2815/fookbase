@@ -1,10 +1,8 @@
-namespace InteractHub.Api.Application.DTOs.Comments;
+namespace InteractHub.Api.Application.DTOs.Common;
 
-public class CommentAuthorDto
+public class AuthorSummaryDto
 {
     public Guid Id { get; init; }
-
-    public string Username { get; init; } = "user";
 
     public string DisplayName { get; init; } = "user";
 

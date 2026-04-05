@@ -10,6 +10,8 @@ public class JavaApiOptions
 
     public string ProfileByUserIdPathTemplate { get; set; } = "profiles/public?userId={userId}";
 
+    public string ProfileSummaryByUserIdPathTemplate { get; set; } = "profiles/summary?userId={userId}";
+
     public string ProfilePrivateByUserIdPathTemplate { get; set; } = "profiles?userId={userId}";
 
     public string ProfileMeOverviewPathTemplate { get; set; } = "profiles/me/overview";

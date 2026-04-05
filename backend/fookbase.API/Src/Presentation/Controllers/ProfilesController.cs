@@ -5,6 +5,7 @@ using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
+using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -55,15 +56,13 @@ public class ProfilesController : ControllerBase
                 return NotFound(ApiResponse<ProfileResponseDto>.Fail("Profile not found."));
             }
 
-            var username = user?.Username ?? "user";
-            var fullName = profile?.DisplayName ?? profile?.FullName ?? username;
+            var fullName = profile?.DisplayName ?? profile?.FullName ?? "user";
 
             var response = new ProfileResponseDto
             {
                 Id = userId,
-                Username = username,
                 FullName = fullName,
-                AvatarUrl = profile?.AvatarUrl ?? BuildDefaultAvatarUrl(userId),
+                AvatarUrl = profile?.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
                 Bio = profile?.Bio,
                 CoverUrl = profile?.CoverUrl,
                 Major = profile?.Major,
@@ -105,33 +104,26 @@ public class ProfilesController : ControllerBase
 
         try
         {
-            var userTask = _javaApiService.GetUserById(
-                userId,
-                cancellationToken: cancellationToken,
-                accessToken: accessToken);
             var privateProfileTask = _javaApiService.GetPrivateProfileByUserIdAsync(userId, accessToken, cancellationToken);
             var overviewTask = _javaApiService.GetMyProfileOverviewAsync(accessToken, cancellationToken);
 
-            await Task.WhenAll(userTask, privateProfileTask, overviewTask);
+            await Task.WhenAll(privateProfileTask, overviewTask);
 
-            var user = userTask.Result;
             var privateProfile = privateProfileTask.Result.Data;
             var overview = overviewTask.Result.Data;
 
-            var username = user?.Username ?? "user";
             var displayName = FirstNonEmpty(
                 privateProfile?.DisplayName,
                 overview?.DisplayName,
-                username);
+                "user");
 
             var response = new MyProfileSettingsResponseDto
             {
                 UserId = userId,
-                Username = username,
-                DisplayName = displayName ?? username,
+                DisplayName = displayName ?? "user",
                 Email = overview?.Email,
                 PhoneNumber = FirstNonEmpty(privateProfile?.PhoneNumber, overview?.PhoneNumber),
-                AvatarUrl = privateProfile?.AvatarUrl ?? BuildDefaultAvatarUrl(userId),
+                AvatarUrl = privateProfile?.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
                 BirthDate = FirstNonEmpty(privateProfile?.BirthDate, overview?.BirthDate),
                 Gender = privateProfile?.Gender
             };
@@ -250,11 +242,6 @@ public class ProfilesController : ControllerBase
             : errorMessage;
 
         return StatusCode(resolvedStatusCode, ApiResponse<T>.Fail(resolvedError));
-    }
-
-    private static string BuildDefaultAvatarUrl(Guid userId)
-    {
-        return $"https://i.pravatar.cc/150?u={userId}";
     }
 
     private static string? FirstNonEmpty(params string?[] values)

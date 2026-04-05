@@ -1,6 +1,7 @@
 package com.dang.app.utils.mapper;
 
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
@@ -55,7 +56,17 @@ public class UserProfileMapper {
         return PublicUserProfileResponse.builder()
                 .userId(profile.getUser().getId())
                 .displayName(displayName)
-                .fullName(fullName)
+                .avatarUrl(profile.getAvatarUrl())
+                .build();
+    }
+
+    public UserProfileSummaryResponse toUserProfileSummary(UserProfile profile) {
+        String fullName = buildFullName(profile);
+        String displayName = resolveDisplayName(profile, fullName);
+
+        return UserProfileSummaryResponse.builder()
+                .userId(profile.getUser().getId())
+                .displayName(displayName)
                 .avatarUrl(profile.getAvatarUrl())
                 .build();
     }

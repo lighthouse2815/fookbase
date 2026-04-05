@@ -295,10 +295,12 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
       {isCommentsOpen ? (
         <CommentSection
           postId={post.id}
+          postAuthorId={post.author.id}
           initialComments={post.comments}
           initialCommentCount={post.commentCount}
           currentUser={currentUser}
           onCommentCountChange={(count) => setCommentCount(count)}
+          onActionToast={onActionToast}
         />
       ) : null}
 

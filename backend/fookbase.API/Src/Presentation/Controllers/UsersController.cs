@@ -1,10 +1,10 @@
 using System.Net;
-using System.Security.Claims;
 using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
+using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,38 +32,29 @@ public class UsersController : ControllerBase
     {
         var userId = User.GetUserId();
         var accessToken = ExtractAccessToken();
-        var usernameFromClaims = ResolveUsernameFromClaims();
 
         try
         {
-            var userTask = _javaApiService.GetUserById(
-                userId,
-                cancellationToken: cancellationToken,
-                accessToken: accessToken);
-            var profileTask = _javaApiService.GetProfileByUserId(
+            var profileTask = _javaApiService.GetProfileSummaryByUserId(
                 userId,
                 cancellationToken: cancellationToken,
                 accessToken: accessToken);
 
-            await Task.WhenAll(userTask, profileTask);
-
-            var user = userTask.Result;
+            await Task.WhenAll(profileTask);
             var profile = profileTask.Result;
 
-            if (user is null && profile is null)
+            if (profile is null)
             {
                 return NotFound(ApiResponse<CurrentUserResponseDto>.Fail("User profile not found."));
             }
 
-            var username = user?.Username ?? usernameFromClaims;
-            var fullName = profile?.DisplayName ?? profile?.FullName ?? username;
+            var fullName = profile.DisplayName ?? "user";
 
             var response = new CurrentUserResponseDto
             {
                 Id = userId,
-                Username = username,
                 FullName = fullName,
-                AvatarUrl = profile?.AvatarUrl ?? BuildDefaultAvatarUrl(userId)
+                AvatarUrl = profile.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
             };
 
             return Ok(ApiResponse<CurrentUserResponseDto>.Ok(response));
@@ -80,15 +71,6 @@ public class UsersController : ControllerBase
                 StatusCodes.Status503ServiceUnavailable,
                 ApiResponse<CurrentUserResponseDto>.Fail("Java profile API is unavailable."));
         }
-    }
-
-    private string ResolveUsernameFromClaims()
-    {
-        return User.FindFirstValue("username")
-            ?? User.FindFirstValue("preferred_username")
-            ?? User.FindFirstValue(ClaimTypes.Name)
-            ?? User.FindFirstValue("name")
-            ?? "user";
     }
 
     private string? ExtractAccessToken()
@@ -108,9 +90,5 @@ public class UsersController : ControllerBase
         return null;
     }
 
-    private static string BuildDefaultAvatarUrl(Guid userId)
-    {
-        return $"https://i.pravatar.cc/150?u={userId}";
-    }
 }
 

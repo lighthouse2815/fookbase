@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Comment> Comments => Set<Comment>();
 
+    public DbSet<CommentReaction> CommentReactions => Set<CommentReaction>();
+
     public DbSet<Like> Likes => Set<Like>();
 
     public DbSet<Story> Stories => Set<Story>();
@@ -64,10 +66,35 @@ public class AppDbContext : DbContext
                 .HasForeignKey(comment => comment.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            entity.HasOne(comment => comment.ParentComment)
+                .WithMany(comment => comment.Replies)
+                .HasForeignKey(comment => comment.ParentCommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasQueryFilter(comment => comment.DeletedAt == null);
 
             entity.HasIndex(comment => comment.PostId);
+            entity.HasIndex(comment => comment.ParentCommentId);
             entity.HasIndex(comment => comment.UserId);
+        });
+
+        modelBuilder.Entity<CommentReaction>(entity =>
+        {
+            entity.ToTable("CommentReaction");
+            entity.HasKey(commentReaction => commentReaction.Id);
+
+            entity.Property(commentReaction => commentReaction.Type).HasMaxLength(20).IsRequired();
+            entity.Property(commentReaction => commentReaction.CreatedAt).IsRequired();
+            entity.Property(commentReaction => commentReaction.UpdatedAt).IsRequired();
+
+            entity.HasOne(commentReaction => commentReaction.Comment)
+                .WithMany(comment => comment.Reactions)
+                .HasForeignKey(commentReaction => commentReaction.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(commentReaction => new { commentReaction.CommentId, commentReaction.UserId }).IsUnique();
+            entity.HasIndex(commentReaction => commentReaction.UserId);
+            entity.HasIndex(commentReaction => commentReaction.CommentId);
         });
 
         modelBuilder.Entity<Like>(entity =>

@@ -7,6 +7,8 @@ public class CreateCommentRequestDto
     [Required]
     public Guid PostId { get; set; }
 
+    public Guid? ParentCommentId { get; set; }
+
     [Required]
     [StringLength(1000, MinimumLength = 1)]
     public string Content { get; set; } = string.Empty;

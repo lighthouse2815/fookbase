@@ -1,3 +1,5 @@
+using InteractHub.Api.Application.DTOs.Common;
+
 namespace InteractHub.Api.Application.DTOs.Stories;
 
 public class StoryResponseDto
@@ -6,7 +8,7 @@ public class StoryResponseDto
 
     public Guid UserId { get; init; }
 
-    public StoryAuthorDto Author { get; init; } = new();
+    public AuthorSummaryDto Author { get; init; } = new();
 
     public string MediaUrl { get; init; } = string.Empty;
 

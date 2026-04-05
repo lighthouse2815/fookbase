@@ -39,6 +39,9 @@ namespace fookbase.API.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("ParentCommentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("PostId")
                         .HasColumnType("uniqueidentifier");
 
@@ -50,11 +53,48 @@ namespace fookbase.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ParentCommentId");
+
                     b.HasIndex("PostId");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Comment", (string)null);
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.CommentReaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("CommentId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("CommentReaction", (string)null);
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Hashtag", b =>
@@ -382,13 +422,31 @@ namespace fookbase.API.Migrations
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Comment", b =>
                 {
+                    b.HasOne("InteractHub.Api.Domain.Entities.Comment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("InteractHub.Api.Domain.Entities.Post", "Post")
                         .WithMany("Comments")
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("ParentComment");
+
                     b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.CommentReaction", b =>
+                {
+                    b.HasOne("InteractHub.Api.Domain.Entities.Comment", "Comment")
+                        .WithMany("Reactions")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Like", b =>
@@ -465,6 +523,13 @@ namespace fookbase.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.Comment", b =>
+                {
+                    b.Navigation("Reactions");
+
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Hashtag", b =>

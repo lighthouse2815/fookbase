@@ -269,7 +269,6 @@ public class FriendshipsController : ControllerBase
         var fullName = string.IsNullOrWhiteSpace(suggestion.DisplayName)
             ? "Nguoi dung"
             : suggestion.DisplayName.Trim();
-        var username = BuildUsername(fullName, safeId, index);
         var avatarUrl = string.IsNullOrWhiteSpace(suggestion.AvatarUrl)
             ? $"https://i.pravatar.cc/150?u={safeId}"
             : suggestion.AvatarUrl.Trim();
@@ -280,45 +279,10 @@ public class FriendshipsController : ControllerBase
         return new FriendSuggestionResponseDto
         {
             Id = safeId,
-            Username = username,
             FullName = fullName,
             AvatarUrl = avatarUrl,
             MutualFriends = mutualFriends
         };
-    }
-
-    private static string BuildUsername(string fullName, string safeId, int index)
-    {
-        if (!string.IsNullOrWhiteSpace(fullName))
-        {
-            var normalized = new string(
-                fullName
-                    .Trim()
-                    .ToLowerInvariant()
-                    .Select((ch, idx) =>
-                    {
-                        if (char.IsLetterOrDigit(ch))
-                        {
-                            return ch;
-                        }
-
-                        return idx > 0 ? '-' : '\0';
-                    })
-                    .Where(ch => ch != '\0')
-                    .ToArray());
-
-            if (!string.IsNullOrWhiteSpace(normalized))
-            {
-                return normalized;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(safeId))
-        {
-            return $"user_{safeId[..Math.Min(8, safeId.Length)]}";
-        }
-
-        return $"user_{index + 1}";
     }
 }
 

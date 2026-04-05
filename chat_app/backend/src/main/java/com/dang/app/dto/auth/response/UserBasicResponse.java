@@ -9,5 +9,4 @@ import java.util.UUID;
 @Builder
 public class UserBasicResponse {
     private UUID id;
-    private String username;
 }

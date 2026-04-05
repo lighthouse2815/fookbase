@@ -5,6 +5,7 @@ import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
@@ -67,6 +68,26 @@ public class UserProfileController {
     ) {
         return ResponseEntity.ok(
                 userProfileService.getPublicProfileByUserId(userId)
+        );
+    }
+
+    @Operation(summary = "Get user profile summary by userId")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Profile summary found",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = UserProfileSummaryResponse.class)
+            )
+    )
+    @ApiResponse(responseCode = "400", description = "Invalid userId")
+    @ApiResponse(responseCode = "404", description = "Profile not found")
+    @GetMapping("/summary")
+    public ResponseEntity<UserProfileSummaryResponse> getUserProfileSummary(
+            @RequestParam @NotNull UUID userId
+    ) {
+        return ResponseEntity.ok(
+                userProfileService.getUserProfileSummary(userId)
         );
     }
 

@@ -10,6 +10,5 @@ import java.util.UUID;
 public class PublicUserProfileResponse {
     private UUID userId;
     private String displayName;
-    private String fullName;
     private String avatarUrl;
 }

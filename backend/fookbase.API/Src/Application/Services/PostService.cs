@@ -1,10 +1,12 @@
 using System.Text.RegularExpressions;
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
+using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -240,45 +242,37 @@ public class PostService : IPostService
         }
     }
 
-    private async Task<Dictionary<Guid, PostAuthorDto>> ResolveAuthorsAsync(
+    private async Task<Dictionary<Guid, AuthorSummaryDto>> ResolveAuthorsAsync(
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
         var distinctUserIds = userIds.Distinct().ToList();
         if (distinctUserIds.Count == 0)
         {
-            return new Dictionary<Guid, PostAuthorDto>();
+            return new Dictionary<Guid, AuthorSummaryDto>();
         }
 
         var tasks = distinctUserIds.Select(async userId =>
-            new KeyValuePair<Guid, PostAuthorDto>(userId, await ResolveAuthorAsync(userId, cancellationToken)));
+            new KeyValuePair<Guid, AuthorSummaryDto>(userId, await ResolveAuthorAsync(userId, cancellationToken)));
 
         var results = await Task.WhenAll(tasks);
         return results.ToDictionary(pair => pair.Key, pair => pair.Value);
     }
 
-    private async Task<PostAuthorDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
+    private async Task<AuthorSummaryDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
     {
         try
         {
-            var userTask = _javaApiService.GetUserById(userId, cancellationToken: cancellationToken);
-            var profileTask = _javaApiService.GetProfileByUserId(userId, cancellationToken: cancellationToken);
-
-            await Task.WhenAll(userTask, profileTask);
-
-            var user = userTask.Result;
-            var profile = profileTask.Result;
-            var username = Normalize(user?.Username) ?? "user";
+            var profileTask = _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
+            var profile = await profileTask;
             var displayName = Normalize(profile?.DisplayName)
-                ?? Normalize(profile?.FullName)
-                ?? username;
+                ?? "user";
 
-            return new PostAuthorDto
+            return new AuthorSummaryDto
             {
                 Id = userId,
-                Username = username,
                 DisplayName = displayName,
-                AvatarUrl = Normalize(profile?.AvatarUrl) ?? BuildDefaultAvatarUrl(userId)
+                AvatarUrl = Normalize(profile?.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
             };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -295,14 +289,13 @@ public class PostService : IPostService
         }
     }
 
-    private static PostAuthorDto CreateFallbackAuthor(Guid userId)
+    private static AuthorSummaryDto CreateFallbackAuthor(Guid userId)
     {
-        return new PostAuthorDto
+        return new AuthorSummaryDto
         {
             Id = userId,
-            Username = "user",
             DisplayName = "user",
-            AvatarUrl = BuildDefaultAvatarUrl(userId)
+            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
         };
     }
 
@@ -314,11 +307,6 @@ public class PostService : IPostService
         }
 
         return value.Trim();
-    }
-
-    private static string BuildDefaultAvatarUrl(Guid userId)
-    {
-        return $"https://i.pravatar.cc/150?u={userId}";
     }
 
     private static bool IsLikedByCurrentUser(Post post, Guid? currentUserId)
@@ -425,23 +413,17 @@ public class PostService : IPostService
     {
         try
         {
-            var profile = await _javaApiService.GetProfileByUserId(
+            var profileSummary = await _javaApiService.GetProfileSummaryByUserId(
                 actorUserId,
                 cancellationToken: cancellationToken,
                 accessToken: accessToken);
 
-            var displayName = Normalize(profile?.DisplayName) ?? Normalize(profile?.FullName);
-            if (!string.IsNullOrWhiteSpace(displayName))
+            var summaryDisplayName = Normalize(profileSummary?.DisplayName);
+            if (!string.IsNullOrWhiteSpace(summaryDisplayName))
             {
-                return displayName;
+                return summaryDisplayName;
             }
-
-            var user = await _javaApiService.GetUserById(
-                actorUserId,
-                cancellationToken: cancellationToken,
-                accessToken: accessToken);
-
-            return Normalize(user?.Username) ?? "Your friend";
+            return "Your friend";
         }
         catch
         {

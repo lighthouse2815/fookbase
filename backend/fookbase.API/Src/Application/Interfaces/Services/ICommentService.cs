@@ -5,9 +5,16 @@ namespace InteractHub.Api.Application.Interfaces.Services;
 
 public interface ICommentService
 {
-    Task<PagedResult<CommentResponseDto>> GetByPostIdAsync(Guid postId, PaginationQuery query, CancellationToken cancellationToken);
+    Task<PagedResult<CommentResponseDto>> GetByPostIdAsync(
+        Guid postId,
+        PaginationQuery query,
+        Guid? currentUserId,
+        CancellationToken cancellationToken);
 
-    Task<CommentResponseDto> GetByIdAsync(Guid commentId, CancellationToken cancellationToken);
+    Task<CommentResponseDto> GetByIdAsync(
+        Guid commentId,
+        Guid? currentUserId,
+        CancellationToken cancellationToken);
 
     Task<CommentResponseDto> CreateAsync(Guid userId, CreateCommentRequestDto request, CancellationToken cancellationToken);
 

@@ -1,6 +1,7 @@
 package com.dang.app.controller.auth;
 
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.service.auth.UserProfileService;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
@@ -36,7 +37,6 @@ class UserProfileControllerTest {
                 PublicUserProfileResponse.builder()
                         .userId(userId)
                         .displayName("Alice Nguyen")
-                        .fullName("Alice Nguyen")
                         .avatarUrl("https://cdn.test/avatar.jpg")
                         .build()
         );
@@ -45,7 +45,7 @@ class UserProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(userId.toString()))
                 .andExpect(jsonPath("$.displayName").value("Alice Nguyen"))
-                .andExpect(jsonPath("$.fullName").value("Alice Nguyen"))
+                .andExpect(jsonPath("$.fullName").doesNotExist())
                 .andExpect(jsonPath("$.avatarUrl").value("https://cdn.test/avatar.jpg"));
     }
 
@@ -64,6 +64,44 @@ class UserProfileControllerTest {
     @Test
     void getPublicProfileByUserId_shouldReturn400_whenUserIdIsInvalidUuid() throws Exception {
         mockMvc.perform(get("/api/profiles/public").param("userId", "invalid-uuid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void getUserProfileSummary_shouldReturn200_whenProfileExists() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(userProfileService.getUserProfileSummary(userId)).thenReturn(
+                UserProfileSummaryResponse.builder()
+                        .userId(userId)
+                        .displayName("Alice Nguyen")
+                        .avatarUrl("https://cdn.test/avatar.jpg")
+                        .build()
+        );
+
+        mockMvc.perform(get("/api/profiles/summary").param("userId", userId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(userId.toString()))
+                .andExpect(jsonPath("$.displayName").value("Alice Nguyen"))
+                .andExpect(jsonPath("$.avatarUrl").value("https://cdn.test/avatar.jpg"));
+    }
+
+    @Test
+    void getUserProfileSummary_shouldReturn404_whenProfileNotFound() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(userProfileService.getUserProfileSummary(userId))
+                .thenThrow(new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+
+        mockMvc.perform(get("/api/profiles/summary").param("userId", userId.toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value(ErrorCode.PROFILE_NOT_FOUND.name()));
+    }
+
+    @Test
+    void getUserProfileSummary_shouldReturn400_whenUserIdIsInvalidUuid() throws Exception {
+        mockMvc.perform(get("/api/profiles/summary").param("userId", "invalid-uuid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     }

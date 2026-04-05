@@ -2,6 +2,7 @@ package com.dang.app.controller.auth;
 
 import com.dang.app.dto.auth.response.UserBasicResponse;
 import com.dang.app.service.auth.UserService;
+import com.dang.app.service.messenger.FriendshipService;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,9 @@ class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private FriendshipService friendshipService;
+
     @Test
     void getUserById_shouldReturn200_whenUserExists() throws Exception {
         UUID userId = UUID.randomUUID();
@@ -35,14 +39,13 @@ class UserControllerTest {
         when(userService.getBasicUserById(userId)).thenReturn(
                 UserBasicResponse.builder()
                         .id(userId)
-                        .username("alice")
                         .build()
         );
 
         mockMvc.perform(get("/api/users/{id}", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value("alice"));
+                .andExpect(jsonPath("$.username").doesNotExist());
     }
 
     @Test

@@ -1,3 +1,5 @@
+using InteractHub.Api.Application.DTOs.Common;
+
 namespace InteractHub.Api.Application.DTOs.Posts;
 
 public record PostResponseDto
@@ -6,7 +8,7 @@ public record PostResponseDto
 
     public Guid UserId { get; init; }
 
-    public PostAuthorDto Author { get; init; } = new();
+    public AuthorSummaryDto Author { get; init; } = new();
 
     public string Content { get; init; } = string.Empty;
 

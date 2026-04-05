@@ -13,10 +13,14 @@ namespace InteractHub.Api.Controllers;
 public class CommentsController : ControllerBase
 {
     private readonly ICommentService _commentService;
+    private readonly ICommentReactionService _commentReactionService;
 
-    public CommentsController(ICommentService commentService)
+    public CommentsController(
+        ICommentService commentService,
+        ICommentReactionService commentReactionService)
     {
         _commentService = commentService;
+        _commentReactionService = commentReactionService;
     }
 
     [HttpGet("post/{postId:guid}")]
@@ -28,7 +32,8 @@ public class CommentsController : ControllerBase
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        var comments = await _commentService.GetByPostIdAsync(postId, query, cancellationToken);
+        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+        var comments = await _commentService.GetByPostIdAsync(postId, query, currentUserId, cancellationToken);
         return Ok(ApiResponse<PagedResult<CommentResponseDto>>.Ok(comments));
     }
 
@@ -40,7 +45,8 @@ public class CommentsController : ControllerBase
         Guid commentId,
         CancellationToken cancellationToken)
     {
-        var comment = await _commentService.GetByIdAsync(commentId, cancellationToken);
+        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+        var comment = await _commentService.GetByIdAsync(commentId, currentUserId, cancellationToken);
         return Ok(ApiResponse<CommentResponseDto>.Ok(comment));
     }
 
@@ -91,5 +97,48 @@ public class CommentsController : ControllerBase
         var userId = User.GetUserId();
         await _commentService.DeleteAsync(commentId, userId, User.IsAdmin(), cancellationToken);
         return Ok(ApiResponse<object>.Ok(new { message = "Comment deleted." }));
+    }
+
+    [HttpPut("{commentId:guid}/reactions")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<CommentReactionStateResponseDto>>> SetReaction(
+        Guid commentId,
+        [FromBody] SetCommentReactionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var reactionState = await _commentReactionService.SetReactionAsync(commentId, userId, request, cancellationToken);
+        return Ok(ApiResponse<CommentReactionStateResponseDto>.Ok(reactionState));
+    }
+
+    [HttpDelete("{commentId:guid}/reactions")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<CommentReactionStateResponseDto>>> RemoveReaction(
+        Guid commentId,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var reactionState = await _commentReactionService.RemoveReactionAsync(commentId, userId, cancellationToken);
+        return Ok(ApiResponse<CommentReactionStateResponseDto>.Ok(reactionState));
+    }
+
+    [HttpGet("{commentId:guid}/reactions")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<CommentReactionUsersResponseDto>>> GetReactionUsers(
+        Guid commentId,
+        CancellationToken cancellationToken)
+    {
+        var users = await _commentReactionService.GetReactionUsersAsync(commentId, cancellationToken);
+        return Ok(ApiResponse<CommentReactionUsersResponseDto>.Ok(users));
     }
 }

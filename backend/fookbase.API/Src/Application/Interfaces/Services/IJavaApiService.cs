@@ -16,6 +16,11 @@ public interface IJavaApiService
         CancellationToken cancellationToken = default,
         string? accessToken = null);
 
+    Task<UserProfileSummaryDto?> GetProfileSummaryByUserId(
+        Guid userId,
+        CancellationToken cancellationToken = default,
+        string? accessToken = null);
+
     Task<JavaApiCallResult<UserProfilePrivateDto>> GetPrivateProfileByUserIdAsync(
         Guid userId,
         string accessToken,

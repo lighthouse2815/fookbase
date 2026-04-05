@@ -1,4 +1,4 @@
-import { Loader2, Phone, Search, UserPlus, UsersRound } from 'lucide-react';
+import { Loader2, Phone, Search, UserCheck, UserPlus, UsersRound, X } from 'lucide-react';
 import { type FormEvent, useEffect, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 
@@ -11,8 +11,9 @@ type FetchState = 'idle' | 'loading' | 'success' | 'error';
 
 interface StatusMeta {
   label: string;
-  canSendRequest: boolean;
+  action: 'send' | 'cancel' | 'respond' | 'none';
   buttonLabel: string;
+  buttonClassName: string;
   badgeClassName: string;
 }
 
@@ -22,8 +23,9 @@ const getStatusMeta = (status: string, isSelf: boolean): StatusMeta => {
   if (isSelf) {
     return {
       label: 'Tai khoan cua ban',
-      canSendRequest: false,
+      action: 'none',
       buttonLabel: 'Khong the ket ban',
+      buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
       badgeClassName:
         'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
     };
@@ -32,25 +34,28 @@ const getStatusMeta = (status: string, isSelf: boolean): StatusMeta => {
   switch (status) {
     case 'PENDING':
       return {
-        label: 'Da gui loi moi',
-        canSendRequest: false,
-        buttonLabel: 'Dang cho phan hoi',
+        label: 'Da nhan loi moi tu nguoi nay',
+        action: 'respond',
+        buttonLabel: 'Chap nhan',
+        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
-          'border border-amber-300/60 bg-amber-100 text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-200',
+          'border border-sky-300/60 bg-sky-100 text-sky-800 dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-200',
       };
     case 'INVITED':
       return {
-        label: 'Da nhan loi moi tu nguoi nay',
-        canSendRequest: false,
-        buttonLabel: 'Kiem tra tab ban be',
+        label: 'Da gui loi moi',
+        action: 'cancel',
+        buttonLabel: 'Huy loi moi',
+        buttonClassName: 'bg-slate-600 text-white hover:bg-slate-700',
         badgeClassName:
-          'border border-sky-300/60 bg-sky-100 text-sky-800 dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-200',
+          'border border-amber-300/60 bg-amber-100 text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-200',
       };
     case 'ACCEPTED':
       return {
         label: 'Da la ban be',
-        canSendRequest: false,
+        action: 'none',
         buttonLabel: 'Da ket ban',
+        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
           'border border-emerald-300/60 bg-emerald-100 text-emerald-800 dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-200',
       };
@@ -59,24 +64,27 @@ const getStatusMeta = (status: string, isSelf: boolean): StatusMeta => {
     case 'NONE':
       return {
         label: 'Chua ket ban',
-        canSendRequest: true,
+        action: 'send',
         buttonLabel: 'Gui ket ban',
+        buttonClassName: 'bg-brand-600 text-white hover:bg-brand-700',
         badgeClassName:
           'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
       };
     case 'BLOCKED':
       return {
         label: 'Khong the ket ban luc nay',
-        canSendRequest: false,
+        action: 'none',
         buttonLabel: 'Khong kha dung',
+        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
           'border border-rose-300/60 bg-rose-100 text-rose-800 dark:border-rose-500/50 dark:bg-rose-500/15 dark:text-rose-200',
       };
     default:
       return {
         label: `Trang thai: ${status}`,
-        canSendRequest: false,
+        action: 'none',
         buttonLabel: 'Khong kha dung',
+        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
           'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
       };
@@ -91,7 +99,8 @@ export const FriendSearchPage = () => {
   const [results, setResults] = useState<UserProfileSearchResult[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [sendingUserId, setSendingUserId] = useState<string | null>(null);
+  const [actionUserId, setActionUserId] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<'send' | 'cancel' | 'accept' | 'reject' | null>(null);
 
   const phoneNumberQuery = searchParams.get('phoneNumber')?.trim() ?? '';
 
@@ -153,7 +162,8 @@ export const FriendSearchPage = () => {
   };
 
   const handleSendFriendRequest = async (targetUserId: string) => {
-    setSendingUserId(targetUserId);
+    setActionUserId(targetUserId);
+    setActionType('send');
     setActionMessage(null);
     setErrorMessage(null);
 
@@ -161,13 +171,77 @@ export const FriendSearchPage = () => {
       await friendshipService.sendFriendRequest(targetUserId);
 
       setResults((existing) =>
-        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'PENDING' } : item)),
+        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'INVITED' } : item)),
       );
       setActionMessage('Da gui loi moi ket ban.');
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, 'Gui loi moi ket ban that bai.'));
     } finally {
-      setSendingUserId(null);
+      setActionUserId(null);
+      setActionType(null);
+    }
+  };
+
+  const handleCancelSentRequest = async (targetUserId: string) => {
+    setActionUserId(targetUserId);
+    setActionType('cancel');
+    setActionMessage(null);
+    setErrorMessage(null);
+
+    try {
+      await friendshipService.cancelSentRequest(targetUserId);
+
+      setResults((existing) =>
+        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'NONE' } : item)),
+      );
+      setActionMessage('Da huy loi moi ket ban.');
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error, 'Huy loi moi ket ban that bai.'));
+    } finally {
+      setActionUserId(null);
+      setActionType(null);
+    }
+  };
+
+  const handleAcceptReceivedRequest = async (targetUserId: string) => {
+    setActionUserId(targetUserId);
+    setActionType('accept');
+    setActionMessage(null);
+    setErrorMessage(null);
+
+    try {
+      await friendshipService.acceptFriendRequest(targetUserId);
+
+      setResults((existing) =>
+        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'ACCEPTED' } : item)),
+      );
+      setActionMessage('Da chap nhan loi moi ket ban.');
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error, 'Chap nhan loi moi that bai.'));
+    } finally {
+      setActionUserId(null);
+      setActionType(null);
+    }
+  };
+
+  const handleRejectReceivedRequest = async (targetUserId: string) => {
+    setActionUserId(targetUserId);
+    setActionType('reject');
+    setActionMessage(null);
+    setErrorMessage(null);
+
+    try {
+      await friendshipService.deleteFriendRequest(targetUserId);
+
+      setResults((existing) =>
+        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'NONE' } : item)),
+      );
+      setActionMessage('Da tu choi loi moi ket ban.');
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error, 'Tu choi loi moi that bai.'));
+    } finally {
+      setActionUserId(null);
+      setActionType(null);
     }
   };
 
@@ -241,7 +315,8 @@ export const FriendSearchPage = () => {
             const status = normalizeStatus(profile.status);
             const isSelf = profile.userId === currentUser.id;
             const statusMeta = getStatusMeta(status, isSelf);
-            const isSending = sendingUserId === profile.userId;
+            const isProcessingAction = actionUserId === profile.userId;
+            const isActionEnabled = statusMeta.action !== 'none';
 
             return (
               <article
@@ -272,15 +347,60 @@ export const FriendSearchPage = () => {
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    <button
-                      type="button"
-                      disabled={!statusMeta.canSendRequest || isSending}
-                      onClick={() => void handleSendFriendRequest(profile.userId)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isSending ? <Loader2 size={15} className="animate-spin" /> : <UserPlus size={15} />}
-                      {isSending ? 'Dang gui...' : statusMeta.buttonLabel}
-                    </button>
+                    {statusMeta.action === 'respond' ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={isProcessingAction}
+                          onClick={() => void handleAcceptReceivedRequest(profile.userId)}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isProcessingAction && actionType === 'accept' ? (
+                            <Loader2 size={15} className="animate-spin" />
+                          ) : (
+                            <UserCheck size={15} />
+                          )}
+                          {isProcessingAction && actionType === 'accept' ? 'Dang chap nhan...' : 'Chap nhan'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isProcessingAction}
+                          onClick={() => void handleRejectReceivedRequest(profile.userId)}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isProcessingAction && actionType === 'reject' ? (
+                            <Loader2 size={15} className="animate-spin" />
+                          ) : (
+                            <X size={15} />
+                          )}
+                          {isProcessingAction && actionType === 'reject' ? 'Dang tu choi...' : 'Tu choi'}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!isActionEnabled || isProcessingAction}
+                        onClick={() =>
+                          void (statusMeta.action === 'cancel'
+                            ? handleCancelSentRequest(profile.userId)
+                            : handleSendFriendRequest(profile.userId))
+                        }
+                        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${statusMeta.buttonClassName}`}
+                      >
+                        {isProcessingAction ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : statusMeta.action === 'cancel' ? (
+                          <X size={15} />
+                        ) : (
+                          <UserPlus size={15} />
+                        )}
+                        {isProcessingAction
+                          ? statusMeta.action === 'cancel'
+                            ? 'Dang huy...'
+                            : 'Dang gui...'
+                          : statusMeta.buttonLabel}
+                      </button>
+                    )}
 
                     <Link
                       to={`/profile/${profile.userId}`}

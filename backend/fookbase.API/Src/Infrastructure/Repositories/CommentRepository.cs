@@ -18,7 +18,7 @@ public class CommentRepository : ICommentRepository
     {
         var query = _context.Comments
             .AsNoTracking()
-            .Where(comment => comment.PostId == postId)
+            .Where(comment => comment.PostId == postId && comment.ParentCommentId == null)
             .OrderBy(comment => comment.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -29,6 +29,30 @@ public class CommentRepository : ICommentRepository
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
+    }
+
+    public async Task<IReadOnlyList<Comment>> GetByPostIdAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        return await _context.Comments
+            .AsNoTracking()
+            .Where(comment => comment.PostId == postId)
+            .OrderBy(comment => comment.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Comment>> GetByPostIdForUpdateAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        return await _context.Comments
+            .Where(comment => comment.PostId == postId)
+            .OrderBy(comment => comment.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountByPostIdAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        return _context.Comments
+            .AsNoTracking()
+            .CountAsync(comment => comment.PostId == postId, cancellationToken);
     }
 
     public Task<Comment?> GetByIdAsync(Guid commentId, CancellationToken cancellationToken)
