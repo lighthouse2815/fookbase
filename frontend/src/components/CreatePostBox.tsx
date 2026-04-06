@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Smile, Video, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 import type { User } from '../types/user';
 
@@ -139,7 +140,9 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
       <div className="flex items-start gap-3">
-        <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-11 w-11 rounded-full object-cover" />
+        <Link to="/profile" className="inline-flex shrink-0" aria-label={currentUser.fullName}>
+          <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-11 w-11 rounded-full object-cover" />
+        </Link>
         <textarea
           ref={textareaRef}
           value={content}

@@ -325,11 +325,13 @@ export const FriendSearchPage = () => {
               >
                 <div className="p-4">
                   <div className="flex items-start gap-3">
-                    <img
-                      src={profile.avatarUrl ?? `https://i.pravatar.cc/150?u=${profile.userId}`}
-                      alt={profile.displayName}
-                      className="h-14 w-14 rounded-full object-cover"
-                    />
+                    <Link to={`/profile/${profile.userId}`} className="inline-flex shrink-0" aria-label={profile.displayName}>
+                      <img
+                        src={profile.avatarUrl ?? `https://i.pravatar.cc/150?u=${profile.userId}`}
+                        alt={profile.displayName}
+                        className="h-14 w-14 rounded-full object-cover"
+                      />
+                    </Link>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {profile.displayName}

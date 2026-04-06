@@ -52,10 +52,10 @@ export const SidebarRight = ({
         <ul className="mt-3 space-y-2">
           {onlineUsers.map((user) => (
             <li key={user.id} className="flex items-center gap-3">
-              <div className="relative">
+              <Link to={`/profile/${user.id}`} className="relative inline-flex" aria-label={user.fullName}>
                 <img src={user.avatarUrl} alt={user.fullName} className="h-10 w-10 rounded-full object-cover" />
                 <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-800" />
-              </div>
+              </Link>
               <p className="text-sm text-slate-700 dark:text-slate-200">{user.fullName}</p>
             </li>
           ))}

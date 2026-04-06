@@ -180,7 +180,7 @@ public class UserProfileService {
     }
 
     // todo sửa , đây là trả về cho trang cá nhân
-    public PublicUserProfileResponse getPublicProfileByUserId(UUID userId) {
+    public PublicUserProfileResponse getPublicProfileByUserId(UUID myId,UUID userId) {
         UserProfile profile = userProfileRepository.findPublicByUserId(userId)
                 .orElseThrow(() -> {
                     log.warn("Public profile lookup failed: userId={} not found", userId);
@@ -192,7 +192,13 @@ public class UserProfileService {
             throw new BusinessException(ErrorCode.PROFILE_NOT_FOUND);
         }
 
-        return userProfileMapper.toPublicUserProfileResponse(profile);
+        String nickName = contactRepository.findNicknameByOwnerIdAndTargetId(myId, userId)
+                .orElse(null);
+
+        FriendshipStatus status = getStatus(myId, userId);
+        long friendsCount = friendshipRepository.countAcceptedFriendsByUserId(userId);
+
+        return userProfileMapper.toPublicUserProfileResponse(userId, profile, nickName, status, friendsCount);
     }
 
     public UserProfileSummaryResponse getUserProfileSummary(UUID userId) {

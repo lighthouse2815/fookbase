@@ -1,11 +1,9 @@
-using System.Net;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
-using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,13 +13,11 @@ namespace InteractHub.Api.Controllers;
 [Route("api/profiles")]
 public class ProfilesController : ControllerBase
 {
-    private readonly IJavaApiService _javaApiService;
-    private readonly ILogger<ProfilesController> _logger;
+    private readonly IProfileService _profileService;
 
-    public ProfilesController(IJavaApiService javaApiService, ILogger<ProfilesController> logger)
+    public ProfilesController(IProfileService profileService)
     {
-        _javaApiService = javaApiService;
-        _logger = logger;
+        _profileService = profileService;
     }
 
     [HttpGet("{userId:guid}")]
@@ -33,58 +29,16 @@ public class ProfilesController : ControllerBase
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
-
-        try
+        var result = await _profileService.GetByUserIdAsync(userId, ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
         {
-            var userTask = _javaApiService.GetUserById(
-                userId,
-                cancellationToken: cancellationToken,
-                accessToken: accessToken);
-            var profileTask = _javaApiService.GetProfileByUserId(
-                userId,
-                cancellationToken: cancellationToken,
-                accessToken: accessToken);
-
-            await Task.WhenAll(userTask, profileTask);
-
-            var user = userTask.Result;
-            var profile = profileTask.Result;
-
-            if (user is null && profile is null)
-            {
-                return NotFound(ApiResponse<ProfileResponseDto>.Fail("Profile not found."));
-            }
-
-            var fullName = profile?.DisplayName ?? profile?.FullName ?? "user";
-
-            var response = new ProfileResponseDto
-            {
-                Id = userId,
-                FullName = fullName,
-                AvatarUrl = profile?.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
-                Bio = profile?.Bio,
-                CoverUrl = profile?.CoverUrl,
-                Major = profile?.Major,
-                Year = profile?.Year,
-                FriendsCount = 0,
-                PostsCount = 0
-            };
-
-            return Ok(ApiResponse<ProfileResponseDto>.Ok(response));
+            return BuildProxyErrorResponse<ProfileResponseDto>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Profile not found.");
         }
-        catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-        {
-            _logger.LogWarning(exception, "Java profile API rejected token for user {UserId}.", userId);
-            return Unauthorized(ApiResponse<ProfileResponseDto>.Fail("Unauthorized."));
-        }
-        catch (HttpRequestException exception)
-        {
-            _logger.LogError(exception, "Java profile API is unavailable when loading profile for user {UserId}.", userId);
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-            ApiResponse<ProfileResponseDto>.Fail("Java profile API is unavailable."));
-        }
+
+        return Ok(ApiResponse<ProfileResponseDto>.Ok(result.Data));
     }
 
     [HttpGet("me")]
@@ -94,54 +48,17 @@ public class ProfilesController : ControllerBase
     public async Task<ActionResult<ApiResponse<MyProfileSettingsResponseDto>>> GetMyProfileSettings(
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<MyProfileSettingsResponseDto>.Fail("Unauthorized."));
-        }
-
         var userId = User.GetUserId();
-
-        try
+        var result = await _profileService.GetMyProfileSettingsAsync(userId, ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
         {
-            var privateProfileTask = _javaApiService.GetPrivateProfileByUserIdAsync(userId, accessToken, cancellationToken);
-            var overviewTask = _javaApiService.GetMyProfileOverviewAsync(accessToken, cancellationToken);
-
-            await Task.WhenAll(privateProfileTask, overviewTask);
-
-            var privateProfile = privateProfileTask.Result.Data;
-            var overview = overviewTask.Result.Data;
-
-            var displayName = FirstNonEmpty(
-                privateProfile?.DisplayName,
-                overview?.DisplayName,
-                "user");
-
-            var response = new MyProfileSettingsResponseDto
-            {
-                UserId = userId,
-                DisplayName = displayName ?? "user",
-                Email = overview?.Email,
-                PhoneNumber = FirstNonEmpty(privateProfile?.PhoneNumber, overview?.PhoneNumber),
-                AvatarUrl = privateProfile?.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
-                BirthDate = FirstNonEmpty(privateProfile?.BirthDate, overview?.BirthDate),
-                Gender = privateProfile?.Gender
-            };
-
-            return Ok(ApiResponse<MyProfileSettingsResponseDto>.Ok(response));
+            return BuildProxyErrorResponse<MyProfileSettingsResponseDto>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Load my profile settings failed.");
         }
-        catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-        {
-            _logger.LogWarning(exception, "Java profile API rejected token for user {UserId}.", userId);
-            return Unauthorized(ApiResponse<MyProfileSettingsResponseDto>.Fail("Unauthorized."));
-        }
-        catch (HttpRequestException exception)
-        {
-            _logger.LogError(exception, "Java profile API is unavailable when loading my profile settings for user {UserId}.", userId);
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                ApiResponse<MyProfileSettingsResponseDto>.Fail("Java profile API is unavailable."));
-        }
+
+        return Ok(ApiResponse<MyProfileSettingsResponseDto>.Ok(result.Data));
     }
 
     [HttpPatch("me")]
@@ -153,13 +70,7 @@ public class ProfilesController : ControllerBase
         [FromBody] UpdateMyProfileRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.UpdateMyProfileAsync(request, accessToken, cancellationToken);
+        var result = await _profileService.UpdateMyProfileAsync(request, ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess)
         {
             return BuildProxyErrorResponse<object?>(
@@ -180,19 +91,8 @@ public class ProfilesController : ControllerBase
         [FromQuery] string phoneNumber,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(phoneNumber))
-        {
-            return BadRequest(ApiResponse<List<UserProfileSearchDto>>.Fail("phoneNumber is required."));
-        }
-
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<List<UserProfileSearchDto>>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.SearchProfileByPhoneNumberAsync(phoneNumber.Trim(), accessToken, cancellationToken);
-        if (!result.IsSuccess)
+        var result = await _profileService.SearchByPhoneNumberAsync(phoneNumber, ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
         {
             return BuildProxyErrorResponse<List<UserProfileSearchDto>>(
                 result.StatusCode,
@@ -200,15 +100,11 @@ public class ProfilesController : ControllerBase
                 "Search profile failed.");
         }
 
-        var profiles = result.Data is null
-            ? new List<UserProfileSearchDto>()
-            : new List<UserProfileSearchDto> { result.Data };
-
         var statusCode = result.StatusCode > 0
             ? result.StatusCode
             : StatusCodes.Status200OK;
 
-        return StatusCode(statusCode, ApiResponse<List<UserProfileSearchDto>>.Ok(profiles));
+        return StatusCode(statusCode, ApiResponse<List<UserProfileSearchDto>>.Ok(result.Data));
     }
 
     private string? ExtractAccessToken()
@@ -244,17 +140,5 @@ public class ProfilesController : ControllerBase
         return StatusCode(resolvedStatusCode, ApiResponse<T>.Fail(resolvedError));
     }
 
-    private static string? FirstNonEmpty(params string?[] values)
-    {
-        foreach (var value in values)
-        {
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                return value.Trim();
-            }
-        }
-
-        return null;
-    }
 }
 

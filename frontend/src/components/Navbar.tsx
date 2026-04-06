@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import type { NotificationItem } from '../types/notification';
 import type { User } from '../types/user';
@@ -12,7 +11,6 @@ import { NotificationDropdown } from './NotificationDropdown';
 interface NavbarProps {
   currentUser: User;
   notifications: NotificationItem[];
-  adminPendingReportCount?: number;
   onOpenNotification: (item: NotificationItem) => void;
   onAcceptFriendRequest: (item: NotificationItem) => Promise<void>;
   onRejectFriendRequest: (item: NotificationItem) => Promise<void>;
@@ -23,7 +21,6 @@ interface NavbarProps {
 export const Navbar = ({
   currentUser,
   notifications,
-  adminPendingReportCount = 0,
   onOpenNotification,
   onAcceptFriendRequest,
   onRejectFriendRequest,
@@ -32,13 +29,13 @@ export const Navbar = ({
 }: NavbarProps) => {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
-  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const isSettingsPage = location.pathname.startsWith('/settings');
 
   const navItems = [
     { key: 'home', icon: House, path: '/' },
@@ -76,18 +73,20 @@ export const Navbar = ({
           <span className="hidden text-sm font-semibold text-slate-700 dark:text-slate-200 lg:block">
             {t('app.name')}
           </span>
-          <input
-            value={searchKeyword}
-            onChange={(event) => setSearchKeyword(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                handleSearchSubmit();
-              }
-            }}
-            placeholder={t('nav.searchPlaceholder')}
-            className="hidden w-44 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 lg:block"
-          />
+          {!isSettingsPage ? (
+            <input
+              value={searchKeyword}
+              onChange={(event) => setSearchKeyword(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleSearchSubmit();
+                }
+              }}
+              placeholder={t('nav.searchPlaceholder')}
+              className="hidden w-44 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 lg:block"
+            />
+          ) : null}
         </div>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -166,18 +165,23 @@ export const Navbar = ({
             ) : null}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsMenuOpen((current) => !current)}
-            className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <img
-              src={currentUser.avatarUrl}
-              alt={currentUser.fullName}
-              className="h-9 w-9 rounded-full object-cover"
-            />
-            <ChevronDown size={16} className="hidden text-slate-500 sm:block" />
-          </button>
+          <div className="flex items-center gap-1 rounded-xl px-1 py-1 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+            <Link to="/profile" className="inline-flex rounded-full" aria-label={currentUser.fullName}>
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.fullName}
+                className="h-9 w-9 rounded-full object-cover"
+              />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((current) => !current)}
+              className="hidden rounded-lg p-1 text-slate-500 transition hover:bg-slate-200 sm:block dark:text-slate-300 dark:hover:bg-slate-700"
+              aria-label="Mo menu tai khoan"
+            >
+              <ChevronDown size={16} />
+            </button>
+          </div>
 
           <button
             className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 md:hidden dark:hover:bg-slate-800"
@@ -203,46 +207,18 @@ export const Navbar = ({
           {isMenuOpen ? (
             <div className="absolute right-0 top-12 z-30 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-card dark:border-slate-700 dark:bg-slate-900">
               <Link
-                to="/settings/security"
+                to="/settings"
                 className="block rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Bao mat
+                Cai dat
               </Link>
-              <Link
-                to="/settings/personal-info"
-                className="block rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Thong tin ca nhan
-              </Link>
-              <Link
-                to="/reports"
-                className="block rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Report
-              </Link>
-              {isAdmin ? (
-                <Link
-                  to="/admin/reports"
-                  className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span>Admin report</span>
-                  {adminPendingReportCount > 0 ? (
-                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      {adminPendingReportCount > 99 ? '99+' : adminPendingReportCount}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : null}
               <Link
                 to="/profile"
                 className="block rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('nav.profile')}
+                Ho so
               </Link>
               <button
                 type="button"

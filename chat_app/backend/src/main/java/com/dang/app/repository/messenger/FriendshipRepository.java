@@ -49,6 +49,14 @@ public interface FriendshipRepository extends JpaRepository<Friendship,UUID> {
         """)
     Optional<Friendship> findBetween(UUID u1, UUID u2);
 
+    @Query("""
+            SELECT COUNT(f)
+            FROM Friendship f
+            WHERE f.status = com.dang.app.utils.enums.FriendshipStatus.ACCEPTED
+              AND (f.userLowId = :userId OR f.userHighId = :userId)
+            """)
+    long countAcceptedFriendsByUserId(@Param("userId") UUID userId);
+
     @Query(value = """
             WITH
             my_friends AS (

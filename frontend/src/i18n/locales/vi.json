@@ -68,6 +68,13 @@
   "profile": {
     "intro": "Gioi thieu",
     "editProfile": "Chinh sua ho so",
+    "addFriend": "Ket ban",
+    "friendsButton": "Ban be",
+    "personalInfo": "Thong tin ca nhan",
+    "displayName": "Ten hien thi",
+    "phoneNumber": "So dien thoai",
+    "gender": "Gioi tinh",
+    "birthDate": "Ngay sinh",
     "major": "Chuyen nganh",
     "year": "Nam hoc",
     "friends": "Ban be",

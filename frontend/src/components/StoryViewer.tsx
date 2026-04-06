@@ -1,5 +1,6 @@
 import { Pause, Play, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { StoryAuthor, StoryItem } from '../types/story';
 import { formatRelativeTime } from '../utils/date';
@@ -185,7 +186,9 @@ export const StoryViewer = ({
 
         <header className="absolute inset-x-3 top-6 z-20 mt-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={author.avatarUrl} alt={author.displayName} className="h-9 w-9 rounded-full border border-white/50" />
+            <Link to={`/profile/${author.id}`} className="inline-flex" aria-label={author.displayName}>
+              <img src={author.avatarUrl} alt={author.displayName} className="h-9 w-9 rounded-full border border-white/50" />
+            </Link>
             <div>
               <p className="text-sm font-semibold text-white">{author.displayName}</p>
               <p className="text-xs text-white/80">{formatRelativeTime(activeStory.createdAt)}</p>

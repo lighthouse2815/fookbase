@@ -4,33 +4,33 @@ namespace InteractHub.Api.Application.DTOs.Profiles;
 
 public class ProfileResponseDto
 {
-    [JsonPropertyName("id")]
-    public Guid Id { get; set; }
+    [JsonPropertyName("userId")]
+    public Guid UserId { get; set; }
 
-    [JsonPropertyName("fullName")]
-    public string FullName { get; set; } = string.Empty;
-
-    [JsonPropertyName("email")]
-    public string? Email { get; set; }
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; } = string.Empty;
 
     [JsonPropertyName("avatarUrl")]
     public string AvatarUrl { get; set; } = string.Empty;
 
-    [JsonPropertyName("bio")]
-    public string? Bio { get; set; }
-
-    [JsonPropertyName("coverUrl")]
-    public string? CoverUrl { get; set; }
-
-    [JsonPropertyName("major")]
-    public string? Major { get; set; }
-
-    [JsonPropertyName("year")]
-    public string? Year { get; set; }
-
     [JsonPropertyName("friendsCount")]
-    public int FriendsCount { get; set; }
+    public long FriendsCount { get; set; }
 
     [JsonPropertyName("postsCount")]
-    public int PostsCount { get; set; }
+    public long PostsCount { get; set; }
+
+    [JsonPropertyName("phoneNumber")]
+    public string? PhoneNumber { get; set; }
+
+    [JsonPropertyName("gender")]
+    public string? Gender { get; set; }
+
+    [JsonPropertyName("birthDate")]
+    public string? BirthDate { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("nickname")]
+    public string? Nickname { get; set; }
 }

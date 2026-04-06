@@ -1,5 +1,5 @@
 ﻿import clsx from 'clsx';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import type { FriendSuggestion, FriendUser } from '../../types/friendship';
 
@@ -28,6 +28,8 @@ export const UserCard = ({
   onSecondaryAction,
   onSelect,
 }: UserCardProps) => {
+  const navigate = useNavigate();
+
   return (
     <article
       className={clsx(
@@ -48,8 +50,12 @@ export const UserCard = ({
         <img
           src={user.avatarUrl}
           alt={user.fullName}
+          onClick={(event) => {
+            event.stopPropagation();
+            void navigate(`/profile/${user.id}`);
+          }}
           className={clsx(
-            'object-cover',
+            'cursor-pointer object-cover',
             variant === 'grid' ? 'h-40 w-full' : 'h-14 w-14 rounded-full sm:h-16 sm:w-16',
           )}
         />

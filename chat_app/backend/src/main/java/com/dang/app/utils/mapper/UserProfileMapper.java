@@ -13,7 +13,12 @@ import java.util.UUID;
 
 @Component
 public class UserProfileMapper {
-    public UserProfileResponse toUserProfileResponse(UUID userId, UserProfile userProfile, String nickName, FriendshipStatus status) {
+    public UserProfileResponse toUserProfileResponse(
+            UUID userId,
+            UserProfile userProfile,
+            String nickName,
+            FriendshipStatus status
+    ) {
         return UserProfileResponse.builder()
                 .userId(userId)
                 .nickname(nickName)
@@ -49,14 +54,23 @@ public class UserProfileMapper {
                 .build();
     }
 
-    public PublicUserProfileResponse toPublicUserProfileResponse(UserProfile profile) {
-        String fullName = buildFullName(profile);
-        String displayName = resolveDisplayName(profile, fullName);
-
+    public PublicUserProfileResponse toPublicUserProfileResponse(
+            UUID userId,
+            UserProfile userProfile,
+            String nickName,
+            FriendshipStatus status,
+            long friendsCount
+    ) {
         return PublicUserProfileResponse.builder()
-                .userId(profile.getUser().getId())
-                .displayName(displayName)
-                .avatarUrl(profile.getAvatarUrl())
+                .userId(userId)
+                .nickname(nickName)
+                .status(status)
+                .friendsCount(friendsCount)
+                .avatarUrl(userProfile.getAvatarUrl())
+                .displayName(userProfile.getDisplayName())
+                .gender(userProfile.getGender())
+                .phoneNumber(userProfile.getPhoneNumber())
+                .birthDate(userProfile.getBirthDate())
                 .build();
     }
 

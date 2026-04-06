@@ -1,6 +1,7 @@
 import { Plus, RefreshCw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { useStories } from '../contexts/StoryContext';
 import type { StoryGroup, StoryItem } from '../types/story';
@@ -120,6 +121,7 @@ const StoryComposerModal = ({
 
 export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { storyGroups, isLoading, isLoadingMore, hasMore, errorMessage, loadMoreStories, createStoryFromFile, markStoryViewed, getStoriesByUser, removeStory } =
     useStories();
 
@@ -313,7 +315,11 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
               <img
                 src={group.author.avatarUrl}
                 alt={group.author.displayName}
-                className="absolute left-2 top-2 h-8 w-8 rounded-full border-2 border-white/80"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void navigate(group.isMine ? '/profile' : `/profile/${group.userId}`);
+                }}
+                className="absolute left-2 top-2 h-8 w-8 cursor-pointer rounded-full border-2 border-white/80"
               />
 
               {group.isMine ? (

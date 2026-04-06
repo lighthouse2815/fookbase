@@ -1099,7 +1099,9 @@ export const CommentSection = ({
 
           {isReplyComposerOpen ? (
             <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 dark:border-slate-700 dark:bg-slate-900">
-              <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-7 w-7 rounded-full object-cover" />
+              <Link to="/profile" className="inline-flex shrink-0" aria-label={currentUser.fullName}>
+                <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-7 w-7 rounded-full object-cover" />
+              </Link>
               <input
                 value={replyDraft}
                 onChange={(event) => setReplyDraft(event.target.value)}
@@ -1212,7 +1214,9 @@ export const CommentSection = ({
       <div className="space-y-2">{visibleCommentRows.map((row) => renderCommentItem(row))}</div>
 
       <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-        <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover" />
+        <Link to="/profile" className="inline-flex shrink-0" aria-label={currentUser.fullName}>
+          <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover" />
+        </Link>
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

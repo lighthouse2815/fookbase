@@ -10,21 +10,24 @@ public class UserProfileDto
     [JsonPropertyName("displayName")]
     public string? DisplayName { get; set; }
 
-    [JsonPropertyName("fullName")]
-    public string? FullName { get; set; }
-
     [JsonPropertyName("avatarUrl")]
     public string? AvatarUrl { get; set; }
 
-    [JsonPropertyName("bio")]
-    public string? Bio { get; set; }
+    [JsonPropertyName("friendsCount")]
+    public long FriendsCount { get; set; }
 
-    [JsonPropertyName("coverUrl")]
-    public string? CoverUrl { get; set; }
+    [JsonPropertyName("phoneNumber")]
+    public string? PhoneNumber { get; set; }
 
-    [JsonPropertyName("major")]
-    public string? Major { get; set; }
+    [JsonPropertyName("gender")]
+    public string? Gender { get; set; }
 
-    [JsonPropertyName("year")]
-    public string? Year { get; set; }
+    [JsonPropertyName("birthDate")]
+    public string? BirthDate { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("nickname")]
+    public string? Nickname { get; set; }
 }

@@ -68,6 +68,13 @@
   "profile": {
     "intro": "Intro",
     "editProfile": "Edit profile",
+    "addFriend": "Add friend",
+    "friendsButton": "Friends",
+    "personalInfo": "Personal info",
+    "displayName": "Display name",
+    "phoneNumber": "Phone number",
+    "gender": "Gender",
+    "birthDate": "Birth date",
     "major": "Major",
     "year": "Academic year",
     "friends": "Friends",

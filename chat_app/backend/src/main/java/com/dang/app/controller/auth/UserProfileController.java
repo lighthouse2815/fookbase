@@ -64,10 +64,12 @@ public class UserProfileController {
     @ApiResponse(responseCode = "404", description = "Profile not found")
     @GetMapping("/public")
     public ResponseEntity<PublicUserProfileResponse> getPublicProfileByUserId(
+            @AuthenticationPrincipal Jwt jwt,
             @RequestParam @NotNull UUID userId
     ) {
+        UUID myId = UUID.fromString(jwt.getSubject());
         return ResponseEntity.ok(
-                userProfileService.getPublicProfileByUserId(userId)
+                userProfileService.getPublicProfileByUserId(myId,userId)
         );
     }
 

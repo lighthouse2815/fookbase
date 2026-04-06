@@ -364,20 +364,22 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
                 <BookmarkPlus size={16} />
                 {isSavingPost ? 'Dang luu bai viet...' : 'Luu bai viet'}
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPostMenuOpen(false);
-                  setReportReason('');
-                  setReportReasonError(null);
-                  setIsReportDialogOpen(true);
-                }}
-                disabled={isReportingPost}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
-              >
-                <Flag size={16} />
-                Bao cao
-              </button>
+              {!isPostOwner ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPostMenuOpen(false);
+                    setReportReason('');
+                    setReportReasonError(null);
+                    setIsReportDialogOpen(true);
+                  }}
+                  disabled={isReportingPost}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                >
+                  <Flag size={16} />
+                  Bao cao
+                </button>
+              ) : null}
               {isPostOwner ? (
                 <button
                   type="button"

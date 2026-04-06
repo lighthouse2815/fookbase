@@ -15,12 +15,13 @@ export const currentUser: User = {
 };
 
 export const profileMock: Profile = {
-  ...currentUser,
+  id: currentUser.id,
+  username: currentUser.username,
+  displayName: currentUser.fullName,
+  avatarUrl: currentUser.avatarUrl,
   bio: 'Final-year student passionate about web architecture and community products.',
   coverUrl:
     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80',
-  major: 'Software Engineering',
-  year: 'Year 4',
   friendsCount: 324,
   postsCount: 61,
 };

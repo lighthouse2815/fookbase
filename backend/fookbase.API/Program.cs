@@ -67,6 +67,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IHashtagService, HashtagService>();
 builder.Services.AddScoped<IPostReportService, PostReportService>();
 builder.Services.AddScoped<ISavedPostService, SavedPostService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();

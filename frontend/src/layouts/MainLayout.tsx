@@ -12,7 +12,6 @@ import {
 } from '../data/mockData';
 import { friendshipService } from '../services/friendshipService';
 import { notificationService } from '../services/notificationService';
-import { postReportService } from '../services/postReportService';
 import { userService } from '../services/userService';
 import type { FriendRequest, FriendSuggestion } from '../types/friendship';
 import type { NotificationItem } from '../types/notification';
@@ -27,15 +26,17 @@ export interface MainLayoutOutletContext {
 
 export const MainLayout = () => {
   const { t } = useTranslation();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [suggestions, setSuggestions] = useState<FriendSuggestion[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<User[]>(onlineUsersMock);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [adminPendingReportCount, setAdminPendingReportCount] = useState(0);
   const isFriendsPage = location.pathname.startsWith('/friends');
+  const isProfilePage = /^\/profile(?:\/[^/]+)?\/?$/.test(location.pathname);
+  const isSettingsPage = location.pathname.startsWith('/settings');
+  const useSingleColumnLayout = isFriendsPage || isProfilePage || isSettingsPage;
 
   const mapReceivedRequestToNotification = useCallback((request: FriendRequest): NotificationItem => {
     const actorName = request.fullName?.trim() || request.username?.trim() || 'Someone';
@@ -101,20 +102,6 @@ export const MainLayout = () => {
     setNotifications(sortNotifications(Array.from(merged.values())));
   }, [mapReceivedRequestToNotification]);
 
-  const loadAdminPendingReportCount = useCallback(async () => {
-    if (!isAdmin) {
-      setAdminPendingReportCount(0);
-      return;
-    }
-
-    try {
-      const pendingCount = await postReportService.getPendingCount();
-      setAdminPendingReportCount(pendingCount);
-    } catch {
-      setAdminPendingReportCount(0);
-    }
-  }, [isAdmin]);
-
   useEffect(() => {
     const loadSidebarData = async () => {
       const [suggestionsResult, onlineUsersResult] = await Promise.allSettled([
@@ -151,32 +138,15 @@ export const MainLayout = () => {
   }, [loadRealtimeNotifications]);
 
   useEffect(() => {
-    void loadAdminPendingReportCount();
-
-    if (!isAdmin) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      void loadAdminPendingReportCount();
-    }, 15000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [isAdmin, loadAdminPendingReportCount]);
-
-  useEffect(() => {
     const handleFocus = () => {
       void loadRealtimeNotifications();
-      void loadAdminPendingReportCount();
     };
 
     window.addEventListener('focus', handleFocus);
     return () => {
       window.removeEventListener('focus', handleFocus);
     };
-  }, [loadAdminPendingReportCount, loadRealtimeNotifications]);
+  }, [loadRealtimeNotifications]);
 
   const markNotificationAsRead = useCallback(async (notification: NotificationItem) => {
     setNotifications((existing) =>
@@ -280,7 +250,6 @@ export const MainLayout = () => {
       <Navbar
         currentUser={currentUser}
         notifications={notifications}
-        adminPendingReportCount={adminPendingReportCount}
         onOpenNotification={(item) => {
           void handleOpenNotification(item);
         }}
@@ -291,19 +260,19 @@ export const MainLayout = () => {
       />
 
       <div
-        className={`mx-auto grid max-w-[1400px] gap-4 px-3 pb-24 pt-20 sm:px-4 md:pb-8 lg:px-6 ${
-          isFriendsPage
+        className={`mx-auto grid max-w-[1600px] gap-4 px-3 pb-24 pt-20 sm:px-4 md:pb-8 lg:px-6 ${
+          useSingleColumnLayout
             ? 'md:grid-cols-[minmax(0,1fr)]'
             : 'md:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_320px]'
         }`}
       >
-        {isFriendsPage ? null : (
+        {useSingleColumnLayout ? null : (
           <div className="sticky top-20 hidden max-h-[calc(100vh-5.75rem)] overflow-y-auto md:block">
             <SidebarLeft currentUser={currentUser} />
           </div>
         )}
 
-        <main className="space-y-4">
+        <main className={`space-y-4 ${isProfilePage ? 'mx-auto w-full max-w-[1280px]' : ''}`}>
           <Outlet
             context={{
               currentUser,
@@ -314,7 +283,7 @@ export const MainLayout = () => {
           />
         </main>
 
-        {isFriendsPage ? null : (
+        {useSingleColumnLayout ? null : (
           <div className="sticky top-20 hidden max-h-[calc(100vh-5.75rem)] overflow-y-auto xl:block">
             <SidebarRight
               suggestions={suggestions}

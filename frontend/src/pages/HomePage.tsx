@@ -15,6 +15,7 @@ import type { Post } from '../types/post';
 import { getApiErrorMessage } from '../utils/apiError';
 
 const PAGE_SIZE = 2;
+const POST_COLUMN_CLASS = 'mx-auto w-full max-w-[980px]';
 
 export const HomePage = () => {
   const { t } = useTranslation();
@@ -91,7 +92,7 @@ export const HomePage = () => {
       {createError ? <p className="text-sm text-rose-600 dark:text-rose-400">{createError}</p> : null}
       <StoryList currentUser={currentUser} onActionToast={showToast} />
 
-      <section className="space-y-4">
+      <section className={`${POST_COLUMN_CLASS} space-y-4`}>
         <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('home.feedTitle')}</h1>
         {loadError ? <p className="text-sm text-rose-600 dark:text-rose-400">{loadError}</p> : null}
         {feed.map((post) => (

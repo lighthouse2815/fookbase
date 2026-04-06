@@ -10,5 +10,7 @@ public interface IPostRepository
 
     Task<Post?> GetByIdForUpdateAsync(Guid postId, CancellationToken cancellationToken);
 
+    Task<int> CountByUserIdAsync(Guid userId, CancellationToken cancellationToken);
+
     Task AddAsync(Post post, CancellationToken cancellationToken);
 }

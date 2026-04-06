@@ -1,5 +1,5 @@
 ﻿import clsx from 'clsx';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import type { FriendRequest } from '../../types/friendship';
 
@@ -51,6 +51,8 @@ export const FriendRequestCard = ({
   onDelete,
   onCancel,
 }: FriendRequestCardProps) => {
+  const navigate = useNavigate();
+
   return (
     <article
       className={clsx(
@@ -61,7 +63,15 @@ export const FriendRequestCard = ({
       )}
     >
       <button type="button" onClick={onSelect} className="group mb-3 flex w-full items-center gap-3 text-left">
-        <img src={request.avatarUrl} alt={request.fullName} className="h-14 w-14 rounded-full object-cover" />
+        <img
+          src={request.avatarUrl}
+          alt={request.fullName}
+          onClick={(event) => {
+            event.stopPropagation();
+            void navigate(`/profile/${request.id}`);
+          }}
+          className="h-14 w-14 cursor-pointer rounded-full object-cover"
+        />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{request.fullName}</p>
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">{request.mutualFriends} ban chung</p>

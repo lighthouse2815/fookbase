@@ -1,5 +1,5 @@
 import { Bookmark, House, UserRound, UsersRound } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import type { User } from '../types/user';
@@ -22,11 +22,13 @@ export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
     <aside className="hidden space-y-4 md:block">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
         <div className="flex items-center gap-3">
-          <img
-            src={currentUser.avatarUrl}
-            alt={currentUser.fullName}
-            className="h-12 w-12 rounded-full object-cover"
-          />
+          <Link to="/profile" className="inline-flex" aria-label={currentUser.fullName}>
+            <img
+              src={currentUser.avatarUrl}
+              alt={currentUser.fullName}
+              className="h-12 w-12 rounded-full object-cover"
+            />
+          </Link>
           <div>
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{currentUser.fullName}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">@{currentUser.username}</p>

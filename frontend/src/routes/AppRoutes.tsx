@@ -12,6 +12,8 @@ import { ProfilePage } from '../pages/ProfilePage';
 import { ReportedPostsPage } from '../pages/ReportedPostsPage';
 import { SavedPostsPage } from '../pages/SavedPostsPage';
 import { SecuritySettingsPage } from '../pages/SecuritySettingsPage';
+import { SettingsPage } from '../pages/SettingsPage';
+import { BlockedUsersSettingsPage } from '../pages/BlockedUsersSettingsPage';
 import { AdminLoginPage } from '../pages/auth/AdminLoginPage';
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { LoginPage } from '../pages/auth/LoginPage';
@@ -38,8 +40,10 @@ export const AppRoutes = () => {
           <Route path="/reports" element={<ReportedPostsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/security" element={<SecuritySettingsPage />} />
           <Route path="/settings/personal-info" element={<PersonalInfoSettingsPage />} />
+          <Route path="/settings/blocked" element={<BlockedUsersSettingsPage />} />
         </Route>
       </Route>
 

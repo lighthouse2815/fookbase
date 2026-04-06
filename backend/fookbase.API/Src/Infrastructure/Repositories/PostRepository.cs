@@ -52,6 +52,11 @@ public class PostRepository : IPostRepository
             .FirstOrDefaultAsync(post => post.Id == postId, cancellationToken);
     }
 
+    public Task<int> CountByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return _context.Posts.CountAsync(post => post.UserId == userId, cancellationToken);
+    }
+
     public Task AddAsync(Post post, CancellationToken cancellationToken)
     {
         return _context.Posts.AddAsync(post, cancellationToken).AsTask();

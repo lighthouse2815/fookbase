@@ -1,6 +1,7 @@
 ﻿import clsx from 'clsx';
 import { Image, Info, MessageCircle, Newspaper, UserRoundCheck, UserRoundPlus, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { FriendRequest, FriendSuggestion, FriendUser } from '../../types/friendship';
 
@@ -58,11 +59,13 @@ export const ProfilePreview = ({
       <div className="h-24 rounded-t-3xl bg-gradient-to-r from-sky-500 via-brand-500 to-indigo-500" />
       <div className="px-5 pb-5">
         <div className="-mt-12 flex items-end gap-3">
-          <img
-            src={user.avatarUrl}
-            alt={user.fullName}
-            className="h-24 w-24 rounded-3xl border-4 border-white object-cover dark:border-slate-900"
-          />
+          <Link to={`/profile/${user.id}`} className="inline-flex" aria-label={user.fullName}>
+            <img
+              src={user.avatarUrl}
+              alt={user.fullName}
+              className="h-24 w-24 rounded-3xl border-4 border-white object-cover dark:border-slate-900"
+            />
+          </Link>
           <div className="pb-2">
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{user.fullName}</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">{user.mutualFriends} ban chung</p>

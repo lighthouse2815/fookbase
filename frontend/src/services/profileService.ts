@@ -7,6 +7,23 @@ interface ApiEnvelope<T> {
   errors?: string[];
 }
 
+interface ProfilePayload {
+  userId?: string | null;
+  id?: string | null;
+  username?: string | null;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  coverUrl?: string | null;
+  friendsCount?: number | null;
+  postsCount?: number | null;
+  phoneNumber?: string | null;
+  gender?: string | null;
+  birthDate?: string | null;
+  nickname?: string | null;
+  status?: string | null;
+}
+
 export interface UserProfileSearchResult {
   userId: string;
   displayName: string;
@@ -37,16 +54,29 @@ export interface UpdateMyProfileRequest {
 
 export const profileService = {
   async getProfileById(profileId: string): Promise<Profile> {
-    const response = await apiClient.get<ApiEnvelope<Profile>>(`/api/profiles/${profileId}`);
+    const response = await apiClient.get<ApiEnvelope<ProfilePayload>>(`/api/profiles/${profileId}`);
     const profile = response.data.data;
 
     if (!profile) {
       throw new Error(response.data.errors?.[0] ?? 'Failed to load profile');
     }
 
+    const resolvedId = profile.userId?.trim() || profile.id || profileId;
+
     return {
-      ...profile,
-      avatarUrl: profile.avatarUrl || `https://i.pravatar.cc/150?u=${profile.id}`,
+      id: resolvedId,
+      username: profile.username?.trim() || undefined,
+      displayName: profile.displayName?.trim() || 'user',
+      avatarUrl: profile.avatarUrl || `https://i.pravatar.cc/150?u=${resolvedId}`,
+      bio: profile.bio ?? undefined,
+      coverUrl: profile.coverUrl ?? undefined,
+      friendsCount: typeof profile.friendsCount === 'number' ? profile.friendsCount : 0,
+      postsCount: typeof profile.postsCount === 'number' ? profile.postsCount : 0,
+      phoneNumber: profile.phoneNumber?.trim() || undefined,
+      gender: profile.gender?.trim() || undefined,
+      birthDate: profile.birthDate?.trim() || undefined,
+      nickname: profile.nickname?.trim() || undefined,
+      friendshipStatus: profile.status?.trim()?.toUpperCase() || undefined,
     };
   },
 
