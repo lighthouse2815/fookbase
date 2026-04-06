@@ -102,6 +102,9 @@ public class AppDbContext : DbContext
             entity.ToTable("Like");
             entity.HasKey(like => like.Id);
 
+            entity.Property(like => like.Type).HasMaxLength(20).IsRequired();
+            entity.Property(like => like.CreatedAt).IsRequired();
+
             entity.HasOne(like => like.Post)
                 .WithMany(post => post.Likes)
                 .HasForeignKey(like => like.PostId)
@@ -109,6 +112,7 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(like => new { like.PostId, like.UserId }).IsUnique();
             entity.HasIndex(like => like.UserId);
+            entity.HasIndex(like => like.PostId);
         });
 
         modelBuilder.Entity<Story>(entity =>

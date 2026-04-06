@@ -62,7 +62,8 @@
     "comment": "Comment",
     "share": "Share",
     "writeComment": "Write a comment...",
-    "addComment": "Send"
+    "addComment": "Send",
+    "commentCountLabel": "{{count}} comments"
   },
   "profile": {
     "intro": "Intro",

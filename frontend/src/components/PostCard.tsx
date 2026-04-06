@@ -6,12 +6,13 @@ import { Link } from 'react-router-dom';
 import { postReportService } from '../services/postReportService';
 import { postService } from '../services/postService';
 import { savedPostService } from '../services/savedPostService';
-import type { Post } from '../types/post';
+import type { Post, PostReactionType } from '../types/post';
 import type { User } from '../types/user';
 import { getApiErrorMessage } from '../utils/apiError';
 import { formatRelativeTime } from '../utils/date';
 import { detectMediaKind } from '../utils/media';
 import { CommentSection } from './CommentSection';
+import { PostReactionViewerModal } from './PostReactionViewerModal';
 
 interface PostCardProps {
   post: Post;
@@ -20,14 +21,52 @@ interface PostCardProps {
   onPostDeleted?: (postId: string) => void;
 }
 
+interface ReactionMeta {
+  type: PostReactionType;
+  label: string;
+  icon: string;
+}
+
+const REACTION_OPTIONS: ReactionMeta[] = [
+  { type: 'LIKE', label: 'Thich', icon: '👍' },
+  { type: 'WOW', label: 'Wow', icon: '😮' },
+  { type: 'SAD', label: 'Sad', icon: '😢' },
+  { type: 'ANGRY', label: 'Gian', icon: '😡' },
+  { type: 'HAHA', label: 'Haha', icon: '😂' },
+  { type: 'LOVE', label: 'Tim', icon: '❤️' },
+];
+
+const REACTION_META_BY_TYPE = REACTION_OPTIONS.reduce<Record<PostReactionType, ReactionMeta>>(
+  (accumulator, item) => {
+    accumulator[item.type] = item;
+    return accumulator;
+  },
+  {
+    LIKE: REACTION_OPTIONS[0],
+    WOW: REACTION_OPTIONS[1],
+    SAD: REACTION_OPTIONS[2],
+    ANGRY: REACTION_OPTIONS[3],
+    HAHA: REACTION_OPTIONS[4],
+    LOVE: REACTION_OPTIONS[5],
+  },
+);
+
+type ReactionFilterTab = 'ALL' | PostReactionType;
+
 export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: PostCardProps) => {
   const { t } = useTranslation();
   const authorProfilePath = `/profile/${post.author.id}`;
   const mediaKind = detectMediaKind(post.imageUrl);
   const isPostOwner = currentUser.id.trim().toLowerCase() === post.author.id.trim().toLowerCase();
-  const [likeCount, setLikeCount] = useState(post.likes);
-  const [isLiked, setIsLiked] = useState(Boolean(post.likedByCurrentUser));
-  const [isLikeUpdating, setIsLikeUpdating] = useState(false);
+  const [reactionCount, setReactionCount] = useState(post.reactionCount ?? post.likes);
+  const [currentUserReactionType, setCurrentUserReactionType] = useState<PostReactionType | null>(
+    post.currentUserReactionType ?? (post.likedByCurrentUser ? 'LIKE' : null),
+  );
+  const [topReactionTypes, setTopReactionTypes] = useState<PostReactionType[]>(post.topReactionTypes ?? []);
+  const [isReactionUpdating, setIsReactionUpdating] = useState(false);
+  const [isReactionPickerOpen, setIsReactionPickerOpen] = useState(false);
+  const [isReactionViewerOpen, setIsReactionViewerOpen] = useState(false);
+  const [reactionViewerFilter, setReactionViewerFilter] = useState<ReactionFilterTab>('ALL');
   const [likeError, setLikeError] = useState<string | null>(null);
   const [commentCount, setCommentCount] = useState(post.commentCount ?? post.comments.length);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
@@ -41,10 +80,13 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
   const [reportReasonError, setReportReasonError] = useState<string | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
   const postMenuRef = useRef<HTMLDivElement | null>(null);
+  const commentSectionRef = useRef<HTMLDivElement | null>(null);
+  const reactionPickerCloseTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setLikeCount(post.likes);
-    setIsLiked(Boolean(post.likedByCurrentUser));
+    setReactionCount(post.reactionCount ?? post.likes);
+    setCurrentUserReactionType(post.currentUserReactionType ?? (post.likedByCurrentUser ? 'LIKE' : null));
+    setTopReactionTypes(post.topReactionTypes ?? []);
     setCommentCount(post.commentCount ?? post.comments.length);
     setIsCommentsOpen(false);
     setIsPostMenuOpen(false);
@@ -55,7 +97,19 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
     setLikeError(null);
     setPostActionError(null);
     setIsDeletingPost(false);
-  }, [post.commentCount, post.comments.length, post.id, post.likedByCurrentUser, post.likes]);
+    setIsReactionPickerOpen(false);
+    setIsReactionViewerOpen(false);
+    setReactionViewerFilter('ALL');
+  }, [
+    post.commentCount,
+    post.comments.length,
+    post.currentUserReactionType,
+    post.id,
+    post.likedByCurrentUser,
+    post.likes,
+    post.reactionCount,
+    post.topReactionTypes,
+  ]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -78,23 +132,130 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
     };
   }, [isPostMenuOpen]);
 
-  const handleToggleLike = async () => {
-    if (isLikeUpdating) {
+  useEffect(() => {
+    if (!isCommentsOpen) {
       return;
     }
 
-    setIsLikeUpdating(true);
+    commentSectionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+    });
+  }, [isCommentsOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (reactionPickerCloseTimeoutRef.current) {
+        window.clearTimeout(reactionPickerCloseTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const getReactionMeta = (reactionType?: PostReactionType | null): ReactionMeta => {
+    if (!reactionType) {
+      return REACTION_META_BY_TYPE.LIKE;
+    }
+
+    return REACTION_META_BY_TYPE[reactionType] ?? REACTION_META_BY_TYPE.LIKE;
+  };
+
+  const getReactionButtonToneClass = (reactionType?: PostReactionType | null) => {
+    if (!reactionType) {
+      return 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700';
+    }
+
+    if (reactionType === 'LIKE') {
+      return 'bg-blue-50 text-blue-600 ring-1 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-400/40';
+    }
+
+    if (reactionType === 'ANGRY' || reactionType === 'LOVE') {
+      return 'bg-rose-50 text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40';
+    }
+
+    return 'bg-amber-50 text-amber-600 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-400/40';
+  };
+
+  const handleSetReaction = async (reactionType: PostReactionType) => {
+    if (isReactionUpdating) {
+      return;
+    }
+
+    setIsReactionUpdating(true);
     setLikeError(null);
 
     try {
-      const state = isLiked ? await postService.unlikePost(post.id) : await postService.likePost(post.id);
-      setLikeCount(state.likeCount);
-      setIsLiked(state.liked);
+      const state = await postService.setReaction(post.id, reactionType);
+      setCurrentUserReactionType(state.reactionType);
+      setReactionCount(state.reactionCount);
+      setTopReactionTypes(state.topReactionTypes);
     } catch (error) {
-      setLikeError(getApiErrorMessage(error, 'Unable to update like.'));
+      setLikeError(getApiErrorMessage(error, 'Unable to update reaction.'));
     } finally {
-      setIsLikeUpdating(false);
+      setIsReactionUpdating(false);
     }
+  };
+
+  const handleRemoveReaction = async () => {
+    if (isReactionUpdating) {
+      return;
+    }
+
+    setIsReactionUpdating(true);
+    setLikeError(null);
+
+    try {
+      const state = await postService.removeReaction(post.id);
+      setCurrentUserReactionType(state.reactionType);
+      setReactionCount(state.reactionCount);
+      setTopReactionTypes(state.topReactionTypes);
+    } catch (error) {
+      setLikeError(getApiErrorMessage(error, 'Unable to update reaction.'));
+    } finally {
+      setIsReactionUpdating(false);
+    }
+  };
+
+  const handleQuickLikePost = async () => {
+    setIsReactionPickerOpen(false);
+    if (currentUserReactionType) {
+      await handleRemoveReaction();
+      return;
+    }
+
+    await handleSetReaction('LIKE');
+  };
+
+  const openReactionPicker = () => {
+    if (reactionPickerCloseTimeoutRef.current) {
+      window.clearTimeout(reactionPickerCloseTimeoutRef.current);
+      reactionPickerCloseTimeoutRef.current = null;
+    }
+
+    setIsReactionPickerOpen(true);
+  };
+
+  const closeReactionPickerWithDelay = () => {
+    if (reactionPickerCloseTimeoutRef.current) {
+      window.clearTimeout(reactionPickerCloseTimeoutRef.current);
+    }
+
+    reactionPickerCloseTimeoutRef.current = window.setTimeout(() => {
+      setIsReactionPickerOpen(false);
+      reactionPickerCloseTimeoutRef.current = null;
+    }, 150);
+  };
+
+  const handleOpenComments = () => {
+    setIsCommentsOpen((previous) => !previous);
+  };
+
+  const handleOpenReactionViewer = (filter: ReactionFilterTab) => {
+    if (reactionCount === 0) {
+      return;
+    }
+
+    setReactionViewerFilter(filter);
+    setIsReactionViewerOpen(true);
   };
 
   const handleSavePost = async () => {
@@ -253,24 +414,86 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
       ) : null}
 
       <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-        <span>{likeCount}</span>
-        <span>{commentCount}</span>
+        {reactionCount > 0 ? (
+          <div className="inline-flex items-center gap-1.5">
+            <div className="inline-flex items-center">
+              {topReactionTypes.slice(0, 3).map((reactionType, index) => (
+                <button
+                  key={`${post.id}-top-reaction-${reactionType}-${index}`}
+                  type="button"
+                  onClick={() => handleOpenReactionViewer(reactionType)}
+                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full border border-white bg-slate-50 text-xs shadow-sm dark:border-slate-800 dark:bg-slate-700 ${
+                    index > 0 ? '-ml-1.5' : ''
+                  }`}
+                  title={getReactionMeta(reactionType).label}
+                >
+                  {getReactionMeta(reactionType).icon}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOpenReactionViewer('ALL')}
+              className="font-semibold transition hover:text-slate-700 dark:hover:text-slate-200"
+            >
+              {reactionCount}
+            </button>
+          </div>
+        ) : (
+          <span>0</span>
+        )}
+
+        <button
+          type="button"
+          onClick={handleOpenComments}
+          className="font-semibold transition hover:text-slate-700 dark:hover:text-slate-200"
+        >
+          {t('post.commentCountLabel', { count: commentCount })}
+        </button>
       </div>
 
       <div className="my-3 grid grid-cols-3 gap-2 border-y border-slate-100 py-2 dark:border-slate-700">
-        <button
-          type="button"
-          onClick={() => void handleToggleLike()}
-          disabled={isLikeUpdating}
-          className={`inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition ${
-            isLiked
-              ? 'bg-brand-100 font-bold text-brand-700 ring-1 ring-brand-300 dark:bg-brand-500/20 dark:text-brand-300 dark:ring-brand-400/50'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
-          } disabled:cursor-not-allowed disabled:opacity-70`}
+        <div
+          className="relative"
+          onMouseEnter={openReactionPicker}
+          onMouseLeave={closeReactionPickerWithDelay}
         >
-          <ThumbsUp size={16} />
-          {t('post.like')}
-        </button>
+          <button
+            type="button"
+            onClick={() => void handleQuickLikePost()}
+            disabled={isReactionUpdating}
+            className={`inline-flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70 ${getReactionButtonToneClass(currentUserReactionType)}`}
+          >
+            {currentUserReactionType ? <span>{getReactionMeta(currentUserReactionType).icon}</span> : <ThumbsUp size={16} />}
+            <span>{currentUserReactionType ? getReactionMeta(currentUserReactionType).label : t('post.like')}</span>
+          </button>
+
+          {isReactionPickerOpen ? (
+            <div
+              className="absolute bottom-full left-0 z-20 mb-1 flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+              onMouseEnter={openReactionPicker}
+              onMouseLeave={closeReactionPickerWithDelay}
+            >
+              {REACTION_OPTIONS.map((reactionOption) => (
+                <button
+                  key={`${post.id}-reaction-option-${reactionOption.type}`}
+                  type="button"
+                  onClick={() => {
+                    setIsReactionPickerOpen(false);
+                    void handleSetReaction(reactionOption.type);
+                  }}
+                  disabled={isReactionUpdating}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-base transition hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  title={reactionOption.label}
+                  aria-label={reactionOption.label}
+                >
+                  {reactionOption.icon}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
         <button
           type="button"
           onClick={() => setIsCommentsOpen((previous) => !previous)}
@@ -293,16 +516,27 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
       {postActionError ? <p className="mb-2 text-xs text-rose-600 dark:text-rose-400">{postActionError}</p> : null}
 
       {isCommentsOpen ? (
-        <CommentSection
-          postId={post.id}
-          postAuthorId={post.author.id}
-          initialComments={post.comments}
-          initialCommentCount={post.commentCount}
-          currentUser={currentUser}
-          onCommentCountChange={(count) => setCommentCount(count)}
-          onActionToast={onActionToast}
-        />
+        <div ref={commentSectionRef}>
+          <CommentSection
+            postId={post.id}
+            postAuthorId={post.author.id}
+            initialComments={post.comments}
+            initialCommentCount={post.commentCount}
+            currentUser={currentUser}
+            onCommentCountChange={(count) => setCommentCount(count)}
+            onActionToast={onActionToast}
+          />
+        </div>
       ) : null}
+
+      <PostReactionViewerModal
+        postId={post.id}
+        isOpen={isReactionViewerOpen}
+        initialFilter={reactionViewerFilter}
+        currentUserId={currentUser.id}
+        onClose={() => setIsReactionViewerOpen(false)}
+        onActionToast={onActionToast}
+      />
 
       {isReportDialogOpen ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">

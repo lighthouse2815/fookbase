@@ -22,6 +22,12 @@ public record PostResponseDto
 
     public bool LikedByCurrentUser { get; init; }
 
+    public int ReactionCount { get; init; }
+
+    public string? CurrentUserReactionType { get; init; }
+
+    public IReadOnlyList<string> TopReactionTypes { get; init; } = Array.Empty<string>();
+
     public int CommentCount { get; init; }
 
     public IReadOnlyList<string> Hashtags { get; init; } = Array.Empty<string>();

@@ -124,6 +124,49 @@ public class PostsController : ControllerBase
         return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
     }
 
+    [HttpPut("{postId:guid}/reactions")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PostReactionStateResponseDto>>> SetReaction(
+        Guid postId,
+        [FromBody] SetPostReactionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var state = await _likeService.SetReactionAsync(postId, userId, request, cancellationToken);
+        return Ok(ApiResponse<PostReactionStateResponseDto>.Ok(state));
+    }
+
+    [HttpDelete("{postId:guid}/reactions")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PostReactionStateResponseDto>>> RemoveReaction(
+        Guid postId,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var state = await _likeService.RemoveReactionAsync(postId, userId, cancellationToken);
+        return Ok(ApiResponse<PostReactionStateResponseDto>.Ok(state));
+    }
+
+    [HttpGet("{postId:guid}/reactions")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PostReactionUsersResponseDto>>> GetReactionUsers(
+        Guid postId,
+        CancellationToken cancellationToken)
+    {
+        var users = await _likeService.GetReactionUsersAsync(postId, cancellationToken);
+        return Ok(ApiResponse<PostReactionUsersResponseDto>.Ok(users));
+    }
+
     private string? ExtractAccessToken()
     {
         var authorizationHeader = Request.Headers.Authorization.ToString();

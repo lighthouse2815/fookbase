@@ -1,6 +1,7 @@
 import type { User } from './user';
 
 export type CommentReactionType = 'LIKE' | 'WOW' | 'SAD' | 'ANGRY' | 'HAHA' | 'LOVE';
+export type PostReactionType = CommentReactionType;
 
 export type CommentReactionFriendshipStatus = 'SELF' | 'FRIEND' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'NONE';
 
@@ -32,6 +33,20 @@ export interface CommentReactionUsersResponse {
   users: CommentReactionUser[];
 }
 
+export interface PostReactionUser {
+  userId: string;
+  displayName: string;
+  avatarUrl: string;
+  reactionType: PostReactionType;
+  reactedAt: string;
+}
+
+export interface PostReactionUsersResponse {
+  postId: string;
+  totalCount: number;
+  users: PostReactionUser[];
+}
+
 export interface Post {
   id: string;
   author: User;
@@ -40,6 +55,9 @@ export interface Post {
   createdAt: string;
   likes: number;
   likedByCurrentUser?: boolean;
+  reactionCount: number;
+  currentUserReactionType?: PostReactionType | null;
+  topReactionTypes: PostReactionType[];
   commentCount?: number;
   comments: Comment[];
 }

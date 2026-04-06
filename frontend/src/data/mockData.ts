@@ -251,6 +251,8 @@ export const posts: Post[] = [
       'Our UI architecture review went well today. We finalized a clean component structure and service layer for the semester project.',
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     likes: 74,
+    reactionCount: 74,
+    topReactionTypes: ['LIKE'],
     comments: [
       {
         id: 'c-1',
@@ -271,6 +273,8 @@ export const posts: Post[] = [
       'Anyone interested in a collaborative study session for distributed systems this weekend?',
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     likes: 31,
+    reactionCount: 31,
+    topReactionTypes: ['LIKE'],
     comments: [
       {
         id: 'c-2',
@@ -297,6 +301,8 @@ export const posts: Post[] = [
       'Just published the first version of InteractHub mobile navigation. Tablet and desktop breakpoints are done next.',
     createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
     likes: 92,
+    reactionCount: 92,
+    topReactionTypes: ['LIKE'],
     comments: [],
   },
   {
@@ -306,6 +312,8 @@ export const posts: Post[] = [
       'Campus volunteering program registration opens tomorrow morning. Let me know if you need the link.',
     createdAt: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString(),
     likes: 56,
+    reactionCount: 56,
+    topReactionTypes: ['LIKE'],
     comments: [
       {
         id: 'c-4',
@@ -324,6 +332,8 @@ export const posts: Post[] = [
       'We are preparing a design system workshop for first-year students. Feedback on topics is welcome.',
     createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
     likes: 39,
+    reactionCount: 39,
+    topReactionTypes: ['LIKE'],
     comments: [],
   },
 ];

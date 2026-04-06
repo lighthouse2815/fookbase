@@ -4,6 +4,7 @@ using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Common.Utilities;
@@ -53,12 +54,14 @@ public class PostService : IPostService
             .Select(post =>
             {
                 var dto = post.ToResponseDto();
+                var currentUserReactionType = GetCurrentUserReactionType(post, currentUserId);
                 dto = dto with
                 {
                     Author = authors.TryGetValue(post.UserId, out var author)
                         ? author
                         : CreateFallbackAuthor(post.UserId),
-                    LikedByCurrentUser = IsLikedByCurrentUser(post, currentUserId)
+                    CurrentUserReactionType = currentUserReactionType,
+                    LikedByCurrentUser = currentUserReactionType is not null
                 };
 
                 return dto;
@@ -74,10 +77,12 @@ public class PostService : IPostService
             ?? throw new NotFoundException("Post not found.");
 
         var dto = post.ToResponseDto();
+        var currentUserReactionType = GetCurrentUserReactionType(post, currentUserId);
         return dto with
         {
             Author = await ResolveAuthorAsync(post.UserId, cancellationToken),
-            LikedByCurrentUser = IsLikedByCurrentUser(post, currentUserId)
+            CurrentUserReactionType = currentUserReactionType,
+            LikedByCurrentUser = currentUserReactionType is not null
         };
     }
 
@@ -128,10 +133,12 @@ public class PostService : IPostService
             cancellationToken: cancellationToken);
 
         var dto = post.ToResponseDto();
+        var currentUserReactionType = GetCurrentUserReactionType(post, userId);
         return dto with
         {
             Author = await ResolveAuthorAsync(post.UserId, cancellationToken),
-            LikedByCurrentUser = IsLikedByCurrentUser(post, userId)
+            CurrentUserReactionType = currentUserReactionType,
+            LikedByCurrentUser = currentUserReactionType is not null
         };
     }
 
@@ -175,10 +182,12 @@ public class PostService : IPostService
             ?? throw new NotFoundException("Post not found.");
 
         var dto = updated.ToResponseDto();
+        var currentUserReactionType = GetCurrentUserReactionType(updated, userId);
         return dto with
         {
             Author = await ResolveAuthorAsync(updated.UserId, cancellationToken),
-            LikedByCurrentUser = IsLikedByCurrentUser(updated, userId)
+            CurrentUserReactionType = currentUserReactionType,
+            LikedByCurrentUser = currentUserReactionType is not null
         };
     }
 
@@ -309,14 +318,27 @@ public class PostService : IPostService
         return value.Trim();
     }
 
-    private static bool IsLikedByCurrentUser(Post post, Guid? currentUserId)
+    private static string? GetCurrentUserReactionType(Post post, Guid? currentUserId)
     {
         if (!currentUserId.HasValue)
         {
-            return false;
+            return null;
         }
 
-        return post.Likes.Any(like => like.UserId == currentUserId.Value);
+        var reaction = post.Likes.FirstOrDefault(like => like.UserId == currentUserId.Value);
+        if (reaction is null)
+        {
+            return null;
+        }
+
+        return NormalizePostReactionType(reaction.Type);
+    }
+
+    private static string NormalizePostReactionType(string? type)
+    {
+        return PostReactionTypes.IsValid(type)
+            ? PostReactionTypes.Normalize(type!)
+            : PostReactionTypes.Like;
     }
 
     private static void EnsurePostHasContentOrMedia(string content, string? media)

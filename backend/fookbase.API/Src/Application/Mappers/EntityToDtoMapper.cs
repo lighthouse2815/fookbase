@@ -5,6 +5,7 @@ using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.DTOs.PostReports;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.DTOs.Stories;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 
@@ -38,6 +39,15 @@ public static class EntityToDtoMapper
     {
         ArgumentNullException.ThrowIfNull(post);
 
+        var reactionCount = post.Likes.Count;
+        var topReactionTypes = post.Likes
+            .GroupBy(like => NormalizePostReactionType(like.Type))
+            .OrderByDescending(group => group.Count())
+            .ThenBy(group => group.Key, StringComparer.Ordinal)
+            .Take(3)
+            .Select(group => group.Key)
+            .ToList();
+
         return new PostResponseDto
         {
             Id = post.Id,
@@ -52,7 +62,10 @@ public static class EntityToDtoMapper
             ImageUrl = post.ImageUrl,
             CreatedAt = post.CreatedAt,
             UpdatedAt = post.UpdatedAt,
-            LikeCount = post.Likes.Count,
+            LikeCount = reactionCount,
+            ReactionCount = reactionCount,
+            CurrentUserReactionType = null,
+            TopReactionTypes = topReactionTypes,
             CommentCount = post.Comments.Count,
             Hashtags = post.PostHashtags
                 .Where(postHashtag => postHashtag.Hashtag is not null)
@@ -134,5 +147,12 @@ public static class EntityToDtoMapper
             UsageCount = usageCount,
             CreatedAt = hashtag.CreatedAt
         };
+    }
+
+    private static string NormalizePostReactionType(string? type)
+    {
+        return PostReactionTypes.IsValid(type)
+            ? PostReactionTypes.Normalize(type!)
+            : PostReactionTypes.Like;
     }
 }

@@ -62,7 +62,8 @@
     "comment": "Binh luan",
     "share": "Chia se",
     "writeComment": "Viet binh luan...",
-    "addComment": "Gui"
+    "addComment": "Gui",
+    "commentCountLabel": "{{count}} binh luan"
   },
   "profile": {
     "intro": "Gioi thieu",

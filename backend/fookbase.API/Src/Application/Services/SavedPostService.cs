@@ -4,6 +4,7 @@ using InteractHub.Api.Application.DTOs.SavedPosts;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Common.Utilities;
@@ -54,12 +55,14 @@ public class SavedPostService : ISavedPostService
             .Select(post =>
             {
                 var dto = post.ToResponseDto();
+                var currentUserReactionType = GetCurrentUserReactionType(post, userId);
                 return dto with
                 {
                     Author = authors.TryGetValue(post.UserId, out var author)
                         ? author
                         : CreateFallbackAuthor(post.UserId),
-                    LikedByCurrentUser = post.Likes.Any(like => like.UserId == userId)
+                    CurrentUserReactionType = currentUserReactionType,
+                    LikedByCurrentUser = currentUserReactionType is not null
                 };
             })
             .ToList();
@@ -192,6 +195,19 @@ public class SavedPostService : ISavedPostService
         }
 
         return value.Trim();
+    }
+
+    private static string? GetCurrentUserReactionType(Post post, Guid currentUserId)
+    {
+        var reaction = post.Likes.FirstOrDefault(like => like.UserId == currentUserId);
+        if (reaction is null)
+        {
+            return null;
+        }
+
+        return PostReactionTypes.IsValid(reaction.Type)
+            ? PostReactionTypes.Normalize(reaction.Type)
+            : PostReactionTypes.Like;
     }
 
 }

@@ -19,6 +19,15 @@ public class LikeRepository : ILikeRepository
         return _context.Likes.FirstOrDefaultAsync(like => like.PostId == postId && like.UserId == userId, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Like>> GetByPostIdAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        return await _context.Likes
+            .AsNoTracking()
+            .Where(like => like.PostId == postId)
+            .OrderByDescending(like => like.UpdatedAt ?? like.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<int> CountByPostIdAsync(Guid postId, CancellationToken cancellationToken)
     {
         return _context.Likes.CountAsync(like => like.PostId == postId, cancellationToken);
