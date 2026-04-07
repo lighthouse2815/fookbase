@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 
 import { FriendRequestCard } from '../components/friends/FriendRequestCard';
@@ -40,23 +41,6 @@ const parseFriendsTab = (value: string | null): FriendsTab => {
 
   return 'home';
 };
-
-const sidebarTabs: Array<{
-  id: FriendsTab;
-  label: string;
-  icon: typeof House;
-}> = [
-  { id: 'home', label: 'Trang chu', icon: House },
-  { id: 'requests', label: 'Loi moi ket ban', icon: UserCheck },
-  { id: 'suggestions', label: 'Goi y', icon: UserPlus },
-  { id: 'friends', label: 'Ban be', icon: UsersRound },
-];
-
-const friendFilters: Array<{ id: FriendFilter; label: string }> = [
-  { id: 'all', label: 'Tat ca' },
-  { id: 'online', label: 'Dang hoat dong' },
-  { id: 'sameFaculty', label: 'Cung khoa' },
-];
 
 const toSuggestion = (user: FriendUser | FriendRequest): FriendSuggestion => ({
   id: user.id,
@@ -105,7 +89,7 @@ const sanitizeSuggestions = (value: unknown, fallback: FriendSuggestion[]) => {
     return {
       id: safeId,
       username: typed.username ?? `user_${safeId}`,
-      fullName: typed.fullName ?? 'Nguoi dung',
+      fullName: typed.fullName ?? 'User',
       avatarUrl: typed.avatarUrl ?? `https://i.pravatar.cc/150?u=${safeId}`,
       mutualFriends: typeof typed.mutualFriends === 'number' ? typed.mutualFriends : 0,
       faculty: typed.faculty,
@@ -136,7 +120,7 @@ const sanitizeRequests = (
       requesterId,
       addresseeId,
       username: typed.username ?? `user_${safeId}`,
-      fullName: typed.fullName ?? 'Nguoi dung',
+      fullName: typed.fullName ?? 'User',
       avatarUrl: typed.avatarUrl ?? `https://i.pravatar.cc/150?u=${safeId}`,
       mutualFriends: typeof typed.mutualFriends === 'number' ? typed.mutualFriends : 0,
       requestedAt: typed.requestedAt,
@@ -159,7 +143,7 @@ const sanitizeFriends = (value: unknown, fallback: FriendUser[]) => {
       id: safeId,
       friendshipId: typed.friendshipId,
       username: typed.username ?? `friend_${safeId}`,
-      fullName: typed.fullName ?? 'Nguoi dung',
+      fullName: typed.fullName ?? 'User',
       avatarUrl: typed.avatarUrl ?? `https://i.pravatar.cc/150?u=${safeId}`,
       mutualFriends: typeof typed.mutualFriends === 'number' ? typed.mutualFriends : 0,
       friendsCount: typed.friendsCount,
@@ -173,6 +157,7 @@ const sanitizeFriends = (value: unknown, fallback: FriendUser[]) => {
 };
 
 export const FriendsPage = () => {
+  const { t } = useTranslation();
   const { suggestions: sidebarSuggestions, currentUser } = useOutletContext<MainLayoutOutletContext>();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -191,6 +176,27 @@ export const FriendsPage = () => {
   const [friendFilter, setFriendFilter] = useState<FriendFilter>('all');
   const [confirmUnfriendUser, setConfirmUnfriendUser] = useState<FriendUser | null>(null);
   const [isUnfriendSubmitting, setIsUnfriendSubmitting] = useState(false);
+  const sidebarTabs: Array<{
+    id: FriendsTab;
+    label: string;
+    icon: typeof House;
+  }> = useMemo(
+    () => [
+      { id: 'home', label: t('friendsPage.sidebar.home'), icon: House },
+      { id: 'requests', label: t('friendsPage.sidebar.requests'), icon: UserCheck },
+      { id: 'suggestions', label: t('friendsPage.sidebar.suggestions'), icon: UserPlus },
+      { id: 'friends', label: t('friendsPage.sidebar.friends'), icon: UsersRound },
+    ],
+    [t],
+  );
+  const friendFilters: Array<{ id: FriendFilter; label: string }> = useMemo(
+    () => [
+      { id: 'all', label: t('friendsPage.filters.all') },
+      { id: 'online', label: t('friendsPage.filters.online') },
+      { id: 'sameFaculty', label: t('friendsPage.filters.sameFaculty') },
+    ],
+    [t],
+  );
 
   const loadFriendData = useCallback(async () => {
     setFetchState('loading');
@@ -235,12 +241,12 @@ export const FriendsPage = () => {
 
     if (hadCriticalError) {
       setFetchState('error');
-      setErrorMessage('Khong the tai day du du lieu realtime. Trang dang hien thi du lieu du phong.');
+      setErrorMessage(t('friendsPage.errors.realtimeFallback'));
       return;
     }
 
     setFetchState('success');
-  }, [currentUser.id, sidebarSuggestions]);
+  }, [currentUser.id, sidebarSuggestions, t]);
 
   useEffect(() => {
     void loadFriendData();
@@ -378,7 +384,7 @@ export const FriendsPage = () => {
       void loadFriendData();
     } catch {
       setFetchState('error');
-      setErrorMessage('Da xac nhan o giao dien, nhung chua dong bo thanh cong voi server.');
+      setErrorMessage(t('friendsPage.errors.acceptNotSynced'));
     }
   };
 
@@ -390,7 +396,7 @@ export const FriendsPage = () => {
       void loadFriendData();
     } catch {
       setFetchState('error');
-      setErrorMessage('Da xoa loi moi o giao dien, nhung chua dong bo thanh cong voi server.');
+      setErrorMessage(t('friendsPage.errors.deleteNotSynced'));
     }
   };
 
@@ -414,7 +420,7 @@ export const FriendsPage = () => {
       void loadFriendData();
     } catch {
       setFetchState('error');
-      setErrorMessage('Da huy loi moi o giao dien, nhung chua dong bo thanh cong voi server.');
+      setErrorMessage(t('friendsPage.errors.cancelNotSynced'));
     }
   };
 
@@ -433,7 +439,7 @@ export const FriendsPage = () => {
       void loadFriendData();
     } catch {
       setFetchState('error');
-      setErrorMessage('Da gui loi moi o giao dien, nhung chua dong bo thanh cong voi server.');
+      setErrorMessage(t('friendsPage.errors.sendNotSynced'));
     }
   };
 
@@ -479,7 +485,7 @@ export const FriendsPage = () => {
       void loadFriendData();
     } catch {
       setFetchState('error');
-      setErrorMessage('Da huy ket ban o giao dien, nhung chua dong bo thanh cong voi server.');
+      setErrorMessage(t('friendsPage.errors.unfriendNotSynced'));
     } finally {
       setIsUnfriendSubmitting(false);
     }
@@ -487,12 +493,12 @@ export const FriendsPage = () => {
 
   const tabTitle =
     activeTab === 'home'
-      ? 'Trang chu ban be'
+      ? t('friendsPage.tabs.home')
       : activeTab === 'requests'
-        ? 'Quan ly loi moi ket ban'
+        ? t('friendsPage.tabs.requests')
         : activeTab === 'suggestions'
-          ? 'Goi y ket ban'
-          : 'Danh sach ban be';
+          ? t('friendsPage.tabs.suggestions')
+          : t('friendsPage.tabs.friends');
 
   if (fetchState === 'loading') {
     return <FriendsPageSkeleton />;
@@ -503,7 +509,7 @@ export const FriendsPage = () => {
       <header className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Friend Management</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('friendsPage.managementTitle')}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">{tabTitle}</p>
           </div>
 
@@ -514,13 +520,13 @@ export const FriendsPage = () => {
               className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
             >
               <RefreshCcw size={15} />
-              Lam moi
+              {t('friendsPage.refresh')}
             </button>
             <button
               type="button"
               onClick={() => setIsSidebarOpen(true)}
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:border-brand-400 hover:text-brand-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-brand-500 dark:hover:text-brand-300 xl:hidden"
-              aria-label="Mo menu ban be"
+              aria-label={t('friendsPage.openMenuAria')}
             >
               <Menu size={18} />
             </button>
@@ -540,7 +546,7 @@ export const FriendsPage = () => {
             type="button"
             onClick={() => setIsSidebarOpen(false)}
             className="fixed inset-0 z-20 bg-slate-950/50 xl:hidden"
-            aria-label="Dong menu ban be"
+            aria-label={t('friendsPage.closeMenuAria')}
           />
         ) : null}
 
@@ -553,7 +559,7 @@ export const FriendsPage = () => {
           )}
         >
           <div className="mb-3 flex items-center justify-between px-1">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Menu ban be</h2>
+            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('friendsPage.menuTitle')}</h2>
             <button
               type="button"
               onClick={() => setIsSidebarOpen(false)}
@@ -596,12 +602,14 @@ export const FriendsPage = () => {
             <>
               <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
                 <div className="mb-4 flex items-center justify-between gap-2">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Loi moi ket ban nhan duoc</h3>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">{receivedRequests.length} loi moi</span>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('friendsPage.receivedRequestsTitle')}</h3>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('friendsPage.receivedRequestCount', { count: receivedRequests.length })}
+                  </span>
                 </div>
 
                 {receivedRequests.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Ban chua co loi moi ket ban moi.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.receivedRequests')}</p>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {receivedRequests.map((request) => (
@@ -621,12 +629,14 @@ export const FriendsPage = () => {
 
               <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
                 <div className="mb-4 flex items-center justify-between gap-2">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Loi moi da gui</h3>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">{sentRequests.length} loi moi</span>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('friendsPage.sentRequestsTitle')}</h3>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('friendsPage.sentRequestCount', { count: sentRequests.length })}
+                  </span>
                 </div>
 
                 {sentRequests.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Ban chua gui loi moi nao gan day.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.sentRequestsRecent')}</p>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {sentRequests.map((request) => (
@@ -645,12 +655,14 @@ export const FriendsPage = () => {
 
               <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
                 <div className="mb-4 flex items-center justify-between gap-2">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Goi y ket ban</h3>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">{suggestions.length} goi y</span>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('friendsPage.suggestionTitle')}</h3>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('friendsPage.suggestionCount', { count: suggestions.length })}
+                  </span>
                 </div>
 
                 {suggestions.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Tam thoi chua co goi y moi.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.suggestionsTemporary')}</p>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {suggestions.map((suggestion) => (
@@ -660,7 +672,7 @@ export const FriendsPage = () => {
                         variant="grid"
                         selected={selectedUserId === suggestion.id}
                         onSelect={() => setSelectedUserId(suggestion.id)}
-                        primaryActionLabel="Them ban be"
+                        primaryActionLabel={t('friendsPage.actions.addFriend')}
                         onPrimaryAction={() => void handleAddFriend(suggestion.id)}
                       />
                     ))}
@@ -673,22 +685,24 @@ export const FriendsPage = () => {
           {activeTab === 'requests' ? (
             <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Loi moi ket ban</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('friendsPage.requestsTitle')}</h3>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
-                  {receivedRequests.length + sentRequests.length} muc
+                  {t('friendsPage.itemsCount', { count: receivedRequests.length + sentRequests.length })}
                 </span>
               </div>
 
               <div className="space-y-6">
                 <div>
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Loi moi nhan duoc</h4>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{receivedRequests.length} loi moi</span>
+                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('friendsPage.receivedRequestsTitle')}</h4>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {t('friendsPage.receivedRequestCount', { count: receivedRequests.length })}
+                    </span>
                   </div>
 
                   {receivedRequests.length === 0 ? (
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Ban khong co loi moi nao dang cho xu ly.
+                      {t('friendsPage.empty.receivedRequestsPending')}
                     </p>
                   ) : (
                     <div className="grid gap-3 md:grid-cols-2">
@@ -709,12 +723,14 @@ export const FriendsPage = () => {
 
                 <div className="border-t border-slate-200 pt-5 dark:border-slate-700">
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Loi moi da gui</h4>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{sentRequests.length} loi moi</span>
+                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('friendsPage.sentRequestsTitle')}</h4>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {t('friendsPage.sentRequestCount', { count: sentRequests.length })}
+                    </span>
                   </div>
 
                   {sentRequests.length === 0 ? (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Ban chua gui loi moi nao.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.sentRequests')}</p>
                   ) : (
                     <div className="grid gap-3 md:grid-cols-2">
                       {sentRequests.map((request) => (
@@ -737,12 +753,12 @@ export const FriendsPage = () => {
           {activeTab === 'suggestions' ? (
             <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Goi y ket ban</h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{suggestions.length} nguoi</span>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('friendsPage.suggestionTitle')}</h3>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t('friendsPage.peopleCount', { count: suggestions.length })}</span>
               </div>
 
               {suggestions.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">Khong con goi y nao phu hop luc nay.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.suggestions')}</p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {suggestions.map((suggestion) => (
@@ -752,7 +768,7 @@ export const FriendsPage = () => {
                       variant="grid"
                       selected={selectedUserId === suggestion.id}
                       onSelect={() => setSelectedUserId(suggestion.id)}
-                      primaryActionLabel="Them ban be"
+                      primaryActionLabel={t('friendsPage.actions.addFriend')}
                       onPrimaryAction={() => void handleAddFriend(suggestion.id)}
                     />
                   ))}
@@ -764,8 +780,8 @@ export const FriendsPage = () => {
           {activeTab === 'friends' ? (
             <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Ban be cua ban</h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{filteredFriends.length} ket qua</span>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('friendsPage.friendsTitle')}</h3>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t('friendsPage.resultCount', { count: filteredFriends.length })}</span>
               </div>
 
               <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -774,7 +790,7 @@ export const FriendsPage = () => {
                   <input
                     value={friendSearch}
                     onChange={(event) => setFriendSearch(event.target.value)}
-                    placeholder="Tim kiem ban be..."
+                    placeholder={t('friendsPage.searchPlaceholder')}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   />
                 </label>
@@ -800,7 +816,7 @@ export const FriendsPage = () => {
               </div>
 
               {filteredFriends.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">Khong co ban be nao phu hop bo loc hien tai.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.friendsFiltered')}</p>
               ) : (
                 <div className="space-y-3">
                   {filteredFriends.map((friend) => (
@@ -810,9 +826,9 @@ export const FriendsPage = () => {
                       variant="list"
                       selected={selectedUserId === friend.id}
                       onSelect={() => setSelectedUserId(friend.id)}
-                      statusText={friend.isOnline ? 'Dang hoat dong' : 'Ban be'}
-                      primaryActionLabel="Nhan tin"
-                      secondaryActionLabel="Huy ket ban"
+                      statusText={friend.isOnline ? t('friendsPage.status.online') : t('friendsPage.status.friend')}
+                      primaryActionLabel={t('friendsPage.actions.message')}
+                      secondaryActionLabel={t('friendsPage.actions.unfriend')}
                       onSecondaryAction={() => requestUnfriend(friend.id)}
                     />
                   ))}
@@ -871,7 +887,7 @@ export const FriendsPage = () => {
             type="button"
             onClick={closeUnfriendDialog}
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
-            aria-label="Dong popup huy ket ban"
+            aria-label={t('friendsPage.closeUnfriendDialogAria')}
           />
 
           <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -883,11 +899,11 @@ export const FriendsPage = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Xac nhan huy ket ban</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('friendsPage.unfriendDialog.title')}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  Ban co chac chan muon huy ket ban voi{' '}
+                  {t('friendsPage.unfriendDialog.descriptionPrefix')}{' '}
                   <span className="font-semibold text-slate-900 dark:text-slate-100">{confirmUnfriendUser.fullName}</span>
-                  ? Sau khi huy, ban se can gui loi moi ket ban lai neu muon ket noi.
+                  ? {t('friendsPage.unfriendDialog.descriptionSuffix')}
                 </p>
               </div>
 
@@ -898,7 +914,7 @@ export const FriendsPage = () => {
                   disabled={isUnfriendSubmitting}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                 >
-                  Huy
+                  {t('friendsPage.actions.cancel')}
                 </button>
                 <button
                   type="button"
@@ -906,7 +922,7 @@ export const FriendsPage = () => {
                   disabled={isUnfriendSubmitting}
                   className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isUnfriendSubmitting ? 'Dang xu ly...' : 'Huy ket ban'}
+                  {isUnfriendSubmitting ? t('friendsPage.actions.processing') : t('friendsPage.actions.unfriend')}
                 </button>
               </div>
             </div>

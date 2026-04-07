@@ -1,4 +1,5 @@
 ﻿import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import type { FriendRequest } from '../../types/friendship';
@@ -15,31 +16,34 @@ interface FriendRequestCardProps {
   onCancel?: () => void;
 }
 
-const formatRequestTime = (requestedAt?: string) => {
+const formatRequestTime = (
+  requestedAt: string | undefined,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) => {
   if (!requestedAt) {
-    return 'Vua xong';
+    return t('friendsPage.time.justNow');
   }
 
   const requestedDate = new Date(requestedAt);
 
   if (Number.isNaN(requestedDate.getTime())) {
-    return 'Vua xong';
+    return t('friendsPage.time.justNow');
   }
 
   const difference = Date.now() - requestedDate.getTime();
   const minutes = Math.max(1, Math.floor(difference / (1000 * 60)));
 
   if (minutes < 60) {
-    return `${minutes} phut truoc`;
+    return t('friendsPage.time.minutesAgo', { count: minutes });
   }
 
   const hours = Math.floor(minutes / 60);
   if (hours < 24) {
-    return `${hours} gio truoc`;
+    return t('friendsPage.time.hoursAgo', { count: hours });
   }
 
   const days = Math.floor(hours / 24);
-  return `${days} ngay truoc`;
+  return t('friendsPage.time.daysAgo', { count: days });
 };
 
 export const FriendRequestCard = ({
@@ -51,6 +55,7 @@ export const FriendRequestCard = ({
   onDelete,
   onCancel,
 }: FriendRequestCardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -74,8 +79,12 @@ export const FriendRequestCard = ({
         />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{request.fullName}</p>
-          <p className="truncate text-xs text-slate-500 dark:text-slate-400">{request.mutualFriends} ban chung</p>
-          <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{formatRequestTime(request.requestedAt)}</p>
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+            {t('friendsPage.mutualFriends', { count: request.mutualFriends })}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+            {formatRequestTime(request.requestedAt, t)}
+          </p>
         </div>
       </button>
 
@@ -86,27 +95,27 @@ export const FriendRequestCard = ({
             onClick={onConfirm}
             className="w-full rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
-            Xac nhan
+            {t('friendsPage.actions.confirm')}
           </button>
           <button
             type="button"
             onClick={onDelete}
             className="w-full rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
-            Xoa
+            {t('friendsPage.actions.delete')}
           </button>
         </div>
       ) : (
         <div className="space-y-2">
           <p className="rounded-xl bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-            Da gui loi moi
+            {t('friendsPage.requestStatus.sent')}
           </p>
           <button
             type="button"
             onClick={onCancel}
             className="w-full rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
-            Huy
+            {t('friendsPage.actions.cancel')}
           </button>
         </div>
       )}
@@ -115,7 +124,7 @@ export const FriendRequestCard = ({
         to={`/profile/${request.id}`}
         className="mt-3 inline-flex text-xs font-semibold text-brand-600 transition hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
       >
-        Xem trang ca nhan
+        {t('friendsPage.actions.viewProfile')}
       </Link>
     </article>
   );

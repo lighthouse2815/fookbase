@@ -1,4 +1,18 @@
-import { Bell, ChevronDown, House, Languages, Menu, MessageSquareText, Moon, Sun, UsersRound } from 'lucide-react';
+import {
+  Bell,
+  Bookmark,
+  ChevronDown,
+  House,
+  Languages,
+  LogOut,
+  Menu,
+  MessageSquareText,
+  Moon,
+  Settings,
+  Sun,
+  UserRound,
+  UsersRound,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -36,11 +50,15 @@ export const Navbar = ({
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const isSettingsPage = location.pathname.startsWith('/settings');
+  const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
+  const isVietnameseActive = currentLanguage.startsWith('vi');
+  const isEnglishActive = currentLanguage.startsWith('en');
 
   const navItems = [
     { key: 'home', icon: House, path: '/' },
     { key: 'friends', icon: UsersRound, path: '/friends' },
     { key: 'messages', icon: MessageSquareText, path: '/messages' },
+    { key: 'saved', icon: Bookmark, path: '/saved' },
   ] as const;
 
   const unreadCount = notifications.filter((item) => !item.isRead).length;
@@ -142,7 +160,11 @@ export const Navbar = ({
             {isLanguageOpen ? (
               <div className="absolute right-0 top-11 min-w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
                 <button
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                    isVietnameseActive
+                      ? 'bg-brand-100 font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200'
+                      : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
+                  }`}
                   onClick={() => {
                     void i18n.changeLanguage('vi');
                     setIsLanguageOpen(false);
@@ -152,7 +174,11 @@ export const Navbar = ({
                   {t('language.vietnamese')}
                 </button>
                 <button
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                    isEnglishActive
+                      ? 'bg-brand-100 font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200'
+                      : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
+                  }`}
                   onClick={() => {
                     void i18n.changeLanguage('en');
                     setIsLanguageOpen(false);
@@ -177,7 +203,7 @@ export const Navbar = ({
               type="button"
               onClick={() => setIsMenuOpen((current) => !current)}
               className="hidden rounded-lg p-1 text-slate-500 transition hover:bg-slate-200 sm:block dark:text-slate-300 dark:hover:bg-slate-700"
-              aria-label="Mo menu tai khoan"
+              aria-label={t('nav.accountMenu')}
             >
               <ChevronDown size={16} />
             </button>
@@ -208,26 +234,29 @@ export const Navbar = ({
             <div className="absolute right-0 top-12 z-30 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-card dark:border-slate-700 dark:bg-slate-900">
               <Link
                 to="/settings"
-                className="block rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Cai dat
+                <Settings size={16} />
+                {t('nav.settings')}
               </Link>
               <Link
                 to="/profile"
-                className="block rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Ho so
+                <UserRound size={16} />
+                {t('nav.profile')}
               </Link>
               <button
                 type="button"
-                className="mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
                 onClick={() => {
                   onLogout();
                   setIsMenuOpen(false);
                 }}
               >
+                <LogOut size={16} />
                 {t('nav.logout')}
               </button>
             </div>

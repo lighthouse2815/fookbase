@@ -1,5 +1,6 @@
-import { Ban, Flag, LockKeyhole, Search, UserRound, UserSquare2 } from 'lucide-react';
+﻿import { Ban, Flag, Search, ShieldCheck, UserRound, UserSquare2, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 import { BlockedUsersSettingsPage } from './BlockedUsersSettingsPage';
@@ -15,46 +16,8 @@ interface SettingsTab {
   label: string;
   description: string;
   keywords: string[];
-  icon: typeof LockKeyhole;
+  icon: LucideIcon;
 }
-
-const SETTINGS_TABS: SettingsTab[] = [
-  {
-    id: 'security',
-    label: 'Bao mat',
-    description: 'Mat khau, OTP, bao ve tai khoan',
-    keywords: ['bao mat', 'mat khau', 'otp', 'security'],
-    icon: LockKeyhole,
-  },
-  {
-    id: 'personal-info',
-    label: 'Thong tin ca nhan',
-    description: 'Ten hien thi, avatar, ngay sinh, gioi tinh',
-    keywords: ['thong tin', 'ca nhan', 'profile', 'avatar', 'display name'],
-    icon: UserRound,
-  },
-  {
-    id: 'profile-page-info',
-    label: 'Thong tin tren trang ca nhan',
-    description: 'Thong tin public hien thi tren profile',
-    keywords: ['trang ca nhan', 'profile', 'public', 'thong tin profile'],
-    icon: UserSquare2,
-  },
-  {
-    id: 'reports',
-    label: 'Bai viet da report',
-    description: 'Danh sach bai viet ban da bao cao',
-    keywords: ['report', 'bao cao', 'post', 'bai viet'],
-    icon: Flag,
-  },
-  {
-    id: 'blocked',
-    label: 'Danh sach chan',
-    description: 'Quan ly nhung tai khoan da chan',
-    keywords: ['chan', 'block', 'blocked', 'danh sach chan'],
-    icon: Ban,
-  },
-];
 
 const parseTabId = (value: string | null): SettingsTabId | null => {
   if (
@@ -70,25 +33,72 @@ const parseTabId = (value: string | null): SettingsTabId | null => {
   return null;
 };
 
-const normalizeKeyword = (value: string): string => value.trim().toLowerCase();
+const normalizeKeyword = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
 export const SettingsPage = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => parseTabId(searchParams.get('tab')) ?? 'security');
+
+  const settingsTabs = useMemo<SettingsTab[]>(
+    () => [
+      {
+        id: 'security',
+        label: t('settings.tabs.security.label'),
+        description: t('settings.tabs.security.description'),
+        keywords: ['bao mat', 'mat khau', 'otp', 'security'],
+        icon: ShieldCheck,
+      },
+      {
+        id: 'personal-info',
+        label: t('settings.tabs.personalInfo.label'),
+        description: t('settings.tabs.personalInfo.description'),
+        keywords: ['thong tin', 'ca nhan', 'profile', 'avatar', 'display name'],
+        icon: UserRound,
+      },
+      {
+        id: 'profile-page-info',
+        label: t('settings.tabs.profilePageInfo.label'),
+        description: t('settings.tabs.profilePageInfo.description'),
+        keywords: ['trang ca nhan', 'profile', 'public', 'thong tin profile'],
+        icon: UserSquare2,
+      },
+      {
+        id: 'reports',
+        label: t('settings.tabs.reports.label'),
+        description: t('settings.tabs.reports.description'),
+        keywords: ['report', 'bao cao', 'post', 'bai viet'],
+        icon: Flag,
+      },
+      {
+        id: 'blocked',
+        label: t('settings.tabs.blocked.label'),
+        description: t('settings.tabs.blocked.description'),
+        keywords: ['chan', 'block', 'blocked', 'danh sach chan'],
+        icon: Ban,
+      },
+    ],
+    [t],
+  );
 
   const normalizedSearchKeyword = normalizeKeyword(searchKeyword);
 
   const filteredTabs = useMemo(() => {
     if (!normalizedSearchKeyword) {
-      return SETTINGS_TABS;
+      return settingsTabs;
     }
 
-    return SETTINGS_TABS.filter((item) => {
+    return settingsTabs.filter((item) => {
       const haystacks = [item.label, item.description, ...item.keywords].map((value) => normalizeKeyword(value));
       return haystacks.some((value) => value.includes(normalizedSearchKeyword));
     });
-  }, [normalizedSearchKeyword]);
+  }, [normalizedSearchKeyword, settingsTabs]);
 
   useEffect(() => {
     const queryTab = parseTabId(searchParams.get('tab'));
@@ -122,21 +132,21 @@ export const SettingsPage = () => {
     setSearchParams(nextSearchParams, { replace: true });
   };
 
-  const activeTabConfig = SETTINGS_TABS.find((item) => item.id === activeTab);
+  const activeTabConfig = settingsTabs.find((item) => item.id === activeTab);
   const hasFilteredTabs = filteredTabs.length > 0;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
       <aside className="xl:sticky xl:top-20 xl:self-start">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-          <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Cai dat va quyen rieng tu</h1>
+          <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h1>
 
           <label className="relative mt-3 block">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
-              placeholder="Tim kiem cai dat"
+              placeholder={t('settings.searchPlaceholder')}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </label>
@@ -144,7 +154,7 @@ export const SettingsPage = () => {
           <div className="mt-4 space-y-2">
             {filteredTabs.length === 0 ? (
               <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                Khong tim thay chuc nang phu hop.
+                {t('settings.notFound')}
               </p>
             ) : null}
 
@@ -178,12 +188,12 @@ export const SettingsPage = () => {
       <section className="space-y-4">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-            {hasFilteredTabs ? activeTabConfig?.label ?? 'Cai dat' : 'Khong tim thay chuc nang'}
+            {hasFilteredTabs ? activeTabConfig?.label ?? t('settings.tabFallback') : t('settings.tabNotFound')}
           </h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {hasFilteredTabs
-              ? activeTabConfig?.description ?? 'Quan ly cac tuy chon tai khoan cua ban.'
-              : 'Thu thay doi tu khoa tim kiem de hien thi lai danh sach chuc nang.'}
+              ? activeTabConfig?.description ?? t('settings.panelDescriptionFallback')
+              : t('settings.searchHintNoResult')}
           </p>
         </section>
 

@@ -1,4 +1,5 @@
 ﻿import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import type { FriendSuggestion, FriendUser } from '../../types/friendship';
@@ -28,6 +29,7 @@ export const UserCard = ({
   onSecondaryAction,
   onSelect,
 }: UserCardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -62,7 +64,9 @@ export const UserCard = ({
 
         <div className={clsx('min-w-0', variant === 'grid' ? 'p-3' : 'flex-1')}>
           <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{user.fullName}</p>
-          <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user.mutualFriends} ban chung</p>
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+            {t('friendsPage.mutualFriends', { count: user.mutualFriends })}
+          </p>
           {statusText ? <p className="mt-1 text-xs text-brand-600 dark:text-brand-300">{statusText}</p> : null}
         </div>
       </button>
@@ -90,7 +94,7 @@ export const UserCard = ({
           to={`/profile/${user.id}`}
           className="inline-flex text-xs font-semibold text-brand-600 transition hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
         >
-          Xem trang ca nhan
+          {t('friendsPage.actions.viewProfile')}
         </Link>
       </div>
     </article>

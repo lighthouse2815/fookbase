@@ -1,5 +1,6 @@
 import { Camera, Save, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { CornerToast } from '../components/CornerToast';
 import { useCornerToast } from '../hooks/useCornerToast';
@@ -30,6 +31,7 @@ const toFallbackAvatarUrl = (seed?: string) => `https://i.pravatar.cc/150?u=${se
 const isImageFile = (file: File) => file.type.trim().toLowerCase().startsWith('image/');
 
 export const PersonalInfoSettingsPage = () => {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<MyProfileSettings | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +72,7 @@ export const PersonalInfoSettingsPage = () => {
           return;
         }
 
-        setErrorMessage(getApiErrorMessage(error, 'Khong the tai thong tin ca nhan.'));
+        setErrorMessage(getApiErrorMessage(error, t('personalInfoSettings.loadError')));
       } finally {
         if (!isCancelled) {
           setIsLoading(false);
@@ -118,8 +120,8 @@ export const PersonalInfoSettingsPage = () => {
     }
 
     if (!isImageFile(file)) {
-      setErrorMessage('Vui long chon file anh hop le.');
-      showToast('Vui long chon file anh hop le.', 'error');
+      setErrorMessage(t('personalInfoSettings.invalidImageFile'));
+      showToast(t('personalInfoSettings.invalidImageFile'), 'error');
       return;
     }
 
@@ -183,9 +185,9 @@ export const PersonalInfoSettingsPage = () => {
         avatarInputRef.current.value = '';
       }
 
-      showToast('Cap nhat thong tin thanh cong.', 'success');
+      showToast(t('personalInfoSettings.updateSuccess'), 'success');
     } catch (error) {
-      const message = getApiErrorMessage(error, 'Khong the cap nhat thong tin ca nhan.');
+      const message = getApiErrorMessage(error, t('personalInfoSettings.updateError'));
       setErrorMessage(message);
       showToast(message, 'error');
     } finally {
@@ -202,7 +204,7 @@ export const PersonalInfoSettingsPage = () => {
   if (isLoading) {
     return (
       <section className="rounded-3xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-        Dang tai thong tin ca nhan...
+        {t('personalInfoSettings.loading')}
       </section>
     );
   }
@@ -215,9 +217,9 @@ export const PersonalInfoSettingsPage = () => {
             <UserRound size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Thong tin ca nhan</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('personalInfoSettings.title')}</h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Xem va cap nhat cac thong tin profile cua ban.
+              {t('personalInfoSettings.subtitle')}
             </p>
           </div>
         </div>
@@ -231,14 +233,16 @@ export const PersonalInfoSettingsPage = () => {
 
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Chinh sua thong tin</h2>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+            {t('personalInfoSettings.editSectionTitle')}
+          </h2>
           <button
             type="button"
             onClick={() => setIsEditing(true)}
             disabled={isEditing || isSaving}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
-            {isEditing ? 'Dang sua' : 'Sua'}
+            {isEditing ? t('personalInfoSettings.editingButton') : t('personalInfoSettings.editButton')}
           </button>
         </div>
 
@@ -257,7 +261,7 @@ export const PersonalInfoSettingsPage = () => {
             disabled={!isEditing || isSaving}
             className="group relative h-32 w-32 overflow-hidden rounded-full border-4 border-white shadow-lg ring-1 ring-slate-200 disabled:cursor-not-allowed dark:border-slate-900 dark:ring-slate-700"
           >
-            <img src={avatarSource} alt="Avatar preview" className="h-full w-full object-cover" />
+            <img src={avatarSource} alt={t('personalInfoSettings.avatarAlt')} className="h-full w-full object-cover" />
 
             {isEditing ? (
               <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition group-hover:opacity-100">
@@ -272,13 +276,13 @@ export const PersonalInfoSettingsPage = () => {
             disabled={!isEditing || isSaving}
             className="mt-3 text-xs font-semibold text-brand-600 transition hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-brand-300 dark:hover:text-brand-200"
           >
-            Doi anh dai dien
+            {t('personalInfoSettings.changeAvatar')}
           </button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Username
+            {t('personalInfoSettings.username')}
             <input
               value={profile?.username ?? ''}
               disabled
@@ -287,7 +291,7 @@ export const PersonalInfoSettingsPage = () => {
           </label>
 
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Email
+            {t('personalInfoSettings.email')}
             <input
               value={profile?.email ?? ''}
               disabled
@@ -296,7 +300,7 @@ export const PersonalInfoSettingsPage = () => {
           </label>
 
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            So dien thoai
+            {t('personalInfoSettings.phoneNumber')}
             <input
               value={profile?.phoneNumber ?? ''}
               disabled
@@ -305,40 +309,40 @@ export const PersonalInfoSettingsPage = () => {
           </label>
 
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Display name
+            {t('personalInfoSettings.displayName')}
             <input
               value={form.displayName}
               onChange={(event) => handleFieldChange('displayName', event.target.value)}
               disabled={!isEditing || isSaving}
               className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/70"
-              placeholder="Nhap ten hien thi"
+              placeholder={t('personalInfoSettings.displayNamePlaceholder')}
             />
           </label>
 
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            First name
+            {t('personalInfoSettings.firstName')}
             <input
               value={form.firstName}
               onChange={(event) => handleFieldChange('firstName', event.target.value)}
               disabled={!isEditing || isSaving}
               className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/70"
-              placeholder="Nhap ten"
+              placeholder={t('personalInfoSettings.firstNamePlaceholder')}
             />
           </label>
 
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Last name
+            {t('personalInfoSettings.lastName')}
             <input
               value={form.lastName}
               onChange={(event) => handleFieldChange('lastName', event.target.value)}
               disabled={!isEditing || isSaving}
               className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/70"
-              placeholder="Nhap ho"
+              placeholder={t('personalInfoSettings.lastNamePlaceholder')}
             />
           </label>
 
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Ngay sinh
+            {t('personalInfoSettings.birthDate')}
             <input
               type="date"
               value={form.birthday}
@@ -349,17 +353,17 @@ export const PersonalInfoSettingsPage = () => {
           </label>
 
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Gioi tinh
+            {t('personalInfoSettings.gender')}
             <select
               value={form.gender}
               onChange={(event) => handleFieldChange('gender', event.target.value)}
               disabled={!isEditing || isSaving}
               className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/70"
             >
-              <option value="">Chon gioi tinh</option>
-              <option value="MALE">Nam</option>
-              <option value="FEMALE">Nu</option>
-              <option value="OTHER">Khac</option>
+              <option value="">{t('personalInfoSettings.genderPlaceholder')}</option>
+              <option value="MALE">{t('personalInfoSettings.genderMale')}</option>
+              <option value="FEMALE">{t('personalInfoSettings.genderFemale')}</option>
+              <option value="OTHER">{t('personalInfoSettings.genderOther')}</option>
             </select>
           </label>
         </div>
@@ -370,13 +374,13 @@ export const PersonalInfoSettingsPage = () => {
               type="button"
               onClick={() => void handleSave()}
               disabled={isSaving}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <Save size={16} />
-              {isSaving ? 'Dang luu...' : 'Luu'}
-            </button>
-          </div>
-        ) : null}
+            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            <Save size={16} />
+            {isSaving ? t('personalInfoSettings.savingButton') : t('personalInfoSettings.saveButton')}
+          </button>
+        </div>
+      ) : null}
       </section>
 
       <CornerToast message={toast?.message ?? null} type={toast?.type} />

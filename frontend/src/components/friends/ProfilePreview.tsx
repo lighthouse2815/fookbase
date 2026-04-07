@@ -1,6 +1,7 @@
 ﻿import clsx from 'clsx';
 import { Image, Info, MessageCircle, Newspaper, UserRoundCheck, UserRoundPlus, UserRoundX } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import type { FriendRequest, FriendSuggestion, FriendUser } from '../../types/friendship';
@@ -21,12 +22,6 @@ interface ProfilePreviewProps {
   onUnfriend?: () => void;
 }
 
-const previewTabs: Array<{ id: PreviewTab; label: string; icon: typeof Newspaper }> = [
-  { id: 'posts', label: 'Bai viet', icon: Newspaper },
-  { id: 'photos', label: 'Anh', icon: Image },
-  { id: 'about', label: 'Gioi thieu', icon: Info },
-];
-
 export const ProfilePreview = ({
   user,
   relation,
@@ -36,7 +31,16 @@ export const ProfilePreview = ({
   onCancelRequest,
   onUnfriend,
 }: ProfilePreviewProps) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<PreviewTab>('posts');
+  const previewTabs: Array<{ id: PreviewTab; label: string; icon: typeof Newspaper }> = useMemo(
+    () => [
+      { id: 'posts', label: t('friendsPage.preview.tabs.posts'), icon: Newspaper },
+      { id: 'photos', label: t('friendsPage.preview.tabs.photos'), icon: Image },
+      { id: 'about', label: t('friendsPage.preview.tabs.about'), icon: Info },
+    ],
+    [t],
+  );
 
   if (!user) {
     return (
@@ -45,10 +49,8 @@ export const ProfilePreview = ({
           <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
             <UserRoundPlus size={22} />
           </div>
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Chon mot nguoi de xem truoc ho so</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Nhan vao card ben trai de xem nhanh thong tin, anh va thao tac ket ban.
-          </p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('friendsPage.preview.emptyTitle')}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('friendsPage.preview.emptyDescription')}</p>
         </div>
       </aside>
     );
@@ -68,7 +70,9 @@ export const ProfilePreview = ({
           </Link>
           <div className="pb-2">
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{user.fullName}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{user.mutualFriends} ban chung</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t('friendsPage.mutualFriends', { count: user.mutualFriends })}
+            </p>
           </div>
         </div>
 
@@ -80,7 +84,7 @@ export const ProfilePreview = ({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <MessageCircle size={16} />
-                Nhan tin
+                {t('friendsPage.actions.message')}
               </button>
               <button
                 type="button"
@@ -88,7 +92,7 @@ export const ProfilePreview = ({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <UserRoundX size={16} />
-                Huy ket ban
+                {t('friendsPage.actions.unfriend')}
               </button>
             </>
           ) : null}
@@ -101,7 +105,7 @@ export const ProfilePreview = ({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <UserRoundCheck size={16} />
-                Xac nhan
+                {t('friendsPage.actions.confirm')}
               </button>
               <button
                 type="button"
@@ -109,7 +113,7 @@ export const ProfilePreview = ({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <UserRoundX size={16} />
-                Xoa
+                {t('friendsPage.actions.delete')}
               </button>
             </>
           ) : null}
@@ -121,7 +125,7 @@ export const ProfilePreview = ({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <MessageCircle size={16} />
-                Nhan tin
+                {t('friendsPage.actions.message')}
               </button>
               <button
                 type="button"
@@ -129,7 +133,7 @@ export const ProfilePreview = ({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <UserRoundX size={16} />
-                Huy loi moi
+                {t('friendsPage.actions.cancelRequest')}
               </button>
             </>
           ) : null}
@@ -142,14 +146,14 @@ export const ProfilePreview = ({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <UserRoundPlus size={16} />
-                Them ban be
+                {t('friendsPage.actions.addFriend')}
               </button>
               <button
                 type="button"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <MessageCircle size={16} />
-                Nhan tin
+                {t('friendsPage.actions.message')}
               </button>
             </>
           ) : null}
@@ -177,12 +181,12 @@ export const ProfilePreview = ({
         <div className="mt-4 rounded-2xl border border-slate-200 p-3 dark:border-slate-700">
           {activeTab === 'posts' ? (
             <div className="space-y-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Hoat dong gan day</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('friendsPage.preview.recentActivity')}</p>
               <div className="rounded-xl bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                {user.fullName} vua cap nhat anh dai dien.
+                {t('friendsPage.preview.sampleActivity.avatarUpdated', { name: user.fullName })}
               </div>
               <div className="rounded-xl bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                Dang tham gia nhom hoc tap tuan nay.
+                {t('friendsPage.preview.sampleActivity.joinedStudyGroup')}
               </div>
             </div>
           ) : null}
@@ -203,14 +207,19 @@ export const ProfilePreview = ({
           {activeTab === 'about' ? (
             <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
               <p>
-                Khoa: <span className="font-semibold text-slate-800 dark:text-slate-100">{user.faculty ?? 'Dang cap nhat'}</span>
+                {t('friendsPage.preview.about.faculty')}:{' '}
+                <span className="font-semibold text-slate-800 dark:text-slate-100">
+                  {user.faculty ?? t('friendsPage.preview.about.notUpdated')}
+                </span>
               </p>
               <p>
-                Ban chung: <span className="font-semibold text-slate-800 dark:text-slate-100">{user.mutualFriends}</span>
+                {t('friendsPage.preview.about.mutualFriends')}:{' '}
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{user.mutualFriends}</span>
               </p>
               {'friendsCount' in user ? (
                 <p>
-                  Tong ban be: <span className="font-semibold text-slate-800 dark:text-slate-100">{user.friendsCount ?? 0}</span>
+                  {t('friendsPage.preview.about.totalFriends')}:{' '}
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{user.friendsCount ?? 0}</span>
                 </p>
               ) : null}
               {'bio' in user && user.bio ? <p className="text-xs text-slate-500 dark:text-slate-400">{user.bio}</p> : null}

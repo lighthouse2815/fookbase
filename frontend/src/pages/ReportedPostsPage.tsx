@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { postReportService } from '../services/postReportService';
@@ -22,6 +23,7 @@ const getStatusBadgeClass = (status: string) => {
 };
 
 export const ReportedPostsPage = () => {
+  const { t } = useTranslation();
   const [reports, setReports] = useState<PostReportItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -44,12 +46,12 @@ export const ReportedPostsPage = () => {
       setPage(targetPage);
       setLoadError(null);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, 'Khong the tai danh sach bao cao.'));
+      setLoadError(getApiErrorMessage(error, t('reportedPosts.loadError')));
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadReports(1, true);
@@ -58,8 +60,8 @@ export const ReportedPostsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Post reports</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Danh sach bai viet ban da bao cao.</p>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('reportedPosts.title')}</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('reportedPosts.subtitle')}</p>
       </section>
 
       {loadError ? (
@@ -70,7 +72,7 @@ export const ReportedPostsPage = () => {
 
       {reports.length === 0 && !isLoading ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-          Chua co bao cao nao.
+          {t('reportedPosts.empty')}
         </section>
       ) : null}
 
@@ -81,7 +83,9 @@ export const ReportedPostsPage = () => {
             className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75"
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Report #{report.id.slice(0, 8)}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {t('reportedPosts.reportLabel', { id: report.id.slice(0, 8) })}
+              </p>
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(report.status)}`}>
                 {report.status}
               </span>
@@ -94,7 +98,7 @@ export const ReportedPostsPage = () => {
               to={`/posts/${report.postId}`}
               className="mt-3 inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Xem bai viet
+              {t('reportedPosts.viewPost')}
             </Link>
           </article>
         ))}
@@ -108,10 +112,10 @@ export const ReportedPostsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? 'Dang tai...' : 'Xem them'}
+            {isLoading ? t('reportedPosts.loadingButton') : t('reportedPosts.loadMoreButton')}
           </button>
         ) : reports.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Da hien thi het bao cao.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t('reportedPosts.noMoreReports')}</p>
         ) : null}
       </div>
     </div>

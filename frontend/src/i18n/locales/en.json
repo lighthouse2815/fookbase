@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "InteractHub",
-    "tagline": "University social network"
+    "name": "Footbase",
+    "tagline": "Social network"
   },
   "common": {
     "loading": "Loading...",
@@ -27,6 +27,8 @@
     "groups": "Groups",
     "saved": "Saved",
     "profile": "Profile",
+    "settings": "Settings",
+    "accountMenu": "Open account menu",
     "logout": "Logout",
     "login": "Login",
     "register": "Register",
@@ -55,7 +57,7 @@
     "onlineUsers": "Online now",
     "notificationsPreview": "Notification preview",
     "mutualFriends": "{{count}} mutual friends",
-    "addFriend": "Add"
+    "addFriend": "Add friend"
   },
   "post": {
     "like": "Like",
@@ -64,6 +66,68 @@
     "writeComment": "Write a comment...",
     "addComment": "Send",
     "commentCountLabel": "{{count}} comments"
+  },
+  "commentSection": {
+    "reactionFilterAll": "All",
+    "replySent": "Reply sent.",
+    "replySendError": "Unable to send reply.",
+    "setReactionError": "Unable to update comment reaction.",
+    "removeReactionError": "Unable to remove comment reaction.",
+    "reactionViewerLoadError": "Unable to load reaction list.",
+    "friendStatusUpdateError": "Unable to update friendship status.",
+    "emptyCommentError": "Comment content cannot be empty.",
+    "commentUpdated": "Comment updated.",
+    "updateCommentError": "Unable to update comment.",
+    "commentDeleted": "Comment deleted.",
+    "deleteCommentError": "Unable to delete comment.",
+    "reportReasonMinLength": "Please enter at least 3 characters for the reason.",
+    "reportSent": "Comment report sent to admin.",
+    "reportError": "Unable to send report.",
+    "processing": "Processing...",
+    "saving": "Saving...",
+    "save": "Save",
+    "reply": "Reply",
+    "replyPlaceholder": "Reply to {{name}}...",
+    "cancel": "Cancel",
+    "sending": "Sending...",
+    "send": "Send",
+    "hideReplies": "Hide replies",
+    "viewOneReply": "View 1 reply",
+    "viewMoreReplies": "View {{count}} more replies",
+    "commentMenuAria": "Open comment options",
+    "reportToAdmin": "Report to admin",
+    "reactionModalOverlayAria": "Close reaction modal",
+    "reactionModalCloseButtonAria": "Close",
+    "reactionModalLoading": "Loading reactions...",
+    "reactionModalEmpty": "No reactions in this group yet.",
+    "deleteModalOverlayAria": "Close delete comment modal",
+    "deleteModalTitle": "Confirm comment deletion",
+    "deleteModalDescription": "Deleted comments cannot be recovered.",
+    "deleting": "Deleting...",
+    "confirmDelete": "Confirm delete",
+    "edit": "Edit",
+    "delete": "Delete",
+    "edited": "Edited",
+    "reportModalOverlayAria": "Close report comment modal",
+    "reportModalTitle": "Report comment",
+    "reportModalDescription": "The content will be sent to admin for review.",
+    "reportReasonLabel": "Reason",
+    "reportReasonPlaceholder": "Enter reason for reporting this comment...",
+    "sendReport": "Send report",
+    "friendAction": {
+      "friends": "Friends",
+      "cancelInvite": "Cancel request",
+      "accept": "Accept",
+      "addFriend": "Add friend"
+    },
+    "reactions": {
+      "like": "Like",
+      "wow": "Wow",
+      "sad": "Sad",
+      "angry": "Angry",
+      "haha": "Haha",
+      "love": "Love"
+    }
   },
   "profile": {
     "intro": "Intro",
@@ -78,12 +142,258 @@
     "major": "Major",
     "year": "Academic year",
     "friends": "Friends",
-    "posts": "Posts"
+    "posts": "Posts",
+    "emptyInfoValue": "Not updated",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other"
   },
   "friendsPage": {
     "title": "Friends",
     "subtitle": "Manage your connections and discover new classmates",
-    "suggestions": "People you may know"
+    "suggestions": "People you may know",
+    "managementTitle": "Friend Management",
+    "refresh": "Refresh",
+    "openMenuAria": "Open friends menu",
+    "closeMenuAria": "Close friends menu",
+    "menuTitle": "Friends menu",
+    "tabs": {
+      "home": "Friends home",
+      "requests": "Manage friend requests",
+      "suggestions": "Friend suggestions",
+      "friends": "Friends list"
+    },
+    "sidebar": {
+      "home": "Home",
+      "requests": "Requests",
+      "suggestions": "Suggestions",
+      "friends": "Friends"
+    },
+    "filters": {
+      "all": "All",
+      "online": "Active now",
+      "sameFaculty": "Same faculty"
+    },
+    "status": {
+      "online": "Active now",
+      "friend": "Friend"
+    },
+    "actions": {
+      "addFriend": "Add friend",
+      "message": "Message",
+      "unfriend": "Unfriend",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "delete": "Delete",
+      "viewProfile": "View profile",
+      "cancelRequest": "Cancel request",
+      "processing": "Processing..."
+    },
+    "requestStatus": {
+      "sent": "Request sent"
+    },
+    "searchPlaceholder": "Search friends...",
+    "receivedRequestsTitle": "Received friend requests",
+    "sentRequestsTitle": "Sent requests",
+    "suggestionTitle": "Friend suggestions",
+    "requestsTitle": "Friend requests",
+    "friendsTitle": "Your friends",
+    "receivedRequestCount": "{{count}} requests",
+    "sentRequestCount": "{{count}} requests",
+    "suggestionCount": "{{count}} suggestions",
+    "peopleCount": "{{count}} people",
+    "itemsCount": "{{count}} items",
+    "resultCount": "{{count}} results",
+    "mutualFriends": "{{count}} mutual friends",
+    "closeUnfriendDialogAria": "Close unfriend dialog",
+    "unfriendDialog": {
+      "title": "Confirm unfriend",
+      "descriptionPrefix": "Are you sure you want to unfriend",
+      "descriptionSuffix": "After unfriending, you will need to send a friend request again to reconnect."
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hours ago",
+      "daysAgo": "{{count}} days ago"
+    },
+    "preview": {
+      "emptyTitle": "Select a user to preview profile",
+      "emptyDescription": "Click a card on the left to quickly view profile, photos, and friend actions.",
+      "tabs": {
+        "posts": "Posts",
+        "photos": "Photos",
+        "about": "About"
+      },
+      "recentActivity": "Recent activity",
+      "sampleActivity": {
+        "avatarUpdated": "{{name}} updated their profile picture.",
+        "joinedStudyGroup": "Joined a study group this week."
+      },
+      "about": {
+        "faculty": "Faculty",
+        "notUpdated": "Not updated",
+        "mutualFriends": "Mutual friends",
+        "totalFriends": "Total friends"
+      }
+    },
+    "empty": {
+      "receivedRequests": "You have no new friend requests.",
+      "sentRequestsRecent": "You have not sent any requests recently.",
+      "suggestionsTemporary": "No new suggestions for now.",
+      "receivedRequestsPending": "You have no pending requests.",
+      "sentRequests": "You have not sent any requests.",
+      "suggestions": "No matching suggestions at the moment.",
+      "friendsFiltered": "No friends match the current filter."
+    },
+    "errors": {
+      "realtimeFallback": "Unable to load full realtime data. The page is showing fallback data.",
+      "acceptNotSynced": "Confirmed on UI, but not synced with server yet.",
+      "deleteNotSynced": "Removed on UI, but not synced with server yet.",
+      "cancelNotSynced": "Canceled on UI, but not synced with server yet.",
+      "sendNotSynced": "Sent on UI, but not synced with server yet.",
+      "unfriendNotSynced": "Unfriended on UI, but not synced with server yet."
+    }
+  },
+  "settings": {
+    "title": "Settings & privacy",
+    "searchPlaceholder": "Search settings",
+    "notFound": "No matching features found.",
+    "tabFallback": "Settings",
+    "tabNotFound": "Feature not found",
+    "panelDescriptionFallback": "Manage your account options.",
+    "searchHintNoResult": "Try changing the search keyword to show features again.",
+    "tabs": {
+      "security": {
+        "label": "Security",
+        "description": "Password, OTP, account protection"
+      },
+      "personalInfo": {
+        "label": "Personal info",
+        "description": "Display name, avatar, birth date, gender"
+      },
+      "profilePageInfo": {
+        "label": "Profile page info",
+        "description": "Public information shown on your profile"
+      },
+      "reports": {
+        "label": "Reported posts",
+        "description": "Posts you have reported"
+      },
+      "blocked": {
+        "label": "Blocked list",
+        "description": "Manage blocked accounts"
+      }
+    }
+  },
+  "securitySettings": {
+    "title": "Account security",
+    "subtitle": "Manage sign-in information and change your password securely.",
+    "accountInfoTitle": "Account info",
+    "usernameLabel": "Username",
+    "changePasswordTitle": "Change password",
+    "otpSentDefault": "OTP has been sent. Please check your email.",
+    "sendOtpError": "Unable to send OTP right now.",
+    "otpRequired": "Please enter OTP.",
+    "resetTokenMissing": "Did not receive reset token from the system.",
+    "otpVerified": "OTP is valid. Please set a new password.",
+    "verifyOtpError": "OTP is invalid or expired.",
+    "resetTokenMissingRetry": "Missing reset token. Please verify OTP again.",
+    "passwordTooShort": "New password must be at least 8 characters.",
+    "passwordNotMatch": "Password confirmation does not match.",
+    "passwordChanged": "Password changed successfully.",
+    "resetPasswordError": "Unable to change password right now.",
+    "sendingButton": "Sending...",
+    "sendOtpButton": "Send password-reset OTP",
+    "otpLabel": "OTP",
+    "otpPlaceholder": "Enter OTP",
+    "verifyingButton": "Verifying...",
+    "verifyOtpButton": "Verify OTP",
+    "resendOtpButton": "Resend OTP",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "confirmNewPasswordPlaceholder": "Confirm new password",
+    "updatingButton": "Updating...",
+    "updatePasswordButton": "Update password"
+  },
+  "personalInfoSettings": {
+    "loading": "Loading personal information...",
+    "loadError": "Unable to load personal information.",
+    "invalidImageFile": "Please select a valid image file.",
+    "updateSuccess": "Profile updated successfully.",
+    "updateError": "Unable to update personal information.",
+    "title": "Personal information",
+    "subtitle": "View and update your profile information.",
+    "editSectionTitle": "Edit information",
+    "editButton": "Edit",
+    "editingButton": "Editing",
+    "changeAvatar": "Change profile picture",
+    "avatarAlt": "Avatar preview",
+    "username": "Username",
+    "email": "Email",
+    "phoneNumber": "Phone number",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "Enter display name",
+    "firstName": "First name",
+    "firstNamePlaceholder": "Enter first name",
+    "lastName": "Last name",
+    "lastNamePlaceholder": "Enter last name",
+    "birthDate": "Birth date",
+    "gender": "Gender",
+    "genderPlaceholder": "Select gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other",
+    "savingButton": "Saving...",
+    "saveButton": "Save"
+  },
+  "profilePageInfoSettings": {
+    "loading": "Loading profile page information...",
+    "loadError": "Unable to load profile page information.",
+    "title": "Information shown on profile",
+    "subtitle": "This is what others can see on your profile page.",
+    "displayName": "Display name",
+    "nickname": "Nickname",
+    "profileUsername": "Profile username",
+    "phoneNumber": "Phone number",
+    "friendsCount": "Friends count",
+    "birthDateGender": "Birth date / Gender",
+    "emptyValue": "Not updated",
+    "defaultUser": "user",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other"
+  },
+  "savedPosts": {
+    "title": "Saved posts",
+    "subtitle": "List of posts you have saved.",
+    "loadError": "Unable to load saved posts.",
+    "empty": "No saved posts yet.",
+    "removeSuccess": "Post removed from saved list.",
+    "removeError": "Unable to remove this saved post.",
+    "removeButton": "Unsave",
+    "removingButton": "Removing...",
+    "loadingButton": "Loading...",
+    "loadMoreButton": "Load more",
+    "noMorePosts": "All saved posts are shown."
+  },
+  "reportedPosts": {
+    "title": "Reported posts",
+    "subtitle": "List of posts you have reported.",
+    "loadError": "Unable to load reports.",
+    "empty": "No reports yet.",
+    "reportLabel": "Report #{{id}}",
+    "viewPost": "View post",
+    "loadingButton": "Loading...",
+    "loadMoreButton": "Load more",
+    "noMoreReports": "All reports are shown."
+  },
+  "blockedUsersSettings": {
+    "title": "Blocked list",
+    "subtitle": "Manage the accounts you have blocked.",
+    "emptyTitle": "You have not blocked any account",
+    "emptySubtitle": "When blocked-list sync is available, blocked accounts will appear here."
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -156,4 +466,3 @@
     "empty": "No new notifications"
   }
 }
-

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 
 import { CornerToast } from '../components/CornerToast';
@@ -12,6 +13,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 const PAGE_SIZE = 6;
 
 export const SavedPostsPage = () => {
+  const { t } = useTranslation();
   const { currentUser } = useOutletContext<MainLayoutOutletContext>();
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
@@ -37,12 +39,12 @@ export const SavedPostsPage = () => {
       setPage(targetPage);
       setLoadError(null);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, 'Khong the tai danh sach bai viet da luu.'));
+      setLoadError(getApiErrorMessage(error, t('savedPosts.loadError')));
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadSavedPosts(1, true);
@@ -58,9 +60,9 @@ export const SavedPostsPage = () => {
     try {
       await savedPostService.removeSavedPost(postId);
       setSavedPosts((previous) => previous.filter((post) => post.id !== postId));
-      showToast('Da bo luu bai viet', 'success');
+      showToast(t('savedPosts.removeSuccess'), 'success');
     } catch (error) {
-      showToast(getApiErrorMessage(error, 'Khong the bo luu bai viet.'), 'error');
+      showToast(getApiErrorMessage(error, t('savedPosts.removeError')), 'error');
     } finally {
       setRemovingPostId(null);
     }
@@ -73,8 +75,8 @@ export const SavedPostsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Saved posts</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Danh sach bai viet ban da luu.</p>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('savedPosts.title')}</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('savedPosts.subtitle')}</p>
       </section>
 
       {loadError ? (
@@ -86,7 +88,7 @@ export const SavedPostsPage = () => {
       <section className="space-y-4">
         {savedPosts.length === 0 && !isLoading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-            Chua co bai viet nao duoc luu.
+            {t('savedPosts.empty')}
           </div>
         ) : null}
 
@@ -99,7 +101,7 @@ export const SavedPostsPage = () => {
                 disabled={removingPostId === post.id}
                 className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
-                {removingPostId === post.id ? 'Dang bo luu...' : 'Bo luu'}
+                {removingPostId === post.id ? t('savedPosts.removingButton') : t('savedPosts.removeButton')}
               </button>
             </div>
             <PostCard
@@ -120,10 +122,10 @@ export const SavedPostsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? 'Dang tai...' : 'Xem them'}
+            {isLoading ? t('savedPosts.loadingButton') : t('savedPosts.loadMoreButton')}
           </button>
         ) : savedPosts.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Da hien thi het bai viet da luu.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t('savedPosts.noMorePosts')}</p>
         ) : null}
       </div>
 

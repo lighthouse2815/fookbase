@@ -1,5 +1,6 @@
 import { Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
@@ -9,6 +10,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 type Step = 'sendOtp' | 'verifyOtp' | 'resetPassword';
 
 export const SecuritySettingsPage = () => {
+  const { t } = useTranslation();
   const { currentUser } = useOutletContext<MainLayoutOutletContext>();
 
   const [step, setStep] = useState<Step>('sendOtp');
@@ -29,11 +31,11 @@ export const SecuritySettingsPage = () => {
 
     try {
       const response = await authService.sendResetPasswordOtpWhenLogin();
-      setInfoMessage(response.result || 'Ma OTP da duoc gui. Vui long kiem tra email cua ban.');
+      setInfoMessage(response.result || t('securitySettings.otpSentDefault'));
       setStep('verifyOtp');
       setOtp('');
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Khong the gui OTP luc nay.'));
+      setErrorMessage(getApiErrorMessage(error, t('securitySettings.sendOtpError')));
     } finally {
       setIsSubmitting(false);
     }
@@ -42,7 +44,7 @@ export const SecuritySettingsPage = () => {
   const handleVerifyOtp = async () => {
     const normalizedOtp = otp.trim();
     if (!normalizedOtp) {
-      setErrorMessage('Vui long nhap OTP.');
+      setErrorMessage(t('securitySettings.otpRequired'));
       return;
     }
 
@@ -58,17 +60,17 @@ export const SecuritySettingsPage = () => {
 
       const token = response.result?.trim();
       if (!token) {
-        setErrorMessage('Khong nhan duoc reset token tu he thong.');
+        setErrorMessage(t('securitySettings.resetTokenMissing'));
         return;
       }
 
       setResetToken(token);
       setStep('resetPassword');
-      setInfoMessage('OTP hop le. Hay dat mat khau moi.');
+      setInfoMessage(t('securitySettings.otpVerified'));
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'OTP khong hop le hoac da het han.'));
+      setErrorMessage(getApiErrorMessage(error, t('securitySettings.verifyOtpError')));
     } finally {
       setIsSubmitting(false);
     }
@@ -76,18 +78,18 @@ export const SecuritySettingsPage = () => {
 
   const handleResetPassword = async () => {
     if (!resetToken) {
-      setErrorMessage('Thieu reset token. Vui long xac thuc OTP lai.');
+      setErrorMessage(t('securitySettings.resetTokenMissingRetry'));
       setStep('verifyOtp');
       return;
     }
 
     if (newPassword.length < 8) {
-      setErrorMessage('Mat khau moi toi thieu 8 ky tu.');
+      setErrorMessage(t('securitySettings.passwordTooShort'));
       return;
     }
 
     if (confirmPassword !== newPassword) {
-      setErrorMessage('Nhap lai mat khau khong khop.');
+      setErrorMessage(t('securitySettings.passwordNotMatch'));
       return;
     }
 
@@ -97,14 +99,14 @@ export const SecuritySettingsPage = () => {
 
     try {
       const response = await authService.resetPassword(resetToken, { newPassword });
-      setInfoMessage(response.message || 'Doi mat khau thanh cong.');
+      setInfoMessage(response.message || t('securitySettings.passwordChanged'));
       setStep('sendOtp');
       setResetToken('');
       setOtp('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Khong the doi mat khau luc nay.'));
+      setErrorMessage(getApiErrorMessage(error, t('securitySettings.resetPasswordError')));
     } finally {
       setIsSubmitting(false);
     }
@@ -118,24 +120,24 @@ export const SecuritySettingsPage = () => {
             <ShieldCheck size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Bao mat tai khoan</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('securitySettings.title')}</h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Quan ly thong tin dang nhap va doi mat khau an toan.
+              {t('securitySettings.subtitle')}
             </p>
           </div>
         </div>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Thong tin tai khoan</h2>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('securitySettings.accountInfoTitle')}</h2>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-          <p className="text-xs text-slate-500 dark:text-slate-400">Username</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.usernameLabel')}</p>
           <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">@{currentUser.username}</p>
         </div>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Doi mat khau</h2>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('securitySettings.changePasswordTitle')}</h2>
 
         {errorMessage ? (
           <p className="mt-3 rounded-xl border border-rose-300/60 bg-rose-100 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/50 dark:bg-rose-500/15 dark:text-rose-200">
@@ -158,7 +160,7 @@ export const SecuritySettingsPage = () => {
               className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <KeyRound size={16} />
-              {isSubmitting ? 'Dang gui...' : 'Gui OTP doi mat khau'}
+              {isSubmitting ? t('securitySettings.sendingButton') : t('securitySettings.sendOtpButton')}
             </button>
           </div>
         ) : null}
@@ -166,12 +168,12 @@ export const SecuritySettingsPage = () => {
         {step === 'verifyOtp' ? (
           <div className="mt-4 space-y-3">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              OTP
+              {t('securitySettings.otpLabel')}
               <input
                 value={otp}
                 onChange={(event) => setOtp(event.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                placeholder="Nhap OTP"
+                placeholder={t('securitySettings.otpPlaceholder')}
               />
             </label>
             <div className="flex items-center gap-2">
@@ -181,7 +183,7 @@ export const SecuritySettingsPage = () => {
                 disabled={isSubmitting}
                 className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isSubmitting ? 'Dang xac thuc...' : 'Xac thuc OTP'}
+                {isSubmitting ? t('securitySettings.verifyingButton') : t('securitySettings.verifyOtpButton')}
               </button>
               <button
                 type="button"
@@ -189,7 +191,7 @@ export const SecuritySettingsPage = () => {
                 disabled={isSubmitting}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
-                Gui lai OTP
+                {t('securitySettings.resendOtpButton')}
               </button>
             </div>
           </div>
@@ -198,14 +200,14 @@ export const SecuritySettingsPage = () => {
         {step === 'resetPassword' ? (
           <div className="mt-4 space-y-3">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Mat khau moi
+              {t('securitySettings.newPasswordLabel')}
               <div className="relative mt-1">
                 <input
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                   type={showPassword ? 'text' : 'password'}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 pr-10 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                  placeholder="Nhap mat khau moi"
+                  placeholder={t('securitySettings.newPasswordPlaceholder')}
                 />
                 <button
                   type="button"
@@ -218,14 +220,14 @@ export const SecuritySettingsPage = () => {
             </label>
 
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Nhap lai mat khau moi
+              {t('securitySettings.confirmNewPasswordLabel')}
               <div className="relative mt-1">
                 <input
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 pr-10 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                  placeholder="Nhap lai mat khau moi"
+                  placeholder={t('securitySettings.confirmNewPasswordPlaceholder')}
                 />
                 <button
                   type="button"
@@ -243,7 +245,7 @@ export const SecuritySettingsPage = () => {
               disabled={isSubmitting}
               className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isSubmitting ? 'Dang cap nhat...' : 'Cap nhat mat khau'}
+              {isSubmitting ? t('securitySettings.updatingButton') : t('securitySettings.updatePasswordButton')}
             </button>
           </div>
         ) : null}

@@ -46,33 +46,37 @@ const createFallbackProfile = (
 };
 
 const PROFILE_POSTS_PAGE_SIZE = 100;
-const EMPTY_INFO_VALUE = 'N/A';
-
-const formatGender = (value?: string): string => {
+const formatGender = (
+  value: string | undefined,
+  emptyValue: string,
+  maleLabel: string,
+  femaleLabel: string,
+  otherLabel: string,
+): string => {
   const normalized = value?.trim().toUpperCase();
   if (!normalized) {
-    return EMPTY_INFO_VALUE;
+    return emptyValue;
   }
 
   if (normalized === 'MALE') {
-    return 'Nam';
+    return maleLabel;
   }
 
   if (normalized === 'FEMALE') {
-    return 'Nu';
+    return femaleLabel;
   }
 
   if (normalized === 'OTHER') {
-    return 'Khac';
+    return otherLabel;
   }
 
-  return value?.trim() || EMPTY_INFO_VALUE;
+  return value?.trim() || emptyValue;
 };
 
-const formatBirthDate = (value?: string): string => {
+const formatBirthDate = (value: string | undefined, emptyValue: string, locale: string): string => {
   const normalized = value?.trim();
   if (!normalized) {
-    return EMPTY_INFO_VALUE;
+    return emptyValue;
   }
 
   const timestamp = Date.parse(normalized);
@@ -80,11 +84,11 @@ const formatBirthDate = (value?: string): string => {
     return normalized;
   }
 
-  return new Intl.DateTimeFormat('vi-VN').format(new Date(timestamp));
+  return new Intl.DateTimeFormat(locale).format(new Date(timestamp));
 };
 
 export const ProfilePage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser } = useOutletContext<MainLayoutOutletContext>();
   const { userId } = useParams<{ userId: string }>();
   const targetUserId = userId ?? currentUser.id;
@@ -92,6 +96,8 @@ export const ProfilePage = () => {
   const [profile, setProfile] = useState<Profile>(() => createFallbackProfile(targetUserId, currentUser));
   const [personalPosts, setPersonalPosts] = useState<Post[]>([]);
   const { toast, showToast } = useCornerToast();
+  const emptyInfoValue = t('profile.emptyInfoValue');
+  const locale = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
 
   useEffect(() => {
     setProfile((previous) => ({
@@ -161,26 +167,34 @@ export const ProfilePage = () => {
               <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
                 <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.displayName')}</dt>
                 <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {profile.displayName?.trim() || EMPTY_INFO_VALUE}
+                  {profile.displayName?.trim() || emptyInfoValue}
                 </dd>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
                 <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.phoneNumber')}</dt>
                 <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {profile.phoneNumber?.trim() || EMPTY_INFO_VALUE}
+                  {profile.phoneNumber?.trim() || emptyInfoValue}
                 </dd>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
                 <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.gender')}</dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{formatGender(profile.gender)}</dd>
+                <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {formatGender(
+                    profile.gender,
+                    emptyInfoValue,
+                    t('profile.genderMale'),
+                    t('profile.genderFemale'),
+                    t('profile.genderOther'),
+                  )}
+                </dd>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
                 <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.birthDate')}</dt>
                 <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {formatBirthDate(profile.birthDate)}
+                  {formatBirthDate(profile.birthDate, emptyInfoValue, locale)}
                 </dd>
               </div>
             </dl>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ellipsis, Flag, Loader2, Pencil, Send, Trash2, UserCheck, UserPlus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -32,29 +32,19 @@ interface ReactionMeta {
   icon: string;
 }
 
-const REACTION_OPTIONS: ReactionMeta[] = [
-  { type: 'LIKE', label: 'Thich', icon: '👍' },
-  { type: 'WOW', label: 'Wow', icon: '😮' },
-  { type: 'SAD', label: 'Sad', icon: '😢' },
-  { type: 'ANGRY', label: 'Gian', icon: '😡' },
-  { type: 'HAHA', label: 'Haha', icon: '😂' },
-  { type: 'LOVE', label: 'Tim', icon: '❤️' },
-];
+interface ReactionOptionBase {
+  type: CommentReactionType;
+  icon: string;
+}
 
-const REACTION_META_BY_TYPE = REACTION_OPTIONS.reduce<Record<CommentReactionType, ReactionMeta>>(
-  (accumulator, item) => {
-    accumulator[item.type] = item;
-    return accumulator;
-  },
-  {
-    LIKE: REACTION_OPTIONS[0],
-    WOW: REACTION_OPTIONS[1],
-    SAD: REACTION_OPTIONS[2],
-    ANGRY: REACTION_OPTIONS[3],
-    HAHA: REACTION_OPTIONS[4],
-    LOVE: REACTION_OPTIONS[5],
-  },
-);
+const REACTION_OPTION_BASES: ReactionOptionBase[] = [
+  { type: 'LIKE', icon: '\u{1F44D}' },
+  { type: 'WOW', icon: '\u{1F62E}' },
+  { type: 'SAD', icon: '\u{1F622}' },
+  { type: 'ANGRY', icon: '\u{1F621}' },
+  { type: 'HAHA', icon: '\u{1F602}' },
+  { type: 'LOVE', icon: '\u2764\uFE0F' },
+];
 
 type ReactionFilterTab = 'ALL' | CommentReactionType;
 
@@ -62,6 +52,8 @@ interface ReactionFriendState {
   status: CommentReactionFriendshipStatus;
   requestId?: string;
 }
+
+type ReactionFriendAction = 'FRIEND' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'ADD_FRIEND';
 
 interface VisibleCommentRow {
   comment: Comment;
@@ -117,6 +109,28 @@ export const CommentSection = ({
   const normalizeId = (value: string) => value.trim().toLowerCase();
   const normalizedCurrentUserId = normalizeId(currentUser.id);
   const normalizedPostAuthorId = normalizeId(postAuthorId);
+  const reactionOptions = useMemo<ReactionMeta[]>(
+    () => [
+      { type: 'LIKE', label: t('commentSection.reactions.like'), icon: REACTION_OPTION_BASES[0].icon },
+      { type: 'WOW', label: t('commentSection.reactions.wow'), icon: REACTION_OPTION_BASES[1].icon },
+      { type: 'SAD', label: t('commentSection.reactions.sad'), icon: REACTION_OPTION_BASES[2].icon },
+      { type: 'ANGRY', label: t('commentSection.reactions.angry'), icon: REACTION_OPTION_BASES[3].icon },
+      { type: 'HAHA', label: t('commentSection.reactions.haha'), icon: REACTION_OPTION_BASES[4].icon },
+      { type: 'LOVE', label: t('commentSection.reactions.love'), icon: REACTION_OPTION_BASES[5].icon },
+    ],
+    [t],
+  );
+  const reactionMetaByType = useMemo<Record<CommentReactionType, ReactionMeta>>(
+    () => ({
+      LIKE: reactionOptions[0],
+      WOW: reactionOptions[1],
+      SAD: reactionOptions[2],
+      ANGRY: reactionOptions[3],
+      HAHA: reactionOptions[4],
+      LOVE: reactionOptions[5],
+    }),
+    [reactionOptions],
+  );
 
   const isCommentEdited = (comment: Comment) => {
     if (!comment.updatedAt) {
@@ -134,10 +148,10 @@ export const CommentSection = ({
 
   const getReactionMeta = (reactionType?: CommentReactionType | null): ReactionMeta => {
     if (!reactionType) {
-      return REACTION_META_BY_TYPE.LIKE;
+      return reactionMetaByType.LIKE;
     }
 
-    return REACTION_META_BY_TYPE[reactionType] ?? REACTION_META_BY_TYPE.LIKE;
+    return reactionMetaByType[reactionType] ?? reactionMetaByType.LIKE;
   };
 
   const getReactionButtonToneClass = (reactionType?: CommentReactionType | null) => {
@@ -486,9 +500,9 @@ export const CommentSection = ({
       setReplyTargetCommentId(null);
       setReplyTargetDisplayName('');
       setReplyDraft('');
-      onActionToast?.('Da gui tra loi', 'success');
+      onActionToast?.(t('commentSection.replySent'), 'success');
     } catch (replyError) {
-      const message = getApiErrorMessage(replyError, 'Khong the gui tra loi.');
+      const message = getApiErrorMessage(replyError, t('commentSection.replySendError'));
       setError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -509,7 +523,7 @@ export const CommentSection = ({
       const refreshedComment = await commentService.getCommentById(commentId);
       setComments((previous) => replaceCommentInTree(previous, refreshedComment));
     } catch (reactionError) {
-      const message = getApiErrorMessage(reactionError, 'Khong the cap nhat reaction cho binh luan.');
+      const message = getApiErrorMessage(reactionError, t('commentSection.setReactionError'));
       setError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -530,7 +544,7 @@ export const CommentSection = ({
       const refreshedComment = await commentService.getCommentById(commentId);
       setComments((previous) => replaceCommentInTree(previous, refreshedComment));
     } catch (reactionError) {
-      const message = getApiErrorMessage(reactionError, 'Khong the xoa reaction cua binh luan.');
+      const message = getApiErrorMessage(reactionError, t('commentSection.removeReactionError'));
       setError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -645,7 +659,7 @@ export const CommentSection = ({
       setReactionViewerUsers(reactionUsersResult.value.users);
     } else {
       setReactionViewerUsers([]);
-      setReactionViewerError(getApiErrorMessage(reactionUsersResult.reason, 'Khong the tai danh sach reaction.'));
+      setReactionViewerError(getApiErrorMessage(reactionUsersResult.reason, t('commentSection.reactionViewerLoadError')));
     }
 
     const friendIds = friendsResult.status === 'fulfilled' ? friendsResult.value.map((friend) => friend.id) : [];
@@ -698,7 +712,7 @@ export const CommentSection = ({
         }));
       }
     } catch (actionError) {
-      const message = getApiErrorMessage(actionError, 'Khong the cap nhat trang thai ban be.');
+      const message = getApiErrorMessage(actionError, t('commentSection.friendStatusUpdateError'));
       setReactionViewerError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -725,16 +739,16 @@ export const CommentSection = ({
     return [
       {
         type: 'ALL' as ReactionFilterTab,
-        label: 'Tat ca',
+        label: t('commentSection.reactionFilterAll'),
         count: reactionViewerUsers.length,
       },
-      ...REACTION_OPTIONS.filter((reaction) => countsByType[reaction.type] > 0).map((reaction) => ({
+      ...reactionOptions.filter((reaction) => countsByType[reaction.type] > 0).map((reaction) => ({
         type: reaction.type as ReactionFilterTab,
         label: reaction.icon,
         count: countsByType[reaction.type],
       })),
     ];
-  }, [reactionViewerUsers]);
+  }, [reactionOptions, reactionViewerUsers, t]);
 
   const filteredReactionViewerUsers = useMemo(() => {
     if (reactionViewerFilter === 'ALL') {
@@ -787,7 +801,7 @@ export const CommentSection = ({
 
     const trimmed = editingDraft.trim();
     if (!trimmed) {
-      setError('Noi dung binh luan khong duoc de trong.');
+      setError(t('commentSection.emptyCommentError'));
       return;
     }
 
@@ -799,9 +813,9 @@ export const CommentSection = ({
       setComments((previous) => replaceCommentInTree(previous, updatedComment));
       setEditingCommentId(null);
       setEditingDraft('');
-      onActionToast?.('Da cap nhat binh luan', 'success');
+      onActionToast?.(t('commentSection.commentUpdated'), 'success');
     } catch (updateError) {
-      const message = getApiErrorMessage(updateError, 'Khong the cap nhat binh luan.');
+      const message = getApiErrorMessage(updateError, t('commentSection.updateCommentError'));
       setError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -844,9 +858,9 @@ export const CommentSection = ({
         setReplyDraft('');
       }
 
-      onActionToast?.('Da xoa binh luan', 'error');
+      onActionToast?.(t('commentSection.commentDeleted'), 'error');
     } catch (deleteError) {
-      const message = getApiErrorMessage(deleteError, 'Khong the xoa binh luan.');
+      const message = getApiErrorMessage(deleteError, t('commentSection.deleteCommentError'));
       setError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -868,7 +882,7 @@ export const CommentSection = ({
 
     const normalizedReason = reportReason.trim();
     if (normalizedReason.length < 3) {
-      setReportReasonError('Vui long nhap ly do toi thieu 3 ky tu.');
+      setReportReasonError(t('commentSection.reportReasonMinLength'));
       return;
     }
 
@@ -882,9 +896,9 @@ export const CommentSection = ({
 
       setReportingComment(null);
       setReportReason('');
-      onActionToast?.('Da gui bao cao binh luan cho admin', 'success');
+      onActionToast?.(t('commentSection.reportSent'), 'success');
     } catch (reportError) {
-      const message = getApiErrorMessage(reportError, 'Khong the gui bao cao.');
+      const message = getApiErrorMessage(reportError, t('commentSection.reportError'));
       setError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -893,6 +907,7 @@ export const CommentSection = ({
   };
 
   const getReactionFriendActionMeta = (userId: string): {
+    action: ReactionFriendAction;
     label: string;
     disabled: boolean;
     className: string;
@@ -904,7 +919,8 @@ export const CommentSection = ({
 
     if (state.status === 'FRIEND') {
       return {
-        label: 'Ban be',
+        action: 'FRIEND',
+        label: t('commentSection.friendAction.friends'),
         disabled: true,
         className:
           'inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200',
@@ -913,7 +929,8 @@ export const CommentSection = ({
 
     if (state.status === 'REQUEST_SENT') {
       return {
-        label: 'Huy loi moi',
+        action: 'REQUEST_SENT',
+        label: t('commentSection.friendAction.cancelInvite'),
         disabled: false,
         className:
           'inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
@@ -922,7 +939,8 @@ export const CommentSection = ({
 
     if (state.status === 'REQUEST_RECEIVED') {
       return {
-        label: 'Xac nhan',
+        action: 'REQUEST_RECEIVED',
+        label: t('commentSection.friendAction.accept'),
         disabled: false,
         className:
           'inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-700',
@@ -930,7 +948,8 @@ export const CommentSection = ({
     }
 
     return {
-      label: 'Them ban be',
+      action: 'ADD_FRIEND',
+      label: t('commentSection.friendAction.addFriend'),
       disabled: false,
       className:
         'inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700',
@@ -982,7 +1001,7 @@ export const CommentSection = ({
                     disabled={isUpdatingCommentId === comment.id}
                     className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    Huy
+                    {t('commentSection.cancel')}
                   </button>
                   <button
                     type="button"
@@ -990,7 +1009,7 @@ export const CommentSection = ({
                     disabled={isUpdatingCommentId === comment.id}
                     className="rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isUpdatingCommentId === comment.id ? 'Dang luu...' : 'Luu'}
+                    {isUpdatingCommentId === comment.id ? t('commentSection.saving') : t('commentSection.save')}
                   </button>
                 </div>
               </div>
@@ -1035,7 +1054,7 @@ export const CommentSection = ({
                   onMouseEnter={() => openReactionPicker(comment.id)}
                   onMouseLeave={() => closeReactionPickerWithDelay(comment.id)}
                 >
-                  {REACTION_OPTIONS.map((reactionOption) => (
+                  {reactionOptions.map((reactionOption) => (
                     <button
                       key={reactionOption.type}
                       type="button"
@@ -1060,10 +1079,10 @@ export const CommentSection = ({
               onClick={() => handleStartReply(comment)}
               className="font-medium transition hover:text-slate-600 dark:hover:text-slate-200"
             >
-              Tra loi
+              {t('commentSection.reply')}
             </button>
 
-            {isCommentEdited(comment) ? <span className="text-[10px] italic text-slate-400">Da chinh sua</span> : null}
+            {isCommentEdited(comment) ? <span className="text-[10px] italic text-slate-400">{t('commentSection.edited')}</span> : null}
 
             {comment.reactionCount > 0 ? (
               <div className="ml-auto inline-flex items-center gap-1.5">
@@ -1111,7 +1130,9 @@ export const CommentSection = ({
                     void handleSubmitReply();
                   }
                 }}
-                placeholder={`Tra loi ${replyTargetDisplayName || comment.author.fullName}...`}
+                placeholder={t('commentSection.replyPlaceholder', {
+                  name: replyTargetDisplayName || comment.author.fullName,
+                })}
                 className="w-full bg-transparent text-xs outline-none placeholder:text-slate-400"
               />
               <button
@@ -1120,7 +1141,7 @@ export const CommentSection = ({
                 disabled={isReplySubmittingCommentId === comment.id}
                 className="rounded-lg border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Huy
+                {t('commentSection.cancel')}
               </button>
               <button
                 type="button"
@@ -1129,7 +1150,7 @@ export const CommentSection = ({
                 className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Send size={12} />
-                {isReplySubmittingCommentId === comment.id ? 'Dang gui...' : 'Gui'}
+                {isReplySubmittingCommentId === comment.id ? t('commentSection.sending') : t('commentSection.send')}
               </button>
             </div>
           ) : null}
@@ -1144,10 +1165,10 @@ export const CommentSection = ({
                 <span className="h-px w-6 bg-slate-300 dark:bg-slate-600" />
                 <span>
                   {isReplyThreadExpanded
-                    ? 'An phan hoi'
+                    ? t('commentSection.hideReplies')
                     : replyCount === 1
-                      ? 'Xem 1 phan hoi'
-                      : `Xem them ${replyCount} phan hoi`}
+                      ? t('commentSection.viewOneReply')
+                      : t('commentSection.viewMoreReplies', { count: replyCount })}
                 </span>
               </button>
             </div>
@@ -1159,7 +1180,7 @@ export const CommentSection = ({
             type="button"
             onClick={() => setOpenMenuCommentId((current) => (current === comment.id ? null : comment.id))}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
-            aria-label="Mo tuy chon binh luan"
+            aria-label={t('commentSection.commentMenuAria')}
           >
             <Ellipsis size={16} />
           </button>
@@ -1173,7 +1194,7 @@ export const CommentSection = ({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   <Pencil size={15} />
-                  Chinh sua
+                  {t('commentSection.edit')}
                 </button>
               ) : null}
 
@@ -1185,7 +1206,7 @@ export const CommentSection = ({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
                 >
                   <Trash2 size={15} />
-                  {isDeletingCommentId === comment.id ? 'Dang xoa...' : 'Xoa'}
+                  {isDeletingCommentId === comment.id ? t('commentSection.deleting') : t('commentSection.delete')}
                 </button>
               ) : null}
 
@@ -1196,7 +1217,7 @@ export const CommentSection = ({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-amber-600 transition hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-500/10"
                 >
                   <Flag size={15} />
-                  Bao cao admin
+                  {t('commentSection.reportToAdmin')}
                 </button>
               ) : null}
             </div>
@@ -1246,7 +1267,7 @@ export const CommentSection = ({
             type="button"
             onClick={closeReactionViewer}
             className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px]"
-            aria-label="Dong popup reaction"
+            aria-label={t('commentSection.reactionModalOverlayAria')}
           />
 
           <div className="relative z-[97] w-full max-w-xl overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl">
@@ -1273,7 +1294,7 @@ export const CommentSection = ({
                 type="button"
                 onClick={closeReactionViewer}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white"
-                aria-label="Dong popup"
+                aria-label={t('commentSection.reactionModalCloseButtonAria')}
               >
                 <X size={16} />
               </button>
@@ -1283,7 +1304,7 @@ export const CommentSection = ({
               {isReactionViewerLoading ? (
                 <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-300">
                   <Loader2 size={16} className="animate-spin" />
-                  Dang tai danh sach reaction...
+                  {t('commentSection.reactionModalLoading')}
                 </div>
               ) : null}
 
@@ -1294,7 +1315,7 @@ export const CommentSection = ({
               ) : null}
 
               {!isReactionViewerLoading && filteredReactionViewerUsers.length === 0 ? (
-                <p className="py-6 text-center text-sm text-slate-400">Chua co reaction nao trong nhom nay.</p>
+                <p className="py-6 text-center text-sm text-slate-400">{t('commentSection.reactionModalEmpty')}</p>
               ) : null}
 
               {!isReactionViewerLoading
@@ -1328,9 +1349,9 @@ export const CommentSection = ({
                             className={`${friendActionMeta.className} disabled:cursor-not-allowed disabled:opacity-70`}
                           >
                             {isFriendActionLoading ? <Loader2 size={14} className="animate-spin" /> : null}
-                            {!isFriendActionLoading && friendActionMeta.label === 'Them ban be' ? <UserPlus size={13} /> : null}
-                            {!isFriendActionLoading && friendActionMeta.label === 'Ban be' ? <UserCheck size={13} /> : null}
-                            <span>{isFriendActionLoading ? 'Dang xu ly...' : friendActionMeta.label}</span>
+                            {!isFriendActionLoading && friendActionMeta.action === 'ADD_FRIEND' ? <UserPlus size={13} /> : null}
+                            {!isFriendActionLoading && friendActionMeta.action === 'FRIEND' ? <UserCheck size={13} /> : null}
+                            <span>{isFriendActionLoading ? t('commentSection.processing') : friendActionMeta.label}</span>
                           </button>
                         ) : null}
                       </div>
@@ -1354,7 +1375,7 @@ export const CommentSection = ({
               setCommentPendingDelete(null);
             }}
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
-            aria-label="Dong popup xoa binh luan"
+            aria-label={t('commentSection.deleteModalOverlayAria')}
           />
 
           <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -1366,9 +1387,9 @@ export const CommentSection = ({
               </div>
 
               <div className="text-center">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Xac nhan xoa binh luan</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('commentSection.deleteModalTitle')}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  Binh luan sau khi xoa se khong the khoi phuc.
+                  {t('commentSection.deleteModalDescription')}
                 </p>
               </div>
 
@@ -1379,7 +1400,7 @@ export const CommentSection = ({
                   disabled={Boolean(isDeletingCommentId)}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                 >
-                  Huy
+                  {t('commentSection.cancel')}
                 </button>
                 <button
                   type="button"
@@ -1387,7 +1408,7 @@ export const CommentSection = ({
                   disabled={Boolean(isDeletingCommentId)}
                   className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isDeletingCommentId ? 'Dang xoa...' : 'Xac nhan xoa'}
+                  {isDeletingCommentId ? t('commentSection.deleting') : t('commentSection.confirmDelete')}
                 </button>
               </div>
             </div>
@@ -1409,7 +1430,7 @@ export const CommentSection = ({
               setReportReasonError(null);
             }}
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
-            aria-label="Dong popup bao cao binh luan"
+            aria-label={t('commentSection.reportModalOverlayAria')}
           />
 
           <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -1417,14 +1438,14 @@ export const CommentSection = ({
 
             <div className="space-y-4 p-5 sm:p-6">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Bao cao binh luan</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('commentSection.reportModalTitle')}</h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Noi dung se duoc gui den admin de kiem tra.
+                  {t('commentSection.reportModalDescription')}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">Ly do</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t('commentSection.reportReasonLabel')}</label>
                 <textarea
                   value={reportReason}
                   onChange={(event) => {
@@ -1435,7 +1456,7 @@ export const CommentSection = ({
                   }}
                   rows={4}
                   maxLength={500}
-                  placeholder="Nhap ly do bao cao binh luan nay..."
+                  placeholder={t('commentSection.reportReasonPlaceholder')}
                   className="mt-2 w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-amber-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                 />
                 <div className="mt-1 flex items-center justify-between">
@@ -1459,7 +1480,7 @@ export const CommentSection = ({
                   disabled={isReportingComment}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                 >
-                  Huy
+                  {t('commentSection.cancel')}
                 </button>
                 <button
                   type="button"
@@ -1467,7 +1488,7 @@ export const CommentSection = ({
                   disabled={isReportingComment}
                   className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isReportingComment ? 'Dang gui...' : 'Gui bao cao'}
+                  {isReportingComment ? t('commentSection.sending') : t('commentSection.sendReport')}
                 </button>
               </div>
             </div>
@@ -1478,3 +1499,4 @@ export const CommentSection = ({
     </div>
   );
 };
+
