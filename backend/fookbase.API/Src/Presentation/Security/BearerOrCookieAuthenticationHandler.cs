@@ -82,6 +82,16 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
             return authorizationHeader["Bearer ".Length..].Trim();
         }
 
+        if (Request.Path.StartsWithSegments("/hubs")
+            && Request.Query.TryGetValue("access_token", out var accessTokenQueryValue))
+        {
+            var queryToken = accessTokenQueryValue.ToString();
+            if (!string.IsNullOrWhiteSpace(queryToken))
+            {
+                return queryToken.Trim();
+            }
+        }
+
         if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
             && !string.IsNullOrWhiteSpace(cookieToken))
         {

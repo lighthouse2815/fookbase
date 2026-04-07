@@ -59,6 +59,10 @@ public interface IJavaApiService
         string accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<List<UserProfilePresenceDto>>> GetFriendPresenceAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<FriendshipResponseDto>> SendFriendRequestAsync(
         string userId,
         string accessToken,

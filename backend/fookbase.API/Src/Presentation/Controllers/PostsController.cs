@@ -1,7 +1,6 @@
 using InteractHub.Api.Application.DTOs.Likes;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
@@ -30,8 +29,7 @@ public class PostsController : ControllerBase
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
-        var posts = await _postService.GetPagedAsync(query, currentUserId, cancellationToken);
+        var posts = await _postService.GetPagedAsync(query, TryGetCurrentUserId(), cancellationToken);
         return Ok(ApiResponse<PagedResult<PostResponseDto>>.Ok(posts));
     }
 
@@ -43,8 +41,7 @@ public class PostsController : ControllerBase
         Guid postId,
         CancellationToken cancellationToken)
     {
-        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
-        var post = await _postService.GetByIdAsync(postId, currentUserId, cancellationToken);
+        var post = await _postService.GetByIdAsync(postId, TryGetCurrentUserId(), cancellationToken);
         return Ok(ApiResponse<PostResponseDto>.Ok(post));
     }
 
@@ -57,9 +54,8 @@ public class PostsController : ControllerBase
         [FromBody] CreatePostRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
-        var accessToken = ExtractAccessToken();
-        var created = await _postService.CreateAsync(userId, request, accessToken, cancellationToken);
+        var accessToken = Request.ExtractAccessToken();
+        var created = await _postService.CreateAsync(GetCurrentUserId(), request, accessToken, cancellationToken);
 
         return CreatedAtAction(
             nameof(GetPostById),
@@ -79,8 +75,7 @@ public class PostsController : ControllerBase
         [FromBody] UpdatePostRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
-        var updated = await _postService.UpdateAsync(postId, userId, User.IsAdmin(), request, cancellationToken);
+        var updated = await _postService.UpdateAsync(postId, GetCurrentUserId(), User.IsAdmin(), request, cancellationToken);
         return Ok(ApiResponse<PostResponseDto>.Ok(updated));
     }
 
@@ -94,8 +89,7 @@ public class PostsController : ControllerBase
         Guid postId,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
-        await _postService.DeleteAsync(postId, userId, User.IsAdmin(), cancellationToken);
+        await _postService.DeleteAsync(postId, GetCurrentUserId(), User.IsAdmin(), cancellationToken);
 
         return Ok(ApiResponse<object>.Ok(new { message = "Post deleted." }));
     }
@@ -107,8 +101,7 @@ public class PostsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> LikePost(Guid postId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
-        var state = await _likeService.LikeAsync(postId, userId, cancellationToken);
+        var state = await _likeService.LikeAsync(postId, GetCurrentUserId(), cancellationToken);
         return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
     }
 
@@ -119,8 +112,7 @@ public class PostsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> UnlikePost(Guid postId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
-        var state = await _likeService.UnlikeAsync(postId, userId, cancellationToken);
+        var state = await _likeService.UnlikeAsync(postId, GetCurrentUserId(), cancellationToken);
         return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
     }
 
@@ -135,8 +127,7 @@ public class PostsController : ControllerBase
         [FromBody] SetPostReactionRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
-        var state = await _likeService.SetReactionAsync(postId, userId, request, cancellationToken);
+        var state = await _likeService.SetReactionAsync(postId, GetCurrentUserId(), request, cancellationToken);
         return Ok(ApiResponse<PostReactionStateResponseDto>.Ok(state));
     }
 
@@ -149,8 +140,7 @@ public class PostsController : ControllerBase
         Guid postId,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
-        var state = await _likeService.RemoveReactionAsync(postId, userId, cancellationToken);
+        var state = await _likeService.RemoveReactionAsync(postId, GetCurrentUserId(), cancellationToken);
         return Ok(ApiResponse<PostReactionStateResponseDto>.Ok(state));
     }
 
@@ -167,21 +157,8 @@ public class PostsController : ControllerBase
         return Ok(ApiResponse<PostReactionUsersResponseDto>.Ok(users));
     }
 
-    private string? ExtractAccessToken()
-    {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return authorizationHeader["Bearer ".Length..].Trim();
-        }
+    private Guid GetCurrentUserId() => User.GetUserId();
 
-        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
-            && !string.IsNullOrWhiteSpace(cookieToken))
-        {
-            return cookieToken;
-        }
-
-        return null;
-    }
+    private Guid? TryGetCurrentUserId() => User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
 }
 

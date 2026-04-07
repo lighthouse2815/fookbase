@@ -54,7 +54,11 @@
   },
   "sidebar": {
     "friendSuggestions": "Gợi ý kết bạn",
+    "noSuggestions": "Hiện chưa có gợi ý kết bạn mới.",
     "onlineUsers": "Đang trực tuyến",
+    "noOnlineUsers": "Hiện không có bạn bè nào đang trực tuyến.",
+    "offlineUsers": "Bạn bè ngoại tuyến",
+    "noOfflineUsers": "Hiện tại mọi người đều đang trực tuyến.",
     "notificationsPreview": "Xem nhanh thông báo",
     "mutualFriends": "{{count}} bạn chung",
     "addFriend": "Kết bạn"

@@ -20,6 +20,7 @@ public class CommentService : ICommentService
     private readonly IPostRepository _postRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
+    private readonly INotificationRealtimeService _notificationRealtimeService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CommentService> _logger;
 
@@ -29,6 +30,7 @@ public class CommentService : ICommentService
         IPostRepository postRepository,
         IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
+        INotificationRealtimeService notificationRealtimeService,
         IUnitOfWork unitOfWork,
         ILogger<CommentService> logger)
     {
@@ -37,6 +39,7 @@ public class CommentService : ICommentService
         _postRepository = postRepository;
         _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
+        _notificationRealtimeService = notificationRealtimeService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -144,10 +147,11 @@ public class CommentService : ICommentService
         };
 
         await _commentRepository.AddAsync(comment, cancellationToken);
+        Notification? createdNotification = null;
 
         if (parentComment is not null && parentComment.UserId != user.Id)
         {
-            await _notificationRepository.AddAsync(new Notification
+            createdNotification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = parentComment.UserId,
@@ -158,11 +162,13 @@ public class CommentService : ICommentService
                 Message = $"{actorName} replied to your comment.",
                 IsRead = false,
                 CreatedAt = now
-            }, cancellationToken);
+            };
+
+            await _notificationRepository.AddAsync(createdNotification, cancellationToken);
         }
         else if (parentComment is null && post.UserId != user.Id)
         {
-            await _notificationRepository.AddAsync(new Notification
+            createdNotification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = post.UserId,
@@ -173,10 +179,17 @@ public class CommentService : ICommentService
                 Message = $"{actorName} commented on your post.",
                 IsRead = false,
                 CreatedAt = now
-            }, cancellationToken);
+            };
+
+            await _notificationRepository.AddAsync(createdNotification, cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (createdNotification is not null)
+        {
+            await _notificationRealtimeService.NotifyCreatedAsync(createdNotification.ToResponseDto(), cancellationToken);
+        }
+
         return await GetByIdAsync(comment.Id, userId, cancellationToken);
     }
 
@@ -417,7 +430,7 @@ public class CommentService : ICommentService
 
         return reactions
             .GroupBy(reaction => reaction.CommentId)
-            .ToDictionary(group => group.Key, group => group.OrderByDescending(reaction => reaction.UpdatedAt).First().Type);
+            .ToDictionary(group => group.Key, group => group.OrderByDescending(reaction => reaction.UpdatedAt).First().Type.ToString());
     }
 
     private async Task<string?> ResolveCurrentUserReactionTypeAsync(
@@ -431,7 +444,7 @@ public class CommentService : ICommentService
         }
 
         var reaction = await _commentReactionRepository.GetByCommentAndUserAsync(commentId, currentUserId.Value, cancellationToken);
-        return reaction?.Type;
+        return reaction?.Type.ToString();
     }
 
     private async Task<Dictionary<Guid, CommentReactionSummary>> ResolveReactionSummariesAsync(
@@ -453,7 +466,7 @@ public class CommentService : ICommentService
                 group => new CommentReactionSummary(
                     group.Count(),
                     group
-                        .GroupBy(reaction => reaction.Type)
+                        .GroupBy(reaction => reaction.Type.ToString())
                         .OrderByDescending(typeGroup => typeGroup.Count())
                         .ThenBy(typeGroup => typeGroup.Key, StringComparer.Ordinal)
                         .Take(3)

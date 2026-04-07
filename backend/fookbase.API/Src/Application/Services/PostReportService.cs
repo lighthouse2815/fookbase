@@ -2,21 +2,22 @@ using InteractHub.Api.Application.DTOs.PostReports;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
+using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
 
 public class PostReportService : IPostReportService
 {
-    private static readonly HashSet<string> AllowedResolveStatuses = new(StringComparer.Ordinal)
-    {
-        ReportStatuses.Resolved,
-        ReportStatuses.Rejected
-    };
+    private static readonly HashSet<ReportStatus> AllowedResolveStatuses =
+    [
+        ReportStatus.RESOLVED,
+        ReportStatus.REJECTED
+    ];
 
     private readonly IPostReportRepository _postReportRepository;
     private readonly IPostRepository _postRepository;
@@ -66,7 +67,7 @@ public class PostReportService : IPostReportService
 
     public Task<int> GetPendingCountAsync(CancellationToken cancellationToken)
     {
-        return _postReportRepository.CountByStatusAsync(ReportStatuses.Pending, cancellationToken);
+        return _postReportRepository.CountByStatusAsync(ReportStatus.PENDING, cancellationToken);
     }
 
     public async Task<PostReportResponseDto> GetByIdAsync(
@@ -108,7 +109,7 @@ public class PostReportService : IPostReportService
             PostId = post.Id,
             ReportedByUserId = user.Id,
             Reason = request.Reason.Trim(),
-            Status = ReportStatuses.Pending,
+            Status = ReportStatus.PENDING,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -132,8 +133,8 @@ public class PostReportService : IPostReportService
             ?? throw new NotFoundException("Post report not found.");
 
         var previousStatus = report.Status;
-        var normalizedStatus = request.Status.Trim().ToUpperInvariant();
-        if (!AllowedResolveStatuses.Contains(normalizedStatus))
+        if (!EnumParser.TryParseReportStatus(request.Status, out var normalizedStatus)
+            || !AllowedResolveStatuses.Contains(normalizedStatus))
         {
             throw new ArgumentException("Status must be RESOLVED or REJECTED.");
         }

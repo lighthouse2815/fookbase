@@ -5,9 +5,9 @@ using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.DTOs.PostReports;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.DTOs.Stories;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.Mappers;
 
@@ -127,7 +127,7 @@ public static class EntityToDtoMapper
             PostId = report.PostId,
             ReportedByUserId = report.ReportedByUserId,
             Reason = report.Reason,
-            Status = report.Status,
+            Status = report.Status.ToString(),
             ResolvedByUserId = report.ResolvedByUserId,
             ResolvedAt = report.ResolvedAt,
             CreatedAt = report.CreatedAt,
@@ -149,10 +149,8 @@ public static class EntityToDtoMapper
         };
     }
 
-    private static string NormalizePostReactionType(string? type)
+    private static string NormalizePostReactionType(ReactionType type)
     {
-        return PostReactionTypes.IsValid(type)
-            ? PostReactionTypes.Normalize(type!)
-            : PostReactionTypes.Like;
+        return type.ToString();
     }
 }

@@ -11,6 +11,10 @@ import {
   onlineUsers as onlineUsersMock,
 } from '../data/mockData';
 import { friendshipService } from '../services/friendshipService';
+import {
+  createNotificationRealtimeConnection,
+  startNotificationRealtimeConnection,
+} from '../services/notificationRealtimeService';
 import { notificationService } from '../services/notificationService';
 import { userService } from '../services/userService';
 import type { FriendRequest, FriendSuggestion } from '../types/friendship';
@@ -21,8 +25,28 @@ export interface MainLayoutOutletContext {
   currentUser: User;
   suggestions: FriendSuggestion[];
   onlineUsers: User[];
+  offlineUsers: User[];
   notifications: NotificationItem[];
 }
+
+const normalizeNotificationType = (value?: string) => value?.trim().toUpperCase() ?? 'GENERAL';
+
+const getNotificationKey = (item: NotificationItem): string => {
+  const type = normalizeNotificationType(item.type);
+  if (type === 'FRIEND_REQUEST' && item.actorUserId) {
+    return `friend-request-${item.actorUserId}`;
+  }
+
+  return item.id;
+};
+
+const sortNotifications = (items: NotificationItem[]): NotificationItem[] => {
+  return [...items].sort((first, second) => {
+    const firstTime = new Date(first.createdAt).getTime();
+    const secondTime = new Date(second.createdAt).getTime();
+    return secondTime - firstTime;
+  });
+};
 
 export const MainLayout = () => {
   const { t } = useTranslation();
@@ -32,6 +56,7 @@ export const MainLayout = () => {
 
   const [suggestions, setSuggestions] = useState<FriendSuggestion[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<User[]>(onlineUsersMock);
+  const [offlineUsers, setOfflineUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const isFriendsPage = location.pathname.startsWith('/friends');
   const isProfilePage = /^\/profile(?:\/[^/]+)?\/?$/.test(location.pathname);
@@ -53,25 +78,6 @@ export const MainLayout = () => {
       isVirtual: true,
     };
   }, []);
-
-  const normalizeNotificationType = (value?: string) => value?.trim().toUpperCase() ?? 'GENERAL';
-
-  const getNotificationKey = (item: NotificationItem): string => {
-    const type = normalizeNotificationType(item.type);
-    if (type === 'FRIEND_REQUEST' && item.actorUserId) {
-      return `friend-request-${item.actorUserId}`;
-    }
-
-    return item.id;
-  };
-
-  const sortNotifications = (items: NotificationItem[]): NotificationItem[] => {
-    return [...items].sort((first, second) => {
-      const firstTime = new Date(first.createdAt).getTime();
-      const secondTime = new Date(second.createdAt).getTime();
-      return secondTime - firstTime;
-    });
-  };
 
   const loadRealtimeNotifications = useCallback(async () => {
     const [apiNotificationsResult, friendRequestsResult] = await Promise.allSettled([
@@ -104,9 +110,9 @@ export const MainLayout = () => {
 
   useEffect(() => {
     const loadSidebarData = async () => {
-      const [suggestionsResult, onlineUsersResult] = await Promise.allSettled([
+      const [suggestionsResult, friendPresenceResult] = await Promise.allSettled([
         friendshipService.getFriendSuggestions(),
-        userService.getOnlineUsers(),
+        userService.getFriendPresence(),
       ]);
 
       if (suggestionsResult.status === 'fulfilled') {
@@ -115,11 +121,35 @@ export const MainLayout = () => {
         setSuggestions([]);
       }
 
-      if (onlineUsersResult.status === 'fulfilled') {
-        setOnlineUsers(onlineUsersResult.value);
-      } else {
-        setOnlineUsers(onlineUsersMock);
+      if (friendPresenceResult.status === 'fulfilled') {
+        setOnlineUsers(friendPresenceResult.value.onlineUsers);
+        setOfflineUsers(friendPresenceResult.value.offlineUsers);
+        return;
       }
+
+      const [onlineUsersResult, friendsResult] = await Promise.allSettled([
+        userService.getOnlineUsers(),
+        friendshipService.getFriends(),
+      ]);
+
+      const resolvedOnlineUsers =
+        onlineUsersResult.status === 'fulfilled' ? onlineUsersResult.value : onlineUsersMock;
+      setOnlineUsers(resolvedOnlineUsers);
+
+      if (friendsResult.status !== 'fulfilled') {
+        setOfflineUsers([]);
+        return;
+      }
+
+      const onlineUserIds = new Set(resolvedOnlineUsers.map((user) => user.id));
+      const resolvedOfflineUsers = friendsResult.value
+        .filter((friend) => !onlineUserIds.has(friend.id))
+        .map((friend) => ({
+          ...friend,
+          isOnline: false,
+        }));
+
+      setOfflineUsers(resolvedOfflineUsers);
     };
 
     void loadSidebarData();
@@ -128,12 +158,44 @@ export const MainLayout = () => {
   useEffect(() => {
     void loadRealtimeNotifications();
 
-    const intervalId = window.setInterval(() => {
+    const connection = createNotificationRealtimeConnection({
+      onCreated: (notification) => {
+        setNotifications((existing) => {
+          const merged = new Map<string, NotificationItem>(
+            existing.map((item) => [getNotificationKey(item), item]),
+          );
+          merged.set(getNotificationKey(notification), notification);
+          return sortNotifications(Array.from(merged.values()));
+        });
+      },
+      onUpdated: (notification) => {
+        setNotifications((existing) =>
+          existing.map((item) => (item.id === notification.id ? { ...item, ...notification } : item)),
+        );
+      },
+      onDeleted: (notificationId) => {
+        setNotifications((existing) => existing.filter((item) => item.id !== notificationId));
+      },
+      onMarkedAllRead: () => {
+        setNotifications((existing) => existing.map((item) => ({ ...item, isRead: true })));
+      },
+    });
+
+    connection.onreconnected(() => {
       void loadRealtimeNotifications();
-    }, 8000);
+    });
+
+    void startNotificationRealtimeConnection(connection).catch(() => {
+      void loadRealtimeNotifications();
+    });
+
+    const fallbackSyncIntervalId = window.setInterval(() => {
+      void loadRealtimeNotifications();
+    }, 45000);
 
     return () => {
-      window.clearInterval(intervalId);
+      window.clearInterval(fallbackSyncIntervalId);
+      void connection.stop();
     };
   }, [loadRealtimeNotifications]);
 
@@ -278,6 +340,7 @@ export const MainLayout = () => {
               currentUser,
               suggestions,
               onlineUsers,
+              offlineUsers,
               notifications,
             }}
           />
@@ -288,11 +351,8 @@ export const MainLayout = () => {
             <SidebarRight
               suggestions={suggestions}
               onlineUsers={onlineUsers}
-              notifications={notifications}
+              offlineUsers={offlineUsers}
               onAddFriend={handleAddFriend}
-              onOpenNotification={(item) => {
-                void handleOpenNotification(item);
-              }}
             />
           </div>
         )}

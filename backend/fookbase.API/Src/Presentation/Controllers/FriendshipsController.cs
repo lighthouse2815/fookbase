@@ -1,7 +1,7 @@
 using InteractHub.Api.Application.DTOs.Friendships;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +13,11 @@ namespace InteractHub.Api.Controllers;
 [Authorize]
 public class FriendshipsController : ControllerBase
 {
-    private readonly IJavaApiService _javaApiService;
+    private readonly IFriendshipService _friendshipService;
 
-    public FriendshipsController(IJavaApiService javaApiService)
+    public FriendshipsController(IFriendshipService friendshipService)
     {
-        _javaApiService = javaApiService;
+        _friendshipService = friendshipService;
     }
 
     [HttpGet("pending-requesters")]
@@ -26,19 +26,13 @@ public class FriendshipsController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<PendingFriendRequesterDto>>>> GetPendingRequesters(
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<List<PendingFriendRequesterDto>>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.GetPendingRequestersAsync(accessToken, cancellationToken);
+        var result = await _friendshipService.GetPendingRequestersAsync(Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildErrorResponse<List<PendingFriendRequesterDto>>(result, "Load pending friend requests failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<List<PendingFriendRequesterDto>>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<PendingFriendRequesterDto>>.Ok(result.Data));
     }
 
     [HttpGet("contacts")]
@@ -46,19 +40,28 @@ public class FriendshipsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<ContactDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<ContactDto>>>> GetContacts(CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<List<ContactDto>>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.GetContactsByUserAsync(accessToken, cancellationToken);
+        var result = await _friendshipService.GetContactsAsync(Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildErrorResponse<List<ContactDto>>(result, "Load contacts failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<List<ContactDto>>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<ContactDto>>.Ok(result.Data));
+    }
+
+    [HttpGet("presence")]
+    [ProducesResponseType(typeof(ApiResponse<List<UserProfilePresenceDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<UserProfilePresenceDto>>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<List<UserProfilePresenceDto>>>> GetFriendPresence(
+        CancellationToken cancellationToken)
+    {
+        var result = await _friendshipService.GetFriendPresenceAsync(Request.ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<List<UserProfilePresenceDto>>(result, "Load friend presence failed.");
+        }
+
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<UserProfilePresenceDto>>.Ok(result.Data));
     }
 
     [HttpGet("suggestions")]
@@ -69,37 +72,13 @@ public class FriendshipsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<List<FriendSuggestionResponseDto>>.Fail("Unauthorized."));
-        }
-
-        var safePage = page < 0 ? 0 : page;
-        var safePageSize = Math.Clamp(pageSize, 1, 100);
-
-        var result = await _javaApiService.GetFriendSuggestionsAsync(accessToken, safePage, safePageSize, cancellationToken);
+        var result = await _friendshipService.GetSuggestionsAsync(Request.ExtractAccessToken(), page, pageSize, cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
-            var statusCode = result.StatusCode > 0
-                ? result.StatusCode
-                : StatusCodes.Status502BadGateway;
-            var errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
-                ? "Load friend suggestions failed."
-                : result.ErrorMessage;
-
-            return StatusCode(statusCode, ApiResponse<List<FriendSuggestionResponseDto>>.Fail(errorMessage));
+            return BuildErrorResponse<List<FriendSuggestionResponseDto>>(result, "Load friend suggestions failed.");
         }
 
-        var mapped = result.Data
-            .Select((item, index) => MapSuggestion(item, index))
-            .ToList();
-
-        var responseStatusCode = result.StatusCode > 0
-            ? result.StatusCode
-            : StatusCodes.Status200OK;
-
-        return StatusCode(responseStatusCode, ApiResponse<List<FriendSuggestionResponseDto>>.Ok(mapped));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<FriendSuggestionResponseDto>>.Ok(result.Data));
     }
 
     [HttpPost("request")]
@@ -110,25 +89,13 @@ public class FriendshipsController : ControllerBase
         [FromBody] SendFriendRequestDto request,
         CancellationToken cancellationToken)
     {
-        var targetUserId = ResolveTargetUserId(request.AddresseeId, request.UserId);
-        if (string.IsNullOrWhiteSpace(targetUserId))
-        {
-            return BadRequest(ApiResponse<FriendshipResponseDto>.Fail("addresseeId or userId is required."));
-        }
-
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<FriendshipResponseDto>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.SendFriendRequestAsync(targetUserId, accessToken, cancellationToken);
+        var result = await _friendshipService.SendFriendRequestAsync(request, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildErrorResponse<FriendshipResponseDto>(result, "Send friend request failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<FriendshipResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<FriendshipResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("accept")]
@@ -139,25 +106,13 @@ public class FriendshipsController : ControllerBase
         [FromBody] FriendRequestActionDto request,
         CancellationToken cancellationToken)
     {
-        var targetUserId = ResolveTargetUserId(request.RequestId, request.UserId);
-        if (string.IsNullOrWhiteSpace(targetUserId))
-        {
-            return BadRequest(ApiResponse<FriendshipResponseDto>.Fail("requestId or userId is required."));
-        }
-
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<FriendshipResponseDto>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.AcceptFriendRequestAsync(targetUserId, accessToken, cancellationToken);
+        var result = await _friendshipService.AcceptFriendRequestAsync(request, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildErrorResponse<FriendshipResponseDto>(result, "Accept friend request failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<FriendshipResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<FriendshipResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("reject")]
@@ -168,19 +123,7 @@ public class FriendshipsController : ControllerBase
         [FromBody] FriendRequestActionDto request,
         CancellationToken cancellationToken)
     {
-        var targetUserId = ResolveTargetUserId(request.RequestId, request.UserId);
-        if (string.IsNullOrWhiteSpace(targetUserId))
-        {
-            return BadRequest(ApiResponse<object>.Fail("requestId or userId is required."));
-        }
-
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.RejectFriendRequestAsync(targetUserId, accessToken, cancellationToken);
+        var result = await _friendshipService.RejectFriendRequestAsync(request, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess)
         {
             return BuildErrorResponse<object?>(result, "Reject friend request failed.");
@@ -197,19 +140,7 @@ public class FriendshipsController : ControllerBase
         [FromBody] UnfriendActionDto request,
         CancellationToken cancellationToken)
     {
-        var targetUserId = ResolveTargetUserId(request.FriendId, request.UserId);
-        if (string.IsNullOrWhiteSpace(targetUserId))
-        {
-            return BadRequest(ApiResponse<object>.Fail("friendId or userId is required."));
-        }
-
-        var accessToken = ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
-        }
-
-        var result = await _javaApiService.UnfriendAsync(targetUserId, accessToken, cancellationToken);
+        var result = await _friendshipService.UnfriendAsync(request, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess)
         {
             return BuildErrorResponse<object?>(result, "Unfriend failed.");
@@ -220,89 +151,20 @@ public class FriendshipsController : ControllerBase
 
     private ActionResult<ApiResponse<T>> BuildErrorResponse<T>(JavaApiCallResult<T> result, string fallbackError)
     {
-        var statusCode = result.StatusCode > 0
+        var resolvedStatusCode = result.StatusCode > 0
             ? result.StatusCode
             : StatusCodes.Status502BadGateway;
-
-        var error = string.IsNullOrWhiteSpace(result.ErrorMessage)
+        var resolvedError = string.IsNullOrWhiteSpace(result.ErrorMessage)
             ? fallbackError
             : result.ErrorMessage;
 
-        return StatusCode(statusCode, ApiResponse<T>.Fail(error));
+        return StatusCode(resolvedStatusCode, ApiResponse<T>.Fail(resolvedError));
     }
 
-    private string? ExtractAccessToken()
+    private static int ResolveSuccessStatusCode(int statusCode)
     {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return authorizationHeader["Bearer ".Length..].Trim();
-        }
-
-        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
-            && !string.IsNullOrWhiteSpace(cookieToken))
-        {
-            return cookieToken;
-        }
-
-        return null;
+        return statusCode > 0
+            ? statusCode
+            : StatusCodes.Status200OK;
     }
-
-    private static string ResolveTargetUserId(params string?[] candidates)
-    {
-        foreach (var candidate in candidates)
-        {
-            if (!string.IsNullOrWhiteSpace(candidate))
-            {
-                return candidate.Trim();
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static FriendSuggestionResponseDto MapSuggestion(FriendSuggestionDto suggestion, int index)
-    {
-        var safeId = string.IsNullOrWhiteSpace(suggestion.Id)
-            ? $"suggestion-{index + 1}"
-            : suggestion.Id.Trim();
-        var fullName = string.IsNullOrWhiteSpace(suggestion.DisplayName)
-            ? "Nguoi dung"
-            : suggestion.DisplayName.Trim();
-        var avatarUrl = string.IsNullOrWhiteSpace(suggestion.AvatarUrl)
-            ? $"https://i.pravatar.cc/150?u={safeId}"
-            : suggestion.AvatarUrl.Trim();
-        var mutualFriends = suggestion.MutualFriends < 0
-            ? 0
-            : suggestion.MutualFriends;
-
-        return new FriendSuggestionResponseDto
-        {
-            Id = safeId,
-            FullName = fullName,
-            AvatarUrl = avatarUrl,
-            MutualFriends = mutualFriends
-        };
-    }
-}
-
-public class SendFriendRequestDto
-{
-    public string? AddresseeId { get; set; }
-
-    public string? UserId { get; set; }
-}
-
-public class FriendRequestActionDto
-{
-    public string? RequestId { get; set; }
-
-    public string? UserId { get; set; }
-}
-
-public class UnfriendActionDto
-{
-    public string? FriendId { get; set; }
-
-    public string? UserId { get; set; }
 }

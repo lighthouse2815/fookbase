@@ -1,4 +1,5 @@
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.Interfaces.Repositories;
 
@@ -14,7 +15,7 @@ public interface IPostReportRepository
 
     Task<bool> ExistsByPostAndReporterAsync(Guid postId, Guid reporterUserId, CancellationToken cancellationToken);
 
-    Task<int> CountByStatusAsync(string status, CancellationToken cancellationToken);
+    Task<int> CountByStatusAsync(ReportStatus status, CancellationToken cancellationToken);
 
     Task AddAsync(PostReport postReport, CancellationToken cancellationToken);
 

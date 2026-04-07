@@ -1,4 +1,5 @@
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace InteractHub.Api.Infrastructure.Data;
@@ -83,7 +84,10 @@ public class AppDbContext : DbContext
             entity.ToTable("CommentReaction");
             entity.HasKey(commentReaction => commentReaction.Id);
 
-            entity.Property(commentReaction => commentReaction.Type).HasMaxLength(20).IsRequired();
+            entity.Property(commentReaction => commentReaction.Type)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
             entity.Property(commentReaction => commentReaction.CreatedAt).IsRequired();
             entity.Property(commentReaction => commentReaction.UpdatedAt).IsRequired();
 
@@ -102,7 +106,10 @@ public class AppDbContext : DbContext
             entity.ToTable("Like");
             entity.HasKey(like => like.Id);
 
-            entity.Property(like => like.Type).HasMaxLength(20).IsRequired();
+            entity.Property(like => like.Type)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
             entity.Property(like => like.CreatedAt).IsRequired();
 
             entity.HasOne(like => like.Post)
@@ -207,7 +214,10 @@ public class AppDbContext : DbContext
             entity.HasKey(report => report.Id);
 
             entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
-            entity.Property(report => report.Status).HasMaxLength(30).IsRequired();
+            entity.Property(report => report.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
             entity.Property(report => report.UpdatedAt).IsRequired();
 
             entity.HasOne(report => report.Post)

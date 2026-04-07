@@ -25,6 +25,17 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
             """)
     Optional<UserProfile> findPublicByUserId(@Param("userId") UUID userId);
 
+    @Query("""
+            SELECT p
+            FROM UserProfile p
+            JOIN FETCH p.user u
+            WHERE u.id IN :userIds
+              AND p.deletedAt IS NULL
+              AND u.deletedAt IS NULL
+              AND u.status = com.dang.app.utils.enums.Status.ACTIVE
+            """)
+    List<UserProfile> findPublicProfilesByUserIds(@Param("userIds") List<UUID> userIds);
+
     Optional<UserProfile> findByEmail(String email);
 
     Optional<UserProfile> findByPhoneNumber(String phoneNumber);

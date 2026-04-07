@@ -28,6 +28,8 @@ public class JavaApiOptions
 
     public string MessengerContactsByUserPathTemplate { get; set; } = "messenger/contacts/getByUser";
 
+    public string FriendPresencePathTemplate { get; set; } = "profiles/me/friends/presence";
+
     public string MessengerSendFriendRequestPathTemplate { get; set; } = "messenger/friendships";
 
     public string MessengerAcceptFriendRequestPathTemplate { get; set; } = "messenger/friendships/accept";

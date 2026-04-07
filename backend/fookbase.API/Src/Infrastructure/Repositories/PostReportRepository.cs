@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using InteractHub.Api.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -65,11 +66,11 @@ public class PostReportRepository : IPostReportRepository
     public Task<bool> ExistsByPostAndReporterAsync(Guid postId, Guid reporterUserId, CancellationToken cancellationToken)
     {
         return _context.PostReports.AnyAsync(
-            report => report.PostId == postId && report.ReportedByUserId == reporterUserId && report.Status == "PENDING",
+            report => report.PostId == postId && report.ReportedByUserId == reporterUserId && report.Status == ReportStatus.PENDING,
             cancellationToken);
     }
 
-    public Task<int> CountByStatusAsync(string status, CancellationToken cancellationToken)
+    public Task<int> CountByStatusAsync(ReportStatus status, CancellationToken cancellationToken)
     {
         return _context.PostReports.CountAsync(report => report.Status == status, cancellationToken);
     }

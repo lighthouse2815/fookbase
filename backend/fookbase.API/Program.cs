@@ -6,6 +6,7 @@ using InteractHub.Api.Common.Models;
 using InteractHub.Api.Infrastructure.Data;
 using InteractHub.Api.Infrastructure.Repositories;
 using InteractHub.Api.Infrastructure.Services;
+using InteractHub.Api.Presentation.Hubs;
 using InteractHub.Api.Presentation.Security;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
@@ -68,9 +69,12 @@ builder.Services.AddScoped<IHashtagService, HashtagService>();
 builder.Services.AddScoped<IPostReportService, PostReportService>();
 builder.Services.AddScoped<ISavedPostService, SavedPostService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+builder.Services.AddScoped<INotificationRealtimeService, SignalRNotificationRealtimeService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
@@ -234,6 +238,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.Run();
 

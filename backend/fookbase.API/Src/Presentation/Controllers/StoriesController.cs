@@ -1,6 +1,5 @@
 using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
@@ -29,7 +28,7 @@ public class StoriesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var stories = await _storyService.GetFeedAsync(userId, query, ExtractAccessToken(), cancellationToken);
+        var stories = await _storyService.GetFeedAsync(userId, query, Request.ExtractAccessToken(), cancellationToken);
         return Ok(ApiResponse<PagedResult<StoryResponseDto>>.Ok(stories));
     }
 
@@ -113,22 +112,5 @@ public class StoriesController : ControllerBase
         var userId = User.GetUserId();
         await _storyService.DeleteAsync(storyId, userId, User.IsAdmin(), cancellationToken);
         return Ok(ApiResponse<object>.Ok(new { message = "Story deleted." }));
-    }
-
-    private string? ExtractAccessToken()
-    {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return authorizationHeader["Bearer ".Length..].Trim();
-        }
-
-        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
-            && !string.IsNullOrWhiteSpace(cookieToken))
-        {
-            return cookieToken;
-        }
-
-        return null;
     }
 }

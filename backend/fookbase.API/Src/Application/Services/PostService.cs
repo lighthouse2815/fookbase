@@ -4,11 +4,11 @@ using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
@@ -21,6 +21,7 @@ public class PostService : IPostService
     private readonly IJavaApiService _javaApiService;
     private readonly IHashtagRepository _hashtagRepository;
     private readonly INotificationRepository _notificationRepository;
+    private readonly INotificationRealtimeService _notificationRealtimeService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PostService> _logger;
 
@@ -29,6 +30,7 @@ public class PostService : IPostService
         IJavaApiService javaApiService,
         IHashtagRepository hashtagRepository,
         INotificationRepository notificationRepository,
+        INotificationRealtimeService notificationRealtimeService,
         IUnitOfWork unitOfWork,
         ILogger<PostService> logger)
     {
@@ -36,6 +38,7 @@ public class PostService : IPostService
         _javaApiService = javaApiService;
         _hashtagRepository = hashtagRepository;
         _notificationRepository = notificationRepository;
+        _notificationRealtimeService = notificationRealtimeService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -334,11 +337,9 @@ public class PostService : IPostService
         return NormalizePostReactionType(reaction.Type);
     }
 
-    private static string NormalizePostReactionType(string? type)
+    private static string NormalizePostReactionType(ReactionType type)
     {
-        return PostReactionTypes.IsValid(type)
-            ? PostReactionTypes.Normalize(type!)
-            : PostReactionTypes.Like;
+        return type.ToString();
     }
 
     private static void EnsurePostHasContentOrMedia(string content, string? media)
@@ -397,10 +398,11 @@ public class PostService : IPostService
 
             var authorName = await ResolveNotificationActorNameAsync(authorUserId, accessToken, cancellationToken);
             var now = DateTime.UtcNow;
+            var createdNotifications = new List<Notification>(friendIds.Count);
 
             foreach (var friendId in friendIds)
             {
-                await _notificationRepository.AddAsync(new Notification
+                var notification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = friendId,
@@ -410,10 +412,18 @@ public class PostService : IPostService
                     Message = $"{authorName} shared a new post.",
                     IsRead = false,
                     CreatedAt = now
-                }, cancellationToken);
+                };
+
+                await _notificationRepository.AddAsync(notification, cancellationToken);
+                createdNotifications.Add(notification);
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            foreach (var notification in createdNotifications)
+            {
+                await _notificationRealtimeService.NotifyCreatedAsync(notification.ToResponseDto(), cancellationToken);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

@@ -5,6 +5,7 @@ import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
@@ -23,6 +24,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -90,6 +92,16 @@ public class UserProfileController {
     ) {
         return ResponseEntity.ok(
                 userProfileService.getUserProfileSummary(userId)
+        );
+    }
+
+    @GetMapping("/me/friends/presence")
+    public ResponseEntity<List<UserProfilePresenceResponse>> getFriendPresenceList(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(
+                userProfileService.getFriendPresenceList(userId)
         );
     }
 

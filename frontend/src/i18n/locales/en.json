@@ -54,7 +54,11 @@
   },
   "sidebar": {
     "friendSuggestions": "Friend suggestions",
+    "noSuggestions": "No new friend suggestions right now.",
     "onlineUsers": "Online now",
+    "noOnlineUsers": "No friends are online right now.",
+    "offlineUsers": "Offline friends",
+    "noOfflineUsers": "Everyone is online at the moment.",
     "notificationsPreview": "Notification preview",
     "mutualFriends": "{{count}} mutual friends",
     "addFriend": "Add friend"

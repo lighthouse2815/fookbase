@@ -1,6 +1,7 @@
 package com.dang.app.utils.mapper;
 
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
@@ -9,6 +10,7 @@ import com.dang.app.entity.auth.UserProfile;
 import com.dang.app.utils.enums.FriendshipStatus;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Component
@@ -82,6 +84,22 @@ public class UserProfileMapper {
                 .userId(profile.getUser().getId())
                 .displayName(displayName)
                 .avatarUrl(profile.getAvatarUrl())
+                .build();
+    }
+
+    public UserProfilePresenceResponse toUserProfilePresenceResponse(
+            UserProfile profile,
+            boolean isOnline,
+            LocalDateTime lastSeenAt
+    ) {
+        UserProfileSummaryResponse summary = toUserProfileSummary(profile);
+
+        return UserProfilePresenceResponse.builder()
+                .userId(summary.getUserId())
+                .displayName(summary.getDisplayName())
+                .avatarUrl(summary.getAvatarUrl())
+                .isOnline(isOnline)
+                .lastSeenAt(isOnline ? null : lastSeenAt)
                 .build();
     }
 

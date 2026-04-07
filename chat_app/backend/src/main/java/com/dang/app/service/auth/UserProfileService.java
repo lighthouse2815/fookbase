@@ -5,12 +5,14 @@ import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
 import com.dang.app.entity.messenger.Friendship;
 import com.dang.app.repository.messenger.ContactRepository;
 import com.dang.app.repository.messenger.FriendshipRepository;
+import com.dang.app.service.messenger.UserPresenceService;
 import com.dang.app.utils.enums.FriendshipStatus;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
@@ -42,6 +44,7 @@ public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
     private final ContactRepository contactRepository;
     private final FriendshipRepository friendshipRepository;
+    private final UserPresenceService userPresenceService;
 
     private final UserGuard userGuard;
     private final UserProfileGuard userProfileGuard;
@@ -214,6 +217,38 @@ public class UserProfileService {
         }
 
         return userProfileMapper.toUserProfileSummary(profile);
+    }
+
+    public List<UserProfilePresenceResponse> getFriendPresenceList(UUID userId) {
+        User user = userService.findById(userId);
+        userGuard.requireActiveAndNotDeleted(user);
+
+        List<UUID> friendIds = friendshipRepository.findAcceptedFriendIdsByUserId(userId);
+        if (friendIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, UserProfile> profileMap = userProfileRepository.findPublicProfilesByUserIds(friendIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getId(),
+                        Function.identity(),
+                        (left, ignored) -> left
+                ));
+
+        return friendIds.stream()
+                .map(profileMap::get)
+                .filter(Objects::nonNull)
+                .map(profile -> {
+                    UUID friendId = profile.getUser().getId();
+                    boolean online = userPresenceService.isOnline(friendId);
+                    return userProfileMapper.toUserProfilePresenceResponse(
+                            profile,
+                            online,
+                            online ? null : userPresenceService.getLastSeenAt(friendId)
+                    );
+                })
+                .toList();
     }
 
 

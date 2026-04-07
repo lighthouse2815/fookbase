@@ -1,6 +1,7 @@
 package com.dang.app.controller.auth;
 
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
+import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.service.auth.UserProfileService;
 import com.dang.app.utils.enums.FriendshipStatus;
@@ -18,6 +19,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -135,6 +138,50 @@ class UserProfileControllerTest {
         mockMvc.perform(get("/api/profiles/summary").param("userId", "invalid-uuid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void getFriendPresenceList_shouldReturn200_whenFriendsExist() throws Exception {
+        UUID myId = UUID.randomUUID();
+        UUID friendOnlineId = UUID.randomUUID();
+        UUID friendOfflineId = UUID.randomUUID();
+        authenticateAs(myId);
+
+        when(userProfileService.getFriendPresenceList(myId)).thenReturn(
+                List.of(
+                        UserProfilePresenceResponse.builder()
+                                .userId(friendOnlineId)
+                                .displayName("Online User")
+                                .avatarUrl("https://cdn.test/online.jpg")
+                                .isOnline(true)
+                                .lastSeenAt(null)
+                                .build(),
+                        UserProfilePresenceResponse.builder()
+                                .userId(friendOfflineId)
+                                .displayName("Offline User")
+                                .avatarUrl("https://cdn.test/offline.jpg")
+                                .isOnline(false)
+                                .lastSeenAt(LocalDateTime.of(2026, 4, 7, 10, 30, 0))
+                                .build()
+                )
+        );
+
+        try {
+            mockMvc.perform(get("/api/profiles/me/friends/presence"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].userId").value(friendOnlineId.toString()))
+                    .andExpect(jsonPath("$[0].displayName").value("Online User"))
+                    .andExpect(jsonPath("$[0].avatarUrl").value("https://cdn.test/online.jpg"))
+                    .andExpect(jsonPath("$[0].online").value(true))
+                    .andExpect(jsonPath("$[0].lastSeenAt").doesNotExist())
+                    .andExpect(jsonPath("$[1].userId").value(friendOfflineId.toString()))
+                    .andExpect(jsonPath("$[1].displayName").value("Offline User"))
+                    .andExpect(jsonPath("$[1].avatarUrl").value("https://cdn.test/offline.jpg"))
+                    .andExpect(jsonPath("$[1].online").value(false))
+                    .andExpect(jsonPath("$[1].lastSeenAt").value("2026-04-07T10:30:00"));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     private void authenticateAs(UUID userId) {

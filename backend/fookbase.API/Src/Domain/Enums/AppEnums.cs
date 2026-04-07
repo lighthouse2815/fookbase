@@ -35,3 +35,20 @@ public enum FriendshipStatus
     BLOCKED,
     REMOVED
 }
+
+public enum ReactionType
+{
+    LIKE,
+    WOW,
+    SAD,
+    ANGRY,
+    HAHA,
+    LOVE
+}
+
+public enum ReportStatus
+{
+    PENDING,
+    RESOLVED,
+    REJECTED
+}

@@ -15,7 +15,7 @@ interface PagedResult<T> {
   totalPages: number;
 }
 
-interface NotificationPayload {
+export interface NotificationPayload {
   id: string;
   userId: string;
   actorUserId: string;
@@ -35,7 +35,7 @@ const extractData = <T>(response: ApiEnvelope<T>, fallbackError: string): T => {
   return response.data;
 };
 
-const mapNotification = (payload: NotificationPayload): NotificationItem => ({
+export const mapNotificationPayload = (payload: NotificationPayload): NotificationItem => ({
   id: payload.id,
   message: payload.message,
   createdAt: payload.createdAt,
@@ -56,7 +56,7 @@ export const notificationService = {
     });
 
     const paged = extractData(response.data, 'Failed to load notifications');
-    return paged.items.map(mapNotification);
+    return paged.items.map(mapNotificationPayload);
   },
 
   async markAsRead(notificationId: string): Promise<void> {

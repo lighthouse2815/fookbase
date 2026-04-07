@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Domain.Entities;
 
 public class PostReport
@@ -10,7 +12,7 @@ public class PostReport
 
     public string Reason { get; set; } = string.Empty;
 
-    public string Status { get; set; } = "PENDING";
+    public ReportStatus Status { get; set; } = ReportStatus.PENDING;
 
     public Guid? ResolvedByUserId { get; set; }
 

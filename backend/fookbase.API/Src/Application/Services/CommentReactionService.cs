@@ -2,10 +2,10 @@ using InteractHub.Api.Application.DTOs.Comments;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
@@ -66,7 +66,7 @@ public class CommentReactionService : ICommentReactionService
                     UserId = reaction.UserId,
                     DisplayName = displayName,
                     AvatarUrl = avatarUrl,
-                    ReactionType = reaction.Type,
+                    ReactionType = reaction.Type.ToString(),
                     ReactedAt = reaction.UpdatedAt
                 };
             })
@@ -92,11 +92,10 @@ public class CommentReactionService : ICommentReactionService
         var comment = await _commentRepository.GetByIdAsync(commentId, cancellationToken)
             ?? throw new NotFoundException("Comment not found.");
 
-        if (!CommentReactionTypes.IsValid(request.Type))
+        if (!EnumParser.TryParseReactionType(request.Type, out var normalizedType))
         {
             throw new ArgumentException("Reaction type is invalid.");
         }
-        var normalizedType = CommentReactionTypes.Normalize(request.Type);
 
         var existingReaction = await _commentReactionRepository.GetByCommentAndUserAsync(comment.Id, user.Id, cancellationToken);
         if (existingReaction is null)
@@ -123,7 +122,7 @@ public class CommentReactionService : ICommentReactionService
         return new CommentReactionStateResponseDto
         {
             CommentId = comment.Id,
-            ReactionType = normalizedType
+            ReactionType = normalizedType.ToString()
         };
     }
 

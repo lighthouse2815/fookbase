@@ -2,10 +2,11 @@ using InteractHub.Api.Application.DTOs.Likes;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
+using InteractHub.Api.Application.Mappers;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
@@ -18,6 +19,7 @@ public class LikeService : ILikeService
     private readonly IPostRepository _postRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
+    private readonly INotificationRealtimeService _notificationRealtimeService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<LikeService> _logger;
 
@@ -26,6 +28,7 @@ public class LikeService : ILikeService
         IPostRepository postRepository,
         IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
+        INotificationRealtimeService notificationRealtimeService,
         IUnitOfWork unitOfWork,
         ILogger<LikeService> logger)
     {
@@ -33,6 +36,7 @@ public class LikeService : ILikeService
         _postRepository = postRepository;
         _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
+        _notificationRealtimeService = notificationRealtimeService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -94,14 +98,14 @@ public class LikeService : ILikeService
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
 
-        if (!PostReactionTypes.IsValid(request.Type))
+        if (!EnumParser.TryParseReactionType(request.Type, out var normalizedType))
         {
             throw new ArgumentException("Reaction type is invalid.");
         }
-        var normalizedType = PostReactionTypes.Normalize(request.Type);
 
         var existingLike = await _likeRepository.GetByPostAndUserAsync(post.Id, user.Id, cancellationToken);
         var now = DateTime.UtcNow;
+        Notification? createdNotification = null;
         if (existingLike is null)
         {
             var actorName = "Someone";
@@ -118,7 +122,7 @@ public class LikeService : ILikeService
 
             if (post.UserId != user.Id)
             {
-                await _notificationRepository.AddAsync(new Notification
+                createdNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = post.UserId,
@@ -128,7 +132,9 @@ public class LikeService : ILikeService
                     Message = $"{actorName} reacted to your post.",
                     IsRead = false,
                     CreatedAt = now
-                }, cancellationToken);
+                };
+
+                await _notificationRepository.AddAsync(createdNotification, cancellationToken);
             }
         }
         else
@@ -138,12 +144,17 @@ public class LikeService : ILikeService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (createdNotification is not null)
+        {
+            await _notificationRealtimeService.NotifyCreatedAsync(createdNotification.ToResponseDto(), cancellationToken);
+        }
+
         var reactionSummary = await ResolveReactionSummaryAsync(post.Id, cancellationToken);
 
         return new PostReactionStateResponseDto
         {
             PostId = post.Id,
-            ReactionType = normalizedType,
+            ReactionType = normalizedType.ToString(),
             ReactionCount = reactionSummary.Count,
             TopReactionTypes = reactionSummary.TopTypes
         };
@@ -180,7 +191,7 @@ public class LikeService : ILikeService
         var state = await SetReactionAsync(
             postId,
             userId,
-            new SetPostReactionRequestDto { Type = PostReactionTypes.Like },
+            new SetPostReactionRequestDto { Type = ReactionType.LIKE.ToString() },
             cancellationToken);
 
         return new LikeStateResponseDto
@@ -222,11 +233,9 @@ public class LikeService : ILikeService
         return new ReactionSummary(reactions.Count, topTypes);
     }
 
-    private static string NormalizeReactionType(string? type)
+    private static string NormalizeReactionType(ReactionType type)
     {
-        return PostReactionTypes.IsValid(type)
-            ? PostReactionTypes.Normalize(type!)
-            : PostReactionTypes.Like;
+        return type.ToString();
     }
 
     private async Task<Dictionary<Guid, UserProfileSummaryDto?>> ResolveProfileLookupAsync(

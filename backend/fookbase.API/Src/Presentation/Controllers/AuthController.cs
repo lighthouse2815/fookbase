@@ -4,6 +4,7 @@ using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -121,7 +122,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendVerifyEmailOtpWhenLogin(
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
+        var accessToken = Request.ExtractAccessToken();
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
@@ -163,7 +164,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendResetPasswordOtpWhenLogin(
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
+        var accessToken = Request.ExtractAccessToken();
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
@@ -206,7 +207,7 @@ public class AuthController : ControllerBase
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
+        var accessToken = Request.ExtractAccessToken();
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
@@ -249,7 +250,7 @@ public class AuthController : ControllerBase
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
+        var accessToken = Request.ExtractAccessToken();
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
@@ -309,23 +310,6 @@ public class AuthController : ControllerBase
             : result.ErrorMessage;
 
         return StatusCode(statusCode, ApiResponse<T>.Fail(error));
-    }
-
-    private string? ExtractAccessToken()
-    {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return authorizationHeader["Bearer ".Length..].Trim();
-        }
-
-        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
-            && !string.IsNullOrWhiteSpace(cookieToken))
-        {
-            return cookieToken;
-        }
-
-        return null;
     }
 
     private void SetAccessTokenCookie(string token)

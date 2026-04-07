@@ -1,7 +1,6 @@
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +28,7 @@ public class ProfilesController : ControllerBase
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.GetByUserIdAsync(userId, ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.GetByUserIdAsync(userId, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildProxyErrorResponse<ProfileResponseDto>(
@@ -49,7 +48,7 @@ public class ProfilesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await _profileService.GetMyProfileSettingsAsync(userId, ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.GetMyProfileSettingsAsync(userId, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildProxyErrorResponse<MyProfileSettingsResponseDto>(
@@ -70,7 +69,7 @@ public class ProfilesController : ControllerBase
         [FromBody] UpdateMyProfileRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.UpdateMyProfileAsync(request, ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.UpdateMyProfileAsync(request, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess)
         {
             return BuildProxyErrorResponse<object?>(
@@ -91,7 +90,7 @@ public class ProfilesController : ControllerBase
         [FromQuery] string phoneNumber,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.SearchByPhoneNumberAsync(phoneNumber, ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.SearchByPhoneNumberAsync(phoneNumber, Request.ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildProxyErrorResponse<List<UserProfileSearchDto>>(
@@ -105,23 +104,6 @@ public class ProfilesController : ControllerBase
             : StatusCodes.Status200OK;
 
         return StatusCode(statusCode, ApiResponse<List<UserProfileSearchDto>>.Ok(result.Data));
-    }
-
-    private string? ExtractAccessToken()
-    {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return authorizationHeader["Bearer ".Length..].Trim();
-        }
-
-        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
-            && !string.IsNullOrWhiteSpace(cookieToken))
-        {
-            return cookieToken;
-        }
-
-        return null;
     }
 
     private ActionResult<ApiResponse<T>> BuildProxyErrorResponse<T>(

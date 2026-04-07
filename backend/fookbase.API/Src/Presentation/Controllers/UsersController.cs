@@ -1,7 +1,6 @@
 using System.Net;
 using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Utilities;
@@ -31,7 +30,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<ApiResponse<CurrentUserResponseDto>>> GetCurrentUser(CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var accessToken = ExtractAccessToken();
+        var accessToken = Request.ExtractAccessToken();
 
         try
         {
@@ -72,23 +71,5 @@ public class UsersController : ControllerBase
                 ApiResponse<CurrentUserResponseDto>.Fail("Java profile API is unavailable."));
         }
     }
-
-    private string? ExtractAccessToken()
-    {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return authorizationHeader["Bearer ".Length..].Trim();
-        }
-
-        if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
-            && !string.IsNullOrWhiteSpace(cookieToken))
-        {
-            return cookieToken;
-        }
-
-        return null;
-    }
-
 }
 

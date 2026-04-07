@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="fookbase.API.csproj" />
+  <Project Path="../fookbase.API.Tests/fookbase.API.Tests.csproj" />
 </Solution>

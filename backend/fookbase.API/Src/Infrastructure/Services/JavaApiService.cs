@@ -158,6 +158,21 @@ public class JavaApiService : IJavaApiService
         return result;
     }
 
+    public async Task<JavaApiCallResult<List<UserProfilePresenceDto>>> GetFriendPresenceAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.FriendPresencePathTemplate);
+        var result = await GetResultAsync<List<UserProfilePresenceDto>>(path, accessToken, cancellationToken);
+
+        if (result.IsSuccess && result.Data is null)
+        {
+            return JavaApiCallResult<List<UserProfilePresenceDto>>.Success(new List<UserProfilePresenceDto>(), result.StatusCode);
+        }
+
+        return result;
+    }
+
     public Task<JavaApiCallResult<FriendshipResponseDto>> SendFriendRequestAsync(
         string userId,
         string accessToken,

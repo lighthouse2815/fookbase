@@ -5,6 +5,7 @@ export interface User {
   email?: string;
   avatarUrl: string;
   isOnline?: boolean;
+  lastSeenAt?: string;
   faculty?: string;
 }
 

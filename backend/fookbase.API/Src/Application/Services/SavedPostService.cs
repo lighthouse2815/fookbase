@@ -4,7 +4,6 @@ using InteractHub.Api.Application.DTOs.SavedPosts;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Common.Utilities;
@@ -205,9 +204,7 @@ public class SavedPostService : ISavedPostService
             return null;
         }
 
-        return PostReactionTypes.IsValid(reaction.Type)
-            ? PostReactionTypes.Normalize(reaction.Type)
-            : PostReactionTypes.Like;
+        return reaction.Type.ToString();
     }
 
 }

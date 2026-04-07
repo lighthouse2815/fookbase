@@ -12,15 +12,18 @@ public class NotificationService : INotificationService
 {
     private readonly INotificationRepository _notificationRepository;
     private readonly IJavaApiService _javaApiService;
+    private readonly INotificationRealtimeService _notificationRealtimeService;
     private readonly IUnitOfWork _unitOfWork;
 
     public NotificationService(
         INotificationRepository notificationRepository,
         IJavaApiService javaApiService,
+        INotificationRealtimeService notificationRealtimeService,
         IUnitOfWork unitOfWork)
     {
         _notificationRepository = notificationRepository;
         _javaApiService = javaApiService;
+        _notificationRealtimeService = notificationRealtimeService;
         _unitOfWork = unitOfWork;
     }
 
@@ -75,7 +78,10 @@ public class NotificationService : INotificationService
         await _notificationRepository.AddAsync(notification, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return notification.ToResponseDto();
+        var response = notification.ToResponseDto();
+        await _notificationRealtimeService.NotifyCreatedAsync(response, cancellationToken);
+
+        return response;
     }
 
     public async Task<NotificationResponseDto> MarkAsReadAsync(
@@ -93,7 +99,10 @@ public class NotificationService : INotificationService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return notification.ToResponseDto();
+        var response = notification.ToResponseDto();
+        await _notificationRealtimeService.NotifyUpdatedAsync(response, cancellationToken);
+
+        return response;
     }
 
     public async Task MarkAllAsReadAsync(Guid userId, CancellationToken cancellationToken)
@@ -105,6 +114,7 @@ public class NotificationService : INotificationService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _notificationRealtimeService.NotifyMarkedAllReadAsync(userId, cancellationToken);
     }
 
     public async Task DeleteAsync(Guid notificationId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
@@ -117,6 +127,7 @@ public class NotificationService : INotificationService
         _notificationRepository.Remove(notification);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _notificationRealtimeService.NotifyDeletedAsync(notification.UserId, notification.Id, cancellationToken);
     }
 
     private static void EnsureOwnerOrAdmin(Guid ownerId, Guid currentUserId, bool isAdmin, string error)

@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Domain.Entities;
 
 public class Like
@@ -8,7 +10,7 @@ public class Like
 
     public Guid UserId { get; set; }
 
-    public string Type { get; set; } = string.Empty;
+    public ReactionType Type { get; set; } = ReactionType.LIKE;
 
     public DateTime CreatedAt { get; set; }
 
