@@ -52,6 +52,61 @@
     "loadMore": "Tải thêm",
     "noMorePosts": "Không còn bài viết"
   },
+  "story": {
+    "reactions": {
+      "like": "Thich",
+      "wow": "Wow",
+      "sad": "Buon",
+      "angry": "Gian",
+      "haha": "Haha",
+      "love": "Yeu"
+    },
+    "list": {
+      "createButton": "Tao story",
+      "createSuccess": "Dang story thanh cong.",
+      "createError": "Khong the dang story.",
+      "youLabel": "Ban",
+      "noStory": "Chua co story"
+    },
+    "composer": {
+      "closeOverlayAria": "Dong popup tao story",
+      "closeButtonAria": "Dong",
+      "title": "Dang story moi",
+      "subtitle": "Chi ho tro anh/video. Story tu dong het han sau 24 gio.",
+      "mediaLabel": "Chon media",
+      "previewAlt": "Xem truoc story",
+      "contentLabel": "Noi dung (tuy chon)",
+      "contentPlaceholder": "Viet them gi do cho story...",
+      "submitting": "Dang dang...",
+      "submit": "Dang story"
+    },
+    "viewer": {
+      "openError": "Khong the mo story viewer.",
+      "loading": "Dang tai story...",
+      "soundOnAria": "Bat am thanh story",
+      "soundOffAria": "Tat am thanh story",
+      "resumeAria": "Phat tiep story",
+      "pauseAria": "Tam dung story",
+      "optionsAria": "Tuy chon story",
+      "deleting": "Dang xoa...",
+      "deleteStory": "Xoa tin",
+      "reportAdmin": "Bao cao admin",
+      "closeAria": "Dong story viewer",
+      "previousAria": "Story truoc do",
+      "nextAria": "Story tiep theo",
+      "reactionSentToast": "Da gui cho {{name}}",
+      "reactionError": "Khong the cap nhat cam xuc story.",
+      "reactionAcknowledgement": "Ban da bay to cam xuc cho {{name}}",
+      "reportReasonMinLength": "Vui long nhap ly do toi thieu 3 ky tu.",
+      "reportSent": "Da gui bao cao story cho admin.",
+      "closeReportOverlayAria": "Dong popup bao cao story",
+      "reportTitle": "Bao cao story",
+      "reportDescription": "Noi dung se duoc gui den admin de kiem tra.",
+      "reasonLabel": "Ly do",
+      "reasonPlaceholder": "Nhap ly do bao cao story...",
+      "sendReport": "Gui bao cao"
+    }
+  },
   "sidebar": {
     "friendSuggestions": "Gợi ý kết bạn",
     "noSuggestions": "Hiện chưa có gợi ý kết bạn mới.",

@@ -20,6 +20,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Story> Stories => Set<Story>();
 
+    public DbSet<StoryReaction> StoryReactions => Set<StoryReaction>();
+
     public DbSet<StoryView> StoryViews => Set<StoryView>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -135,6 +137,28 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(story => story.UserId);
             entity.HasIndex(story => story.ExpiredAt);
+        });
+
+        modelBuilder.Entity<StoryReaction>(entity =>
+        {
+            entity.ToTable("StoryReaction");
+            entity.HasKey(storyReaction => storyReaction.Id);
+
+            entity.Property(storyReaction => storyReaction.Type)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
+            entity.Property(storyReaction => storyReaction.CreatedAt).IsRequired();
+            entity.Property(storyReaction => storyReaction.UpdatedAt).IsRequired();
+
+            entity.HasOne(storyReaction => storyReaction.Story)
+                .WithMany(story => story.Reactions)
+                .HasForeignKey(storyReaction => storyReaction.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(storyReaction => new { storyReaction.StoryId, storyReaction.UserId }).IsUnique();
+            entity.HasIndex(storyReaction => storyReaction.UserId);
+            entity.HasIndex(storyReaction => storyReaction.StoryId);
         });
 
         modelBuilder.Entity<StoryView>(entity =>

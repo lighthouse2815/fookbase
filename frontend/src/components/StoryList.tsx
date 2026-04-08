@@ -39,6 +39,8 @@ const StoryComposerModal = ({
   onContentChanged,
   onSubmit,
 }: StoryComposerModalProps) => {
+  const { t } = useTranslation();
+
   if (!isOpen) {
     return null;
   }
@@ -49,7 +51,7 @@ const StoryComposerModal = ({
         type="button"
         className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px]"
         onClick={onClose}
-        aria-label="Dong popup tao story"
+        aria-label={t('story.composer.closeOverlayAria')}
       />
 
       <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -57,15 +59,15 @@ const StoryComposerModal = ({
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-          aria-label="Dong"
+          aria-label={t('story.composer.closeButtonAria')}
         >
           <X size={16} />
         </button>
 
-        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Dang story moi</h3>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Chi ho tro anh/video. Story tu dong het han sau 24 gio.</p>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('story.composer.title')}</h3>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('story.composer.subtitle')}</p>
 
-        <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Chon media</label>
+        <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">{t('story.composer.mediaLabel')}</label>
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
@@ -78,18 +80,18 @@ const StoryComposerModal = ({
             {selectedFile?.type.startsWith('video/') ? (
               <video src={previewUrl} controls className="h-72 w-full object-cover" />
             ) : (
-              <img src={previewUrl} alt="Story preview" className="h-72 w-full object-cover" />
+              <img src={previewUrl} alt={t('story.composer.previewAlt')} className="h-72 w-full object-cover" />
             )}
           </div>
         ) : null}
 
-        <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Noi dung (tuy chon)</label>
+        <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">{t('story.composer.contentLabel')}</label>
         <textarea
           value={content}
           onChange={(event) => onContentChanged(event.target.value)}
           rows={3}
           maxLength={500}
-          placeholder="Viet them gi do cho story..."
+          placeholder={t('story.composer.contentPlaceholder')}
           className="mt-2 w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
         <div className="mt-1 text-right text-xs text-slate-500 dark:text-slate-400">{content.length}/500</div>
@@ -103,7 +105,7 @@ const StoryComposerModal = ({
             disabled={isSubmitting}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
-            Huy
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -111,7 +113,7 @@ const StoryComposerModal = ({
             disabled={isSubmitting || !selectedFile}
             className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? 'Dang dang...' : 'Dang story'}
+            {isSubmitting ? t('story.composer.submitting') : t('story.composer.submit')}
           </button>
         </div>
       </div>
@@ -211,9 +213,9 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
     try {
       await createStoryFromFile(selectedFile, content);
       closeComposer();
-      onActionToast?.('Dang story thanh cong', 'success');
+      onActionToast?.(t('story.list.createSuccess'), 'success');
     } catch (error) {
-      setComposerError(error instanceof Error ? error.message : 'Khong the dang story.');
+      setComposerError(error instanceof Error ? error.message : t('story.list.createError'));
     } finally {
       setIsCreatingStory(false);
     }
@@ -238,7 +240,7 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
       setViewerStories(stories);
       setViewerStoryIndex(Math.max(0, Math.min(initialStoryIndex, stories.length - 1)));
     } catch (error) {
-      onActionToast?.(error instanceof Error ? error.message : 'Khong the mo story viewer.', 'error');
+      onActionToast?.(error instanceof Error ? error.message : t('story.viewer.openError'), 'error');
     } finally {
       setIsViewerLoading(false);
     }
@@ -260,7 +262,7 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
           className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           <Plus size={14} />
-          Tao story
+          {t('story.list.createButton')}
         </button>
       </div>
 
@@ -291,7 +293,7 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
               key={group.userId}
               type="button"
               onClick={() => void openStoryViewer(group)}
-              className={`relative h-44 w-28 shrink-0 overflow-hidden rounded-2xl border text-left transition hover:scale-[1.02] ${
+              className={`relative h-44 w-40 shrink-0 overflow-hidden rounded-2xl border text-left transition hover:scale-[1.02] ${
                 hasNew
                   ? 'border-brand-500 ring-2 ring-brand-300 dark:border-brand-300 dark:ring-brand-400/40'
                   : 'border-slate-200 dark:border-slate-700'
@@ -304,11 +306,11 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
               )}
 
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent p-2">
-                <p className="line-clamp-2 text-xs font-semibold text-white">{group.isMine ? 'Ban' : group.author.displayName}</p>
+                <p className="line-clamp-2 text-xs font-semibold text-white">{group.isMine ? t('story.list.youLabel') : group.author.displayName}</p>
                 {latestStory ? (
                   <p className="mt-0.5 text-[10px] text-white/80">{formatRelativeTime(latestStory.createdAt)}</p>
                 ) : (
-                  <p className="mt-0.5 text-[10px] text-white/80">Chua co story</p>
+                  <p className="mt-0.5 text-[10px] text-white/80">{t('story.list.noStory')}</p>
                 )}
               </div>
 
@@ -332,7 +334,7 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
         })}
 
         {isLoading || isLoadingMore ? (
-          <div className="flex h-44 w-28 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <div className="flex h-44 w-32 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <RefreshCw size={18} className="animate-spin" />
           </div>
         ) : null}
@@ -355,7 +357,7 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 text-white">
           <div className="inline-flex items-center gap-2 rounded-xl bg-black/50 px-4 py-2 text-sm font-medium">
             <RefreshCw size={14} className="animate-spin" />
-            Dang tai story...
+            {t('story.viewer.loading')}
           </div>
         </div>
       ) : null}
@@ -368,7 +370,8 @@ export const StoryList = ({ currentUser, onActionToast }: StoryListProps) => {
           currentUserId={currentUser.id}
           onClose={closeViewer}
           onMarkViewed={markStoryViewed}
-          onDeleteStory={viewerGroup.isMine ? removeStory : undefined}
+          onDeleteStory={removeStory}
+          onActionToast={onActionToast}
         />
       ) : null}
     </section>

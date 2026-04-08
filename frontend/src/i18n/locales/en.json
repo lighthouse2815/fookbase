@@ -52,6 +52,61 @@
     "loadMore": "Load more",
     "noMorePosts": "No more posts"
   },
+  "story": {
+    "reactions": {
+      "like": "Like",
+      "wow": "Wow",
+      "sad": "Sad",
+      "angry": "Angry",
+      "haha": "Haha",
+      "love": "Love"
+    },
+    "list": {
+      "createButton": "Create story",
+      "createSuccess": "Story posted successfully.",
+      "createError": "Unable to post story.",
+      "youLabel": "You",
+      "noStory": "No story yet"
+    },
+    "composer": {
+      "closeOverlayAria": "Close create story dialog",
+      "closeButtonAria": "Close",
+      "title": "Create a new story",
+      "subtitle": "Image/video only. Stories expire after 24 hours.",
+      "mediaLabel": "Choose media",
+      "previewAlt": "Story preview",
+      "contentLabel": "Content (optional)",
+      "contentPlaceholder": "Add something to your story...",
+      "submitting": "Posting...",
+      "submit": "Post story"
+    },
+    "viewer": {
+      "openError": "Unable to open story viewer.",
+      "loading": "Loading story...",
+      "soundOnAria": "Turn on story sound",
+      "soundOffAria": "Turn off story sound",
+      "resumeAria": "Resume story",
+      "pauseAria": "Pause story",
+      "optionsAria": "Story options",
+      "deleting": "Deleting...",
+      "deleteStory": "Delete story",
+      "reportAdmin": "Report to admin",
+      "closeAria": "Close story viewer",
+      "previousAria": "Previous story",
+      "nextAria": "Next story",
+      "reactionSentToast": "Sent to {{name}}",
+      "reactionError": "Unable to update story reaction.",
+      "reactionAcknowledgement": "You reacted to {{name}}",
+      "reportReasonMinLength": "Please enter at least 3 characters for the reason.",
+      "reportSent": "Story report sent to admin.",
+      "closeReportOverlayAria": "Close report story dialog",
+      "reportTitle": "Report story",
+      "reportDescription": "This content will be sent to admin for review.",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Enter reason for reporting this story...",
+      "sendReport": "Send report"
+    }
+  },
   "sidebar": {
     "friendSuggestions": "Friend suggestions",
     "noSuggestions": "No new friend suggestions right now.",

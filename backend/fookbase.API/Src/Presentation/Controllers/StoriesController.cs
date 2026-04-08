@@ -14,10 +14,12 @@ namespace InteractHub.Api.Controllers;
 public class StoriesController : ControllerBase
 {
     private readonly IStoryService _storyService;
+    private readonly IStoryReactionService _storyReactionService;
 
-    public StoriesController(IStoryService storyService)
+    public StoriesController(IStoryService storyService, IStoryReactionService storyReactionService)
     {
         _storyService = storyService;
+        _storyReactionService = storyReactionService;
     }
 
     [HttpGet]
@@ -112,5 +114,33 @@ public class StoriesController : ControllerBase
         var userId = User.GetUserId();
         await _storyService.DeleteAsync(storyId, userId, User.IsAdmin(), cancellationToken);
         return Ok(ApiResponse<object>.Ok(new { message = "Story deleted." }));
+    }
+
+    [HttpPut("{storyId:guid}/reactions")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<StoryReactionStateResponseDto>>> SetReaction(
+        Guid storyId,
+        [FromBody] SetStoryReactionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var state = await _storyReactionService.SetReactionAsync(storyId, userId, request, cancellationToken);
+        return Ok(ApiResponse<StoryReactionStateResponseDto>.Ok(state));
+    }
+
+    [HttpDelete("{storyId:guid}/reactions")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<StoryReactionStateResponseDto>>> RemoveReaction(
+        Guid storyId,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var state = await _storyReactionService.RemoveReactionAsync(storyId, userId, cancellationToken);
+        return Ok(ApiResponse<StoryReactionStateResponseDto>.Ok(state));
     }
 }

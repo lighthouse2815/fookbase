@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import type { StoryItem, StoryMediaType, StoryUploadResult } from '../types/story';
+import type { StoryItem, StoryMediaType, StoryReactionType, StoryUploadResult } from '../types/story';
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -31,7 +31,13 @@ interface StoryPayload {
   createdAt: string;
   expiredAt: string;
   isViewedByCurrentUser: boolean;
+  currentUserReactionType?: string | null;
   viewCount: number;
+}
+
+interface StoryReactionStatePayload {
+  storyId: string;
+  reactionType: string | null;
 }
 
 interface StoryUploadPayload {
@@ -102,8 +108,22 @@ const mapStory = (payload: StoryPayload): StoryItem => ({
   createdAt: payload.createdAt,
   expiredAt: payload.expiredAt,
   isViewedByCurrentUser: payload.isViewedByCurrentUser,
+  currentUserReactionType: normalizeReactionType(payload.currentUserReactionType),
   viewCount: payload.viewCount,
 });
+
+const normalizeReactionType = (value?: string | null): StoryReactionType | null => {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim().toUpperCase();
+  if (normalized === 'LIKE' || normalized === 'WOW' || normalized === 'SAD' || normalized === 'ANGRY' || normalized === 'HAHA' || normalized === 'LOVE') {
+    return normalized;
+  }
+
+  return null;
+};
 
 const mapPagedStories = (paged: PagedResult<StoryPayload>): PaginatedStories => {
   const loadedCount = paged.page * paged.pageSize;
@@ -166,5 +186,18 @@ export const storyService = {
 
   async deleteStory(storyId: string): Promise<void> {
     await apiClient.delete(`/api/stories/${storyId}`);
+  },
+
+  async setReaction(storyId: string, reactionType: StoryReactionType): Promise<StoryReactionType | null> {
+    const response = await apiClient.put<ApiEnvelope<StoryReactionStatePayload>>(`/api/stories/${storyId}/reactions`, {
+      type: reactionType,
+    });
+
+    const state = extractData(response.data, 'Failed to set story reaction');
+    return normalizeReactionType(state.reactionType);
+  },
+
+  async removeReaction(storyId: string): Promise<void> {
+    await apiClient.delete<ApiEnvelope<StoryReactionStatePayload>>(`/api/stories/${storyId}/reactions`);
   },
 };

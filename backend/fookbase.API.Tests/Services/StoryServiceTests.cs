@@ -16,6 +16,7 @@ namespace InteractHub.Api.Tests.Services;
 public class StoryServiceTests
 {
     private readonly Mock<IStoryRepository> _storyRepositoryMock = new();
+    private readonly Mock<IStoryReactionRepository> _storyReactionRepositoryMock = new();
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock = new();
@@ -28,6 +29,7 @@ public class StoryServiceTests
         var options = Options.Create(new CloudinaryOptions());
         return new StoryService(
             _storyRepositoryMock.Object,
+            _storyReactionRepositoryMock.Object,
             _javaApiServiceMock.Object,
             _unitOfWorkMock.Object,
             _httpClientFactoryMock.Object,

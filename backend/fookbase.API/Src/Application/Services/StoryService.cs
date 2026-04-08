@@ -58,6 +58,7 @@ public class StoryService : IStoryService
     };
 
     private readonly IStoryRepository _storyRepository;
+    private readonly IStoryReactionRepository _storyReactionRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -68,6 +69,7 @@ public class StoryService : IStoryService
 
     public StoryService(
         IStoryRepository storyRepository,
+        IStoryReactionRepository storyReactionRepository,
         IJavaApiService javaApiService,
         IUnitOfWork unitOfWork,
         IHttpClientFactory httpClientFactory,
@@ -77,6 +79,7 @@ public class StoryService : IStoryService
         ILogger<StoryService> logger)
     {
         _storyRepository = storyRepository;
+        _storyReactionRepository = storyReactionRepository;
         _javaApiService = javaApiService;
         _unitOfWork = unitOfWork;
         _httpClientFactory = httpClientFactory;
@@ -97,9 +100,17 @@ public class StoryService : IStoryService
         var feedUserIds = await ResolveFeedUserIdsAsync(currentUserId, accessToken, cancellationToken);
         var (items, totalCount) = await _storyRepository.GetPagedFeedAsync(feedUserIds, query.Page, query.PageSize, cancellationToken);
         var authors = await ResolveAuthorsAsync(items.Select(story => story.UserId), cancellationToken);
+        var currentUserReactions = await ResolveCurrentUserReactionsAsync(
+            items.Select(story => story.Id).ToList(),
+            currentUserId,
+            cancellationToken);
 
         var mappedItems = items
-            .Select(story => MapStoryToResponse(story, currentUserId, authors))
+            .Select(story => MapStoryToResponse(
+                story,
+                currentUserId,
+                authors,
+                currentUserReactions.TryGetValue(story.Id, out var reactionType) ? reactionType : null))
             .ToList();
 
         return PagedResult<StoryResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
@@ -123,8 +134,16 @@ public class StoryService : IStoryService
             cancellationToken);
 
         var authors = await ResolveAuthorsAsync(items.Select(story => story.UserId), cancellationToken);
+        var currentUserReactions = await ResolveCurrentUserReactionsAsync(
+            items.Select(story => story.Id).ToList(),
+            currentUserId,
+            cancellationToken);
         var mappedItems = items
-            .Select(story => MapStoryToResponse(story, currentUserId, authors))
+            .Select(story => MapStoryToResponse(
+                story,
+                currentUserId,
+                authors,
+                currentUserReactions.TryGetValue(story.Id, out var reactionType) ? reactionType : null))
             .ToList();
 
         return PagedResult<StoryResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
@@ -138,7 +157,8 @@ public class StoryService : IStoryService
         EnsureStoryIsActive(story);
 
         var authors = await ResolveAuthorsAsync([story.UserId], cancellationToken);
-        return MapStoryToResponse(story, currentUserId, authors);
+        var currentUserReactionType = await ResolveCurrentUserReactionTypeAsync(story.Id, currentUserId, cancellationToken);
+        return MapStoryToResponse(story, currentUserId, authors, currentUserReactionType);
     }
 
     public async Task<StoryResponseDto> CreateAsync(Guid userId, CreateStoryRequestDto request, CancellationToken cancellationToken)
@@ -167,7 +187,7 @@ public class StoryService : IStoryService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var authors = await ResolveAuthorsAsync([story.UserId], cancellationToken);
-        return MapStoryToResponse(story, userId, authors);
+        return MapStoryToResponse(story, userId, authors, currentUserReactionType: null);
     }
 
     public async Task<StoryUploadResponseDto> UploadMediaAsync(Guid userId, IFormFile file, CancellationToken cancellationToken)
@@ -341,7 +361,8 @@ public class StoryService : IStoryService
     private StoryResponseDto MapStoryToResponse(
         Story story,
         Guid currentUserId,
-        IReadOnlyDictionary<Guid, AuthorSummaryDto> authors)
+        IReadOnlyDictionary<Guid, AuthorSummaryDto> authors,
+        string? currentUserReactionType)
     {
         var isViewedByCurrentUser = story.UserId == currentUserId || story.Views.Any(view => view.ViewerId == currentUserId);
         var viewCount = story.Views
@@ -367,8 +388,32 @@ public class StoryService : IStoryService
             CreatedAt = story.CreatedAt,
             ExpiredAt = story.ExpiredAt,
             IsViewedByCurrentUser = isViewedByCurrentUser,
+            CurrentUserReactionType = currentUserReactionType,
             ViewCount = viewCount
         };
+    }
+
+    private async Task<Dictionary<Guid, string>> ResolveCurrentUserReactionsAsync(
+        IReadOnlyCollection<Guid> storyIds,
+        Guid currentUserId,
+        CancellationToken cancellationToken)
+    {
+        var reactions = await _storyReactionRepository.GetByStoryIdsAndUserAsync(storyIds, currentUserId, cancellationToken);
+        if (reactions.Count == 0)
+        {
+            return new Dictionary<Guid, string>();
+        }
+
+        return reactions.ToDictionary(reaction => reaction.StoryId, reaction => reaction.Type.ToString());
+    }
+
+    private async Task<string?> ResolveCurrentUserReactionTypeAsync(
+        Guid storyId,
+        Guid currentUserId,
+        CancellationToken cancellationToken)
+    {
+        var reaction = await _storyReactionRepository.GetByStoryAndUserAsync(storyId, currentUserId, cancellationToken);
+        return reaction?.Type.ToString();
     }
 
     private string ResolveStoryMediaUrl(string mediaUrl)

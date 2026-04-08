@@ -18,5 +18,7 @@ public class Story
 
     public bool IsDeleted { get; set; }
 
+    public ICollection<StoryReaction> Reactions { get; set; } = new List<StoryReaction>();
+
     public ICollection<StoryView> Views { get; set; } = new List<StoryView>();
 }

@@ -95,6 +95,7 @@ public static class EntityToDtoMapper
             CreatedAt = story.CreatedAt,
             ExpiredAt = story.ExpiredAt,
             IsViewedByCurrentUser = false,
+            CurrentUserReactionType = null,
             ViewCount = story.Views.Select(view => view.ViewerId).Distinct().Count()
         };
     }

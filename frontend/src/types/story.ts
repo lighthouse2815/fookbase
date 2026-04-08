@@ -1,4 +1,5 @@
 export type StoryMediaType = 'IMAGE' | 'VIDEO';
+export type StoryReactionType = 'LIKE' | 'WOW' | 'SAD' | 'ANGRY' | 'HAHA' | 'LOVE';
 
 export interface StoryAuthor {
   id: string;
@@ -17,6 +18,7 @@ export interface StoryItem {
   createdAt: string;
   expiredAt: string;
   isViewedByCurrentUser: boolean;
+  currentUserReactionType?: StoryReactionType | null;
   viewCount: number;
 }
 

@@ -22,5 +22,7 @@ public class StoryResponseDto
 
     public bool IsViewedByCurrentUser { get; init; }
 
+    public string? CurrentUserReactionType { get; init; }
+
     public int ViewCount { get; init; }
 }

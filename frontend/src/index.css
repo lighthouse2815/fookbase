@@ -25,3 +25,24 @@ body {
   border-radius: 9999px;
 }
 
+@keyframes story-reaction-fly-up {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, 0) scale(0.95);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -28px) scale(1.1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -56px) scale(0.9);
+  }
+}
+
+.story-reaction-fly-icon {
+  animation: story-reaction-fly-up 0.72s ease-out forwards;
+}
+
