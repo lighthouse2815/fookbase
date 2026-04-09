@@ -1,0 +1,105 @@
+name: Azure Java Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "chat_app/backend/**"
+      - ".github/workflows/azure-java-backend.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "chat_app/backend/**"
+      - ".github/workflows/azure-java-backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  java-backend-build-test-package:
+    name: Java Backend Build Test Package
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: chat_app
+          MYSQL_ROOT_PASSWORD: 123456
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p123456"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+    defaults:
+      run:
+        working-directory: chat_app/backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Run Java backend tests
+        run: ./mvnw -B test
+
+      - name: Package Java backend
+        run: ./mvnw -B package -DskipTests
+
+      - name: Stage deployment artifact
+        run: |
+          mkdir -p "${{ github.workspace }}/java_publish"
+          cp "$(find target -maxdepth 1 -name '*.jar' ! -name '*.original' | head -n 1)" "${{ github.workspace }}/java_publish/app.jar"
+
+      - name: Upload Java backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-backend-publish
+          path: java_publish
+          if-no-files-found: error
+
+  deploy-java-backend-azure:
+    name: Deploy Java Backend To Azure Web App
+    runs-on: ubuntu-latest
+    needs: java-backend-build-test-package
+    if: github.event_name != 'pull_request'
+    environment:
+      name: production
+    steps:
+      - name: Download Java backend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: java-backend-publish
+          path: java_publish
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Java backend package
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_JAVA_WEBAPP_NAME }}
+          package: java_publish/app.jar
