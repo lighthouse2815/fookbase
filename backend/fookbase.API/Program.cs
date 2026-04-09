@@ -163,11 +163,8 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 var migrateOnStartup = builder.Configuration.GetValue("Database:MigrateOnStartup", true);
 var migrationRetryCount = Math.Max(1, builder.Configuration.GetValue("Database:MigrationRetryCount", 5));

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { AdminReportsPage } from '../pages/AdminReportsPage';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
@@ -21,6 +22,9 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 import { AdminRoute } from './AdminRoute';
 import { ProtectedRoute } from './ProtectedRoute';
 
+const BloodFortressPage = lazy(() => import('../pages/BloodFortressPage'));
+const BloodFortressUnityPage = lazy(() => import('../pages/BloodFortressUnityPage'));
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -28,6 +32,22 @@ export const AppRoutes = () => {
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route
+        path="/games/hiep-si-dang-phao-dai-mau"
+        element={
+          <Suspense fallback={<div className="min-h-screen bg-black text-white" />}>
+            <BloodFortressUnityPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/games/hiep-si-dang-phao-dai-mau/canvas"
+        element={
+          <Suspense fallback={<div className="min-h-screen bg-black text-white" />}>
+            <BloodFortressPage />
+          </Suspense>
+        }
+      />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>

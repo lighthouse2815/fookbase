@@ -1,0 +1,151 @@
+.blood-fortress-page {
+  --bf-bg: #08080b;
+  --bf-panel: rgba(14, 12, 15, 0.84);
+  --bf-stroke: rgba(133, 70, 78, 0.72);
+  --bf-text: #f0e5d9;
+  --bf-soft: #c9b8ba;
+  --bf-blood: #c53448;
+  --bf-ember: #e7b27a;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(111, 20, 30, 0.24), transparent 36%),
+    radial-gradient(circle at 20% 20%, rgba(96, 16, 22, 0.18), transparent 24%),
+    linear-gradient(180deg, #110c12 0%, #08080b 55%, #050406 100%);
+  color: var(--bf-text);
+}
+
+.blood-fortress-inner {
+  margin: 0 auto;
+  max-width: 1760px;
+  padding: 1.25rem clamp(0.75rem, 2vw, 1.5rem) 2.5rem;
+}
+
+.blood-fortress-hero {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.blood-fortress-hero-card,
+.blood-fortress-info-card {
+  border: 1px solid var(--bf-stroke);
+  background: var(--bf-panel);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+.blood-fortress-hero-card {
+  padding: 1.5rem;
+}
+
+.blood-fortress-kicker {
+  margin: 0 0 0.5rem;
+  color: #eeb48b;
+  font: 700 0.8rem/1.2 'Courier New', Consolas, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.blood-fortress-title {
+  margin: 0;
+  font: 700 clamp(2.2rem, 5vw, 4.6rem) / 0.92 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.blood-fortress-subtitle {
+  max-width: 70rem;
+  margin: 0.75rem 0 0;
+  color: var(--bf-soft);
+  font: 400 1rem/1.7 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+}
+
+.blood-fortress-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.blood-fortress-stage {
+  margin: 0 calc(50% - 50vw) 1.25rem;
+  padding: 0 clamp(0.55rem, 2vw, 1.5rem);
+}
+
+.blood-fortress-stage-frame {
+  margin: 0 auto;
+  max-width: 1820px;
+}
+
+.blood-fortress-info-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.blood-fortress-info-card {
+  padding: 1.1rem 1rem;
+}
+
+.blood-fortress-info-card h2 {
+  margin: 0 0 0.65rem;
+  color: #f0ddd1;
+  font: 700 1.15rem/1.2 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.blood-fortress-info-card p,
+.blood-fortress-info-card li {
+  color: var(--bf-soft);
+  font: 400 0.95rem/1.65 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+}
+
+.blood-fortress-info-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.blood-fortress-canvas-shell {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(145, 78, 86, 0.76);
+  background: #050406;
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 40px 120px rgba(0, 0, 0, 0.5);
+}
+
+.blood-fortress-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 8.5rem);
+  image-rendering: pixelated;
+  background: #000;
+}
+
+.blood-fortress-footer {
+  margin-top: 1rem;
+  border: 1px solid var(--bf-stroke);
+  background: rgba(10, 9, 12, 0.76);
+  padding: 1rem 1.1rem;
+  color: #d6c5c8;
+  font: 400 0.93rem/1.7 'Courier New', Consolas, monospace;
+}
+
+.blood-fortress-footer code {
+  color: #ffd59e;
+}
+
+@media (min-width: 768px) {
+  .blood-fortress-info-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .blood-fortress-info-stack {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
