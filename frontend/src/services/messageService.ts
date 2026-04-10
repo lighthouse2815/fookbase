@@ -227,4 +227,18 @@ export const messageService = {
       members: uniqueMembers,
     });
   },
+
+  async createPrivateConversation(currentUserId: string, targetUserId: string): Promise<void> {
+    const uniqueMembers = Array.from(new Set([currentUserId, targetUserId]))
+      .filter((memberId) => memberId.trim().length > 0)
+      .map((memberId) => ({
+        userId: memberId,
+        role: 'MEMBER',
+      }));
+
+    await javaApiClient.post('/api/messenger/conversations/create', {
+      type: 'PRIVATE',
+      members: uniqueMembers,
+    });
+  },
 };

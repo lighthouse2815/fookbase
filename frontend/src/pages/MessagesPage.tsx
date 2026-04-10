@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { Plus, Search, Send, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
 import { messageService } from '../services/messageService';
@@ -64,6 +64,7 @@ const dedupeUsersById = (users: User[]): User[] => {
 export const MessagesPage = () => {
   const { t } = useTranslation();
   const { currentUser, onlineUsers, offlineUsers } = useOutletContext<MainLayoutOutletContext>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [fetchState, setFetchState] = useState<FetchState>('loading');
   const [activeTab, setActiveTab] = useState<ChatFilterTab>('all');
@@ -88,6 +89,7 @@ export const MessagesPage = () => {
 
   const loadedConversationIdsRef = useRef<Set<string>>(new Set());
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
+  const pendingUserChatCreationRef = useRef<string | null>(null);
 
   const chatTabs: Array<{ id: ChatFilterTab; label: string }> = useMemo(
     () => [
@@ -156,7 +158,7 @@ export const MessagesPage = () => {
       if (resolvedConversations.length === 0 && allResult.status === 'rejected' && groupResult.status === 'rejected') {
         setFetchState('error');
         setErrorMessage(t('messagesPage.errors.loadConversations'));
-        return;
+        return [] as ConversationSummary[];
       }
 
       setFetchState('success');
@@ -164,6 +166,8 @@ export const MessagesPage = () => {
       if (allResult.status === 'rejected' || groupResult.status === 'rejected') {
         setErrorMessage(t('messagesPage.errors.partialData'));
       }
+
+      return resolvedConversations;
     },
     [t],
   );
@@ -192,6 +196,107 @@ export const MessagesPage = () => {
       };
     });
   }, [conversations, friendLookupByName]);
+
+  const privateConversationByUserId = useMemo(() => {
+    const mapped = new Map<string, ConversationListItem>();
+
+    decoratedConversations.forEach((conversation) => {
+      if (conversation.type !== 'PRIVATE') {
+        return;
+      }
+
+      const matchedFriend = friendLookupByName.get(normalizeText(conversation.name));
+      if (!matchedFriend) {
+        return;
+      }
+
+      if (!mapped.has(matchedFriend.id)) {
+        mapped.set(matchedFriend.id, conversation);
+      }
+    });
+
+    return mapped;
+  }, [decoratedConversations, friendLookupByName]);
+
+  useEffect(() => {
+    const targetUserId = searchParams.get('userId')?.trim();
+    if (!targetUserId) {
+      return;
+    }
+
+    const clearTargetUserParam = () => {
+      const nextSearchParams = new URLSearchParams(searchParams);
+      nextSearchParams.delete('userId');
+      setSearchParams(nextSearchParams, { replace: true });
+    };
+
+    const existingConversation = privateConversationByUserId.get(targetUserId);
+    if (existingConversation) {
+      setSelectedConversationId(existingConversation.conversationId);
+      clearTargetUserParam();
+      return;
+    }
+
+    const targetFriend = friendCandidates.find((friend) => friend.id === targetUserId);
+    if (!targetFriend) {
+      clearTargetUserParam();
+      return;
+    }
+
+    if (pendingUserChatCreationRef.current === targetUserId) {
+      return;
+    }
+
+    let isCancelled = false;
+    pendingUserChatCreationRef.current = targetUserId;
+
+    const ensureConversation = async () => {
+      try {
+        await messageService.createPrivateConversation(currentUser.id, targetUserId);
+      } catch {
+        // Conversation may already exist. Continue by reloading list.
+      }
+
+      const refreshedConversations = await loadConversations({ silent: true });
+      if (isCancelled) {
+        return;
+      }
+
+      const candidateNames = new Set(
+        [targetFriend.fullName, targetFriend.username]
+          .map((name) => normalizeText(name))
+          .filter((name) => name.length > 0),
+      );
+
+      const matchedConversation = refreshedConversations.find(
+        (conversation) =>
+          conversation.type === 'PRIVATE' && candidateNames.has(normalizeText(conversation.name)),
+      );
+
+      if (matchedConversation) {
+        setSelectedConversationId(matchedConversation.conversationId);
+      }
+
+      clearTargetUserParam();
+    };
+
+    void ensureConversation().finally(() => {
+      if (!isCancelled) {
+        pendingUserChatCreationRef.current = null;
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    currentUser.id,
+    friendCandidates,
+    loadConversations,
+    privateConversationByUserId,
+    searchParams,
+    setSearchParams,
+  ]);
 
   const filteredConversations = useMemo(() => {
     const normalizedQuery = normalizeText(searchValue);

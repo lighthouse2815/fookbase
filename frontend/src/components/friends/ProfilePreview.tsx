@@ -16,6 +16,7 @@ interface ProfilePreviewProps {
   user: ProfilePreviewUser | null;
   relation: PreviewRelation;
   onAddFriend?: () => void;
+  onMessage?: () => void;
   onConfirmRequest?: () => void;
   onDeleteRequest?: () => void;
   onCancelRequest?: () => void;
@@ -26,6 +27,7 @@ export const ProfilePreview = ({
   user,
   relation,
   onAddFriend,
+  onMessage,
   onConfirmRequest,
   onDeleteRequest,
   onCancelRequest,
@@ -81,6 +83,7 @@ export const ProfilePreview = ({
             <>
               <button
                 type="button"
+                onClick={onMessage}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <MessageCircle size={16} />

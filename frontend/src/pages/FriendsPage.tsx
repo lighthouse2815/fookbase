@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOutletContext, useSearchParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 
 import { FriendRequestCard } from '../components/friends/FriendRequestCard';
 import { FriendsPageSkeleton } from '../components/friends/FriendsPageSkeleton';
@@ -159,6 +159,7 @@ const sanitizeFriends = (value: unknown, fallback: FriendUser[]) => {
 export const FriendsPage = () => {
   const { t } = useTranslation();
   const { suggestions: sidebarSuggestions, currentUser } = useOutletContext<MainLayoutOutletContext>();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<FriendsTab>(() => parseFriendsTab(searchParams.get('tab')));
@@ -436,6 +437,15 @@ export const FriendsPage = () => {
       setErrorMessage(t('friendsPage.errors.sendNotSynced'));
     }
   };
+
+  const handleMessageUser = useCallback(
+    (userId: string) => {
+      const nextSearchParams = new URLSearchParams();
+      nextSearchParams.set('userId', userId);
+      navigate(`/messages?${nextSearchParams.toString()}`);
+    },
+    [navigate],
+  );
 
   const requestUnfriend = (friendId: string) => {
     const existingFriend = friends.find((friend) => friend.id === friendId);
@@ -822,6 +832,7 @@ export const FriendsPage = () => {
                       onSelect={() => setSelectedUserId(friend.id)}
                       statusText={friend.isOnline ? t('friendsPage.status.online') : t('friendsPage.status.friend')}
                       primaryActionLabel={t('friendsPage.actions.message')}
+                      onPrimaryAction={() => handleMessageUser(friend.id)}
                       secondaryActionLabel={t('friendsPage.actions.unfriend')}
                       onSecondaryAction={() => requestUnfriend(friend.id)}
                     />
@@ -868,6 +879,13 @@ export const FriendsPage = () => {
               selectedFriend
                 ? () => {
                     requestUnfriend(selectedFriend.id);
+                  }
+                : undefined
+            }
+            onMessage={
+              selectedFriend
+                ? () => {
+                    handleMessageUser(selectedFriend.id);
                   }
                 : undefined
             }
