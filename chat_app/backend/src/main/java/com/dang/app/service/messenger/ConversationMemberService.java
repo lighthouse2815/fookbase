@@ -81,9 +81,14 @@ public class ConversationMemberService {
             return Optional.empty();
         }
 
+        List<UUID> sortedUserIds = userIds.stream().sorted().toList();
+        UUID firstUserId = sortedUserIds.get(0);
+        UUID secondUserId = sortedUserIds.get(1);
+
         List<Conversation> existingConversations =
-                conversationMemberRepository.findExistingConversationsByActiveMemberIdsAndType(
-                        userIds,
+                conversationMemberRepository.findExistingConversationsByTwoUsersAndType(
+                        firstUserId,
+                        secondUserId,
                         ConversationType.PRIVATE
                 );
 

@@ -92,25 +92,35 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
     );
 
     @Query("""
-        SELECT cm.conversation
-        FROM ConversationMember cm
-        WHERE cm.conversation.type = :type
-          AND cm.conversation.deletedAt IS NULL
-          AND cm.leftAt IS NULL
-          AND cm.user.id IN :userIds
-        GROUP BY cm.conversation
-        HAVING COUNT(DISTINCT cm.user.id) = 2
-           AND (
-             SELECT COUNT(cm2)
-             FROM ConversationMember cm2
-             WHERE cm2.conversation = cm.conversation
-               AND cm2.leftAt IS NULL
-           ) = 2
-        ORDER BY COALESCE(cm.conversation.lastMessageAt, cm.conversation.createdAt) DESC,
-                 cm.conversation.createdAt DESC
+        SELECT c
+        FROM Conversation c
+        WHERE c.type = :type
+          AND c.deletedAt IS NULL
+          AND (
+            SELECT COUNT(cmAll)
+            FROM ConversationMember cmAll
+            WHERE cmAll.conversation = c
+              AND cmAll.leftAt IS NULL
+          ) = 2
+          AND EXISTS (
+            SELECT 1
+            FROM ConversationMember cmFirst
+            WHERE cmFirst.conversation = c
+              AND cmFirst.user.id = :firstUserId
+              AND cmFirst.leftAt IS NULL
+          )
+          AND EXISTS (
+            SELECT 1
+            FROM ConversationMember cmSecond
+            WHERE cmSecond.conversation = c
+              AND cmSecond.user.id = :secondUserId
+              AND cmSecond.leftAt IS NULL
+          )
+        ORDER BY COALESCE(c.lastMessageAt, c.createdAt) DESC, c.createdAt DESC
     """)
-    List<Conversation> findExistingConversationsByActiveMemberIdsAndType(
-            @Param("userIds") Set<UUID> userIds,
+    List<Conversation> findExistingConversationsByTwoUsersAndType(
+            @Param("firstUserId") UUID firstUserId,
+            @Param("secondUserId") UUID secondUserId,
             @Param("type") ConversationType type
     );
 
