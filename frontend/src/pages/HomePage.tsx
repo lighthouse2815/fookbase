@@ -29,6 +29,7 @@ export const HomePage = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const loadingRef = useRef(false);
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const { toast, showToast } = useCornerToast();
 
   const loadPosts = useCallback(async (targetPage: number, replace = false) => {
@@ -56,6 +57,40 @@ export const HomePage = () => {
   useEffect(() => {
     void loadPosts(1, true);
   }, [loadPosts]);
+
+  useEffect(() => {
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel || !hasMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (!firstEntry?.isIntersecting) {
+          return;
+        }
+
+        if (loadingRef.current) {
+          return;
+        }
+
+        void loadPosts(page + 1);
+      },
+      {
+        root: null,
+        // Start loading slightly before the user reaches the absolute end.
+        rootMargin: '320px 0px',
+        threshold: 0,
+      },
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, loadPosts, page]);
 
   const handleCreatePost = async (draft: CreatePostDraft) => {
     setIsSubmitting(true);
@@ -108,14 +143,20 @@ export const HomePage = () => {
 
       <div className="flex justify-center pb-2">
         {hasMore ? (
-          <button
-            type="button"
-            onClick={() => void loadPosts(page + 1)}
-            disabled={isLoading}
-            className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-          >
-            {isLoading ? t('common.loading') : t('home.loadMore')}
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <div ref={loadMoreSentinelRef} className="h-1 w-full" aria-hidden />
+            {isLoading ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void loadPosts(page + 1)}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                {t('home.loadMore')}
+              </button>
+            )}
+          </div>
         ) : (
           <p className="text-sm text-slate-500 dark:text-slate-400">{t('home.noMorePosts')}</p>
         )}
