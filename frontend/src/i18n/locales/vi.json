@@ -520,6 +520,44 @@
     "usernameMin": "Tên đăng nhập tối thiểu 3 ký tự",
     "identifierFormat": "Nhập email hoặc tên đăng nhập hợp lệ"
   },
+  "messagesPage": {
+    "title": "Tin nhan",
+    "createGroup": "Tao nhom",
+    "creatingGroup": "Dang tao...",
+    "searchPlaceholder": "Tim cuoc tro chuyen...",
+    "tabs": {
+      "all": "Tat ca",
+      "friends": "Ban be",
+      "groups": "Nhom"
+    },
+    "empty": "Khong co doan chat nao.",
+    "noMessagesYet": "Chua co tin nhan nao.",
+    "attachmentOnly": "Tap dinh kem",
+    "placeholderTitle": "Chon mot doan chat",
+    "placeholderDescription": "Chon doan chat ben trai de bat dau nhan tin.",
+    "composerPlaceholder": "Nhap tin nhan...",
+    "groupMembers": "{{count}} thanh vien",
+    "onlineNow": "Dang hoat dong",
+    "offline": "Ngoai tuyen",
+    "closeCreateGroup": "Dong cua so tao nhom",
+    "createGroupDialog": {
+      "title": "Tao nhom chat",
+      "description": "Chon ban be de tao cuoc tro chuyen nhom moi.",
+      "groupNameLabel": "Ten nhom",
+      "groupNamePlaceholder": "Nhap ten nhom",
+      "membersLabel": "Thanh vien",
+      "noFriends": "Hien tai chua co ban nao de them."
+    },
+    "errors": {
+      "loadConversations": "Khong the tai danh sach cuoc tro chuyen.",
+      "partialData": "Mot phan du lieu chat chua tai duoc do loi ket noi.",
+      "loadMessages": "Khong the tai tin nhan cua cuoc tro chuyen nay.",
+      "sendMessage": "Khong the gui tin nhan. Vui long thu lai.",
+      "createGroup": "Khong the tao nhom luc nay.",
+      "groupNameRequired": "Vui long nhap ten nhom.",
+      "groupMemberRequired": "Vui long chon it nhat 1 ban."
+    }
+  },
   "notifications": {
     "title": "Thông báo",
     "empty": "Không có thông báo mới"

@@ -61,7 +61,9 @@ export const MainLayout = () => {
   const isFriendsPage = location.pathname.startsWith('/friends');
   const isProfilePage = /^\/profile(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isSettingsPage = location.pathname.startsWith('/settings');
-  const useSingleColumnLayout = isFriendsPage || isProfilePage || isSettingsPage;
+  const isMessagesPage = location.pathname.startsWith('/messages');
+  const hideLeftSidebar = isFriendsPage || isProfilePage || isSettingsPage;
+  const hideRightSidebar = hideLeftSidebar || isMessagesPage;
 
   const mapReceivedRequestToNotification = useCallback((request: FriendRequest): NotificationItem => {
     const actorName = request.fullName?.trim() || request.username?.trim() || 'Someone';
@@ -323,12 +325,14 @@ export const MainLayout = () => {
 
       <div
         className={`mx-auto grid max-w-[1600px] gap-4 px-3 pb-24 pt-20 sm:px-4 md:pb-8 lg:px-6 ${
-          useSingleColumnLayout
+          hideLeftSidebar
             ? 'md:grid-cols-[minmax(0,1fr)]'
-            : 'md:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_320px]'
+            : hideRightSidebar
+              ? 'md:grid-cols-[260px_minmax(0,1fr)]'
+              : 'md:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_320px]'
         }`}
       >
-        {useSingleColumnLayout ? null : (
+        {hideLeftSidebar ? null : (
           <div className="sticky top-20 hidden max-h-[calc(100vh-5.75rem)] overflow-y-auto md:block">
             <SidebarLeft currentUser={currentUser} />
           </div>
@@ -346,7 +350,7 @@ export const MainLayout = () => {
           />
         </main>
 
-        {useSingleColumnLayout ? null : (
+        {hideRightSidebar ? null : (
           <div className="sticky top-20 hidden max-h-[calc(100vh-5.75rem)] overflow-y-auto xl:block">
             <SidebarRight
               suggestions={suggestions}

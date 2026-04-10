@@ -314,6 +314,44 @@
       "unfriendNotSynced": "Unfriended on UI, but not synced with server yet."
     }
   },
+  "messagesPage": {
+    "title": "Messages",
+    "createGroup": "Create group",
+    "creatingGroup": "Creating...",
+    "searchPlaceholder": "Search conversations...",
+    "tabs": {
+      "all": "All",
+      "friends": "Friends",
+      "groups": "Groups"
+    },
+    "empty": "No conversations found.",
+    "noMessagesYet": "No messages yet.",
+    "attachmentOnly": "Attachment",
+    "placeholderTitle": "Select a conversation",
+    "placeholderDescription": "Choose a chat on the left to start messaging.",
+    "composerPlaceholder": "Type a message...",
+    "groupMembers": "{{count}} members",
+    "onlineNow": "Online now",
+    "offline": "Offline",
+    "closeCreateGroup": "Close create group dialog",
+    "createGroupDialog": {
+      "title": "Create group chat",
+      "description": "Pick friends and create a new group conversation.",
+      "groupNameLabel": "Group name",
+      "groupNamePlaceholder": "Enter group name",
+      "membersLabel": "Members",
+      "noFriends": "No friends available to add right now."
+    },
+    "errors": {
+      "loadConversations": "Unable to load your conversations.",
+      "partialData": "Some chat data is missing because one source failed.",
+      "loadMessages": "Unable to load messages for this conversation.",
+      "sendMessage": "Unable to send message. Please try again.",
+      "createGroup": "Unable to create group right now.",
+      "groupNameRequired": "Please enter a group name.",
+      "groupMemberRequired": "Please choose at least one friend."
+    }
+  },
   "settings": {
     "title": "Settings & privacy",
     "searchPlaceholder": "Search settings",
