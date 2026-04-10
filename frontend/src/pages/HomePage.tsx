@@ -86,12 +86,12 @@ export const HomePage = () => {
   }, [hasMore]);
 
   useEffect(() => {
-    if (!hasMore || !isSentinelVisible || loadingRef.current) {
+    if (!hasMore || !isSentinelVisible || isLoading) {
       return;
     }
 
     void loadPosts(page + 1);
-  }, [hasMore, isSentinelVisible, loadPosts, page]);
+  }, [hasMore, isSentinelVisible, isLoading, loadPosts, page]);
 
   const handleCreatePost = async (draft: CreatePostDraft) => {
     setIsSubmitting(true);
