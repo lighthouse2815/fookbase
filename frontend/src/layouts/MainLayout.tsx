@@ -62,7 +62,7 @@ export const MainLayout = () => {
   const isProfilePage = /^\/profile(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isSettingsPage = location.pathname.startsWith('/settings');
   const isMessagesPage = location.pathname.startsWith('/messages');
-  const hideLeftSidebar = isFriendsPage || isProfilePage || isSettingsPage;
+  const hideLeftSidebar = isFriendsPage || isProfilePage || isSettingsPage || isMessagesPage;
   const hideRightSidebar = hideLeftSidebar || isMessagesPage;
 
   const mapReceivedRequestToNotification = useCallback((request: FriendRequest): NotificationItem => {
