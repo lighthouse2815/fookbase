@@ -28,6 +28,7 @@ export const HomePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [isSentinelVisible, setIsSentinelVisible] = useState(false);
   const loadingRef = useRef(false);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const { toast, showToast } = useCornerToast();
@@ -67,15 +68,7 @@ export const HomePage = () => {
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
-        if (!firstEntry?.isIntersecting) {
-          return;
-        }
-
-        if (loadingRef.current) {
-          return;
-        }
-
-        void loadPosts(page + 1);
+        setIsSentinelVisible(Boolean(firstEntry?.isIntersecting));
       },
       {
         root: null,
@@ -90,7 +83,15 @@ export const HomePage = () => {
     return () => {
       observer.disconnect();
     };
-  }, [hasMore, loadPosts, page]);
+  }, [hasMore]);
+
+  useEffect(() => {
+    if (!hasMore || !isSentinelVisible || loadingRef.current) {
+      return;
+    }
+
+    void loadPosts(page + 1);
+  }, [hasMore, isSentinelVisible, loadPosts, page]);
 
   const handleCreatePost = async (draft: CreatePostDraft) => {
     setIsSubmitting(true);
@@ -145,17 +146,7 @@ export const HomePage = () => {
         {hasMore ? (
           <div className="flex flex-col items-center gap-2">
             <div ref={loadMoreSentinelRef} className="h-1 w-full" aria-hidden />
-            {isLoading ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void loadPosts(page + 1)}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-              >
-                {t('home.loadMore')}
-              </button>
-            )}
+            {isLoading ? <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p> : null}
           </div>
         ) : (
           <p className="text-sm text-slate-500 dark:text-slate-400">{t('home.noMorePosts')}</p>
