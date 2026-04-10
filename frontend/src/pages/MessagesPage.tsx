@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
+import { createChatRealtimeConnection, type ChatRealtimeConnection } from '../services/chatRealtimeService';
 import { messageService } from '../services/messageService';
 import type { ChatMessage, ConversationSummary } from '../types/message';
 import type { User } from '../types/user';
@@ -80,6 +81,7 @@ export const MessagesPage = () => {
 
   const [composerValue, setComposerValue] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
 
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
@@ -90,6 +92,8 @@ export const MessagesPage = () => {
   const loadedConversationIdsRef = useRef<Set<string>>(new Set());
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const pendingUserChatCreationRef = useRef<string | null>(null);
+  const realtimeConnectionRef = useRef<ChatRealtimeConnection | null>(null);
+  const selectedConversationIdRef = useRef<string | null>(null);
 
   const chatTabs: Array<{ id: ChatFilterTab; label: string }> = useMemo(
     () => [
@@ -171,6 +175,82 @@ export const MessagesPage = () => {
     },
     [t],
   );
+
+  const applyIncomingMessage = useCallback(
+    (incomingMessage: ChatMessage) => {
+      loadedConversationIdsRef.current.add(incomingMessage.conversationId);
+
+      setMessagesByConversation((existing) => {
+        const currentMessages = existing[incomingMessage.conversationId] ?? [];
+        if (currentMessages.some((message) => message.messageId === incomingMessage.messageId)) {
+          return existing;
+        }
+
+        return {
+          ...existing,
+          [incomingMessage.conversationId]: sortMessagesByOldest([...currentMessages, incomingMessage]),
+        };
+      });
+
+      setConversations((existing) => {
+        const activeConversationId = selectedConversationIdRef.current;
+        const conversationExists = existing.some(
+          (conversation) => conversation.conversationId === incomingMessage.conversationId,
+        );
+
+        if (!conversationExists) {
+          void loadConversations({ silent: true });
+          return existing;
+        }
+
+        return sortConversationsByNewest(
+          existing.map((conversation) =>
+            conversation.conversationId === incomingMessage.conversationId
+              ? {
+                  ...conversation,
+                  lastMessagePreview: incomingMessage.content || conversation.lastMessagePreview,
+                  lastMessageAt: incomingMessage.createdAt,
+                  lastSenderId: incomingMessage.senderId,
+                  lastSenderName: incomingMessage.senderName,
+                  hasUnread:
+                    incomingMessage.senderId !== currentUser.id &&
+                    activeConversationId !== incomingMessage.conversationId,
+                  unreadCount:
+                    incomingMessage.senderId !== currentUser.id &&
+                    activeConversationId !== incomingMessage.conversationId
+                      ? conversation.unreadCount + 1
+                      : 0,
+                }
+              : conversation,
+          ),
+        );
+      });
+    },
+    [currentUser.id, loadConversations],
+  );
+
+  useEffect(() => {
+    const connection = createChatRealtimeConnection({
+      onMessage: (message) => {
+        applyIncomingMessage(message);
+      },
+      onConnectionChange: (connected) => {
+        setIsRealtimeConnected(connected);
+      },
+      onError: () => {
+        setIsRealtimeConnected(false);
+      },
+    });
+
+    realtimeConnectionRef.current = connection;
+    connection.connect();
+
+    return () => {
+      connection.disconnect();
+      realtimeConnectionRef.current = null;
+      setIsRealtimeConnected(false);
+    };
+  }, [applyIncomingMessage]);
 
   useEffect(() => {
     void loadConversations();
@@ -392,6 +472,22 @@ export const MessagesPage = () => {
   }, [messagesByConversation, selectedConversationId]);
 
   useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
+
+  useEffect(() => {
+    if (!selectedConversationId) {
+      return;
+    }
+
+    realtimeConnectionRef.current?.subscribeConversation(selectedConversationId);
+
+    return () => {
+      realtimeConnectionRef.current?.unsubscribeConversation(selectedConversationId);
+    };
+  }, [selectedConversationId]);
+
+  useEffect(() => {
     if (!selectedConversationId) {
       return;
     }
@@ -458,68 +554,14 @@ export const MessagesPage = () => {
     if (trimmedContent.length === 0) {
       return;
     }
-
-    const optimisticMessageId = `local-${Date.now()}`;
-    const optimisticMessage: ChatMessage = {
-      messageId: optimisticMessageId,
-      conversationId: selectedConversationId,
-      senderId: currentUser.id,
-      senderName: currentUser.fullName,
-      content: trimmedContent,
-      attachments: [],
-      createdAt: new Date().toISOString(),
-      status: 'SENT',
-      type: 'TEXT',
-    };
-
-    setComposerValue('');
     setIsSending(true);
     setMessageError(null);
-
-    setMessagesByConversation((existing) => ({
-      ...existing,
-      [selectedConversationId]: sortMessagesByOldest([
-        ...(existing[selectedConversationId] ?? []),
-        optimisticMessage,
-      ]),
-    }));
+    setComposerValue('');
 
     try {
       const sentMessage = await messageService.sendMessage(selectedConversationId, trimmedContent);
-
-      setMessagesByConversation((existing) => ({
-        ...existing,
-        [selectedConversationId]: sortMessagesByOldest(
-          (existing[selectedConversationId] ?? []).map((message) =>
-            message.messageId === optimisticMessageId ? sentMessage : message,
-          ),
-        ),
-      }));
-
-      setConversations((existing) =>
-        sortConversationsByNewest(
-          existing.map((conversation) =>
-            conversation.conversationId === selectedConversationId
-              ? {
-                  ...conversation,
-                  lastMessagePreview: sentMessage.content || trimmedContent,
-                  lastMessageAt: sentMessage.createdAt,
-                  lastSenderId: currentUser.id,
-                  lastSenderName: currentUser.fullName,
-                  hasUnread: false,
-                  unreadCount: 0,
-                }
-              : conversation,
-          ),
-        ),
-      );
+      applyIncomingMessage(sentMessage);
     } catch {
-      setMessagesByConversation((existing) => ({
-        ...existing,
-        [selectedConversationId]: (existing[selectedConversationId] ?? []).filter(
-          (message) => message.messageId !== optimisticMessageId,
-        ),
-      }));
       setComposerValue(trimmedContent);
       setMessageError(t('messagesPage.errors.sendMessage'));
     } finally {
@@ -751,6 +793,16 @@ export const MessagesPage = () => {
                     {selectedConversation.type === 'GROUP'
                       ? t('messagesPage.tabs.groups')
                       : t('messagesPage.tabs.friends')}
+                  </span>
+                  <span
+                    className={clsx(
+                      'inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold',
+                      isRealtimeConnected
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+                    )}
+                  >
+                    {isRealtimeConnected ? t('messagesPage.realtime.connected') : t('messagesPage.realtime.fallback')}
                   </span>
                 </header>
 

@@ -20,6 +20,16 @@ public class ChatRealTimeService {
 
     public void sendRealTimeMessage(SendMessageRequest request, UUID senderId) {
         SendMessageResult result = messageService.sendMessage(request, senderId);
+        broadcastMessage(result, senderId);
+    }
+
+    public MessageResponse sendMessageRest(SendMessageRequest request, UUID senderId) {
+        SendMessageResult result = messageService.sendMessage(request, senderId);
+        broadcastMessage(result, senderId);
+        return result.getResponse();
+    }
+
+    private void broadcastMessage(SendMessageResult result, UUID senderId) {
         MessageResponse response = result.getResponse();
         String userDestination = "/queue/conversation/" + response.getConversationId() + "/messages";
 
@@ -37,9 +47,5 @@ public class ChatRealTimeService {
                     response
             );
         }
-    }
-
-    public MessageResponse sendMessageRest(SendMessageRequest request, UUID senderId) {
-        return messageService.sendMessage(request, senderId).getResponse();
     }
 }

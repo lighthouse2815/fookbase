@@ -333,6 +333,10 @@
     "groupMembers": "{{count}} members",
     "onlineNow": "Online now",
     "offline": "Offline",
+    "realtime": {
+      "connected": "Realtime on",
+      "fallback": "Realtime reconnecting"
+    },
     "closeCreateGroup": "Close create group dialog",
     "createGroupDialog": {
       "title": "Create group chat",

@@ -539,6 +539,10 @@
     "groupMembers": "{{count}} thanh vien",
     "onlineNow": "Dang hoat dong",
     "offline": "Ngoai tuyen",
+    "realtime": {
+      "connected": "Dang thoi gian thuc",
+      "fallback": "Dang ket noi lai"
+    },
     "closeCreateGroup": "Dong cua so tao nhom",
     "createGroupDialog": {
       "title": "Tao nhom chat",
