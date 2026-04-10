@@ -177,24 +177,39 @@ export const MessagesPage = () => {
   }, [loadConversations]);
 
   const decoratedConversations = useMemo<ConversationListItem[]>(() => {
-    return conversations.map((conversation) => {
+    const dedupedConversations: ConversationListItem[] = [];
+    const seenPrivateKeys = new Set<string>();
+
+    conversations.forEach((conversation) => {
       if (conversation.type === 'GROUP') {
-        return {
+        dedupedConversations.push({
           ...conversation,
           displayAvatar: conversation.avatarUrl?.trim() || buildFallbackAvatar(conversation.conversationId),
           isOnline: false,
-        };
+        });
+        return;
       }
 
       const matchedFriend = friendLookupByName.get(normalizeText(conversation.name));
+      const privateKey = matchedFriend?.id ?? normalizeText(conversation.name);
 
-      return {
+      if (privateKey && seenPrivateKeys.has(privateKey)) {
+        return;
+      }
+
+      if (privateKey) {
+        seenPrivateKeys.add(privateKey);
+      }
+
+      dedupedConversations.push({
         ...conversation,
         displayAvatar:
           matchedFriend?.avatarUrl || conversation.avatarUrl?.trim() || buildFallbackAvatar(conversation.conversationId),
         isOnline: matchedFriend?.isOnline === true,
-      };
+      });
     });
+
+    return dedupedConversations;
   }, [conversations, friendLookupByName]);
 
   const privateConversationByUserId = useMemo(() => {

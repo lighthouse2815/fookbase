@@ -76,6 +76,17 @@ public class ConversationMemberService {
         return getMemberInfoByUserIdAndConversationType(userId, ConversationType.PRIVATE);
     }
 
+    public Optional<Conversation> findExistingPrivateConversationByUserIds(Set<UUID> userIds) {
+        if (userIds == null || userIds.size() != 2) {
+            return Optional.empty();
+        }
+
+        return conversationMemberRepository.findExistingConversationByActiveMemberIdsAndType(
+                userIds,
+                ConversationType.PRIVATE
+        );
+    }
+
     public List<User> findActiveMembersExcludingUser(UUID conversationId, UUID excludedUserId) {
         return conversationMemberRepository.findActiveUsersByConversationIdExcludingUserId(
                 conversationId,

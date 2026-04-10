@@ -1,6 +1,7 @@
 package com.dang.app.repository.messenger;
 
 import com.dang.app.entity.auth.User;
+import com.dang.app.entity.messenger.Conversation;
 import com.dang.app.entity.messenger.ConversationMember;
 import com.dang.app.repository.projection.messenger.RecentUserChatInfoProjection;
 import com.dang.app.utils.enums.ConversationType;
@@ -87,6 +88,27 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
     """)
     List<RecentUserChatInfoProjection> findMemberInfoByUserIdAndConversationType(
             @Param("userId") UUID userId,
+            @Param("type") ConversationType type
+    );
+
+    @Query("""
+        SELECT cm.conversation
+        FROM ConversationMember cm
+        WHERE cm.conversation.type = :type
+          AND cm.conversation.deletedAt IS NULL
+          AND cm.leftAt IS NULL
+          AND cm.user.id IN :userIds
+        GROUP BY cm.conversation
+        HAVING COUNT(DISTINCT cm.user.id) = 2
+           AND (
+             SELECT COUNT(cm2)
+             FROM ConversationMember cm2
+             WHERE cm2.conversation = cm.conversation
+               AND cm2.leftAt IS NULL
+           ) = 2
+    """)
+    Optional<Conversation> findExistingConversationByActiveMemberIdsAndType(
+            @Param("userIds") Set<UUID> userIds,
             @Param("type") ConversationType type
     );
 

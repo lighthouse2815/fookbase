@@ -76,6 +76,15 @@ public class ConversationService {
             throw new BusinessException(ErrorCode.PRIVATE_CONVERSATION_HAS_NAME);
         }
 
+        if (request.getType() == ConversationType.PRIVATE && isPrivate) {
+            Optional<Conversation> existingPrivateConversation =
+                    conversationMemberService.findExistingPrivateConversationByUserIds(memberIds);
+
+            if (existingPrivateConversation.isPresent()) {
+                return existingPrivateConversation.get();
+            }
+        }
+
         User creator = userService.findById(userId);
 
         Conversation conversation = conversationRepository.save(
