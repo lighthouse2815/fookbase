@@ -253,10 +253,11 @@ export const MessagesPage = () => {
     }
 
     const targetFriend = friendCandidates.find((friend) => friend.id === targetUserId);
-    if (!targetFriend) {
-      clearTargetUserParam();
-      return;
-    }
+    const knownPrivateConversationIds = new Set(
+      decoratedConversations
+        .filter((conversation) => conversation.type === 'PRIVATE')
+        .map((conversation) => conversation.conversationId),
+    );
 
     if (pendingUserChatCreationRef.current === targetUserId) {
       return;
@@ -277,16 +278,33 @@ export const MessagesPage = () => {
         return;
       }
 
-      const candidateNames = new Set(
-        [targetFriend.fullName, targetFriend.username]
-          .map((name) => normalizeText(name))
-          .filter((name) => name.length > 0),
-      );
+      let matchedConversation: ConversationSummary | undefined;
 
-      const matchedConversation = refreshedConversations.find(
-        (conversation) =>
-          conversation.type === 'PRIVATE' && candidateNames.has(normalizeText(conversation.name)),
-      );
+      if (targetFriend) {
+        const candidateNames = new Set(
+          [targetFriend.fullName, targetFriend.username]
+            .map((name) => normalizeText(name))
+            .filter((name) => name.length > 0),
+        );
+
+        matchedConversation = refreshedConversations.find(
+          (conversation) =>
+            conversation.type === 'PRIVATE' && candidateNames.has(normalizeText(conversation.name)),
+        );
+      }
+
+      if (!matchedConversation) {
+        matchedConversation = refreshedConversations.find(
+          (conversation) =>
+            conversation.type === 'PRIVATE' &&
+            !knownPrivateConversationIds.has(conversation.conversationId),
+        );
+      }
+
+      if (!matchedConversation && targetFriend) {
+        // Fallback if backend returned existing conversation but naming does not match exactly.
+        matchedConversation = refreshedConversations.find((conversation) => conversation.type === 'PRIVATE');
+      }
 
       if (matchedConversation) {
         setSelectedConversationId(matchedConversation.conversationId);
@@ -306,6 +324,7 @@ export const MessagesPage = () => {
     };
   }, [
     currentUser.id,
+    decoratedConversations,
     friendCandidates,
     loadConversations,
     privateConversationByUserId,
