@@ -113,7 +113,7 @@ public class FriendshipService {
 
     @Transactional
     public void rejectFriendRequest(UUID userId, FriendshipRequest request) {
-        Friendship friendship = getPendingFriendshipForAddressee(userId, request.getUserId());
+        Friendship friendship = getPendingFriendshipForParticipant(userId, request.getUserId());
 
         friendship.setStatus(FriendshipStatus.REJECTED);
     }
@@ -166,12 +166,30 @@ public class FriendshipService {
         Friendship friendship = friendshipRepository.findBetween(userId, otherUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
 
+        if (friendship.getStatus() != FriendshipStatus.PENDING) {
+            throw new BusinessException(ErrorCode.INVALID_FRIEND_REQUEST_STATUS);
+        }
+
         if (!friendship.getAddressee().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.NO_PERMISSION);
         }
 
+        return friendship;
+    }
+
+    private Friendship getPendingFriendshipForParticipant(UUID userId, UUID otherUserId) {
+        Friendship friendship = friendshipRepository.findBetween(userId, otherUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
+
         if (friendship.getStatus() != FriendshipStatus.PENDING) {
             throw new BusinessException(ErrorCode.INVALID_FRIEND_REQUEST_STATUS);
+        }
+
+        UUID requesterId = friendship.getRequester().getId();
+        UUID addresseeId = friendship.getAddressee().getId();
+
+        if (!requesterId.equals(userId) && !addresseeId.equals(userId)) {
+            throw new BusinessException(ErrorCode.NO_PERMISSION);
         }
 
         return friendship;
