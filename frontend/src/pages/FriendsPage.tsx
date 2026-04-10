@@ -407,19 +407,7 @@ export const FriendsPage = () => {
   };
 
   const handleCancelSentRequest = async (requestId: string) => {
-    const sentRequest = sentRequests.find((item) => item.requestId === requestId);
-
     setSentRequests((existing) => existing.filter((item) => item.requestId !== requestId));
-
-    if (sentRequest) {
-      setSuggestions((existing) => {
-        if (existing.some((item) => item.id === sentRequest.id)) {
-          return existing;
-        }
-
-        return [toSuggestion(sentRequest), ...existing];
-      });
-    }
 
     try {
       await friendshipService.cancelSentRequest(requestId);
