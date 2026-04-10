@@ -198,9 +198,13 @@ export const FriendsPage = () => {
     [t],
   );
 
-  const loadFriendData = useCallback(async () => {
-    setFetchState('loading');
-    setErrorMessage(null);
+  const loadFriendData = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+
+    if (!silent) {
+      setFetchState('loading');
+      setErrorMessage(null);
+    }
 
     const [receivedResult, sentResult, suggestionsResult, friendsResult] = await Promise.allSettled([
       friendshipService.getReceivedRequests(),
@@ -240,7 +244,9 @@ export const FriendsPage = () => {
     setFriends(sanitizeFriends(friendsResult.status === 'fulfilled' ? friendsResult.value : undefined, friendsMock));
 
     if (hadCriticalError) {
-      setFetchState('error');
+      if (!silent) {
+        setFetchState('error');
+      }
       setErrorMessage(t('friendsPage.errors.realtimeFallback'));
       return;
     }
@@ -381,7 +387,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.acceptFriendRequest(requestId);
-      void loadFriendData();
+      void loadFriendData({ silent: true });
     } catch {
       setFetchState('error');
       setErrorMessage(t('friendsPage.errors.acceptNotSynced'));
@@ -393,7 +399,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.deleteFriendRequest(requestId);
-      void loadFriendData();
+      void loadFriendData({ silent: true });
     } catch {
       setFetchState('error');
       setErrorMessage(t('friendsPage.errors.deleteNotSynced'));
@@ -417,7 +423,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.cancelSentRequest(requestId);
-      void loadFriendData();
+      void loadFriendData({ silent: true });
     } catch {
       setFetchState('error');
       setErrorMessage(t('friendsPage.errors.cancelNotSynced'));
@@ -436,7 +442,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.sendFriendRequest(userId);
-      void loadFriendData();
+      void loadFriendData({ silent: true });
     } catch {
       setFetchState('error');
       setErrorMessage(t('friendsPage.errors.sendNotSynced'));
@@ -482,7 +488,7 @@ export const FriendsPage = () => {
 
     try {
       await friendshipService.unfriend(friendId);
-      void loadFriendData();
+      void loadFriendData({ silent: true });
     } catch {
       setFetchState('error');
       setErrorMessage(t('friendsPage.errors.unfriendNotSynced'));
