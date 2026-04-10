@@ -34,21 +34,21 @@ const getStatusMeta = (status: string, isSelf: boolean): StatusMeta => {
   switch (status) {
     case 'PENDING':
       return {
-        label: 'Da nhan loi moi tu nguoi nay',
-        action: 'respond',
-        buttonLabel: 'Chap nhan',
-        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-        badgeClassName:
-          'border border-sky-300/60 bg-sky-100 text-sky-800 dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-200',
-      };
-    case 'INVITED':
-      return {
         label: 'Da gui loi moi',
         action: 'cancel',
         buttonLabel: 'Huy loi moi',
         buttonClassName: 'bg-slate-600 text-white hover:bg-slate-700',
         badgeClassName:
           'border border-amber-300/60 bg-amber-100 text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-200',
+      };
+    case 'INVITED':
+      return {
+        label: 'Da nhan loi moi tu nguoi nay',
+        action: 'respond',
+        buttonLabel: 'Chap nhan',
+        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+        badgeClassName:
+          'border border-sky-300/60 bg-sky-100 text-sky-800 dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-200',
       };
     case 'ACCEPTED':
       return {
@@ -171,7 +171,7 @@ export const FriendSearchPage = () => {
       await friendshipService.sendFriendRequest(targetUserId);
 
       setResults((existing) =>
-        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'INVITED' } : item)),
+        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'PENDING' } : item)),
       );
       setActionMessage('Da gui loi moi ket ban.');
     } catch (error) {

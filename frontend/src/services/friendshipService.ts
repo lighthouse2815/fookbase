@@ -221,7 +221,8 @@ export const friendshipService = {
     try {
       const pending = await getPendingRequestersFromJava();
       return pending
-        .filter((item) => item.requester === true)
+        // requester=true means current user is the sender.
+        .filter((item) => item.requester !== true)
         .map((item, index) => mapPendingRequesterToRequest(item, index, 'received'));
     } catch {
       return requestFromCandidates<FriendRequest[]>([
@@ -236,7 +237,8 @@ export const friendshipService = {
     try {
       const pending = await getPendingRequestersFromJava();
       return pending
-        .filter((item) => item.requester !== true)
+        // requester=true means current user is the sender.
+        .filter((item) => item.requester === true)
         .map((item, index) => mapPendingRequesterToRequest(item, index, 'sent'));
     } catch {
       return requestFromCandidates<FriendRequest[]>([
