@@ -230,12 +230,12 @@
     },
     "filters": {
       "all": "All",
-      "online": "Active now",
+      "online": "Online",
       "sameFaculty": "Same faculty"
     },
     "status": {
-      "online": "Active now",
-      "friend": "Friend"
+      "online": "Online now",
+      "offline": "Offline"
     },
     "actions": {
       "addFriend": "Add friend",

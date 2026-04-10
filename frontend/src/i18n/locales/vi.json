@@ -230,12 +230,12 @@
     },
     "filters": {
       "all": "Tất cả",
-      "online": "Đang hoạt động",
+      "online": "Trực tuyến",
       "sameFaculty": "Cùng khoa"
     },
     "status": {
-      "online": "Đang hoạt động",
-      "friend": "Bạn bè"
+      "online": "Trực tuyến",
+      "offline": "Ngoại tuyến"
     },
     "actions": {
       "addFriend": "Kết bạn",
@@ -537,8 +537,8 @@
     "placeholderDescription": "Chon doan chat ben trai de bat dau nhan tin.",
     "composerPlaceholder": "Nhap tin nhan...",
     "groupMembers": "{{count}} thanh vien",
-    "onlineNow": "Dang hoat dong",
-    "offline": "Ngoai tuyen",
+    "onlineNow": "Đang trực tuyến",
+    "offline": "Ngoại tuyến",
     "realtime": {
       "connected": "Dang thoi gian thuc",
       "fallback": "Dang ket noi lai"

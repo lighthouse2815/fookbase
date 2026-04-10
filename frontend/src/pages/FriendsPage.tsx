@@ -1,4 +1,4 @@
-﻿import clsx from 'clsx';
+import clsx from 'clsx';
 import {
   AlertTriangle,
   Filter,
@@ -33,6 +33,7 @@ type FriendsTab = 'home' | 'requests' | 'suggestions' | 'friends';
 type FriendFilter = 'all' | 'online' | 'sameFaculty';
 type FetchState = 'loading' | 'success' | 'error';
 type ProfileRelation = 'received' | 'sent' | 'suggestion' | 'friend' | null;
+type PresenceAwareUser = { id: string; isOnline?: boolean };
 
 const parseFriendsTab = (value: string | null): FriendsTab => {
   if (value === 'requests' || value === 'suggestions' || value === 'friends') {
@@ -156,9 +157,32 @@ const sanitizeFriends = (value: unknown, fallback: FriendUser[]) => {
   });
 };
 
+const syncPresenceByUserId = <T extends PresenceAwareUser>(
+  users: T[],
+  presenceByUserId: Map<string, boolean>,
+): T[] => {
+  let hasChange = false;
+
+  const syncedUsers = users.map((user) => {
+    const onlineState = presenceByUserId.get(user.id);
+    if (typeof onlineState !== 'boolean' || onlineState === user.isOnline) {
+      return user;
+    }
+
+    hasChange = true;
+    return {
+      ...user,
+      isOnline: onlineState,
+    };
+  });
+
+  return hasChange ? syncedUsers : users;
+};
+
 export const FriendsPage = () => {
   const { t } = useTranslation();
-  const { suggestions: sidebarSuggestions, currentUser } = useOutletContext<MainLayoutOutletContext>();
+  const { suggestions: sidebarSuggestions, currentUser, onlineUsers, offlineUsers } =
+    useOutletContext<MainLayoutOutletContext>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -198,6 +222,19 @@ export const FriendsPage = () => {
     ],
     [t],
   );
+  const presenceByUserId = useMemo(() => {
+    const mappedPresence = new Map<string, boolean>();
+
+    offlineUsers.forEach((user) => {
+      mappedPresence.set(user.id, false);
+    });
+
+    onlineUsers.forEach((user) => {
+      mappedPresence.set(user.id, true);
+    });
+
+    return mappedPresence;
+  }, [offlineUsers, onlineUsers]);
 
   const loadFriendData = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent === true;
@@ -220,29 +257,40 @@ export const FriendsPage = () => {
       friendsResult.status === 'rejected';
 
     setReceivedRequests(
-      sanitizeRequests(
-        receivedResult.status === 'fulfilled' ? receivedResult.value : undefined,
-        receivedFriendRequestsMock,
-        currentUser.id,
-        'received',
+      syncPresenceByUserId(
+        sanitizeRequests(
+          receivedResult.status === 'fulfilled' ? receivedResult.value : undefined,
+          receivedFriendRequestsMock,
+          currentUser.id,
+          'received',
+        ),
+        presenceByUserId,
       ),
     );
 
     setSentRequests(
-      sanitizeRequests(
-        sentResult.status === 'fulfilled' ? sentResult.value : undefined,
-        sentFriendRequestsMock,
-        currentUser.id,
-        'sent',
+      syncPresenceByUserId(
+        sanitizeRequests(
+          sentResult.status === 'fulfilled' ? sentResult.value : undefined,
+          sentFriendRequestsMock,
+          currentUser.id,
+          'sent',
+        ),
+        presenceByUserId,
       ),
     );
 
     const resolvedSuggestions = suggestionsResult.status === 'fulfilled'
       ? suggestionsResult.value
       : sidebarSuggestions;
-    setSuggestions(sanitizeSuggestions(resolvedSuggestions, []));
+    setSuggestions(syncPresenceByUserId(sanitizeSuggestions(resolvedSuggestions, []), presenceByUserId));
 
-    setFriends(sanitizeFriends(friendsResult.status === 'fulfilled' ? friendsResult.value : undefined, friendsMock));
+    setFriends(
+      syncPresenceByUserId(
+        sanitizeFriends(friendsResult.status === 'fulfilled' ? friendsResult.value : undefined, friendsMock),
+        presenceByUserId,
+      ),
+    );
 
     if (hadCriticalError) {
       if (!silent) {
@@ -253,7 +301,14 @@ export const FriendsPage = () => {
     }
 
     setFetchState('success');
-  }, [currentUser.id, sidebarSuggestions, t]);
+  }, [currentUser.id, presenceByUserId, sidebarSuggestions, t]);
+
+  useEffect(() => {
+    setReceivedRequests((existing) => syncPresenceByUserId(existing, presenceByUserId));
+    setSentRequests((existing) => syncPresenceByUserId(existing, presenceByUserId));
+    setSuggestions((existing) => syncPresenceByUserId(existing, presenceByUserId));
+    setFriends((existing) => syncPresenceByUserId(existing, presenceByUserId));
+  }, [presenceByUserId]);
 
   useEffect(() => {
     void loadFriendData();
@@ -830,7 +885,7 @@ export const FriendsPage = () => {
                       variant="list"
                       selected={selectedUserId === friend.id}
                       onSelect={() => setSelectedUserId(friend.id)}
-                      statusText={friend.isOnline ? t('friendsPage.status.online') : t('friendsPage.status.friend')}
+                      statusText={friend.isOnline ? t('friendsPage.status.online') : t('friendsPage.status.offline')}
                       primaryActionLabel={t('friendsPage.actions.message')}
                       onPrimaryAction={() => handleMessageUser(friend.id)}
                       secondaryActionLabel={t('friendsPage.actions.unfriend')}

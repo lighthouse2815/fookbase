@@ -7,9 +7,6 @@ import { Navbar } from '../components/Navbar';
 import { SidebarLeft } from '../components/SidebarLeft';
 import { SidebarRight } from '../components/SidebarRight';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  onlineUsers as onlineUsersMock,
-} from '../data/mockData';
 import { friendshipService } from '../services/friendshipService';
 import {
   createNotificationRealtimeConnection,
@@ -48,6 +45,19 @@ const sortNotifications = (items: NotificationItem[]): NotificationItem[] => {
   });
 };
 
+const normalizePresenceUsers = (users: User[], isOnline: boolean): User[] => {
+  const dedupedById = new Map<string, User>();
+
+  users.forEach((user) => {
+    dedupedById.set(user.id, {
+      ...user,
+      isOnline,
+    });
+  });
+
+  return Array.from(dedupedById.values());
+};
+
 export const MainLayout = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
@@ -55,7 +65,7 @@ export const MainLayout = () => {
   const navigate = useNavigate();
 
   const [suggestions, setSuggestions] = useState<FriendSuggestion[]>([]);
-  const [onlineUsers, setOnlineUsers] = useState<User[]>(onlineUsersMock);
+  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [offlineUsers, setOfflineUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const isFriendsPage = location.pathname.startsWith('/friends');
@@ -110,52 +120,78 @@ export const MainLayout = () => {
     setNotifications(sortNotifications(Array.from(merged.values())));
   }, [mapReceivedRequestToNotification]);
 
+  const applyPresenceUsers = useCallback((nextOnlineUsers: User[], nextOfflineUsers: User[]) => {
+    const normalizedOnlineUsers = normalizePresenceUsers(nextOnlineUsers, true);
+    const onlineUserIds = new Set(normalizedOnlineUsers.map((user) => user.id));
+    const normalizedOfflineUsers = normalizePresenceUsers(nextOfflineUsers, false).filter(
+      (user) => !onlineUserIds.has(user.id),
+    );
+
+    setOnlineUsers(normalizedOnlineUsers);
+    setOfflineUsers(normalizedOfflineUsers);
+  }, []);
+
+  const loadFriendPresence = useCallback(async () => {
+    try {
+      const friendPresence = await userService.getFriendPresence();
+      applyPresenceUsers(friendPresence.onlineUsers, friendPresence.offlineUsers);
+      return;
+    } catch {
+      // Fallback below keeps compatibility when presence endpoint is unavailable.
+    }
+
+    const [onlineUsersResult, friendsResult] = await Promise.allSettled([
+      userService.getOnlineUsers(),
+      friendshipService.getFriends(),
+    ]);
+
+    if (onlineUsersResult.status === 'rejected' && friendsResult.status === 'rejected') {
+      return;
+    }
+
+    const resolvedOnlineUsers = onlineUsersResult.status === 'fulfilled' ? onlineUsersResult.value : [];
+    const onlineUserIds = new Set(resolvedOnlineUsers.map((user) => user.id));
+    const resolvedOfflineUsers =
+      friendsResult.status === 'fulfilled'
+        ? friendsResult.value
+            .filter((friend) => !onlineUserIds.has(friend.id))
+            .map((friend) => ({
+              ...friend,
+              isOnline: false,
+            }))
+        : [];
+
+    applyPresenceUsers(resolvedOnlineUsers, resolvedOfflineUsers);
+  }, [applyPresenceUsers]);
+
   useEffect(() => {
     const loadSidebarData = async () => {
-      const [suggestionsResult, friendPresenceResult] = await Promise.allSettled([
-        friendshipService.getFriendSuggestions(),
-        userService.getFriendPresence(),
-      ]);
-
-      if (suggestionsResult.status === 'fulfilled') {
-        setSuggestions(suggestionsResult.value);
-      } else {
+      try {
+        const nextSuggestions = await friendshipService.getFriendSuggestions();
+        setSuggestions(nextSuggestions);
+      } catch {
         setSuggestions([]);
       }
 
-      if (friendPresenceResult.status === 'fulfilled') {
-        setOnlineUsers(friendPresenceResult.value.onlineUsers);
-        setOfflineUsers(friendPresenceResult.value.offlineUsers);
-        return;
-      }
-
-      const [onlineUsersResult, friendsResult] = await Promise.allSettled([
-        userService.getOnlineUsers(),
-        friendshipService.getFriends(),
-      ]);
-
-      const resolvedOnlineUsers =
-        onlineUsersResult.status === 'fulfilled' ? onlineUsersResult.value : onlineUsersMock;
-      setOnlineUsers(resolvedOnlineUsers);
-
-      if (friendsResult.status !== 'fulfilled') {
-        setOfflineUsers([]);
-        return;
-      }
-
-      const onlineUserIds = new Set(resolvedOnlineUsers.map((user) => user.id));
-      const resolvedOfflineUsers = friendsResult.value
-        .filter((friend) => !onlineUserIds.has(friend.id))
-        .map((friend) => ({
-          ...friend,
-          isOnline: false,
-        }));
-
-      setOfflineUsers(resolvedOfflineUsers);
+      await loadFriendPresence();
     };
 
     void loadSidebarData();
-  }, []);
+  }, [loadFriendPresence]);
+
+  useEffect(() => {
+    const refreshPresence = () => {
+      void loadFriendPresence();
+    };
+
+    const intervalId = window.setInterval(refreshPresence, 30000);
+    window.addEventListener('focus', refreshPresence);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshPresence);
+    };
+  }, [loadFriendPresence]);
 
   useEffect(() => {
     void loadRealtimeNotifications();
