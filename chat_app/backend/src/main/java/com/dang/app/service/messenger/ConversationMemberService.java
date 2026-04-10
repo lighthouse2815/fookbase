@@ -81,10 +81,17 @@ public class ConversationMemberService {
             return Optional.empty();
         }
 
-        return conversationMemberRepository.findExistingConversationByActiveMemberIdsAndType(
-                userIds,
-                ConversationType.PRIVATE
-        );
+        List<Conversation> existingConversations =
+                conversationMemberRepository.findExistingConversationsByActiveMemberIdsAndType(
+                        userIds,
+                        ConversationType.PRIVATE
+                );
+
+        if (existingConversations.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(existingConversations.get(0));
     }
 
     public List<User> findActiveMembersExcludingUser(UUID conversationId, UUID excludedUserId) {

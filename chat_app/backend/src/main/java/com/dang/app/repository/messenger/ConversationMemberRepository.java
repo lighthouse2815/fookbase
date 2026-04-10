@@ -106,8 +106,10 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
              WHERE cm2.conversation = cm.conversation
                AND cm2.leftAt IS NULL
            ) = 2
+        ORDER BY COALESCE(cm.conversation.lastMessageAt, cm.conversation.createdAt) DESC,
+                 cm.conversation.createdAt DESC
     """)
-    Optional<Conversation> findExistingConversationByActiveMemberIdsAndType(
+    List<Conversation> findExistingConversationsByActiveMemberIdsAndType(
             @Param("userIds") Set<UUID> userIds,
             @Param("type") ConversationType type
     );
