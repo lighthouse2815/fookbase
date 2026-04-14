@@ -34,6 +34,13 @@ namespace BloodFortress.EditorTools
 
         private static void BuildWebGLInternal(string outputPath)
         {
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                throw new InvalidOperationException(
+                    "Scripts are still compiling. Wait until compilation finishes, then run build again."
+                );
+            }
+
             string scenePath = EnsureSceneAsset();
 
             string normalizedOutput = Path.GetFullPath(outputPath);
