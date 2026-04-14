@@ -54,7 +54,24 @@ namespace BloodFortress.EditorTools
                 options = BuildOptions.None
             };
 
-            BuildReport report = BuildPipeline.BuildPlayer(options);
+            WebGLCompressionFormat originalCompression = PlayerSettings.WebGL.compressionFormat;
+            bool originalDecompressionFallback = PlayerSettings.WebGL.decompressionFallback;
+
+            // Keep local/static hosting simple: output uncompressed files so no gzip headers are required.
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            PlayerSettings.WebGL.decompressionFallback = false;
+
+            BuildReport report;
+            try
+            {
+                report = BuildPipeline.BuildPlayer(options);
+            }
+            finally
+            {
+                PlayerSettings.WebGL.compressionFormat = originalCompression;
+                PlayerSettings.WebGL.decompressionFallback = originalDecompressionFallback;
+            }
+
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new Exception($"WebGL build failed: {report.summary.result}. See Editor.log for details.");
