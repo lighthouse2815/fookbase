@@ -23,7 +23,6 @@ import { AdminRoute } from './AdminRoute';
 import { ProtectedRoute } from './ProtectedRoute';
 
 const BloodFortressPage = lazy(() => import('../pages/BloodFortressPage'));
-const BloodFortressUnityPage = lazy(() => import('../pages/BloodFortressUnityPage'));
 
 export const AppRoutes = () => {
   return (
@@ -36,17 +35,13 @@ export const AppRoutes = () => {
         path="/games/hiep-si-dang-phao-dai-mau"
         element={
           <Suspense fallback={<div className="min-h-screen bg-black text-white" />}>
-            <BloodFortressUnityPage />
+            <BloodFortressPage />
           </Suspense>
         }
       />
       <Route
         path="/games/hiep-si-dang-phao-dai-mau/canvas"
-        element={
-          <Suspense fallback={<div className="min-h-screen bg-black text-white" />}>
-            <BloodFortressPage />
-          </Suspense>
-        }
+        element={<Navigate to="/games/hiep-si-dang-phao-dai-mau" replace />}
       />
 
       <Route element={<ProtectedRoute />}>
