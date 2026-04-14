@@ -59,8 +59,8 @@ export const PersonalInfoSettingsPage = () => {
         setProfile(data);
         setForm({
           displayName: data.displayName ?? '',
-          firstName: '',
-          lastName: '',
+          firstName: data.firstName ?? '',
+          lastName: data.lastName ?? '',
           birthday: data.birthDate ?? '',
           gender: normalizeGender(data.gender),
           avatarUrl: data.avatarUrl ?? '',
@@ -167,6 +167,8 @@ export const PersonalInfoSettingsPage = () => {
       setForm((previous) => ({
         ...previous,
         displayName: refreshed.displayName ?? previous.displayName,
+        firstName: refreshed.firstName ?? previous.firstName,
+        lastName: refreshed.lastName ?? previous.lastName,
         birthday: refreshed.birthDate ?? previous.birthday,
         gender: normalizeGender(refreshed.gender) || previous.gender,
         avatarUrl: refreshed.avatarUrl ?? previous.avatarUrl,

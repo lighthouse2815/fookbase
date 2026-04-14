@@ -153,7 +153,6 @@ public class UserProfileService {
 
         return userProfileMapper.toUserProfileOverviewResponse(
                 profile,
-                maskPhone(profile.getPhoneNumber()),
                 maskEmail(profile.getEmail())
         );
 

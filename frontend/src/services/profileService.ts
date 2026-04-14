@@ -36,6 +36,8 @@ export interface MyProfileSettings {
   userId: string;
   username: string;
   displayName: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email?: string | null;
   phoneNumber?: string | null;
   avatarUrl?: string | null;
@@ -103,6 +105,14 @@ export const profileService = {
 
     return {
       ...profile,
+      username: profile.username?.trim() || 'user',
+      displayName: profile.displayName?.trim() || 'user',
+      firstName: profile.firstName?.trim() || null,
+      lastName: profile.lastName?.trim() || null,
+      email: profile.email?.trim() || null,
+      phoneNumber: profile.phoneNumber?.trim() || null,
+      birthDate: profile.birthDate?.trim() || null,
+      gender: profile.gender?.trim() || null,
       avatarUrl: profile.avatarUrl || `https://i.pravatar.cc/150?u=${profile.userId}`,
     };
   },

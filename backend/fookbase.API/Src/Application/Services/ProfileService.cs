@@ -91,45 +91,43 @@ public class ProfileService : IProfileService
         }
 
         var safeAccessToken = accessToken.Trim();
-
-        var privateProfileTask = _javaApiService.GetPrivateProfileByUserIdAsync(userId, safeAccessToken, cancellationToken);
-        var overviewTask = _javaApiService.GetMyProfileOverviewAsync(safeAccessToken, cancellationToken);
-
-        await Task.WhenAll(privateProfileTask, overviewTask);
-
-        if (!privateProfileTask.Result.IsSuccess)
+        var overviewResult = await _javaApiService.GetMyProfileOverviewAsync(safeAccessToken, cancellationToken);
+        if (!overviewResult.IsSuccess)
         {
             return BuildFailure<MyProfileSettingsResponseDto>(
-                privateProfileTask.Result.StatusCode,
-                privateProfileTask.Result.ErrorMessage,
-                "Load private profile failed.");
-        }
-
-        if (!overviewTask.Result.IsSuccess)
-        {
-            return BuildFailure<MyProfileSettingsResponseDto>(
-                overviewTask.Result.StatusCode,
-                overviewTask.Result.ErrorMessage,
+                overviewResult.StatusCode,
+                overviewResult.ErrorMessage,
                 "Load profile overview failed.");
         }
 
-        var privateProfile = privateProfileTask.Result.Data;
-        var overview = overviewTask.Result.Data;
+        var overview = overviewResult.Data;
+
+        var resolvedUserId = userId;
+        if (Guid.TryParse(overview?.UserId, out var userIdFromOverview))
+        {
+            resolvedUserId = userIdFromOverview;
+        }
+
+        var username = FirstNonEmpty(overview?.Username, "user") ?? "user";
 
         var displayName = FirstNonEmpty(
-            privateProfile?.DisplayName,
             overview?.DisplayName,
+            overview?.FirstName,
+            username,
             "user");
 
         var response = new MyProfileSettingsResponseDto
         {
-            UserId = userId,
+            UserId = resolvedUserId,
+            Username = username,
             DisplayName = displayName ?? "user",
+            FirstName = FirstNonEmpty(overview?.FirstName),
+            LastName = FirstNonEmpty(overview?.LastName),
             Email = overview?.Email,
-            PhoneNumber = FirstNonEmpty(privateProfile?.PhoneNumber, overview?.PhoneNumber),
-            AvatarUrl = privateProfile?.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
-            BirthDate = FirstNonEmpty(privateProfile?.BirthDate, overview?.BirthDate),
-            Gender = privateProfile?.Gender
+            PhoneNumber = FirstNonEmpty(overview?.PhoneNumber),
+            AvatarUrl = FirstNonEmpty(overview?.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(resolvedUserId),
+            BirthDate = FirstNonEmpty(overview?.BirthDate),
+            Gender = FirstNonEmpty(overview?.Gender)
         };
 
         return JavaApiCallResult<MyProfileSettingsResponseDto>.Success(response, StatusCodes.Status200OK);
