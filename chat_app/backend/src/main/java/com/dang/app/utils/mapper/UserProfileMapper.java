@@ -1,5 +1,8 @@
 package com.dang.app.utils.mapper;
 
+import com.dang.app.dto.auth.request.UpdateProfileInfoVisibilityRequest;
+import com.dang.app.dto.auth.response.ProfileInfoSettingsResponse;
+import com.dang.app.dto.auth.response.ProfileInfoVisibilityResponse;
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
@@ -8,6 +11,7 @@ import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
 import com.dang.app.dto.auth.response.UserSecurityPrivateResponse;
 import com.dang.app.entity.auth.User;
+import com.dang.app.entity.auth.UserProfileInfoVisibility;
 import com.dang.app.entity.auth.UserProfile;
 import com.dang.app.utils.enums.FriendshipStatus;
 import org.springframework.stereotype.Component;
@@ -74,6 +78,43 @@ public class UserProfileMapper {
                 .email(normalize(profile.getEmail()))
                 .phoneNumber(normalize(profile.getPhoneNumber()))
                 .build();
+    }
+
+    public ProfileInfoSettingsResponse toProfileInfoSettingsResponse(
+            UserProfile profile,
+            long friendCount
+    ) {
+        return ProfileInfoSettingsResponse.builder()
+                .displayName(normalize(profile.getDisplayName()))
+                .phoneNumber(normalize(profile.getPhoneNumber()))
+                .email(normalize(profile.getEmail()))
+                .dateOfBirth(profile.getBirthDate())
+                .gender(profile.getGender() == null ? null : profile.getGender().name())
+                .friendCount(Math.max(friendCount, 0))
+                .build();
+    }
+
+    public ProfileInfoVisibilityResponse toProfileInfoVisibilityResponse(UserProfileInfoVisibility visibility) {
+        return ProfileInfoVisibilityResponse.builder()
+                .displayNameVisible(resolveVisibility(visibility.getDisplayNameVisible()))
+                .phoneVisible(resolveVisibility(visibility.getPhoneVisible()))
+                .emailVisible(resolveVisibility(visibility.getEmailVisible()))
+                .dateOfBirthVisible(resolveVisibility(visibility.getDateOfBirthVisible()))
+                .genderVisible(resolveVisibility(visibility.getGenderVisible()))
+                .friendCountVisible(resolveVisibility(visibility.getFriendCountVisible()))
+                .build();
+    }
+
+    public void applyProfileInfoVisibility(
+            UserProfileInfoVisibility visibility,
+            UpdateProfileInfoVisibilityRequest request
+    ) {
+        visibility.setDisplayNameVisible(request.getDisplayNameVisible());
+        visibility.setPhoneVisible(request.getPhoneVisible());
+        visibility.setEmailVisible(request.getEmailVisible());
+        visibility.setDateOfBirthVisible(request.getDateOfBirthVisible());
+        visibility.setGenderVisible(request.getGenderVisible());
+        visibility.setFriendCountVisible(request.getFriendCountVisible());
     }
 
     public PublicUserProfileResponse toPublicUserProfileResponse(
@@ -166,6 +207,10 @@ public class UserProfileMapper {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private boolean resolveVisibility(Boolean value) {
+        return value == null || value;
     }
 
 }

@@ -67,7 +67,6 @@ public class UserProfile {
 
     private LocalDateTime emailVerifiedAt;
 
-
 }
 
 

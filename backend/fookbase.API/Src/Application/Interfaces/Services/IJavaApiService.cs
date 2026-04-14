@@ -31,6 +31,19 @@ public interface IJavaApiService
         string accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<ProfileInfoSettingsDto>> GetMyProfileInfoSettingsAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<ProfileInfoVisibilityDto>> GetMyProfileInfoVisibilityAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<object?>> UpdateMyProfileInfoVisibilityAsync(
+        UpdateProfileInfoVisibilityRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<UserSecurityPrivateDto>> GetMySecurityPrivateProfileAsync(
         string accessToken,
         CancellationToken cancellationToken = default);

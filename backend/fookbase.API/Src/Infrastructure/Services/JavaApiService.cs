@@ -83,6 +83,31 @@ public class JavaApiService : IJavaApiService
         return GetResultAsync<UserProfileOverviewDto>(path, accessToken, cancellationToken);
     }
 
+    public Task<JavaApiCallResult<ProfileInfoSettingsDto>> GetMyProfileInfoSettingsAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileMeInfoSettingsPathTemplate);
+        return GetResultAsync<ProfileInfoSettingsDto>(path, accessToken, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<ProfileInfoVisibilityDto>> GetMyProfileInfoVisibilityAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileMeInfoSettingsVisibilityPathTemplate);
+        return GetResultAsync<ProfileInfoVisibilityDto>(path, accessToken, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<object?>> UpdateMyProfileInfoVisibilityAsync(
+        UpdateProfileInfoVisibilityRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileMeInfoSettingsVisibilityUpdatePathTemplate);
+        return PatchNoContentAsync(path, request, cancellationToken, accessToken: accessToken);
+    }
+
     public Task<JavaApiCallResult<UserSecurityPrivateDto>> GetMySecurityPrivateProfileAsync(
         string accessToken,
         CancellationToken cancellationToken = default)

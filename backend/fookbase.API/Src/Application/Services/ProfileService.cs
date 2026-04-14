@@ -133,6 +133,119 @@ public class ProfileService : IProfileService
         return JavaApiCallResult<MyProfileSettingsResponseDto>.Success(response, StatusCodes.Status200OK);
     }
 
+    public async Task<JavaApiCallResult<ProfilePageInfoSettingsResponseDto>> GetMyProfilePageInfoSettingsAsync(
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return JavaApiCallResult<ProfilePageInfoSettingsResponseDto>.Failure(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized.");
+        }
+
+        var result = await _javaApiService.GetMyProfileInfoSettingsAsync(accessToken.Trim(), cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BuildFailure<ProfilePageInfoSettingsResponseDto>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Load profile info settings failed.");
+        }
+
+        var data = result.Data;
+        if (data is null)
+        {
+            return BuildFailure<ProfilePageInfoSettingsResponseDto>(
+                StatusCodes.Status502BadGateway,
+                "Java API returned empty profile info settings.",
+                "Load profile info settings failed.");
+        }
+
+        var response = new ProfilePageInfoSettingsResponseDto
+        {
+            DisplayName = FirstNonEmpty(data.DisplayName, "user") ?? "user",
+            PhoneNumber = FirstNonEmpty(data.PhoneNumber),
+            Email = FirstNonEmpty(data.Email),
+            DateOfBirth = FirstNonEmpty(data.DateOfBirth),
+            Gender = FirstNonEmpty(data.Gender),
+            FriendCount = data.FriendCount < 0 ? 0 : data.FriendCount
+        };
+
+        return JavaApiCallResult<ProfilePageInfoSettingsResponseDto>.Success(
+            response,
+            result.StatusCode > 0 ? result.StatusCode : StatusCodes.Status200OK);
+    }
+
+    public async Task<JavaApiCallResult<ProfileInfoVisibilityResponseDto>> GetMyProfilePageInfoVisibilityAsync(
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return JavaApiCallResult<ProfileInfoVisibilityResponseDto>.Failure(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized.");
+        }
+
+        var result = await _javaApiService.GetMyProfileInfoVisibilityAsync(accessToken.Trim(), cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BuildFailure<ProfileInfoVisibilityResponseDto>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Load profile info visibility failed.");
+        }
+
+        var visibility = result.Data;
+        if (visibility is null)
+        {
+            return BuildFailure<ProfileInfoVisibilityResponseDto>(
+                StatusCodes.Status502BadGateway,
+                "Java API returned empty profile info visibility.",
+                "Load profile info visibility failed.");
+        }
+
+        return JavaApiCallResult<ProfileInfoVisibilityResponseDto>.Success(
+            new ProfileInfoVisibilityResponseDto
+            {
+                DisplayNameVisible = visibility.DisplayNameVisible,
+                PhoneVisible = visibility.PhoneVisible,
+                EmailVisible = visibility.EmailVisible,
+                DateOfBirthVisible = visibility.DateOfBirthVisible,
+                GenderVisible = visibility.GenderVisible,
+                FriendCountVisible = visibility.FriendCountVisible,
+            },
+            result.StatusCode > 0 ? result.StatusCode : StatusCodes.Status200OK);
+    }
+
+    public Task<JavaApiCallResult<object?>> UpdateMyProfilePageInfoVisibilityAsync(
+        UpdateProfileInfoVisibilityRequestDto request,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Task.FromResult(JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized."));
+        }
+
+        if (!request.DisplayNameVisible.HasValue
+            || !request.PhoneVisible.HasValue
+            || !request.EmailVisible.HasValue
+            || !request.DateOfBirthVisible.HasValue
+            || !request.GenderVisible.HasValue
+            || !request.FriendCountVisible.HasValue)
+        {
+            return Task.FromResult(JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status400BadRequest,
+                "All visibility fields are required."));
+        }
+
+        return _javaApiService.UpdateMyProfileInfoVisibilityAsync(request, accessToken.Trim(), cancellationToken);
+    }
+
     public Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
         UpdateMyProfileRequestDto request,
         string? accessToken,

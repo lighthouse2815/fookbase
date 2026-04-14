@@ -54,6 +54,33 @@ export interface UpdateMyProfileRequest {
   displayName?: string;
 }
 
+export interface ProfileInfoVisibility {
+  displayNameVisible: boolean;
+  phoneVisible: boolean;
+  emailVisible: boolean;
+  dateOfBirthVisible: boolean;
+  genderVisible: boolean;
+  friendCountVisible: boolean;
+}
+
+export interface ProfilePageInfoSettings {
+  displayName: string;
+  phoneNumber?: string | null;
+  email?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  friendCount: number;
+}
+
+export interface UpdateProfileInfoVisibilityRequest {
+  displayNameVisible: boolean;
+  phoneVisible: boolean;
+  emailVisible: boolean;
+  dateOfBirthVisible: boolean;
+  genderVisible: boolean;
+  friendCountVisible: boolean;
+}
+
 export const profileService = {
   async getProfileById(profileId: string): Promise<Profile> {
     const response = await apiClient.get<ApiEnvelope<ProfilePayload>>(`/api/profiles/${profileId}`);
@@ -119,6 +146,47 @@ export const profileService = {
 
   async updateMyProfile(payload: UpdateMyProfileRequest): Promise<void> {
     await apiClient.patch('/api/profiles/me', payload);
+  },
+
+  async getMyProfilePageInfoSettings(): Promise<ProfilePageInfoSettings> {
+    const response = await apiClient.get<ApiEnvelope<ProfilePageInfoSettings>>('/api/profiles/me/page-info');
+    const settings = response.data.data;
+
+    if (!settings) {
+      throw new Error(response.data.errors?.[0] ?? 'Failed to load profile page info settings');
+    }
+
+    return {
+      ...settings,
+      displayName: settings.displayName?.trim() || 'user',
+      phoneNumber: settings.phoneNumber?.trim() || null,
+      email: settings.email?.trim() || null,
+      dateOfBirth: settings.dateOfBirth?.trim() || null,
+      gender: settings.gender?.trim() || null,
+      friendCount: typeof settings.friendCount === 'number' ? settings.friendCount : 0,
+    };
+  },
+
+  async getMyProfilePageInfoVisibility(): Promise<ProfileInfoVisibility> {
+    const response = await apiClient.get<ApiEnvelope<ProfileInfoVisibility>>('/api/profiles/me/page-info/visibility');
+    const visibility = response.data.data;
+
+    if (!visibility) {
+      throw new Error(response.data.errors?.[0] ?? 'Failed to load profile page info visibility');
+    }
+
+    return {
+      displayNameVisible: visibility.displayNameVisible ?? true,
+      phoneVisible: visibility.phoneVisible ?? true,
+      emailVisible: visibility.emailVisible ?? true,
+      dateOfBirthVisible: visibility.dateOfBirthVisible ?? true,
+      genderVisible: visibility.genderVisible ?? true,
+      friendCountVisible: visibility.friendCountVisible ?? true,
+    };
+  },
+
+  async updateMyProfilePageInfoVisibility(payload: UpdateProfileInfoVisibilityRequest): Promise<void> {
+    await apiClient.patch('/api/profiles/me/page-info/visibility', payload);
   },
 };
 

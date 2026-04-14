@@ -1,10 +1,13 @@
 package com.dang.app.controller.auth;
 
 import com.dang.app.dto.auth.request.CompleteProfileRequest;
+import com.dang.app.dto.auth.request.UpdateProfileInfoVisibilityRequest;
 import com.dang.app.dto.auth.request.UpdateSecurityPrivateRequest;
 import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
+import com.dang.app.dto.auth.response.ProfileInfoSettingsResponse;
+import com.dang.app.dto.auth.response.ProfileInfoVisibilityResponse;
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
@@ -42,6 +45,32 @@ public class UserProfileController {
         return ResponseEntity.ok(
                 userProfileService.getOverviewProfile(userId)
         );
+    }
+
+    @GetMapping("/me/profile-info-settings")
+    public ResponseEntity<ProfileInfoSettingsResponse> getMyProfileInfoSettings(@AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(
+                userProfileService.getMyProfileInfoSettings(userId)
+        );
+    }
+
+    @GetMapping("/me/profile-info-settings/visibility")
+    public ResponseEntity<ProfileInfoVisibilityResponse> getMyProfileInfoVisibility(@AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(
+                userProfileService.getMyProfileInfoVisibility(userId)
+        );
+    }
+
+    @PatchMapping("/me/profile-info-settings/visibility")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateMyProfileInfoVisibility(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody UpdateProfileInfoVisibilityRequest request
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        userProfileService.updateMyProfileInfoVisibility(userId, request);
     }
 
     @GetMapping("/me/security-private")

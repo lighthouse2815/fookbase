@@ -15,6 +15,19 @@ public interface IProfileService
         string? accessToken,
         CancellationToken cancellationToken);
 
+    Task<JavaApiCallResult<ProfilePageInfoSettingsResponseDto>> GetMyProfilePageInfoSettingsAsync(
+        string? accessToken,
+        CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<ProfileInfoVisibilityResponseDto>> GetMyProfilePageInfoVisibilityAsync(
+        string? accessToken,
+        CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<object?>> UpdateMyProfilePageInfoVisibilityAsync(
+        UpdateProfileInfoVisibilityRequestDto request,
+        string? accessToken,
+        CancellationToken cancellationToken);
+
     Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
         UpdateMyProfileRequestDto request,
         string? accessToken,

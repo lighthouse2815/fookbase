@@ -16,6 +16,12 @@ public class JavaApiOptions
 
     public string ProfileMeOverviewPathTemplate { get; set; } = "profiles/me/overview";
 
+    public string ProfileMeInfoSettingsPathTemplate { get; set; } = "profiles/me/profile-info-settings";
+
+    public string ProfileMeInfoSettingsVisibilityPathTemplate { get; set; } = "profiles/me/profile-info-settings/visibility";
+
+    public string ProfileMeInfoSettingsVisibilityUpdatePathTemplate { get; set; } = "profiles/me/profile-info-settings/visibility";
+
     public string ProfileMeSecurityPrivatePathTemplate { get; set; } = "profiles/me/security-private";
 
     public string ProfileMeSecurityPrivateUpdatePathTemplate { get; set; } = "profiles/me/security-private";

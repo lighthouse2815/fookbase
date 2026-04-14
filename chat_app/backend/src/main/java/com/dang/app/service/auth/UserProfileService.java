@@ -1,10 +1,13 @@
 package com.dang.app.service.auth;
 
 import com.dang.app.dto.auth.request.CompleteProfileRequest;
+import com.dang.app.dto.auth.request.UpdateProfileInfoVisibilityRequest;
 import com.dang.app.dto.auth.request.UpdateSecurityPrivateRequest;
 import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
+import com.dang.app.dto.auth.response.ProfileInfoSettingsResponse;
+import com.dang.app.dto.auth.response.ProfileInfoVisibilityResponse;
 import com.dang.app.dto.auth.response.PublicUserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
@@ -21,7 +24,9 @@ import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
 import com.dang.app.entity.auth.User;
+import com.dang.app.entity.auth.UserProfileInfoVisibility;
 import com.dang.app.entity.auth.UserProfile;
+import com.dang.app.repository.auth.UserProfileInfoVisibilityRepository;
 import com.dang.app.repository.auth.UserProfileRepository;
 import com.dang.app.utils.guard.UserGuard;
 import com.dang.app.utils.guard.UserProfileGuard;
@@ -47,6 +52,7 @@ public class UserProfileService {
     private final OTPService otpService;
 
     private final UserProfileRepository userProfileRepository;
+    private final UserProfileInfoVisibilityRepository userProfileInfoVisibilityRepository;
     private final ContactRepository contactRepository;
     private final FriendshipRepository friendshipRepository;
     private final UserPresenceService userPresenceService;
@@ -158,6 +164,47 @@ public class UserProfileService {
                 maskEmail(profile.getEmail())
         );
 
+    }
+
+    public ProfileInfoSettingsResponse getMyProfileInfoSettings(UUID userId) {
+        User user = userService.findById(userId);
+        userGuard.requireActiveAndNotDeleted(user);
+
+        UserProfile profile = userProfileRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        userProfileGuard.requireNotDeleted(profile);
+
+        long friendCount = friendshipRepository.countAcceptedFriendsByUserId(userId);
+
+        return userProfileMapper.toProfileInfoSettingsResponse(profile, friendCount);
+    }
+
+    @Transactional
+    public ProfileInfoVisibilityResponse getMyProfileInfoVisibility(UUID userId) {
+        User user = userService.findById(userId);
+        userGuard.requireActiveAndNotDeleted(user);
+
+        UserProfile profile = userProfileRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        userProfileGuard.requireNotDeleted(profile);
+
+        UserProfileInfoVisibility visibility = getOrCreateProfileInfoVisibility(user);
+        return userProfileMapper.toProfileInfoVisibilityResponse(visibility);
+    }
+
+    @Transactional
+    public void updateMyProfileInfoVisibility(UUID userId, UpdateProfileInfoVisibilityRequest request) {
+        User user = userService.findById(userId);
+        userGuard.requireActiveAndNotDeleted(user);
+
+        UserProfile profile = userProfileRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        userProfileGuard.requireNotDeleted(profile);
+
+        UserProfileInfoVisibility visibility = getOrCreateProfileInfoVisibility(user);
+        userProfileMapper.applyProfileInfoVisibility(visibility, request);
+
+        userProfileInfoVisibilityRepository.save(visibility);
     }
 
     public UserSecurityPrivateResponse getSecurityPrivateProfile(UUID userId) {
@@ -405,6 +452,15 @@ public class UserProfileService {
     private String maskPhone(String phone) {
         if (phone == null || phone.length() < 7) return "****";
         return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
+    }
+
+    private UserProfileInfoVisibility getOrCreateProfileInfoVisibility(User user) {
+        return userProfileInfoVisibilityRepository.findByUser_Id(user.getId())
+                .orElseGet(() -> userProfileInfoVisibilityRepository.save(
+                        UserProfileInfoVisibility.builder()
+                                .user(user)
+                                .build()
+                ));
     }
 
     private String maskUsername(String username) {

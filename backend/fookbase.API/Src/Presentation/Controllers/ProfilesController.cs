@@ -60,6 +60,69 @@ public class ProfilesController : ApiControllerBase
         return Ok(ApiResponse<MyProfileSettingsResponseDto>.Ok(result.Data));
     }
 
+    [HttpGet("me/page-info")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<ProfilePageInfoSettingsResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ProfilePageInfoSettingsResponseDto>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<ProfilePageInfoSettingsResponseDto>>> GetMyProfilePageInfoSettings(
+        CancellationToken cancellationToken)
+    {
+        var result = await _profileService.GetMyProfilePageInfoSettingsAsync(ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<ProfilePageInfoSettingsResponseDto>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Load my profile page info settings failed.");
+        }
+
+        return Ok(ApiResponse<ProfilePageInfoSettingsResponseDto>.Ok(result.Data));
+    }
+
+    [HttpGet("me/page-info/visibility")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<ProfileInfoVisibilityResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ProfileInfoVisibilityResponseDto>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<ProfileInfoVisibilityResponseDto>>> GetMyProfilePageInfoVisibility(
+        CancellationToken cancellationToken)
+    {
+        var result = await _profileService.GetMyProfilePageInfoVisibilityAsync(ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<ProfileInfoVisibilityResponseDto>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Load my profile page info visibility failed.");
+        }
+
+        return Ok(ApiResponse<ProfileInfoVisibilityResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPatch("me/page-info/visibility")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<object?>>> UpdateMyProfilePageInfoVisibility(
+        [FromBody] UpdateProfileInfoVisibilityRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _profileService.UpdateMyProfilePageInfoVisibilityAsync(
+            request,
+            ExtractAccessToken(),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BuildErrorResponse<object?>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Update profile page info visibility failed.");
+        }
+
+        return NoContent();
+    }
+
     [HttpPatch("me")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
