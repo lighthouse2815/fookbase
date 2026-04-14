@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class ProfileInfoSettingsResponse {
-    private String displayName;
+    private String fullName;
     private String phoneNumber;
     private String email;
     private LocalDate dateOfBirth;

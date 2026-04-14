@@ -316,8 +316,17 @@ public class UserProfileService {
 
         FriendshipStatus status = getStatus(myId, userId);
         long friendsCount = friendshipRepository.countAcceptedFriendsByUserId(userId);
+        UserProfileInfoVisibility visibility = userProfileInfoVisibilityRepository.findByUser_Id(userId)
+                .orElse(null);
 
-        return userProfileMapper.toPublicUserProfileResponse(userId, profile, nickName, status, friendsCount);
+        return userProfileMapper.toPublicUserProfileResponse(
+                userId,
+                profile,
+                nickName,
+                status,
+                friendsCount,
+                visibility
+        );
     }
 
     public UserProfileSummaryResponse getUserProfileSummary(UUID userId) {

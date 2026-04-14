@@ -4,8 +4,8 @@ namespace InteractHub.Api.Application.DTOs.JavaApi;
 
 public class ProfileInfoVisibilityDto
 {
-    [JsonPropertyName("displayNameVisible")]
-    public bool DisplayNameVisible { get; set; }
+    [JsonPropertyName("fullNameVisible")]
+    public bool FullNameVisible { get; set; }
 
     [JsonPropertyName("phoneVisible")]
     public bool PhoneVisible { get; set; }

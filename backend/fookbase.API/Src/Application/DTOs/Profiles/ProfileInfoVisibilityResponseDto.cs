@@ -2,7 +2,7 @@ namespace InteractHub.Api.Application.DTOs.Profiles;
 
 public class ProfileInfoVisibilityResponseDto
 {
-    public bool DisplayNameVisible { get; set; }
+    public bool FullNameVisible { get; set; }
 
     public bool PhoneVisible { get; set; }
 

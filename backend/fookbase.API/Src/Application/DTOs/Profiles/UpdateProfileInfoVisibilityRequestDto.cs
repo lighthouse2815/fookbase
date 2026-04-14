@@ -5,7 +5,7 @@ namespace InteractHub.Api.Application.DTOs.Profiles;
 public class UpdateProfileInfoVisibilityRequestDto
 {
     [Required]
-    public bool? DisplayNameVisible { get; set; }
+    public bool? FullNameVisible { get; set; }
 
     [Required]
     public bool? PhoneVisible { get; set; }

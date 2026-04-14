@@ -85,7 +85,7 @@ public class UserProfileMapper {
             long friendCount
     ) {
         return ProfileInfoSettingsResponse.builder()
-                .displayName(normalize(profile.getDisplayName()))
+                .fullName(buildFullNameForProfileInfo(profile))
                 .phoneNumber(normalize(profile.getPhoneNumber()))
                 .email(normalize(profile.getEmail()))
                 .dateOfBirth(profile.getBirthDate())
@@ -96,7 +96,7 @@ public class UserProfileMapper {
 
     public ProfileInfoVisibilityResponse toProfileInfoVisibilityResponse(UserProfileInfoVisibility visibility) {
         return ProfileInfoVisibilityResponse.builder()
-                .displayNameVisible(resolveVisibility(visibility.getDisplayNameVisible()))
+                .fullNameVisible(resolveVisibility(visibility.getFullNameVisible()))
                 .phoneVisible(resolveVisibility(visibility.getPhoneVisible()))
                 .emailVisible(resolveVisibility(visibility.getEmailVisible()))
                 .dateOfBirthVisible(resolveVisibility(visibility.getDateOfBirthVisible()))
@@ -109,7 +109,7 @@ public class UserProfileMapper {
             UserProfileInfoVisibility visibility,
             UpdateProfileInfoVisibilityRequest request
     ) {
-        visibility.setDisplayNameVisible(request.getDisplayNameVisible());
+        visibility.setFullNameVisible(request.getFullNameVisible());
         visibility.setPhoneVisible(request.getPhoneVisible());
         visibility.setEmailVisible(request.getEmailVisible());
         visibility.setDateOfBirthVisible(request.getDateOfBirthVisible());
@@ -122,18 +122,34 @@ public class UserProfileMapper {
             UserProfile userProfile,
             String nickName,
             FriendshipStatus status,
-            long friendsCount
+            long friendsCount,
+            UserProfileInfoVisibility visibility
     ) {
+        boolean fullNameVisible = resolveVisibility(visibility == null ? null : visibility.getFullNameVisible());
+        boolean phoneVisible = resolveVisibility(visibility == null ? null : visibility.getPhoneVisible());
+        boolean emailVisible = resolveVisibility(visibility == null ? null : visibility.getEmailVisible());
+        boolean dateOfBirthVisible = resolveVisibility(visibility == null ? null : visibility.getDateOfBirthVisible());
+        boolean genderVisible = resolveVisibility(visibility == null ? null : visibility.getGenderVisible());
+        boolean friendCountVisible = resolveVisibility(visibility == null ? null : visibility.getFriendCountVisible());
+
         return PublicUserProfileResponse.builder()
                 .userId(userId)
                 .nickname(nickName)
                 .status(status)
-                .friendsCount(friendsCount)
+                .friendsCount(friendCountVisible ? Math.max(friendsCount, 0) : 0)
                 .avatarUrl(userProfile.getAvatarUrl())
                 .displayName(userProfile.getDisplayName())
-                .gender(userProfile.getGender())
-                .phoneNumber(userProfile.getPhoneNumber())
-                .birthDate(userProfile.getBirthDate())
+                .fullName(fullNameVisible ? buildFullNameForProfileInfo(userProfile) : null)
+                .email(emailVisible ? normalize(userProfile.getEmail()) : null)
+                .gender(genderVisible ? userProfile.getGender() : null)
+                .phoneNumber(phoneVisible ? normalize(userProfile.getPhoneNumber()) : null)
+                .birthDate(dateOfBirthVisible ? userProfile.getBirthDate() : null)
+                .fullNameVisible(fullNameVisible)
+                .phoneVisible(phoneVisible)
+                .emailVisible(emailVisible)
+                .dateOfBirthVisible(dateOfBirthVisible)
+                .genderVisible(genderVisible)
+                .friendCountVisible(friendCountVisible)
                 .build();
     }
 
@@ -207,6 +223,25 @@ public class UserProfileMapper {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String buildFullNameForProfileInfo(UserProfile profile) {
+        String lastName = normalize(profile.getLastName());
+        String firstName = normalize(profile.getFirstName());
+
+        if (lastName == null && firstName == null) {
+            return normalize(profile.getDisplayName());
+        }
+
+        if (lastName == null) {
+            return firstName;
+        }
+
+        if (firstName == null) {
+            return lastName;
+        }
+
+        return (lastName + " " + firstName).trim();
     }
 
     private boolean resolveVisibility(Boolean value) {

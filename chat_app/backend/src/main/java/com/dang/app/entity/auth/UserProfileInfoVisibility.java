@@ -39,7 +39,7 @@ public class UserProfileInfoVisibility {
 
     @Builder.Default
     @Column(name = "display_name_visible")
-    private Boolean displayNameVisible = true;
+    private Boolean fullNameVisible = true;
 
     @Builder.Default
     @Column(name = "phone_visible")
@@ -63,7 +63,7 @@ public class UserProfileInfoVisibility {
 
     @PrePersist
     public void applyDefaults() {
-        if (displayNameVisible == null) displayNameVisible = true;
+        if (fullNameVisible == null) fullNameVisible = true;
         if (phoneVisible == null) phoneVisible = true;
         if (emailVisible == null) emailVisible = true;
         if (dateOfBirthVisible == null) dateOfBirthVisible = true;

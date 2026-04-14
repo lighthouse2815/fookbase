@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class UpdateProfileInfoVisibilityRequest {
     @NotNull
-    private Boolean displayNameVisible;
+    private Boolean fullNameVisible;
 
     @NotNull
     private Boolean phoneVisible;

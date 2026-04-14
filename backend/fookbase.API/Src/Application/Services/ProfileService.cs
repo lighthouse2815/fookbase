@@ -50,12 +50,20 @@ public class ProfileService : IProfileService
             {
                 UserId = profile.UserId == Guid.Empty ? userId : profile.UserId,
                 DisplayName = displayName,
+                FullName = FirstNonEmpty(profile.FullName),
                 AvatarUrl = profile.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
                 FriendsCount = profile.FriendsCount < 0 ? 0 : profile.FriendsCount,
                 PostsCount = postsCount < 0 ? 0 : postsCount,
                 PhoneNumber = FirstNonEmpty(profile.PhoneNumber),
+                Email = FirstNonEmpty(profile.Email),
                 Gender = FirstNonEmpty(profile.Gender),
                 BirthDate = FirstNonEmpty(profile.BirthDate),
+                FullNameVisible = profile.FullNameVisible ?? true,
+                PhoneVisible = profile.PhoneVisible ?? true,
+                EmailVisible = profile.EmailVisible ?? true,
+                DateOfBirthVisible = profile.DateOfBirthVisible ?? true,
+                GenderVisible = profile.GenderVisible ?? true,
+                FriendCountVisible = profile.FriendCountVisible ?? true,
                 Status = FirstNonEmpty(profile.Status),
                 Nickname = FirstNonEmpty(profile.Nickname)
             };
@@ -164,7 +172,7 @@ public class ProfileService : IProfileService
 
         var response = new ProfilePageInfoSettingsResponseDto
         {
-            DisplayName = FirstNonEmpty(data.DisplayName, "user") ?? "user",
+            FullName = FirstNonEmpty(data.FullName, "user") ?? "user",
             PhoneNumber = FirstNonEmpty(data.PhoneNumber),
             Email = FirstNonEmpty(data.Email),
             DateOfBirth = FirstNonEmpty(data.DateOfBirth),
@@ -209,7 +217,7 @@ public class ProfileService : IProfileService
         return JavaApiCallResult<ProfileInfoVisibilityResponseDto>.Success(
             new ProfileInfoVisibilityResponseDto
             {
-                DisplayNameVisible = visibility.DisplayNameVisible,
+                FullNameVisible = visibility.FullNameVisible,
                 PhoneVisible = visibility.PhoneVisible,
                 EmailVisible = visibility.EmailVisible,
                 DateOfBirthVisible = visibility.DateOfBirthVisible,
@@ -231,7 +239,7 @@ public class ProfileService : IProfileService
                 "Unauthorized."));
         }
 
-        if (!request.DisplayNameVisible.HasValue
+        if (!request.FullNameVisible.HasValue
             || !request.PhoneVisible.HasValue
             || !request.EmailVisible.HasValue
             || !request.DateOfBirthVisible.HasValue

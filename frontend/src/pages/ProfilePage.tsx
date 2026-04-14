@@ -18,11 +18,18 @@ const DEFAULT_PROFILE = (user: MainLayoutOutletContext['currentUser']): Profile 
   id: user.id,
   username: user.username,
   displayName: user.fullName,
+  fullName: user.fullName,
   avatarUrl: user.avatarUrl,
   bio: '',
   coverUrl: undefined,
   friendsCount: 0,
   postsCount: 0,
+  fullNameVisible: true,
+  phoneVisible: true,
+  emailVisible: true,
+  dateOfBirthVisible: true,
+  genderVisible: true,
+  friendCountVisible: true,
 });
 
 const DEFAULT_PUBLIC_USERNAME = 'user';
@@ -41,6 +48,7 @@ const createFallbackProfile = (
     id: targetUserId,
     username: DEFAULT_PUBLIC_USERNAME,
     displayName: DEFAULT_PUBLIC_DISPLAY_NAME,
+    fullName: undefined,
     avatarUrl: `https://i.pravatar.cc/150?u=${targetUserId}`,
   };
 };
@@ -117,6 +125,7 @@ export const ProfilePage = () => {
           ...data,
           username: data.username ?? previous.username,
           displayName: data.displayName || previous.displayName,
+          fullName: data.fullName ?? previous.fullName,
           bio: data.bio ?? previous.bio,
           coverUrl: data.coverUrl ?? previous.coverUrl,
         }));
@@ -127,6 +136,7 @@ export const ProfilePage = () => {
             id: currentUser.id,
             username: currentUser.username,
             displayName: currentUser.fullName,
+            fullName: currentUser.fullName,
             avatarUrl: currentUser.avatarUrl,
           }));
         }
@@ -154,6 +164,51 @@ export const ProfilePage = () => {
     setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));
   };
 
+  const infoItems = [
+    {
+      key: 'fullName',
+      visible: profile.fullNameVisible ?? true,
+      label: t('profile.fullName'),
+      value: profile.fullName?.trim() || emptyInfoValue,
+    },
+    {
+      key: 'phoneNumber',
+      visible: profile.phoneVisible ?? true,
+      label: t('profile.phoneNumber'),
+      value: profile.phoneNumber?.trim() || emptyInfoValue,
+    },
+    {
+      key: 'email',
+      visible: profile.emailVisible ?? true,
+      label: t('profile.email'),
+      value: profile.email?.trim() || emptyInfoValue,
+    },
+    {
+      key: 'gender',
+      visible: profile.genderVisible ?? true,
+      label: t('profile.gender'),
+      value: formatGender(
+        profile.gender,
+        emptyInfoValue,
+        t('profile.genderMale'),
+        t('profile.genderFemale'),
+        t('profile.genderOther'),
+      ),
+    },
+    {
+      key: 'birthDate',
+      visible: profile.dateOfBirthVisible ?? true,
+      label: t('profile.birthDate'),
+      value: formatBirthDate(profile.birthDate, emptyInfoValue, locale),
+    },
+    {
+      key: 'friendsCount',
+      visible: profile.friendCountVisible ?? true,
+      label: t('profile.friendsCount'),
+      value: String(profile.friendsCount),
+    },
+  ].filter((item) => item.visible);
+
   return (
     <div className="space-y-4">
       <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
@@ -164,39 +219,12 @@ export const ProfilePage = () => {
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('profile.personalInfo')}</h2>
 
             <dl className="mt-3 space-y-3">
-              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
-                <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.displayName')}</dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {profile.displayName?.trim() || emptyInfoValue}
-                </dd>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
-                <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.phoneNumber')}</dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {profile.phoneNumber?.trim() || emptyInfoValue}
-                </dd>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
-                <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.gender')}</dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {formatGender(
-                    profile.gender,
-                    emptyInfoValue,
-                    t('profile.genderMale'),
-                    t('profile.genderFemale'),
-                    t('profile.genderOther'),
-                  )}
-                </dd>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
-                <dt className="text-xs text-slate-500 dark:text-slate-400">{t('profile.birthDate')}</dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {formatBirthDate(profile.birthDate, emptyInfoValue, locale)}
-                </dd>
-              </div>
+              {infoItems.map((item) => (
+                <div key={item.key} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
+                  <dt className="text-xs text-slate-500 dark:text-slate-400">{item.label}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{item.value}</dd>
+                </div>
+              ))}
             </dl>
           </section>
         </aside>

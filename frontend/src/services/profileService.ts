@@ -12,14 +12,22 @@ interface ProfilePayload {
   id?: string | null;
   username?: string | null;
   displayName?: string | null;
+  fullName?: string | null;
   avatarUrl?: string | null;
   bio?: string | null;
   coverUrl?: string | null;
   friendsCount?: number | null;
   postsCount?: number | null;
   phoneNumber?: string | null;
+  email?: string | null;
   gender?: string | null;
   birthDate?: string | null;
+  fullNameVisible?: boolean | null;
+  phoneVisible?: boolean | null;
+  emailVisible?: boolean | null;
+  dateOfBirthVisible?: boolean | null;
+  genderVisible?: boolean | null;
+  friendCountVisible?: boolean | null;
   nickname?: string | null;
   status?: string | null;
 }
@@ -55,7 +63,7 @@ export interface UpdateMyProfileRequest {
 }
 
 export interface ProfileInfoVisibility {
-  displayNameVisible: boolean;
+  fullNameVisible: boolean;
   phoneVisible: boolean;
   emailVisible: boolean;
   dateOfBirthVisible: boolean;
@@ -64,7 +72,7 @@ export interface ProfileInfoVisibility {
 }
 
 export interface ProfilePageInfoSettings {
-  displayName: string;
+  fullName: string;
   phoneNumber?: string | null;
   email?: string | null;
   dateOfBirth?: string | null;
@@ -73,7 +81,7 @@ export interface ProfilePageInfoSettings {
 }
 
 export interface UpdateProfileInfoVisibilityRequest {
-  displayNameVisible: boolean;
+  fullNameVisible: boolean;
   phoneVisible: boolean;
   emailVisible: boolean;
   dateOfBirthVisible: boolean;
@@ -96,14 +104,22 @@ export const profileService = {
       id: resolvedId,
       username: profile.username?.trim() || undefined,
       displayName: profile.displayName?.trim() || 'user',
+      fullName: profile.fullName?.trim() || undefined,
       avatarUrl: profile.avatarUrl || `https://i.pravatar.cc/150?u=${resolvedId}`,
       bio: profile.bio ?? undefined,
       coverUrl: profile.coverUrl ?? undefined,
       friendsCount: typeof profile.friendsCount === 'number' ? profile.friendsCount : 0,
       postsCount: typeof profile.postsCount === 'number' ? profile.postsCount : 0,
       phoneNumber: profile.phoneNumber?.trim() || undefined,
+      email: profile.email?.trim() || undefined,
       gender: profile.gender?.trim() || undefined,
       birthDate: profile.birthDate?.trim() || undefined,
+      fullNameVisible: profile.fullNameVisible ?? true,
+      phoneVisible: profile.phoneVisible ?? true,
+      emailVisible: profile.emailVisible ?? true,
+      dateOfBirthVisible: profile.dateOfBirthVisible ?? true,
+      genderVisible: profile.genderVisible ?? true,
+      friendCountVisible: profile.friendCountVisible ?? true,
       nickname: profile.nickname?.trim() || undefined,
       friendshipStatus: profile.status?.trim()?.toUpperCase() || undefined,
     };
@@ -158,7 +174,7 @@ export const profileService = {
 
     return {
       ...settings,
-      displayName: settings.displayName?.trim() || 'user',
+      fullName: settings.fullName?.trim() || 'user',
       phoneNumber: settings.phoneNumber?.trim() || null,
       email: settings.email?.trim() || null,
       dateOfBirth: settings.dateOfBirth?.trim() || null,
@@ -176,7 +192,7 @@ export const profileService = {
     }
 
     return {
-      displayNameVisible: visibility.displayNameVisible ?? true,
+      fullNameVisible: visibility.fullNameVisible ?? true,
       phoneVisible: visibility.phoneVisible ?? true,
       emailVisible: visibility.emailVisible ?? true,
       dateOfBirthVisible: visibility.dateOfBirthVisible ?? true,

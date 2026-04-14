@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ProfileInfoVisibilityResponse {
-    private boolean displayNameVisible;
+    private boolean fullNameVisible;
     private boolean phoneVisible;
     private boolean emailVisible;
     private boolean dateOfBirthVisible;

@@ -4,8 +4,8 @@ namespace InteractHub.Api.Application.DTOs.JavaApi;
 
 public class ProfileInfoSettingsDto
 {
-    [JsonPropertyName("displayName")]
-    public string? DisplayName { get; set; }
+    [JsonPropertyName("fullName")]
+    public string? FullName { get; set; }
 
     [JsonPropertyName("phoneNumber")]
     public string? PhoneNumber { get; set; }

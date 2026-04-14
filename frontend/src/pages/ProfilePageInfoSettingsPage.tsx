@@ -10,7 +10,7 @@ import {
 import { getApiErrorMessage } from '../utils/apiError';
 
 const DEFAULT_VISIBILITY: ProfileInfoVisibility = {
-  displayNameVisible: true,
+  fullNameVisible: true,
   phoneVisible: true,
   emailVisible: true,
   dateOfBirthVisible: true,
@@ -22,7 +22,7 @@ const areAllFieldsVisible = (visibility: ProfileInfoVisibility): boolean =>
   Object.values(visibility).every(Boolean);
 
 const buildAllVisibility = (value: boolean): ProfileInfoVisibility => ({
-  displayNameVisible: value,
+  fullNameVisible: value,
   phoneVisible: value,
   emailVisible: value,
   dateOfBirthVisible: value,
@@ -237,7 +237,7 @@ export const ProfilePageInfoSettingsPage = () => {
 
   const allVisible = areAllFieldsVisible(visibility);
 
-  const displayNameValue = settings?.displayName?.trim() || emptyValue;
+  const fullNameValue = settings?.fullName?.trim() || emptyValue;
   const phoneValue = showPhone
     ? settings?.phoneNumber?.trim() || emptyValue
     : maskPhone(settings?.phoneNumber, emptyValue);
@@ -303,16 +303,16 @@ export const ProfilePageInfoSettingsPage = () => {
             <div className="flex items-center justify-between gap-2">
               <dt className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <UserRound size={14} />
-                {t('profilePageInfoSettings.displayName')}
+                {t('profilePageInfoSettings.fullName')}
               </dt>
               <VisibilitySwitch
-                checked={visibility.displayNameVisible}
+                checked={visibility.fullNameVisible}
                 disabled={isUpdatingVisibility}
-                ariaLabel={t('profilePageInfoSettings.toggleFieldAria', { field: t('profilePageInfoSettings.displayName') })}
-                onToggle={() => handleToggleField('displayNameVisible')}
+                ariaLabel={t('profilePageInfoSettings.toggleFieldAria', { field: t('profilePageInfoSettings.fullName') })}
+                onToggle={() => handleToggleField('fullNameVisible')}
               />
             </div>
-            <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{displayNameValue}</dd>
+            <dd className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{fullNameValue}</dd>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70">

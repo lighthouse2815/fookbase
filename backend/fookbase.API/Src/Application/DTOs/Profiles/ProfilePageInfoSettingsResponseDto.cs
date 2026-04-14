@@ -2,7 +2,7 @@ namespace InteractHub.Api.Application.DTOs.Profiles;
 
 public class ProfilePageInfoSettingsResponseDto
 {
-    public string DisplayName { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
 
     public string? PhoneNumber { get; set; }
 
