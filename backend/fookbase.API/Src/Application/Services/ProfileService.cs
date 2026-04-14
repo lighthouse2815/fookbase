@@ -124,7 +124,7 @@ public class ProfileService : IProfileService
             FirstName = FirstNonEmpty(overview?.FirstName),
             LastName = FirstNonEmpty(overview?.LastName),
             Email = overview?.Email,
-            PhoneNumber = FirstNonEmpty(overview?.PhoneNumber),
+            PhoneNumber = MaskPhoneNumber(FirstNonEmpty(overview?.PhoneNumber)),
             AvatarUrl = FirstNonEmpty(overview?.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(resolvedUserId),
             BirthDate = FirstNonEmpty(overview?.BirthDate),
             Gender = FirstNonEmpty(overview?.Gender)
@@ -218,5 +218,26 @@ public class ProfileService : IProfileService
         }
 
         return null;
+    }
+
+    private static string? MaskPhoneNumber(string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            return null;
+        }
+
+        var normalized = phoneNumber.Trim();
+        if (normalized.Contains('*', StringComparison.Ordinal))
+        {
+            return normalized;
+        }
+
+        if (normalized.Length < 7)
+        {
+            return "****";
+        }
+
+        return $"{normalized[..3]}****{normalized[^4..]}";
     }
 }

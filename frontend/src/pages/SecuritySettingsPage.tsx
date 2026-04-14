@@ -335,6 +335,18 @@ export const SecuritySettingsPage = () => {
     }
   };
 
+  const handleCancelPasswordFlow = () => {
+    setStep('sendOtp');
+    setOtp('');
+    setResetToken('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setErrorMessage(null);
+    setInfoMessage(null);
+  };
+
   return (
     <div className="space-y-4">
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
@@ -628,6 +640,14 @@ export const SecuritySettingsPage = () => {
               >
                 {t('securitySettings.resendOtpButton')}
               </button>
+              <button
+                type="button"
+                onClick={handleCancelPasswordFlow}
+                disabled={isSubmitting}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t('securitySettings.cancelButton')}
+              </button>
             </div>
           </div>
         ) : null}
@@ -678,14 +698,24 @@ export const SecuritySettingsPage = () => {
               </div>
             </label>
 
-            <button
-              type="button"
-              onClick={() => void handleResetPassword()}
-              disabled={isSubmitting}
-              className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? t('securitySettings.updatingButton') : t('securitySettings.updatePasswordButton')}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleResetPassword()}
+                disabled={isSubmitting}
+                className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isSubmitting ? t('securitySettings.updatingButton') : t('securitySettings.updatePasswordButton')}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelPasswordFlow}
+                disabled={isSubmitting}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t('securitySettings.cancelButton')}
+              </button>
+            </div>
           </div>
         ) : null}
       </section>

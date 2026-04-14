@@ -47,6 +47,7 @@ public class UserProfileMapper {
 
     public UserProfileOverviewResponse toUserProfileOverviewResponse(
             UserProfile profile,
+            String maskedPhone,
             String maskedEmail
     ) {
         return UserProfileOverviewResponse.builder()
@@ -55,7 +56,7 @@ public class UserProfileMapper {
                 .displayName(profile.getDisplayName())
                 .firstName(profile.getFirstName())
                 .lastName(profile.getLastName())
-                .phoneNumber(profile.getPhoneNumber())
+                .phoneNumber(maskedPhone)
                 .email(maskedEmail)
                 .avatarUrl(profile.getAvatarUrl())
                 .birthDate(profile.getBirthDate())
