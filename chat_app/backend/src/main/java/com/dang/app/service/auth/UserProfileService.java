@@ -153,6 +153,7 @@ public class UserProfileService {
 
         return userProfileMapper.toUserProfileOverviewResponse(
                 profile,
+                maskUsername(profile.getUser().getUsername()),
                 maskPhone(profile.getPhoneNumber()),
                 maskEmail(profile.getEmail())
         );
@@ -404,6 +405,21 @@ public class UserProfileService {
     private String maskPhone(String phone) {
         if (phone == null || phone.length() < 7) return "****";
         return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
+    }
+
+    private String maskUsername(String username) {
+        if (username == null || username.isBlank()) return "****";
+
+        String normalized = username.trim();
+        if (normalized.length() <= 2) {
+            return normalized.charAt(0) + "***";
+        }
+
+        if (normalized.length() <= 4) {
+            return normalized.substring(0, 1) + "***" + normalized.substring(normalized.length() - 1);
+        }
+
+        return normalized.substring(0, 2) + "***" + normalized.substring(normalized.length() - 2);
     }
 
     private String normalize(String value) {

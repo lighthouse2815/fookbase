@@ -47,12 +47,13 @@ public class UserProfileMapper {
 
     public UserProfileOverviewResponse toUserProfileOverviewResponse(
             UserProfile profile,
+            String maskedUsername,
             String maskedPhone,
             String maskedEmail
     ) {
         return UserProfileOverviewResponse.builder()
                 .userId(profile.getUser().getId())
-                .username(profile.getUser().getUsername())
+                .username(maskedUsername)
                 .displayName(profile.getDisplayName())
                 .firstName(profile.getFirstName())
                 .lastName(profile.getLastName())
