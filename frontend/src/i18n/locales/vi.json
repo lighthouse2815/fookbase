@@ -410,6 +410,7 @@
     "username": "Tên đăng nhập",
     "email": "Email",
     "phoneNumber": "Số điện thoại",
+    "securityEditHint": "Chỉnh sửa trường này bên tab bảo mật.",
     "displayName": "Tên hiển thị",
     "displayNamePlaceholder": "Nhập tên hiển thị",
     "firstName": "Tên",

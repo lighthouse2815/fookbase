@@ -452,6 +452,7 @@
     "username": "Username",
     "email": "Email",
     "phoneNumber": "Phone number",
+    "securityEditHint": "Edit this field in the Security tab.",
     "displayName": "Display name",
     "displayNamePlaceholder": "Enter display name",
     "firstName": "First name",
