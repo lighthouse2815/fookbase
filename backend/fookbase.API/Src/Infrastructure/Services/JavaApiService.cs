@@ -292,6 +292,24 @@ public class JavaApiService : IJavaApiService
         return PostAsync<OtpVerifyResponseDto>(path, payload: null, cancellationToken, accessToken: accessToken);
     }
 
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyChangeUsernameOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthVerifyChangeUsernameOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyChangePhoneNumberOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthVerifyChangePhoneNumberOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken, accessToken: accessToken);
+    }
+
     public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendResetPasswordOtpWhenNotLoginAsync(
         OtpRequestDto request,
         CancellationToken cancellationToken = default)

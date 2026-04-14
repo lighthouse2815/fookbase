@@ -54,6 +54,10 @@ public class JavaApiOptions
 
     public string AuthSendChangePhoneNumberOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/send/change-phone-number";
 
+    public string AuthVerifyChangeUsernameOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/verify/change-username";
+
+    public string AuthVerifyChangePhoneNumberOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/verify/change-phone-number";
+
     public string AuthSendResetPasswordOtpWhenNotLoginPathTemplate { get; set; } = "auth/otp/send/reset-password";
 
     public string AuthSendResetPasswordOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/send/reset-password";

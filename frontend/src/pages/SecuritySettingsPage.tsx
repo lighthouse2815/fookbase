@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 
 type Step = 'sendOtp' | 'verifyOtp' | 'resetPassword';
 type SecurityFieldKey = 'username' | 'phoneNumber';
+type SecurityEditStep = 'verifyOtp' | 'edit';
 
 export const SecuritySettingsPage = () => {
   const { t } = useTranslation();
@@ -32,6 +33,12 @@ export const SecuritySettingsPage = () => {
   const [securityUsernameError, setSecurityUsernameError] = useState<string | null>(null);
   const [isSendingEditOtp, setIsSendingEditOtp] = useState(false);
   const [editingField, setEditingField] = useState<SecurityFieldKey | null>(null);
+  const [activeEditField, setActiveEditField] = useState<SecurityFieldKey | null>(null);
+  const [activeEditStep, setActiveEditStep] = useState<SecurityEditStep | null>(null);
+  const [editOtp, setEditOtp] = useState('');
+  const [editValue, setEditValue] = useState('');
+  const [isVerifyingEditOtp, setIsVerifyingEditOtp] = useState(false);
+  const [isUpdatingEditField, setIsUpdatingEditField] = useState(false);
   const [editOtpInfoMessage, setEditOtpInfoMessage] = useState<string | null>(null);
   const [editOtpErrorMessage, setEditOtpErrorMessage] = useState<string | null>(null);
 
@@ -105,6 +112,21 @@ export const SecuritySettingsPage = () => {
     return t('securitySettings.phoneNumberLabel');
   };
 
+  const getCurrentFieldValue = (field: SecurityFieldKey) => {
+    if (field === 'username') {
+      return securityUsername;
+    }
+    return securityPhoneNumber ?? '';
+  };
+
+  const resetEditFlow = () => {
+    setActiveEditField(null);
+    setActiveEditStep(null);
+    setEditOtp('');
+    setEditValue('');
+    setEditOtpErrorMessage(null);
+  };
+
   const handleSendEditOtp = async (field: SecurityFieldKey) => {
     setIsSendingEditOtp(true);
     setEditingField(field);
@@ -122,11 +144,107 @@ export const SecuritySettingsPage = () => {
           field: getFieldLabel(field),
         }),
       );
+      setActiveEditField(field);
+      setActiveEditStep('verifyOtp');
+      setEditOtp('');
+      setEditValue(getCurrentFieldValue(field));
     } catch (error) {
       setEditOtpErrorMessage(getApiErrorMessage(error, t('securitySettings.editOtpSendError')));
     } finally {
       setIsSendingEditOtp(false);
       setEditingField(null);
+    }
+  };
+
+  const handleVerifyEditOtp = async () => {
+    if (!activeEditField) {
+      return;
+    }
+
+    const normalizedOtp = editOtp.trim();
+    if (!normalizedOtp) {
+      setEditOtpErrorMessage(t('securitySettings.otpRequired'));
+      return;
+    }
+
+    setIsVerifyingEditOtp(true);
+    setEditOtpErrorMessage(null);
+    setEditOtpInfoMessage(null);
+
+    try {
+      const payload = { otp: normalizedOtp };
+      if (activeEditField === 'username') {
+        await authService.verifyChangeUsernameOtpWhenLogin(payload);
+      } else {
+        await authService.verifyChangePhoneNumberOtpWhenLogin(payload);
+      }
+
+      setActiveEditStep('edit');
+      setEditValue(getCurrentFieldValue(activeEditField));
+      setEditOtpInfoMessage(
+        t('securitySettings.editOtpVerified', {
+          field: getFieldLabel(activeEditField),
+        }),
+      );
+    } catch (error) {
+      setEditOtpErrorMessage(getApiErrorMessage(error, t('securitySettings.verifyOtpError')));
+    } finally {
+      setIsVerifyingEditOtp(false);
+    }
+  };
+
+  const handleUpdateEditField = async () => {
+    if (!activeEditField) {
+      return;
+    }
+
+    const normalizedOtp = editOtp.trim();
+    if (!normalizedOtp) {
+      setEditOtpErrorMessage(t('securitySettings.otpRequired'));
+      return;
+    }
+
+    const normalizedValue = editValue.trim();
+    if (!normalizedValue) {
+      setEditOtpErrorMessage(t('securitySettings.fieldValueRequired'));
+      return;
+    }
+
+    if (activeEditField === 'phoneNumber' && !/^0\d{9}$/.test(normalizedValue)) {
+      setEditOtpErrorMessage(t('securitySettings.phoneNumberInvalid'));
+      return;
+    }
+
+    setIsUpdatingEditField(true);
+    setEditOtpErrorMessage(null);
+    setEditOtpInfoMessage(null);
+
+    try {
+      if (activeEditField === 'username') {
+        await userService.updateSecurityAccountInfo({
+          otp: normalizedOtp,
+          username: normalizedValue,
+        });
+        setSecurityUsername(normalizedValue);
+      } else {
+        await userService.updateSecurityAccountInfo({
+          otp: normalizedOtp,
+          phoneNumber: normalizedValue,
+        });
+        setSecurityPhoneNumber(normalizedValue);
+      }
+
+      setEditOtpInfoMessage(
+        t('securitySettings.fieldUpdated', {
+          field: getFieldLabel(activeEditField),
+        }),
+      );
+      setEditOtpErrorMessage(null);
+      resetEditFlow();
+    } catch (error) {
+      setEditOtpErrorMessage(getApiErrorMessage(error, t('securitySettings.updateFieldError')));
+    } finally {
+      setIsUpdatingEditField(false);
     }
   };
 
@@ -160,7 +278,6 @@ export const SecuritySettingsPage = () => {
 
     try {
       const response = await authService.verifyResetPasswordOtpWhenLogin({
-        email: '',
         otp: normalizedOtp,
       });
 
@@ -254,15 +371,21 @@ export const SecuritySettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowSecurityUsername((value) => !value)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  aria-label={showSecurityUsername ? t('auth.hidePassword') : t('auth.showPassword')}
+                  title={showSecurityUsername ? t('auth.hidePassword') : t('auth.showPassword')}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   {showSecurityUsername ? <EyeOff size={14} /> : <Eye size={14} />}
-                  {showSecurityUsername ? t('auth.hidePassword') : t('auth.showPassword')}
                 </button>
                 <button
                   type="button"
                   onClick={() => void handleSendEditOtp('username')}
-                  disabled={isLoadingSecurityUsername || isSendingEditOtp}
+                  disabled={
+                    isLoadingSecurityUsername
+                    || isSendingEditOtp
+                    || isVerifyingEditOtp
+                    || isUpdatingEditField
+                  }
                   className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSendingEditOtp && editingField === 'username'
@@ -287,10 +410,11 @@ export const SecuritySettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowSecurityEmail((value) => !value)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  aria-label={showSecurityEmail ? t('auth.hidePassword') : t('auth.showPassword')}
+                  title={showSecurityEmail ? t('auth.hidePassword') : t('auth.showPassword')}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   {showSecurityEmail ? <EyeOff size={14} /> : <Eye size={14} />}
-                  {showSecurityEmail ? t('auth.hidePassword') : t('auth.showPassword')}
                 </button>
                 <button
                   type="button"
@@ -318,15 +442,21 @@ export const SecuritySettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowSecurityPhoneNumber((value) => !value)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  aria-label={showSecurityPhoneNumber ? t('auth.hidePassword') : t('auth.showPassword')}
+                  title={showSecurityPhoneNumber ? t('auth.hidePassword') : t('auth.showPassword')}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   {showSecurityPhoneNumber ? <EyeOff size={14} /> : <Eye size={14} />}
-                  {showSecurityPhoneNumber ? t('auth.hidePassword') : t('auth.showPassword')}
                 </button>
                 <button
                   type="button"
                   onClick={() => void handleSendEditOtp('phoneNumber')}
-                  disabled={isLoadingSecurityUsername || isSendingEditOtp}
+                  disabled={
+                    isLoadingSecurityUsername
+                    || isSendingEditOtp
+                    || isVerifyingEditOtp
+                    || isUpdatingEditField
+                  }
                   className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSendingEditOtp && editingField === 'phoneNumber'
@@ -337,6 +467,90 @@ export const SecuritySettingsPage = () => {
             </div>
           </div>
         </div>
+
+        {activeEditField && activeEditStep ? (
+          <div className="mt-3 rounded-2xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-500/40 dark:bg-brand-500/10">
+            <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">
+              {t('securitySettings.editFieldTitle', { field: getFieldLabel(activeEditField) })}
+            </p>
+
+            {activeEditStep === 'verifyOtp' ? (
+              <div className="mt-3 space-y-3">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {t('securitySettings.otpLabel')}
+                  <input
+                    value={editOtp}
+                    onChange={(event) => setEditOtp(event.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    placeholder={t('securitySettings.otpPlaceholder')}
+                  />
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleVerifyEditOtp()}
+                    disabled={isVerifyingEditOtp || isUpdatingEditField}
+                    className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isVerifyingEditOtp ? t('securitySettings.verifyingButton') : t('securitySettings.verifyOtpButton')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSendEditOtp(activeEditField)}
+                    disabled={isSendingEditOtp || isVerifyingEditOtp || isUpdatingEditField}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    {t('securitySettings.resendOtpButton')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetEditFlow}
+                    disabled={isSendingEditOtp || isVerifyingEditOtp || isUpdatingEditField}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    {t('securitySettings.cancelButton')}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {activeEditStep === 'edit' ? (
+              <div className="mt-3 space-y-3">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {getFieldLabel(activeEditField)}
+                  <input
+                    value={editValue}
+                    onChange={(event) => setEditValue(event.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    placeholder={
+                      activeEditField === 'username'
+                        ? t('securitySettings.newUsernamePlaceholder')
+                        : t('securitySettings.newPhoneNumberPlaceholder')
+                    }
+                  />
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleUpdateEditField()}
+                    disabled={isUpdatingEditField || isVerifyingEditOtp}
+                    className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isUpdatingEditField ? t('securitySettings.updatingButton') : t('securitySettings.updateFieldButton')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetEditFlow}
+                    disabled={isUpdatingEditField || isVerifyingEditOtp}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    {t('securitySettings.cancelButton')}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {editOtpErrorMessage ? (
           <p className="mt-2 text-xs text-rose-700 dark:text-rose-300">
@@ -433,6 +647,8 @@ export const SecuritySettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  title={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -453,6 +669,8 @@ export const SecuritySettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword((value) => !value)}
+                  aria-label={showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  title={showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
                   {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}

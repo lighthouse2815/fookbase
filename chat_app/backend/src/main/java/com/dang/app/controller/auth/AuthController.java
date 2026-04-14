@@ -199,6 +199,36 @@ public class AuthController {
         );
     }
 
+    @PostMapping("/me/otp/verify/change-username")
+    public ResponseEntity<OtpVerifyResponse> verifyOtpChangeUsernameWhenLogin(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody VerifyOtpRequest request
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(
+            authService.verifyOTPWhenLogin(
+                    userId,
+                    OTPType.CHANGE_USERNAME_VERIFY,
+                    request
+            )
+        );
+    }
+
+    @PostMapping("/me/otp/verify/change-phone-number")
+    public ResponseEntity<OtpVerifyResponse> verifyOtpChangePhoneNumberWhenLogin(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody VerifyOtpRequest request
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(
+            authService.verifyOTPWhenLogin(
+                    userId,
+                    OTPType.CHANGE_PHONENUMBER_VERIFY,
+                    request
+            )
+        );
+    }
+
     @PostMapping("/otp/verify/password")
     public ResponseEntity<OtpVerifyResponse> verifyOtpResetPasswordWhenNotLogin(@Valid @RequestBody VerifyOtpRequest request) {
         return ResponseEntity.ok(

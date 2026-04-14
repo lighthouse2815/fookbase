@@ -112,6 +112,22 @@ export const authService = {
     return extractEnvelopeData(response.data);
   },
 
+  async verifyChangeUsernameOtpWhenLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/me/otp/verify/change-username',
+      payload,
+    );
+    return extractEnvelopeData(response.data);
+  },
+
+  async verifyChangePhoneNumberOtpWhenLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
+    const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
+      '/api/auth/me/otp/verify/change-phone-number',
+      payload,
+    );
+    return extractEnvelopeData(response.data);
+  },
+
   async verifyEmailOtpWhenNotLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
       '/api/auth/otp/verify/email',

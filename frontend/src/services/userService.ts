@@ -26,6 +26,12 @@ export interface SecurityAccountInfo {
   phoneNumber: string | null;
 }
 
+export interface UpdateSecurityAccountRequest {
+  otp: string;
+  username?: string;
+  phoneNumber?: string;
+}
+
 const mapPresenceToUser = (payload: UserProfilePresencePayload): User => {
   const id = payload.userId;
   const displayName = payload.displayName?.trim() || 'user';
@@ -68,6 +74,10 @@ export const userService = {
       email: accountInfo.email?.trim() || null,
       phoneNumber: accountInfo.phoneNumber?.trim() || null,
     };
+  },
+
+  async updateSecurityAccountInfo(payload: UpdateSecurityAccountRequest): Promise<void> {
+    await apiClient.patch('/api/users/me/security-account', payload);
   },
 
   async getOnlineUsers(): Promise<User[]> {

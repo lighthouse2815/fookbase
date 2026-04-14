@@ -117,6 +117,16 @@ public interface IJavaApiService
         string accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyChangeUsernameOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyChangePhoneNumberOtpWhenLoginAsync(
+        VerifyOtpRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<OtpVerifyResponseDto>> SendResetPasswordOtpWhenNotLoginAsync(
         OtpRequestDto request,
         CancellationToken cancellationToken = default);

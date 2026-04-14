@@ -181,6 +181,54 @@ public class AuthController : ApiControllerBase
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
+    [HttpPost("me/otp/verify/change-username")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyChangeUsernameOtpWhenLogin(
+        [FromBody] VerifyOtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryExtractAccessToken(out var accessToken))
+        {
+            return UnauthorizedApiResponse<OtpVerifyResponseDto>();
+        }
+
+        var result = await _javaApiService.VerifyChangeUsernameOtpWhenLoginAsync(request, accessToken, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify change username OTP failed.");
+        }
+
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("me/otp/verify/change-phone-number")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyChangePhoneNumberOtpWhenLogin(
+        [FromBody] VerifyOtpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryExtractAccessToken(out var accessToken))
+        {
+            return UnauthorizedApiResponse<OtpVerifyResponseDto>();
+        }
+
+        var result = await _javaApiService.VerifyChangePhoneNumberOtpWhenLoginAsync(request, accessToken, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify change phone number OTP failed.");
+        }
+
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+    }
+
     [HttpPost("otp/send/reset-password")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
