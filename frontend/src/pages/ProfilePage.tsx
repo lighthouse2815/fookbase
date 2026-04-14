@@ -201,12 +201,6 @@ export const ProfilePage = () => {
       label: t('profile.birthDate'),
       value: formatBirthDate(profile.birthDate, emptyInfoValue, locale),
     },
-    {
-      key: 'friendsCount',
-      visible: profile.friendCountVisible ?? true,
-      label: t('profile.friendsCount'),
-      value: String(profile.friendsCount),
-    },
   ].filter((item) => item.visible);
 
   return (

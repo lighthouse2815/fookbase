@@ -12,7 +12,7 @@ export const ProfileHeader = ({ profile, isOwnProfile = false }: ProfileHeaderPr
   const { t } = useTranslation();
   const normalizedDisplayName = profile.displayName?.trim() || 'user';
   const normalizedNickname = profile.nickname?.trim();
-  const shouldShowFriendCount = profile.friendCountVisible ?? true;
+  const visibleFriendCount = (profile.friendCountVisible ?? true) ? profile.friendsCount : 0;
   const normalizedStatus = profile.friendshipStatus?.trim().toUpperCase();
   const isFriend = normalizedStatus === 'ACCEPTED';
   const actionLabel = isOwnProfile ? t('profile.editProfile') : isFriend ? t('profile.friendsButton') : t('profile.addFriend');
@@ -51,14 +51,12 @@ export const ProfileHeader = ({ profile, isOwnProfile = false }: ProfileHeaderPr
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {shouldShowFriendCount ? (
-            <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t('profile.friends')}</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                {profile.friendsCount}
-              </p>
-            </div>
-          ) : null}
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('profile.friends')}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+              {visibleFriendCount}
+            </p>
+          </div>
           <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('profile.posts')}</p>
             <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{profile.postsCount}</p>
