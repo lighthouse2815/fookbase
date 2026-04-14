@@ -61,21 +61,6 @@ public class StoriesController : ApiControllerBase
         return Ok(ApiResponse<StoryResponseDto>.Ok(story));
     }
 
-    [HttpPost("upload")]
-    [Consumes("multipart/form-data")]
-    [RequestSizeLimit(60 * 1024 * 1024)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<StoryUploadResponseDto>>> UploadStoryMedia(
-        IFormFile file,
-        CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        var uploaded = await _storyService.UploadMediaAsync(userId, file, cancellationToken);
-        return Ok(ApiResponse<StoryUploadResponseDto>.Ok(uploaded));
-    }
-
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

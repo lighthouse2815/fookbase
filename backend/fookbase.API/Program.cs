@@ -74,6 +74,8 @@ builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITokenRoleService, TokenRoleService>();
+builder.Services.AddScoped<IAuthCookieService, AuthCookieService>();
+builder.Services.AddScoped<ICloudinarySigningService, CloudinarySigningService>();
 builder.Services.AddScoped<INotificationRealtimeService, SignalRNotificationRealtimeService>();
 builder.Services.AddHttpContextAccessor();
 

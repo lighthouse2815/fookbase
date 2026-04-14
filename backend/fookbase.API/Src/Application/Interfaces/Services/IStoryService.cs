@@ -1,6 +1,5 @@
 using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Common.Pagination;
-using Microsoft.AspNetCore.Http;
 
 namespace InteractHub.Api.Application.Interfaces.Services;
 
@@ -21,8 +20,6 @@ public interface IStoryService
     Task<StoryResponseDto> GetByIdAsync(Guid storyId, Guid currentUserId, CancellationToken cancellationToken);
 
     Task<StoryResponseDto> CreateAsync(Guid userId, CreateStoryRequestDto request, CancellationToken cancellationToken);
-
-    Task<StoryUploadResponseDto> UploadMediaAsync(Guid userId, IFormFile file, CancellationToken cancellationToken);
 
     Task MarkAsViewedAsync(Guid storyId, Guid viewerUserId, CancellationToken cancellationToken);
 

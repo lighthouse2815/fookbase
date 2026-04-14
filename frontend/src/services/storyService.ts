@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import type { StoryItem, StoryMediaType, StoryReactionType, StoryUploadResult } from '../types/story';
+import type { StoryItem, StoryMediaType, StoryReactionType } from '../types/story';
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -38,12 +38,6 @@ interface StoryPayload {
 interface StoryReactionStatePayload {
   storyId: string;
   reactionType: string | null;
-}
-
-interface StoryUploadPayload {
-  mediaUrl: string;
-  mediaType: StoryMediaType;
-  sizeBytes: number;
 }
 
 interface StoryViewedResponse {
@@ -155,24 +149,6 @@ export const storyService = {
   async getById(storyId: string): Promise<StoryItem> {
     const response = await apiClient.get<ApiEnvelope<StoryPayload>>(`/api/stories/${storyId}`);
     return mapStory(extractData(response.data, 'Failed to load story'));
-  },
-
-  async uploadStoryMedia(file: File): Promise<StoryUploadResult> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await apiClient.post<ApiEnvelope<StoryUploadPayload>>('/api/stories/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    const uploaded = extractData(response.data, 'Failed to upload story media');
-    return {
-      mediaUrl: uploaded.mediaUrl,
-      mediaType: uploaded.mediaType,
-      sizeBytes: uploaded.sizeBytes,
-    };
   },
 
   async createStory(payload: StoryCreatePayload): Promise<StoryItem> {

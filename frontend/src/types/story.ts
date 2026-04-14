@@ -30,9 +30,3 @@ export interface StoryGroup {
   latestCreatedAt: string;
   isMine: boolean;
 }
-
-export interface StoryUploadResult {
-  mediaUrl: string;
-  mediaType: StoryMediaType;
-  sizeBytes: number;
-}

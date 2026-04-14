@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAuth } from './AuthContext';
+import { cloudinaryService } from '../services/cloudinaryService';
 import { storyService } from '../services/storyService';
 import type { StoryAuthor, StoryGroup, StoryItem, StoryMediaType } from '../types/story';
 
@@ -196,10 +197,10 @@ export const StoryProvider = ({ children }: { children: React.ReactNode }) => {
       const mediaType = normalizeMediaType(file);
       validateFileSize(file, mediaType);
 
-      const uploaded = await storyService.uploadStoryMedia(file);
+      const uploadedMediaUrl = await cloudinaryService.uploadMedia(file);
       const created = await storyService.createStory({
-        mediaUrl: uploaded.mediaUrl,
-        mediaType: uploaded.mediaType,
+        mediaUrl: uploadedMediaUrl,
+        mediaType,
         content: content?.trim() ? content.trim() : undefined,
       });
 

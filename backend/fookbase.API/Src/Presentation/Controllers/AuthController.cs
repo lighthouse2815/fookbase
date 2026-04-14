@@ -1,7 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
 using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -15,13 +13,16 @@ public class AuthController : ApiControllerBase
 {
     private readonly IJavaApiService _javaApiService;
     private readonly ITokenRoleService _tokenRoleService;
+    private readonly IAuthCookieService _authCookieService;
 
     public AuthController(
         IJavaApiService javaApiService,
-        ITokenRoleService tokenRoleService)
+        ITokenRoleService tokenRoleService,
+        IAuthCookieService authCookieService)
     {
         _javaApiService = javaApiService;
         _tokenRoleService = tokenRoleService;
+        _authCookieService = authCookieService;
     }
 
     [HttpPost("register")]
@@ -61,8 +62,7 @@ public class AuthController : ApiControllerBase
         }
 
         result.Data.Token = result.Data.Token.NormalizeAccessToken();
-        SetAccessTokenCookie(result.Data.Token);
-        SetUserIdCookie(result.Data.UserId);
+        _authCookieService.SetLoginCookies(HttpContext, result.Data.Token, result.Data.UserId);
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 
@@ -92,8 +92,7 @@ public class AuthController : ApiControllerBase
                 ApiResponse<LoginResponseDto>.Fail("This account does not have admin permission."));
         }
 
-        SetAccessTokenCookie(result.Data.Token);
-        SetUserIdCookie(result.Data.UserId);
+        _authCookieService.SetLoginCookies(HttpContext, result.Data.Token, result.Data.UserId);
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 
@@ -292,69 +291,7 @@ public class AuthController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public ActionResult Logout()
     {
-        Response.Cookies.Delete(AuthCookieConstants.AccessTokenCookieName, CreateAuthCookieOptions());
-        Response.Cookies.Delete(AuthCookieConstants.UserIdCookieName, CreateAuthCookieOptions());
+        _authCookieService.ClearLoginCookies(HttpContext);
         return NoContent();
-    }
-
-    private void SetAccessTokenCookie(string token)
-    {
-        token = token.NormalizeAccessToken();
-
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return;
-        }
-
-        var cookieOptions = CreateAuthCookieOptions();
-        var expiration = TryReadJwtExpiration(token);
-
-        if (expiration.HasValue)
-        {
-            cookieOptions.Expires = expiration.Value;
-        }
-
-        Response.Cookies.Append(AuthCookieConstants.AccessTokenCookieName, token, cookieOptions);
-    }
-
-    private CookieOptions CreateAuthCookieOptions()
-    {
-        var isHttps = HttpContext.Request.IsHttps;
-        var sameSiteMode = isHttps ? SameSiteMode.None : SameSiteMode.Lax;
-
-        return new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = isHttps,
-            SameSite = sameSiteMode,
-            Path = "/",
-            IsEssential = true
-        };
-    }
-
-    private static DateTimeOffset? TryReadJwtExpiration(string token)
-    {
-        try
-        {
-            var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);
-            return jwtToken.ValidTo == DateTime.MinValue
-                ? null
-                : new DateTimeOffset(jwtToken.ValidTo, TimeSpan.Zero);
-        }
-        catch (ArgumentException)
-        {
-            return null;
-        }
-    }
-
-    private void SetUserIdCookie(Guid userId)
-    {
-        if (userId == Guid.Empty)
-        {
-            return;
-        }
-
-        var cookieOptions = CreateAuthCookieOptions();
-        Response.Cookies.Append(AuthCookieConstants.UserIdCookieName, userId.ToString(), cookieOptions);
     }
 }

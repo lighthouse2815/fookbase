@@ -1,20 +1,13 @@
-using System.Net.Http.Headers;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Exceptions;
-using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace InteractHub.Api.Application.Services;
 
@@ -23,23 +16,6 @@ public class StoryService : IStoryService
     private const string StoryMediaTypeImage = "IMAGE";
     private const string StoryMediaTypeVideo = "VIDEO";
     private const int StoryLifetimeHours = 24;
-    private const long MaxImageBytes = 10 * 1024 * 1024;
-    private const long MaxVideoBytes = 50 * 1024 * 1024;
-
-    private static readonly HashSet<string> AllowedImageContentTypes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/gif"
-    };
-
-    private static readonly HashSet<string> AllowedVideoContentTypes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "video/mp4",
-        "video/webm",
-        "video/quicktime"
-    };
 
     private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -61,10 +37,7 @@ public class StoryService : IStoryService
     private readonly IStoryReactionRepository _storyReactionRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly CloudinaryOptions _cloudinaryOptions;
     private readonly ILogger<StoryService> _logger;
 
     public StoryService(
@@ -72,20 +45,14 @@ public class StoryService : IStoryService
         IStoryReactionRepository storyReactionRepository,
         IJavaApiService javaApiService,
         IUnitOfWork unitOfWork,
-        IHttpClientFactory httpClientFactory,
-        IWebHostEnvironment webHostEnvironment,
         IHttpContextAccessor httpContextAccessor,
-        IOptions<CloudinaryOptions> cloudinaryOptions,
         ILogger<StoryService> logger)
     {
         _storyRepository = storyRepository;
         _storyReactionRepository = storyReactionRepository;
         _javaApiService = javaApiService;
         _unitOfWork = unitOfWork;
-        _httpClientFactory = httpClientFactory;
-        _webHostEnvironment = webHostEnvironment;
         _httpContextAccessor = httpContextAccessor;
-        _cloudinaryOptions = cloudinaryOptions.Value;
         _logger = logger;
     }
 
@@ -188,41 +155,6 @@ public class StoryService : IStoryService
 
         var authors = await ResolveAuthorsAsync([story.UserId], cancellationToken);
         return MapStoryToResponse(story, userId, authors, currentUserReactionType: null);
-    }
-
-    public async Task<StoryUploadResponseDto> UploadMediaAsync(Guid userId, IFormFile file, CancellationToken cancellationToken)
-    {
-        var mediaType = ResolveMediaType(file);
-        ValidateFileSize(file, mediaType);
-
-        string uploadedUrl;
-        if (IsCloudinaryConfigured(_cloudinaryOptions))
-        {
-            try
-            {
-                uploadedUrl = await UploadToCloudinaryAsync(userId, file, cancellationToken);
-            }
-            catch (ServiceUnavailableException exception)
-            {
-                _logger.LogWarning(
-                    exception,
-                    "Cloudinary upload failed for user {UserId}. Falling back to local story storage.",
-                    userId);
-
-                uploadedUrl = await UploadToLocalStorageAsync(userId, file, mediaType, cancellationToken);
-            }
-        }
-        else
-        {
-            uploadedUrl = await UploadToLocalStorageAsync(userId, file, mediaType, cancellationToken);
-        }
-
-        return new StoryUploadResponseDto
-        {
-            MediaUrl = uploadedUrl,
-            MediaType = mediaType,
-            SizeBytes = file.Length
-        };
     }
 
     public async Task MarkAsViewedAsync(Guid storyId, Guid viewerUserId, CancellationToken cancellationToken)
@@ -443,151 +375,6 @@ public class StoryService : IStoryService
         return normalized;
     }
 
-    private async Task<string> UploadToCloudinaryAsync(Guid userId, IFormFile file, CancellationToken cancellationToken)
-    {
-        var folder = BuildStoryUploadFolder(_cloudinaryOptions.UploadFolder, userId);
-        var publicId = $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{Guid.NewGuid():N}";
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-        var parametersToSign = new SortedDictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["folder"] = folder,
-            ["public_id"] = publicId,
-            ["timestamp"] = timestamp.ToString(),
-            ["upload_preset"] = _cloudinaryOptions.UploadPreset
-        };
-
-        var signature = GenerateCloudinarySignature(parametersToSign, _cloudinaryOptions.ApiSecret);
-
-        using var multipart = new MultipartFormDataContent();
-        multipart.Add(new StringContent(_cloudinaryOptions.ApiKey), "api_key");
-        multipart.Add(new StringContent(_cloudinaryOptions.UploadPreset), "upload_preset");
-        multipart.Add(new StringContent(folder), "folder");
-        multipart.Add(new StringContent(publicId), "public_id");
-        multipart.Add(new StringContent(timestamp.ToString()), "timestamp");
-        multipart.Add(new StringContent(signature), "signature");
-
-        using (var stream = file.OpenReadStream())
-        {
-            using var fileContent = new StreamContent(stream);
-            if (!string.IsNullOrWhiteSpace(file.ContentType))
-            {
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-            }
-
-            multipart.Add(fileContent, "file", file.FileName);
-
-            var httpClient = _httpClientFactory.CreateClient();
-            var endpoint = $"https://api.cloudinary.com/v1_1/{_cloudinaryOptions.CloudName}/auto/upload";
-            using var response = await httpClient.PostAsync(endpoint, multipart, cancellationToken);
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = TryExtractCloudinaryError(body)
-                    ?? $"Cloudinary upload failed with status {(int)response.StatusCode}.";
-                throw new ServiceUnavailableException(error);
-            }
-
-            using var document = JsonDocument.Parse(body);
-            if (!document.RootElement.TryGetProperty("secure_url", out var secureUrlElement)
-                || secureUrlElement.ValueKind != JsonValueKind.String)
-            {
-                throw new ServiceUnavailableException("Cloudinary upload succeeded but returned no secure_url.");
-            }
-
-            return secureUrlElement.GetString() ?? throw new ServiceUnavailableException("Cloudinary secure_url is empty.");
-        }
-    }
-
-    private async Task<string> UploadToLocalStorageAsync(
-        Guid userId,
-        IFormFile file,
-        string mediaType,
-        CancellationToken cancellationToken)
-    {
-        _logger.LogWarning(
-            "Cloudinary is not configured. Story upload is using local file storage fallback for user {UserId}.",
-            userId);
-
-        var webRootPath = _webHostEnvironment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(_webHostEnvironment.ContentRootPath, "wwwroot");
-        }
-
-        var relativeDirectory = Path.Combine("uploads", "stories", userId.ToString("D"));
-        var targetDirectory = Path.Combine(webRootPath, relativeDirectory);
-        Directory.CreateDirectory(targetDirectory);
-
-        var extension = GetSafeExtension(file.FileName, mediaType);
-        var fileName = $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{Guid.NewGuid():N}{extension}";
-        var targetPath = Path.Combine(targetDirectory, fileName);
-
-        await using (var stream = new FileStream(targetPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-        {
-            await file.CopyToAsync(stream, cancellationToken);
-        }
-
-        return $"/uploads/stories/{userId:D}/{fileName}";
-    }
-
-    private static string? TryExtractCloudinaryError(string payload)
-    {
-        if (string.IsNullOrWhiteSpace(payload))
-        {
-            return null;
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(payload);
-            if (document.RootElement.TryGetProperty("error", out var errorElement)
-                && errorElement.ValueKind == JsonValueKind.Object
-                && errorElement.TryGetProperty("message", out var messageElement)
-                && messageElement.ValueKind == JsonValueKind.String)
-            {
-                return messageElement.GetString();
-            }
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-
-        return null;
-    }
-
-    private static string GenerateCloudinarySignature(
-        SortedDictionary<string, string> parametersToSign,
-        string apiSecret)
-    {
-        var serializedParameters = string.Join(
-            "&",
-            parametersToSign.Select(pair => $"{pair.Key}={pair.Value}"));
-
-        using var sha1 = SHA1.Create();
-        var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes($"{serializedParameters}{apiSecret}"));
-        return Convert.ToHexString(hash).ToLowerInvariant();
-    }
-
-    private static bool IsCloudinaryConfigured(CloudinaryOptions options)
-    {
-        return !string.IsNullOrWhiteSpace(options.CloudName)
-            && !string.IsNullOrWhiteSpace(options.ApiKey)
-            && !string.IsNullOrWhiteSpace(options.ApiSecret)
-            && !string.IsNullOrWhiteSpace(options.UploadPreset);
-    }
-
-    private static string BuildStoryUploadFolder(string configuredFolder, Guid userId)
-    {
-        var normalizedRoot = string.IsNullOrWhiteSpace(configuredFolder)
-            ? "fookbase"
-            : configuredFolder.Trim().Trim('/');
-
-        return $"{normalizedRoot}/stories/{userId:D}";
-    }
-
     private string BuildAbsoluteMediaUrl(string relativeUrl)
     {
         if (string.IsNullOrWhiteSpace(relativeUrl))
@@ -680,64 +467,6 @@ public class StoryService : IStoryService
         }
 
         return content.Trim();
-    }
-
-    private static string ResolveMediaType(IFormFile file)
-    {
-        if (file is null || file.Length <= 0)
-        {
-            throw new ArgumentException("Story file is required.");
-        }
-
-        var contentType = file.ContentType?.Trim() ?? string.Empty;
-        if (AllowedImageContentTypes.Contains(contentType))
-        {
-            return StoryMediaTypeImage;
-        }
-
-        if (AllowedVideoContentTypes.Contains(contentType))
-        {
-            return StoryMediaTypeVideo;
-        }
-
-        var extension = Path.GetExtension(file.FileName);
-        if (AllowedImageExtensions.Contains(extension))
-        {
-            return StoryMediaTypeImage;
-        }
-
-        if (AllowedVideoExtensions.Contains(extension))
-        {
-            return StoryMediaTypeVideo;
-        }
-
-        throw new ArgumentException("Only image/video files are allowed for story upload.");
-    }
-
-    private static string GetSafeExtension(string fileName, string mediaType)
-    {
-        var extension = Path.GetExtension(fileName);
-        if (string.IsNullOrWhiteSpace(extension))
-        {
-            return mediaType == StoryMediaTypeImage ? ".jpg" : ".mp4";
-        }
-
-        if (AllowedImageExtensions.Contains(extension) || AllowedVideoExtensions.Contains(extension))
-        {
-            return extension.ToLowerInvariant();
-        }
-
-        return mediaType == StoryMediaTypeImage ? ".jpg" : ".mp4";
-    }
-
-    private static void ValidateFileSize(IFormFile file, string mediaType)
-    {
-        var maxSize = mediaType == StoryMediaTypeImage ? MaxImageBytes : MaxVideoBytes;
-        if (file.Length > maxSize)
-        {
-            var maxSizeMb = maxSize / (1024 * 1024);
-            throw new ArgumentException($"Story file is too large. Maximum allowed size is {maxSizeMb}MB for {mediaType.ToLowerInvariant()}.");
-        }
     }
 
     private static string? Normalize(string? value)
