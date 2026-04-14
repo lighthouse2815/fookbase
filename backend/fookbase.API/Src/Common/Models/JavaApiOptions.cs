@@ -16,6 +16,8 @@ public class JavaApiOptions
 
     public string ProfileMeOverviewPathTemplate { get; set; } = "profiles/me/overview";
 
+    public string ProfileMeSecurityPrivatePathTemplate { get; set; } = "profiles/me/security-private";
+
     public string ProfileMeUpdatePathTemplate { get; set; } = "profiles/me";
 
     public string ProfileSearchByPhonePathTemplate { get; set; } = "profiles/search?phoneNumber={phoneNumber}";

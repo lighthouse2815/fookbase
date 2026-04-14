@@ -6,6 +6,8 @@ import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
+import com.dang.app.dto.auth.response.UserSecurityPrivateResponse;
+import com.dang.app.entity.auth.User;
 import com.dang.app.entity.auth.UserProfile;
 import com.dang.app.utils.enums.FriendshipStatus;
 import org.springframework.stereotype.Component;
@@ -53,6 +55,17 @@ public class UserProfileMapper {
                 .phoneNumber(maskedPhone)
                 .email(maskedEmail)
                 .birthDate(profile.getBirthDate())
+                .build();
+    }
+
+    public UserSecurityPrivateResponse toUserSecurityPrivateResponse(
+            User user,
+            UserProfile profile
+    ) {
+        return UserSecurityPrivateResponse.builder()
+                .username(user == null ? null : normalize(user.getUsername()))
+                .email(normalize(profile.getEmail()))
+                .phoneNumber(normalize(profile.getPhoneNumber()))
                 .build();
     }
 

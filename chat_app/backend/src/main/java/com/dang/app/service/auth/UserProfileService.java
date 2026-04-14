@@ -9,6 +9,7 @@ import com.dang.app.dto.auth.response.UserProfilePresenceResponse;
 import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
+import com.dang.app.dto.auth.response.UserSecurityPrivateResponse;
 import com.dang.app.entity.messenger.Friendship;
 import com.dang.app.repository.messenger.ContactRepository;
 import com.dang.app.repository.messenger.FriendshipRepository;
@@ -151,6 +152,17 @@ public class UserProfileService {
                 maskEmail(profile.getEmail())
         );
 
+    }
+
+    public UserSecurityPrivateResponse getSecurityPrivateProfile(UUID userId) {
+        User user = userService.findById(userId);
+        userGuard.requireActiveAndNotDeleted(user);
+
+        UserProfile profile = userProfileRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        userProfileGuard.requireNotDeleted(profile);
+
+        return userProfileMapper.toUserSecurityPrivateResponse(user, profile);
     }
 
 

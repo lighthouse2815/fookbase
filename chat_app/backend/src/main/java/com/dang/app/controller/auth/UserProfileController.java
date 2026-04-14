@@ -10,6 +10,7 @@ import com.dang.app.dto.auth.response.UserProfileSummaryResponse;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
 import com.dang.app.dto.auth.response.UserProfileResponse;
 import com.dang.app.dto.auth.response.UserProfileSearchResponse;
+import com.dang.app.dto.auth.response.UserSecurityPrivateResponse;
 import com.dang.app.service.auth.UserProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,6 +40,14 @@ public class UserProfileController {
         UUID userId = UUID.fromString(jwt.getSubject());
         return ResponseEntity.ok(
                 userProfileService.getOverviewProfile(userId)
+        );
+    }
+
+    @GetMapping("/me/security-private")
+    public ResponseEntity<UserSecurityPrivateResponse> getSecurityPrivateProfile(@AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(
+                userProfileService.getSecurityPrivateProfile(userId)
         );
     }
 

@@ -22,6 +22,8 @@ export interface FriendPresenceResult {
 
 export interface SecurityAccountInfo {
   username: string;
+  email: string | null;
+  phoneNumber: string | null;
 }
 
 const mapPresenceToUser = (payload: UserProfilePresencePayload): User => {
@@ -63,6 +65,8 @@ export const userService = {
 
     return {
       username: accountInfo.username?.trim() || 'user',
+      email: accountInfo.email?.trim() || null,
+      phoneNumber: accountInfo.phoneNumber?.trim() || null,
     };
   },
 

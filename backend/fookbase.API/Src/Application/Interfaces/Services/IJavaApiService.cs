@@ -30,6 +30,10 @@ public interface IJavaApiService
         string accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<UserSecurityPrivateDto>> GetMySecurityPrivateProfileAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
         UpdateMyProfileRequestDto request,
         string accessToken,

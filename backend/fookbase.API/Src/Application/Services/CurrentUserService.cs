@@ -78,69 +78,71 @@ public class CurrentUserService : ICurrentUserService
         string? usernameFromClaims,
         CancellationToken cancellationToken)
     {
-        var resolvedUsername = FirstNonEmpty(usernameFromClaims);
-
-        if (string.IsNullOrWhiteSpace(resolvedUsername)
-            && !string.IsNullOrWhiteSpace(accessToken))
+        if (string.IsNullOrWhiteSpace(accessToken))
         {
-            resolvedUsername = await ResolveUsernameFromOverviewAsync(accessToken.Trim(), cancellationToken);
+            return JavaApiCallResult<SecurityAccountInfoResponseDto>.Failure(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized.");
         }
+
+        var privateSecurityResult = await _javaApiService.GetMySecurityPrivateProfileAsync(
+            accessToken.Trim(),
+            cancellationToken);
+
+        if (!privateSecurityResult.IsSuccess)
+        {
+            var statusCode = privateSecurityResult.StatusCode > 0
+                ? privateSecurityResult.StatusCode
+                : StatusCodes.Status502BadGateway;
+
+            var errorMessage = string.IsNullOrWhiteSpace(privateSecurityResult.ErrorMessage)
+                ? "Load private security profile failed."
+                : privateSecurityResult.ErrorMessage;
+
+            return JavaApiCallResult<SecurityAccountInfoResponseDto>.Failure(statusCode, errorMessage);
+        }
+
+        if (privateSecurityResult.Data is null)
+        {
+            return JavaApiCallResult<SecurityAccountInfoResponseDto>.Failure(
+                StatusCodes.Status502BadGateway,
+                "Java security profile API returned empty data.");
+        }
+
+        var resolvedUsername = FirstNonEmpty(privateSecurityResult.Data.Username, usernameFromClaims);
 
         if (string.IsNullOrWhiteSpace(resolvedUsername))
         {
             resolvedUsername = BuildFallbackUsername(userId);
             _logger.LogInformation(
-                "Username is unavailable from claim and profile overview for user {UserId}. Using fallback.",
+                "Username is unavailable from private security profile and token claims for user {UserId}. Using fallback.",
                 userId);
         }
 
         var response = new SecurityAccountInfoResponseDto
         {
-            Username = resolvedUsername
+            Username = resolvedUsername,
+            Email = NormalizeOptional(privateSecurityResult.Data.Email),
+            PhoneNumber = NormalizeOptional(privateSecurityResult.Data.PhoneNumber)
         };
 
-        return JavaApiCallResult<SecurityAccountInfoResponseDto>.Success(response, StatusCodes.Status200OK);
-    }
+        var successStatusCode = privateSecurityResult.StatusCode > 0
+            ? privateSecurityResult.StatusCode
+            : StatusCodes.Status200OK;
 
-    private async Task<string?> ResolveUsernameFromOverviewAsync(string accessToken, CancellationToken cancellationToken)
-    {
-        var overviewResult = await _javaApiService.GetMyProfileOverviewAsync(accessToken, cancellationToken);
-        if (!overviewResult.IsSuccess)
-        {
-            _logger.LogInformation(
-                "Cannot load profile overview while resolving security username. StatusCode={StatusCode}, Error={Error}",
-                overviewResult.StatusCode,
-                overviewResult.ErrorMessage);
-            return null;
-        }
-
-        return ExtractUsernameFromEmail(overviewResult.Data?.Email);
-    }
-
-    private static string? ExtractUsernameFromEmail(string? email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            return null;
-        }
-
-        var trimmedEmail = email.Trim();
-        var atIndex = trimmedEmail.IndexOf('@');
-
-        if (atIndex <= 0)
-        {
-            return null;
-        }
-
-        var usernamePart = trimmedEmail[..atIndex].Trim();
-        return string.IsNullOrWhiteSpace(usernamePart)
-            ? null
-            : usernamePart;
+        return JavaApiCallResult<SecurityAccountInfoResponseDto>.Success(response, successStatusCode);
     }
 
     private static string BuildFallbackUsername(Guid userId)
     {
         return $"user_{userId.ToString("N")[..8]}";
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
     }
 
     private static string? FirstNonEmpty(params string?[] values)

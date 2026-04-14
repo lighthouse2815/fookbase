@@ -22,6 +22,8 @@ export const SecuritySettingsPage = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [securityUsername, setSecurityUsername] = useState<string>('user');
+  const [securityEmail, setSecurityEmail] = useState<string | null>(null);
+  const [securityPhoneNumber, setSecurityPhoneNumber] = useState<string | null>(null);
   const [isLoadingSecurityUsername, setIsLoadingSecurityUsername] = useState(true);
   const [securityUsernameError, setSecurityUsernameError] = useState<string | null>(null);
 
@@ -39,11 +41,15 @@ export const SecuritySettingsPage = () => {
         }
 
         setSecurityUsername(accountInfo.username);
+        setSecurityEmail(accountInfo.email);
+        setSecurityPhoneNumber(accountInfo.phoneNumber);
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
+        setSecurityEmail(null);
+        setSecurityPhoneNumber(null);
         setSecurityUsernameError(
           getApiErrorMessage(error, t('securitySettings.accountInfoLoadError')),
         );
@@ -167,17 +173,38 @@ export const SecuritySettingsPage = () => {
 
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('securitySettings.accountInfoTitle')}</h2>
-        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-          <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.usernameLabel')}</p>
-          <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-            {isLoadingSecurityUsername ? t('common.loading') : `@${securityUsername}`}
-          </p>
-          {securityUsernameError ? (
-            <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-              {securityUsernameError}
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.usernameLabel')}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+              {isLoadingSecurityUsername ? t('common.loading') : `@${securityUsername}`}
             </p>
-          ) : null}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.emailLabel')}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+              {isLoadingSecurityUsername
+                ? t('common.loading')
+                : (securityEmail ?? t('securitySettings.emptyValue'))}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.phoneNumberLabel')}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+              {isLoadingSecurityUsername
+                ? t('common.loading')
+                : (securityPhoneNumber ?? t('securitySettings.emptyValue'))}
+            </p>
+          </div>
         </div>
+
+        {securityUsernameError ? (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+            {securityUsernameError}
+          </p>
+        ) : null}
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">

@@ -82,6 +82,14 @@ public class JavaApiService : IJavaApiService
         return GetResultAsync<UserProfileOverviewDto>(path, accessToken, cancellationToken);
     }
 
+    public Task<JavaApiCallResult<UserSecurityPrivateDto>> GetMySecurityPrivateProfileAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileMeSecurityPrivatePathTemplate);
+        return GetResultAsync<UserSecurityPrivateDto>(path, accessToken, cancellationToken);
+    }
+
     public Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
         UpdateMyProfileRequestDto request,
         string accessToken,
