@@ -15,4 +15,9 @@ public interface ICurrentUserService
         string? accessToken,
         string? usernameFromClaims,
         CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<object?>> UpdateSecurityAccountInfoAsync(
+        UpdateSecurityAccountRequestDto request,
+        string? accessToken,
+        CancellationToken cancellationToken);
 }

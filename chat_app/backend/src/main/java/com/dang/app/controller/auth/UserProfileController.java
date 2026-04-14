@@ -1,6 +1,7 @@
 package com.dang.app.controller.auth;
 
 import com.dang.app.dto.auth.request.CompleteProfileRequest;
+import com.dang.app.dto.auth.request.UpdateSecurityPrivateRequest;
 import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
@@ -49,6 +50,16 @@ public class UserProfileController {
         return ResponseEntity.ok(
                 userProfileService.getSecurityPrivateProfile(userId)
         );
+    }
+
+    @PatchMapping("/me/security-private")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateSecurityPrivateProfile(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody UpdateSecurityPrivateRequest request
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        userProfileService.updateSecurityPrivateProfile(userId, request);
     }
 
     @GetMapping

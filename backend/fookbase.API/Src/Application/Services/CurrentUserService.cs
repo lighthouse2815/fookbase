@@ -133,6 +133,49 @@ public class CurrentUserService : ICurrentUserService
         return JavaApiCallResult<SecurityAccountInfoResponseDto>.Success(response, successStatusCode);
     }
 
+    public Task<JavaApiCallResult<object?>> UpdateSecurityAccountInfoAsync(
+        UpdateSecurityAccountRequestDto request,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Task.FromResult(JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized."));
+        }
+
+        var otp = request.Otp?.Trim();
+        var username = NormalizeOptional(request.Username);
+        var phoneNumber = NormalizeOptional(request.PhoneNumber);
+
+        if (string.IsNullOrWhiteSpace(otp))
+        {
+            return Task.FromResult(JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status400BadRequest,
+                "otp is required."));
+        }
+
+        if (username is null && phoneNumber is null)
+        {
+            return Task.FromResult(JavaApiCallResult<object?>.Failure(
+                StatusCodes.Status400BadRequest,
+                "username or phoneNumber is required."));
+        }
+
+        var normalizedRequest = new UpdateSecurityAccountRequestDto
+        {
+            Otp = otp,
+            Username = username,
+            PhoneNumber = phoneNumber
+        };
+
+        return _javaApiService.UpdateMySecurityPrivateProfileAsync(
+            normalizedRequest,
+            accessToken.Trim(),
+            cancellationToken);
+    }
+
     private static string BuildFallbackUsername(Guid userId)
     {
         return $"user_{userId.ToString("N")[..8]}";

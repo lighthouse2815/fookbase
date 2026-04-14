@@ -5,6 +5,7 @@ using System.Text.Json;
 using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
+using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
@@ -88,6 +89,15 @@ public class JavaApiService : IJavaApiService
     {
         var path = BuildPath(_options.ProfileMeSecurityPrivatePathTemplate);
         return GetResultAsync<UserSecurityPrivateDto>(path, accessToken, cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<object?>> UpdateMySecurityPrivateProfileAsync(
+        UpdateSecurityAccountRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileMeSecurityPrivateUpdatePathTemplate);
+        return PatchNoContentAsync(path, request, cancellationToken, accessToken: accessToken);
     }
 
     public Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
@@ -263,6 +273,22 @@ public class JavaApiService : IJavaApiService
         CancellationToken cancellationToken = default)
     {
         var path = BuildPath(_options.AuthSendVerifyEmailOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, payload: null, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendChangeUsernameOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthSendChangeUsernameOtpWhenLoginPathTemplate);
+        return PostAsync<OtpVerifyResponseDto>(path, payload: null, cancellationToken, accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendChangePhoneNumberOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthSendChangePhoneNumberOtpWhenLoginPathTemplate);
         return PostAsync<OtpVerifyResponseDto>(path, payload: null, cancellationToken, accessToken: accessToken);
     }
 

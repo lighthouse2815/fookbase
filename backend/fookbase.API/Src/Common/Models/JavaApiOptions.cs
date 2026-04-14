@@ -18,6 +18,8 @@ public class JavaApiOptions
 
     public string ProfileMeSecurityPrivatePathTemplate { get; set; } = "profiles/me/security-private";
 
+    public string ProfileMeSecurityPrivateUpdatePathTemplate { get; set; } = "profiles/me/security-private";
+
     public string ProfileMeUpdatePathTemplate { get; set; } = "profiles/me";
 
     public string ProfileSearchByPhonePathTemplate { get; set; } = "profiles/search?phoneNumber={phoneNumber}";
@@ -47,6 +49,10 @@ public class JavaApiOptions
     public string AuthSendVerifyEmailOtpWhenNotLoginPathTemplate { get; set; } = "auth/otp/send/verify-email";
 
     public string AuthSendVerifyEmailOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/send/verify-email";
+
+    public string AuthSendChangeUsernameOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/send/change-username";
+
+    public string AuthSendChangePhoneNumberOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/send/change-phone-number";
 
     public string AuthSendResetPasswordOtpWhenNotLoginPathTemplate { get; set; } = "auth/otp/send/reset-password";
 

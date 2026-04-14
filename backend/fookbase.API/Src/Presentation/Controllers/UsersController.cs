@@ -65,5 +65,32 @@ public class UsersController : ApiControllerBase
             ResolveSuccessStatusCode(result.StatusCode),
             ApiResponse<SecurityAccountInfoResponseDto>.Ok(result.Data));
     }
+
+    [HttpPatch("me/security-account")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<object?>>> UpdateMySecurityAccountInfo(
+        [FromBody] UpdateSecurityAccountRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = ExtractAccessToken();
+        var result = await _currentUserService.UpdateSecurityAccountInfoAsync(
+            request,
+            accessToken,
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BuildErrorResponse<object?>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Update security account info failed.");
+        }
+
+        return NoContent();
+    }
 }
 

@@ -8,6 +8,14 @@ public enum OTPMailType {
     PASSWORD_RESET(
             "Email đặt lại mật khẩu",
             "Mã đặt lại mật khẩu của bạn là"
+    ),
+    CHANGE_USERNAME_VERIFY(
+            "Email đổi tên đăng nhập",
+            "Mã xác nhận đổi tên đăng nhập của bạn là"
+    ),
+    CHANGE_PHONENUMBER_VERIFY(
+            "Email đổi số điện thoại",
+            "Mã xác nhận đổi số điện thoại của bạn là"
     );
 
     private final String subject;
@@ -26,4 +34,3 @@ public enum OTPMailType {
         return title;
     }
 }
-

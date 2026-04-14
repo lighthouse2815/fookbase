@@ -1,6 +1,7 @@
 using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
+using InteractHub.Api.Application.DTOs.Users;
 
 namespace InteractHub.Api.Application.Interfaces.Services;
 
@@ -31,6 +32,11 @@ public interface IJavaApiService
         CancellationToken cancellationToken = default);
 
     Task<JavaApiCallResult<UserSecurityPrivateDto>> GetMySecurityPrivateProfileAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<object?>> UpdateMySecurityPrivateProfileAsync(
+        UpdateSecurityAccountRequestDto request,
         string accessToken,
         CancellationToken cancellationToken = default);
 
@@ -100,6 +106,14 @@ public interface IJavaApiService
         CancellationToken cancellationToken = default);
 
     Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> SendChangeUsernameOtpWhenLoginAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<OtpVerifyResponseDto>> SendChangePhoneNumberOtpWhenLoginAsync(
         string accessToken,
         CancellationToken cancellationToken = default);
 

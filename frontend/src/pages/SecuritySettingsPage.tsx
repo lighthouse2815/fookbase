@@ -7,6 +7,7 @@ import { userService } from '../services/userService';
 import { getApiErrorMessage } from '../utils/apiError';
 
 type Step = 'sendOtp' | 'verifyOtp' | 'resetPassword';
+type SecurityFieldKey = 'username' | 'phoneNumber';
 
 export const SecuritySettingsPage = () => {
   const { t } = useTranslation();
@@ -24,8 +25,15 @@ export const SecuritySettingsPage = () => {
   const [securityUsername, setSecurityUsername] = useState<string>('user');
   const [securityEmail, setSecurityEmail] = useState<string | null>(null);
   const [securityPhoneNumber, setSecurityPhoneNumber] = useState<string | null>(null);
+  const [showSecurityUsername, setShowSecurityUsername] = useState(false);
+  const [showSecurityEmail, setShowSecurityEmail] = useState(false);
+  const [showSecurityPhoneNumber, setShowSecurityPhoneNumber] = useState(false);
   const [isLoadingSecurityUsername, setIsLoadingSecurityUsername] = useState(true);
   const [securityUsernameError, setSecurityUsernameError] = useState<string | null>(null);
+  const [isSendingEditOtp, setIsSendingEditOtp] = useState(false);
+  const [editingField, setEditingField] = useState<SecurityFieldKey | null>(null);
+  const [editOtpInfoMessage, setEditOtpInfoMessage] = useState<string | null>(null);
+  const [editOtpErrorMessage, setEditOtpErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -66,6 +74,61 @@ export const SecuritySettingsPage = () => {
       isMounted = false;
     };
   }, [t]);
+
+  const maskSensitiveValue = (value: string) => {
+    const maskLength = Math.max(8, Math.min(16, value.length));
+    return '*'.repeat(maskLength);
+  };
+
+  const resolveSensitiveValue = (
+    value: string | null,
+    isVisible: boolean,
+    options?: { prefix?: string },
+  ) => {
+    const normalized = value?.trim();
+
+    if (!normalized) {
+      return t('securitySettings.emptyValue');
+    }
+
+    if (isVisible) {
+      return `${options?.prefix ?? ''}${normalized}`;
+    }
+
+    return maskSensitiveValue(normalized);
+  };
+
+  const getFieldLabel = (field: SecurityFieldKey) => {
+    if (field === 'username') {
+      return t('securitySettings.usernameLabel');
+    }
+    return t('securitySettings.phoneNumberLabel');
+  };
+
+  const handleSendEditOtp = async (field: SecurityFieldKey) => {
+    setIsSendingEditOtp(true);
+    setEditingField(field);
+    setEditOtpErrorMessage(null);
+    setEditOtpInfoMessage(null);
+
+    try {
+      if (field === 'username') {
+        await authService.sendChangeUsernameOtpWhenLogin();
+      } else {
+        await authService.sendChangePhoneNumberOtpWhenLogin();
+      }
+      setEditOtpInfoMessage(
+        t('securitySettings.editOtpSent', {
+          field: getFieldLabel(field),
+        }),
+      );
+    } catch (error) {
+      setEditOtpErrorMessage(getApiErrorMessage(error, t('securitySettings.editOtpSendError')));
+    } finally {
+      setIsSendingEditOtp(false);
+      setEditingField(null);
+    }
+  };
 
   const handleSendOtp = async () => {
     setIsSubmitting(true);
@@ -173,32 +236,119 @@ export const SecuritySettingsPage = () => {
 
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('securitySettings.accountInfoTitle')}</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {t('securitySettings.accountInfoOtpHint')}
+        </p>
+        <div className="mt-3 space-y-3">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.usernameLabel')}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-              {isLoadingSecurityUsername ? t('common.loading') : `@${securityUsername}`}
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.usernameLabel')}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {isLoadingSecurityUsername
+                    ? t('common.loading')
+                    : resolveSensitiveValue(securityUsername, showSecurityUsername, { prefix: '@' })}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSecurityUsername((value) => !value)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  {showSecurityUsername ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {showSecurityUsername ? t('auth.hidePassword') : t('auth.showPassword')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSendEditOtp('username')}
+                  disabled={isLoadingSecurityUsername || isSendingEditOtp}
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isSendingEditOtp && editingField === 'username'
+                    ? t('securitySettings.sendingButton')
+                    : t('personalInfoSettings.editButton')}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.emailLabel')}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-              {isLoadingSecurityUsername
-                ? t('common.loading')
-                : (securityEmail ?? t('securitySettings.emptyValue'))}
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.emailLabel')}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {isLoadingSecurityUsername
+                    ? t('common.loading')
+                    : resolveSensitiveValue(securityEmail, showSecurityEmail)}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSecurityEmail((value) => !value)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  {showSecurityEmail ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {showSecurityEmail ? t('auth.hidePassword') : t('auth.showPassword')}
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title={t('securitySettings.emailEditDisabledHint')}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 disabled:cursor-not-allowed dark:bg-slate-700 dark:text-slate-400"
+                >
+                  {t('personalInfoSettings.editButton')}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.phoneNumberLabel')}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-              {isLoadingSecurityUsername
-                ? t('common.loading')
-                : (securityPhoneNumber ?? t('securitySettings.emptyValue'))}
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.phoneNumberLabel')}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {isLoadingSecurityUsername
+                    ? t('common.loading')
+                    : resolveSensitiveValue(securityPhoneNumber, showSecurityPhoneNumber)}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSecurityPhoneNumber((value) => !value)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  {showSecurityPhoneNumber ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {showSecurityPhoneNumber ? t('auth.hidePassword') : t('auth.showPassword')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSendEditOtp('phoneNumber')}
+                  disabled={isLoadingSecurityUsername || isSendingEditOtp}
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isSendingEditOtp && editingField === 'phoneNumber'
+                    ? t('securitySettings.sendingButton')
+                    : t('personalInfoSettings.editButton')}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+
+        {editOtpErrorMessage ? (
+          <p className="mt-2 text-xs text-rose-700 dark:text-rose-300">
+            {editOtpErrorMessage}
+          </p>
+        ) : null}
+
+        {editOtpInfoMessage ? (
+          <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
+            {editOtpInfoMessage}
+          </p>
+        ) : null}
 
         {securityUsernameError ? (
           <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">

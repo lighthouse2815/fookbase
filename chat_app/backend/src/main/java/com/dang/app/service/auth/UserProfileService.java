@@ -1,6 +1,7 @@
 package com.dang.app.service.auth;
 
 import com.dang.app.dto.auth.request.CompleteProfileRequest;
+import com.dang.app.dto.auth.request.UpdateSecurityPrivateRequest;
 import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
@@ -15,6 +16,7 @@ import com.dang.app.repository.messenger.ContactRepository;
 import com.dang.app.repository.messenger.FriendshipRepository;
 import com.dang.app.service.messenger.UserPresenceService;
 import com.dang.app.utils.enums.FriendshipStatus;
+import com.dang.app.utils.enums.OTPType;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
@@ -33,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Validated
@@ -41,6 +44,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserProfileService {
     private final UserService userService;
+    private final OTPService otpService;
 
     private final UserProfileRepository userProfileRepository;
     private final ContactRepository contactRepository;
@@ -51,6 +55,7 @@ public class UserProfileService {
     private final UserProfileGuard userProfileGuard;
 
     private final UserProfileMapper userProfileMapper;
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^0\\d{9}$");
 
 
     /*
@@ -163,6 +168,57 @@ public class UserProfileService {
         userProfileGuard.requireNotDeleted(profile);
 
         return userProfileMapper.toUserSecurityPrivateResponse(user, profile);
+    }
+
+    @Transactional
+    public void updateSecurityPrivateProfile(UUID userId, UpdateSecurityPrivateRequest request) {
+        User user = userService.findById(userId);
+        userGuard.requireActiveAndNotDeleted(user);
+
+        UserProfile profile = userProfileRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        userProfileGuard.requireNotDeleted(profile);
+
+        String normalizedUsername = normalize(request.getUsername());
+        String normalizedPhoneNumber = normalize(request.getPhoneNumber());
+
+        boolean shouldUpdateUsername = normalizedUsername != null && !normalizedUsername.equals(user.getUsername());
+        boolean shouldUpdatePhoneNumber = normalizedPhoneNumber != null
+                && !normalizedPhoneNumber.equals(profile.getPhoneNumber());
+
+        if (!shouldUpdateUsername && !shouldUpdatePhoneNumber) {
+            return;
+        }
+
+        if (shouldUpdateUsername && userService.isUsernameTaken(normalizedUsername)) {
+            throw new BusinessException(ErrorCode.USERNAME_EXISTS);
+        }
+
+        if (shouldUpdatePhoneNumber) {
+            if (!PHONE_PATTERN.matcher(normalizedPhoneNumber).matches()) {
+                throw new BusinessException(ErrorCode.INVALID_PHONE);
+            }
+
+            if (userProfileRepository.existsByPhoneNumber(normalizedPhoneNumber)) {
+                throw new BusinessException(ErrorCode.PHONENUMBER_EXISTS);
+            }
+        }
+
+        OTPType otpType = shouldUpdateUsername
+                ? OTPType.CHANGE_USERNAME_VERIFY
+                : OTPType.CHANGE_PHONENUMBER_VERIFY;
+
+        otpService.verifyOTP(userId, request.getOtp().trim(), otpType);
+
+        if (shouldUpdateUsername) {
+            user.setUsername(normalizedUsername);
+            userService.save(user);
+        }
+
+        if (shouldUpdatePhoneNumber) {
+            profile.setPhoneNumber(normalizedPhoneNumber);
+            userProfileRepository.save(profile);
+        }
     }
 
 
@@ -348,6 +404,15 @@ public class UserProfileService {
     private String maskPhone(String phone) {
         if (phone == null || phone.length() < 7) return "****";
         return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private FriendshipStatus getStatus(UUID myId, UUID userId) {

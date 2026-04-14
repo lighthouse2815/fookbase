@@ -111,6 +111,10 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public boolean isUsernameTaken(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
     public List<User> findAllById(Set<UUID> memberIds) {
         return userRepository.findAllById(memberIds);
     }
