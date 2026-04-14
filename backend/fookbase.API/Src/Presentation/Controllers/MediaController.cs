@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using InteractHub.Api.Application.DTOs.Media;
-using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +11,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/media")]
-public class MediaController : ControllerBase
+public class MediaController : ApiControllerBase
 {
     private readonly CloudinaryOptions _cloudinaryOptions;
 
@@ -35,7 +34,7 @@ public class MediaController : ControllerBase
                 ApiResponse<CloudinaryUploadSignatureResponseDto>.Fail("Cloudinary signing is not configured."));
         }
 
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var uploadFolder = BuildUploadFolder(_cloudinaryOptions.UploadFolder, userId);
         var publicId = $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{Guid.NewGuid():N}";
         const bool overwrite = false;

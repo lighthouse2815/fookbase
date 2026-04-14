@@ -10,7 +10,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/comments")]
-public class CommentsController : ControllerBase
+public class CommentsController : ApiControllerBase
 {
     private readonly ICommentService _commentService;
     private readonly ICommentReactionService _commentReactionService;
@@ -32,7 +32,7 @@ public class CommentsController : ControllerBase
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+        var currentUserId = TryGetCurrentUserId();
         var comments = await _commentService.GetByPostIdAsync(postId, query, currentUserId, cancellationToken);
         return Ok(ApiResponse<PagedResult<CommentResponseDto>>.Ok(comments));
     }
@@ -45,7 +45,7 @@ public class CommentsController : ControllerBase
         Guid commentId,
         CancellationToken cancellationToken)
     {
-        Guid? currentUserId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+        var currentUserId = TryGetCurrentUserId();
         var comment = await _commentService.GetByIdAsync(commentId, currentUserId, cancellationToken);
         return Ok(ApiResponse<CommentResponseDto>.Ok(comment));
     }
@@ -60,7 +60,7 @@ public class CommentsController : ControllerBase
         [FromBody] CreateCommentRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var created = await _commentService.CreateAsync(userId, request, cancellationToken);
 
         return CreatedAtAction(
@@ -81,7 +81,7 @@ public class CommentsController : ControllerBase
         [FromBody] UpdateCommentRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var updated = await _commentService.UpdateAsync(commentId, userId, User.IsAdmin(), request, cancellationToken);
         return Ok(ApiResponse<CommentResponseDto>.Ok(updated));
     }
@@ -94,7 +94,7 @@ public class CommentsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid commentId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         await _commentService.DeleteAsync(commentId, userId, User.IsAdmin(), cancellationToken);
         return Ok(ApiResponse<object>.Ok(new { message = "Comment deleted." }));
     }
@@ -110,7 +110,7 @@ public class CommentsController : ControllerBase
         [FromBody] SetCommentReactionRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var reactionState = await _commentReactionService.SetReactionAsync(commentId, userId, request, cancellationToken);
         return Ok(ApiResponse<CommentReactionStateResponseDto>.Ok(reactionState));
     }
@@ -124,7 +124,7 @@ public class CommentsController : ControllerBase
         Guid commentId,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var reactionState = await _commentReactionService.RemoveReactionAsync(commentId, userId, cancellationToken);
         return Ok(ApiResponse<CommentReactionStateResponseDto>.Ok(reactionState));
     }

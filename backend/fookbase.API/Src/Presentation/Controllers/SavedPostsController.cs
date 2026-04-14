@@ -1,7 +1,6 @@
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.DTOs.SavedPosts;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Pagination;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +11,7 @@ namespace InteractHub.Api.Controllers;
 [ApiController]
 [Route("api/saved-posts")]
 [Authorize]
-public class SavedPostsController : ControllerBase
+public class SavedPostsController : ApiControllerBase
 {
     private readonly ISavedPostService _savedPostService;
 
@@ -28,7 +27,7 @@ public class SavedPostsController : ControllerBase
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var savedPosts = await _savedPostService.GetMineAsync(userId, query, cancellationToken);
         return Ok(ApiResponse<PagedResult<PostResponseDto>>.Ok(savedPosts));
     }
@@ -42,7 +41,7 @@ public class SavedPostsController : ControllerBase
         [FromBody] SavePostRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var state = await _savedPostService.SaveAsync(userId, request, cancellationToken);
         return Ok(ApiResponse<SavedPostStateResponseDto>.Ok(state));
     }
@@ -54,7 +53,7 @@ public class SavedPostsController : ControllerBase
         Guid postId,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var state = await _savedPostService.RemoveAsync(userId, postId, cancellationToken);
         return Ok(ApiResponse<SavedPostStateResponseDto>.Ok(state));
     }

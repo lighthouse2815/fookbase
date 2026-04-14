@@ -9,16 +9,16 @@ public static class HttpRequestExtensions
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var authorizationHeader = request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        var tokenFromAuthorization = request.Headers.Authorization.ToString().NormalizeAccessTokenOrNull();
+        if (!string.IsNullOrWhiteSpace(tokenFromAuthorization))
         {
-            return authorizationHeader["Bearer ".Length..].Trim();
+            return tokenFromAuthorization;
         }
 
         if (request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
             && !string.IsNullOrWhiteSpace(cookieToken))
         {
-            return cookieToken.Trim();
+            return cookieToken.NormalizeAccessTokenOrNull();
         }
 
         return null;

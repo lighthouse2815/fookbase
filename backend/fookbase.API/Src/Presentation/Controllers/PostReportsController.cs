@@ -12,7 +12,7 @@ namespace InteractHub.Api.Controllers;
 [ApiController]
 [Route("api/post-reports")]
 [Authorize]
-public class PostReportsController : ControllerBase
+public class PostReportsController : ApiControllerBase
 {
     private readonly IPostReportService _postReportService;
 
@@ -28,7 +28,7 @@ public class PostReportsController : ControllerBase
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var reports = await _postReportService.GetMineAsync(userId, query, cancellationToken);
         return Ok(ApiResponse<PagedResult<PostReportResponseDto>>.Ok(reports));
     }
@@ -64,7 +64,7 @@ public class PostReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostReportResponseDto>>> GetById(Guid reportId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var report = await _postReportService.GetByIdAsync(reportId, userId, User.IsAdmin(), cancellationToken);
         return Ok(ApiResponse<PostReportResponseDto>.Ok(report));
     }
@@ -78,7 +78,7 @@ public class PostReportsController : ControllerBase
         [FromBody] CreatePostReportRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var created = await _postReportService.CreateAsync(userId, request, cancellationToken);
 
         return CreatedAtAction(
@@ -99,7 +99,7 @@ public class PostReportsController : ControllerBase
         [FromBody] ResolvePostReportRequestDto request,
         CancellationToken cancellationToken)
     {
-        var adminUserId = User.GetUserId();
+        var adminUserId = GetCurrentUserId();
         var resolved = await _postReportService.ResolveAsync(reportId, adminUserId, request, cancellationToken);
 
         return Ok(ApiResponse<PostReportResponseDto>.Ok(resolved));
@@ -112,7 +112,7 @@ public class PostReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid reportId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         await _postReportService.DeleteAsync(reportId, userId, User.IsAdmin(), cancellationToken);
 
         return Ok(ApiResponse<object>.Ok(new { message = "Post report deleted." }));

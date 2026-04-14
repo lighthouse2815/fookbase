@@ -11,7 +11,7 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 
@@ -235,9 +235,16 @@ export const FriendsPage = () => {
 
     return mappedPresence;
   }, [offlineUsers, onlineUsers]);
+  const sidebarSuggestionsRef = useRef(sidebarSuggestions);
+  const presenceByUserIdRef = useRef(presenceByUserId);
+
+  useEffect(() => {
+    sidebarSuggestionsRef.current = sidebarSuggestions;
+  }, [sidebarSuggestions]);
 
   const loadFriendData = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent === true;
+    const latestPresenceByUserId = presenceByUserIdRef.current;
 
     if (!silent) {
       setFetchState('loading');
@@ -264,7 +271,7 @@ export const FriendsPage = () => {
           currentUser.id,
           'received',
         ),
-        presenceByUserId,
+        latestPresenceByUserId,
       ),
     );
 
@@ -276,19 +283,19 @@ export const FriendsPage = () => {
           currentUser.id,
           'sent',
         ),
-        presenceByUserId,
+        latestPresenceByUserId,
       ),
     );
 
     const resolvedSuggestions = suggestionsResult.status === 'fulfilled'
       ? suggestionsResult.value
-      : sidebarSuggestions;
-    setSuggestions(syncPresenceByUserId(sanitizeSuggestions(resolvedSuggestions, []), presenceByUserId));
+      : sidebarSuggestionsRef.current;
+    setSuggestions(syncPresenceByUserId(sanitizeSuggestions(resolvedSuggestions, []), latestPresenceByUserId));
 
     setFriends(
       syncPresenceByUserId(
         sanitizeFriends(friendsResult.status === 'fulfilled' ? friendsResult.value : undefined, friendsMock),
-        presenceByUserId,
+        latestPresenceByUserId,
       ),
     );
 
@@ -301,9 +308,10 @@ export const FriendsPage = () => {
     }
 
     setFetchState('success');
-  }, [currentUser.id, presenceByUserId, sidebarSuggestions, t]);
+  }, [currentUser.id, t]);
 
   useEffect(() => {
+    presenceByUserIdRef.current = presenceByUserId;
     setReceivedRequests((existing) => syncPresenceByUserId(existing, presenceByUserId));
     setSentRequests((existing) => syncPresenceByUserId(existing, presenceByUserId));
     setSuggestions((existing) => syncPresenceByUserId(existing, presenceByUserId));

@@ -72,6 +72,8 @@ builder.Services.AddScoped<IPostReportService, PostReportService>();
 builder.Services.AddScoped<ISavedPostService, SavedPostService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ITokenRoleService, TokenRoleService>();
 builder.Services.AddScoped<INotificationRealtimeService, SignalRNotificationRealtimeService>();
 builder.Services.AddHttpContextAccessor();
 

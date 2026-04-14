@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Globalization;
 using InteractHub.Api.Common.Constants;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -76,26 +77,26 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
 
     private string? ExtractAccessToken()
     {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        var tokenFromAuthorization = Request.Headers.Authorization.ToString().NormalizeAccessTokenOrNull();
+        if (!string.IsNullOrWhiteSpace(tokenFromAuthorization))
         {
-            return authorizationHeader["Bearer ".Length..].Trim();
+            return tokenFromAuthorization;
         }
 
         if (Request.Path.StartsWithSegments("/hubs")
             && Request.Query.TryGetValue("access_token", out var accessTokenQueryValue))
         {
-            var queryToken = accessTokenQueryValue.ToString();
-            if (!string.IsNullOrWhiteSpace(queryToken))
+            var tokenFromQuery = accessTokenQueryValue.ToString().NormalizeAccessTokenOrNull();
+            if (!string.IsNullOrWhiteSpace(tokenFromQuery))
             {
-                return queryToken.Trim();
+                return tokenFromQuery;
             }
         }
 
         if (Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
             && !string.IsNullOrWhiteSpace(cookieToken))
         {
-            return cookieToken;
+            return cookieToken.NormalizeAccessTokenOrNull();
         }
 
         return null;

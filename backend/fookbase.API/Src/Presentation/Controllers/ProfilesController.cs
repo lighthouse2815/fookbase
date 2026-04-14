@@ -10,7 +10,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/profiles")]
-public class ProfilesController : ControllerBase
+public class ProfilesController : ApiControllerBase
 {
     private readonly IProfileService _profileService;
 
@@ -28,10 +28,10 @@ public class ProfilesController : ControllerBase
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.GetByUserIdAsync(userId, Request.ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.GetByUserIdAsync(userId, ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
-            return BuildProxyErrorResponse<ProfileResponseDto>(
+            return BuildErrorResponse<ProfileResponseDto>(
                 result.StatusCode,
                 result.ErrorMessage,
                 "Profile not found.");
@@ -48,10 +48,10 @@ public class ProfilesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await _profileService.GetMyProfileSettingsAsync(userId, Request.ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.GetMyProfileSettingsAsync(userId, ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
-            return BuildProxyErrorResponse<MyProfileSettingsResponseDto>(
+            return BuildErrorResponse<MyProfileSettingsResponseDto>(
                 result.StatusCode,
                 result.ErrorMessage,
                 "Load my profile settings failed.");
@@ -69,10 +69,10 @@ public class ProfilesController : ControllerBase
         [FromBody] UpdateMyProfileRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.UpdateMyProfileAsync(request, Request.ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.UpdateMyProfileAsync(request, ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess)
         {
-            return BuildProxyErrorResponse<object?>(
+            return BuildErrorResponse<object?>(
                 result.StatusCode,
                 result.ErrorMessage,
                 "Update profile failed.");
@@ -90,37 +90,18 @@ public class ProfilesController : ControllerBase
         [FromQuery] string phoneNumber,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.SearchByPhoneNumberAsync(phoneNumber, Request.ExtractAccessToken(), cancellationToken);
+        var result = await _profileService.SearchByPhoneNumberAsync(phoneNumber, ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
-            return BuildProxyErrorResponse<List<UserProfileSearchDto>>(
+            return BuildErrorResponse<List<UserProfileSearchDto>>(
                 result.StatusCode,
                 result.ErrorMessage,
                 "Search profile failed.");
         }
 
-        var statusCode = result.StatusCode > 0
-            ? result.StatusCode
-            : StatusCodes.Status200OK;
+        var statusCode = ResolveSuccessStatusCode(result.StatusCode);
 
         return StatusCode(statusCode, ApiResponse<List<UserProfileSearchDto>>.Ok(result.Data));
     }
-
-    private ActionResult<ApiResponse<T>> BuildProxyErrorResponse<T>(
-        int statusCode,
-        string? errorMessage,
-        string fallbackError)
-    {
-        var resolvedStatusCode = statusCode > 0
-            ? statusCode
-            : StatusCodes.Status502BadGateway;
-
-        var resolvedError = string.IsNullOrWhiteSpace(errorMessage)
-            ? fallbackError
-            : errorMessage;
-
-        return StatusCode(resolvedStatusCode, ApiResponse<T>.Fail(resolvedError));
-    }
-
 }
 

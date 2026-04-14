@@ -1,7 +1,9 @@
 {
   "name": "BloodFortress",
   "rootNamespace": "BloodFortress",
-  "references": [],
+  "references": [
+    "Unity.TextMeshPro"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

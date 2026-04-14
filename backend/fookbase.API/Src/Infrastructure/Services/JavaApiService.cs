@@ -7,6 +7,7 @@ using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -859,7 +860,7 @@ public class JavaApiService : IJavaApiService
     {
         if (!string.IsNullOrWhiteSpace(accessToken))
         {
-            return accessToken.Trim();
+            return accessToken.NormalizeAccessTokenOrNull();
         }
 
         var httpContext = _httpContextAccessor.HttpContext;
@@ -868,16 +869,16 @@ public class JavaApiService : IJavaApiService
             return null;
         }
 
-        var authorizationHeader = httpContext.Request.Headers.Authorization.ToString();
-        if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        var tokenFromAuthorization = httpContext.Request.Headers.Authorization.ToString().NormalizeAccessTokenOrNull();
+        if (!string.IsNullOrWhiteSpace(tokenFromAuthorization))
         {
-            return authorizationHeader["Bearer ".Length..].Trim();
+            return tokenFromAuthorization;
         }
 
         if (httpContext.Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
             && !string.IsNullOrWhiteSpace(cookieToken))
         {
-            return cookieToken.Trim();
+            return cookieToken.NormalizeAccessTokenOrNull();
         }
 
         return null;

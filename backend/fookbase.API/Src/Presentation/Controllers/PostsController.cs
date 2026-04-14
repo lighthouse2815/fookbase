@@ -11,7 +11,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/posts")]
-public class PostsController : ControllerBase
+public class PostsController : ApiControllerBase
 {
     private readonly IPostService _postService;
     private readonly ILikeService _likeService;
@@ -54,7 +54,7 @@ public class PostsController : ControllerBase
         [FromBody] CreatePostRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = Request.ExtractAccessToken();
+        var accessToken = ExtractAccessToken();
         var created = await _postService.CreateAsync(GetCurrentUserId(), request, accessToken, cancellationToken);
 
         return CreatedAtAction(
@@ -157,8 +157,5 @@ public class PostsController : ControllerBase
         return Ok(ApiResponse<PostReactionUsersResponseDto>.Ok(users));
     }
 
-    private Guid GetCurrentUserId() => User.GetUserId();
-
-    private Guid? TryGetCurrentUserId() => User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
 }
 

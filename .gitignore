@@ -24,3 +24,12 @@ backend/fookbase.API/appsettings.Local.json
 .dotnet/
 .buildtmp/
 
+# Unity generated
+game/unity-blood-fortress/[Ll]ibrary/
+game/unity-blood-fortress/[Tt]emp/
+game/unity-blood-fortress/[Ll]ogs/
+game/unity-blood-fortress/[Oo]bj/
+game/unity-blood-fortress/[Bb]uild/
+game/unity-blood-fortress/[Bb]uilds/
+game/unity-blood-fortress/[Uu]ser[Ss]ettings/
+game/unity-blood-fortress/MemoryCaptures/

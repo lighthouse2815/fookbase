@@ -10,7 +10,7 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/hashtags")]
-public class HashtagsController : ControllerBase
+public class HashtagsController : ApiControllerBase
 {
     private readonly IHashtagService _hashtagService;
 

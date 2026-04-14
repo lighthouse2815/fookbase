@@ -12,7 +12,7 @@ namespace InteractHub.Api.Controllers;
 [ApiController]
 [Route("api/notifications")]
 [Authorize]
-public class NotificationsController : ControllerBase
+public class NotificationsController : ApiControllerBase
 {
     private readonly INotificationService _notificationService;
 
@@ -28,7 +28,7 @@ public class NotificationsController : ControllerBase
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var notifications = await _notificationService.GetMineAsync(userId, query, cancellationToken);
         return Ok(ApiResponse<PagedResult<NotificationResponseDto>>.Ok(notifications));
     }
@@ -40,7 +40,7 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<NotificationResponseDto>>> GetById(Guid notificationId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var notification = await _notificationService.GetByIdAsync(notificationId, userId, User.IsAdmin(), cancellationToken);
         return Ok(ApiResponse<NotificationResponseDto>.Ok(notification));
     }
@@ -70,7 +70,7 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<NotificationResponseDto>>> MarkAsRead(Guid notificationId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         var updated = await _notificationService.MarkAsReadAsync(notificationId, userId, User.IsAdmin(), cancellationToken);
         return Ok(ApiResponse<NotificationResponseDto>.Ok(updated));
     }
@@ -80,7 +80,7 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object>>> MarkAllAsRead(CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         await _notificationService.MarkAllAsReadAsync(userId, cancellationToken);
 
         return Ok(ApiResponse<object>.Ok(new { message = "All notifications are marked as read." }));
@@ -93,7 +93,7 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid notificationId, CancellationToken cancellationToken)
     {
-        var userId = User.GetUserId();
+        var userId = GetCurrentUserId();
         await _notificationService.DeleteAsync(notificationId, userId, User.IsAdmin(), cancellationToken);
 
         return Ok(ApiResponse<object>.Ok(new { message = "Notification deleted." }));

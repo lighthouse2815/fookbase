@@ -1,7 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using InteractHub.Api.Application.DTOs.Auth;
-using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
@@ -13,13 +11,17 @@ namespace InteractHub.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController : ControllerBase
+public class AuthController : ApiControllerBase
 {
     private readonly IJavaApiService _javaApiService;
+    private readonly ITokenRoleService _tokenRoleService;
 
-    public AuthController(IJavaApiService javaApiService)
+    public AuthController(
+        IJavaApiService javaApiService,
+        ITokenRoleService tokenRoleService)
     {
         _javaApiService = javaApiService;
+        _tokenRoleService = tokenRoleService;
     }
 
     [HttpPost("register")]
@@ -38,7 +40,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<RegisterResponseDto>(result, "Register failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<RegisterResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<RegisterResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("login")]
@@ -58,10 +60,10 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<LoginResponseDto>(result, "Login failed.");
         }
 
-        result.Data.Token = NormalizeAccessToken(result.Data.Token);
+        result.Data.Token = result.Data.Token.NormalizeAccessToken();
         SetAccessTokenCookie(result.Data.Token);
         SetUserIdCookie(result.Data.UserId);
-        return StatusCode(result.StatusCode, ApiResponse<LoginResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("admin/login")]
@@ -81,9 +83,9 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<LoginResponseDto>(result, "Admin login failed.");
         }
 
-        result.Data.Token = NormalizeAccessToken(result.Data.Token);
+        result.Data.Token = result.Data.Token.NormalizeAccessToken();
 
-        if (!IsAdminToken(result.Data))
+        if (!_tokenRoleService.IsAdmin(result.Data.Role, result.Data.Token))
         {
             return StatusCode(
                 StatusCodes.Status403Forbidden,
@@ -92,7 +94,7 @@ public class AuthController : ControllerBase
 
         SetAccessTokenCookie(result.Data.Token);
         SetUserIdCookie(result.Data.UserId);
-        return StatusCode(result.StatusCode, ApiResponse<LoginResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("otp/send/verify-email")]
@@ -111,7 +113,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send verify email OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("me/otp/send/verify-email")]
@@ -122,10 +124,9 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendVerifyEmailOtpWhenLogin(
         CancellationToken cancellationToken)
     {
-        var accessToken = Request.ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
+        if (!TryExtractAccessToken(out var accessToken))
         {
-            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+            return UnauthorizedApiResponse<OtpVerifyResponseDto>();
         }
 
         var result = await _javaApiService.SendVerifyEmailOtpWhenLoginAsync(accessToken, cancellationToken);
@@ -134,7 +135,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send verify email OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("otp/send/reset-password")]
@@ -153,7 +154,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send reset password OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("me/otp/send/reset-password")]
@@ -164,10 +165,9 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendResetPasswordOtpWhenLogin(
         CancellationToken cancellationToken)
     {
-        var accessToken = Request.ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
+        if (!TryExtractAccessToken(out var accessToken))
         {
-            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+            return UnauthorizedApiResponse<OtpVerifyResponseDto>();
         }
 
         var result = await _javaApiService.SendResetPasswordOtpWhenLoginAsync(accessToken, cancellationToken);
@@ -176,7 +176,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Send reset password OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("otp/verify/email")]
@@ -195,7 +195,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify email OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("me/otp/verify/email")]
@@ -207,10 +207,9 @@ public class AuthController : ControllerBase
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = Request.ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
+        if (!TryExtractAccessToken(out var accessToken))
         {
-            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+            return UnauthorizedApiResponse<OtpVerifyResponseDto>();
         }
 
         var result = await _javaApiService.VerifyEmailOtpWhenLoginAsync(request, accessToken, cancellationToken);
@@ -219,7 +218,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify email OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("otp/verify/password")]
@@ -238,7 +237,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify reset password OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("me/otp/verify/password")]
@@ -250,10 +249,9 @@ public class AuthController : ControllerBase
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = Request.ExtractAccessToken();
-        if (string.IsNullOrWhiteSpace(accessToken))
+        if (!TryExtractAccessToken(out var accessToken))
         {
-            return Unauthorized(ApiResponse<OtpVerifyResponseDto>.Fail("Unauthorized."));
+            return UnauthorizedApiResponse<OtpVerifyResponseDto>();
         }
 
         var result = await _javaApiService.VerifyResetPasswordOtpWhenLoginAsync(request, accessToken, cancellationToken);
@@ -262,7 +260,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<OtpVerifyResponseDto>(result, "Verify reset password OTP failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<OtpVerifyResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("reset-password")]
@@ -286,7 +284,7 @@ public class AuthController : ControllerBase
             return BuildErrorResponse<MessageResponseDto>(result, "Reset password failed.");
         }
 
-        return StatusCode(result.StatusCode, ApiResponse<MessageResponseDto>.Ok(result.Data));
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<MessageResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("logout")]
@@ -299,22 +297,9 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
-    private ActionResult<ApiResponse<T>> BuildErrorResponse<T>(JavaApiCallResult<T> result, string fallbackError)
-    {
-        var statusCode = result.StatusCode > 0
-            ? result.StatusCode
-            : StatusCodes.Status502BadGateway;
-
-        var error = string.IsNullOrWhiteSpace(result.ErrorMessage)
-            ? fallbackError
-            : result.ErrorMessage;
-
-        return StatusCode(statusCode, ApiResponse<T>.Fail(error));
-    }
-
     private void SetAccessTokenCookie(string token)
     {
-        token = NormalizeAccessToken(token);
+        token = token.NormalizeAccessToken();
 
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -359,56 +344,6 @@ public class AuthController : ControllerBase
         catch (ArgumentException)
         {
             return null;
-        }
-    }
-
-    private static string NormalizeAccessToken(string? token)
-    {
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return string.Empty;
-        }
-
-        var normalized = token.Trim();
-        const string bearerPrefix = "Bearer ";
-
-        if (normalized.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return normalized[bearerPrefix.Length..].Trim();
-        }
-
-        return normalized;
-    }
-
-    private static bool IsAdminToken(LoginResponseDto payload)
-    {
-        if (string.Equals(payload.Role, AppRoles.Admin, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (string.IsNullOrWhiteSpace(payload.Token))
-        {
-            return false;
-        }
-
-        try
-        {
-            var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(payload.Token);
-            var roleClaims = jwtToken.Claims
-                .Where(claim =>
-                    claim.Type == ClaimTypes.Role
-                    || claim.Type == "role"
-                    || claim.Type == "roles"
-                    || claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-                    || claim.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role")
-                .Select(claim => claim.Value);
-
-            return roleClaims.Any(role => string.Equals(role, AppRoles.Admin, StringComparison.OrdinalIgnoreCase));
-        }
-        catch (ArgumentException)
-        {
-            return false;
         }
     }
 

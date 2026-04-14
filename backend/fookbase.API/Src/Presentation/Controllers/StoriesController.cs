@@ -11,7 +11,7 @@ namespace InteractHub.Api.Controllers;
 [ApiController]
 [Route("api/stories")]
 [Authorize]
-public class StoriesController : ControllerBase
+public class StoriesController : ApiControllerBase
 {
     private readonly IStoryService _storyService;
     private readonly IStoryReactionService _storyReactionService;
@@ -30,7 +30,7 @@ public class StoriesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var stories = await _storyService.GetFeedAsync(userId, query, Request.ExtractAccessToken(), cancellationToken);
+        var stories = await _storyService.GetFeedAsync(userId, query, ExtractAccessToken(), cancellationToken);
         return Ok(ApiResponse<PagedResult<StoryResponseDto>>.Ok(stories));
     }
 
