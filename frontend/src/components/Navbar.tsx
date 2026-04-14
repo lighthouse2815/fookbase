@@ -32,6 +32,8 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
+type NavbarPopover = 'menu' | 'notification' | 'language' | null;
+
 export const Navbar = ({
   currentUser,
   notifications,
@@ -45,10 +47,11 @@ export const Navbar = ({
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [openPopover, setOpenPopover] = useState<NavbarPopover>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const isMenuOpen = openPopover === 'menu';
+  const isNotificationOpen = openPopover === 'notification';
+  const isLanguageOpen = openPopover === 'language';
   const isSettingsPage = location.pathname.startsWith('/settings');
   const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
   const isVietnameseActive = currentLanguage.startsWith('vi');
@@ -79,6 +82,10 @@ export const Navbar = ({
     }
 
     navigate(`/friends/search?phoneNumber=${encodeURIComponent(normalizedKeyword)}`);
+  };
+
+  const togglePopover = (popover: Exclude<NavbarPopover, null>) => {
+    setOpenPopover((current) => (current === popover ? null : popover));
   };
 
   return (
@@ -130,7 +137,7 @@ export const Navbar = ({
         <div className="relative flex items-center gap-1 sm:gap-2">
           <button
             type="button"
-            onClick={() => setIsNotificationOpen((current) => !current)}
+            onClick={() => togglePopover('notification')}
             className="relative rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             title={t('nav.notifications')}
           >
@@ -152,7 +159,7 @@ export const Navbar = ({
           <div className="relative">
             <button
               type="button"
-              onClick={() => setIsLanguageOpen((current) => !current)}
+              onClick={() => togglePopover('language')}
               className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <Languages size={19} />
@@ -167,7 +174,7 @@ export const Navbar = ({
                   }`}
                   onClick={() => {
                     void i18n.changeLanguage('vi');
-                    setIsLanguageOpen(false);
+                    setOpenPopover(null);
                   }}
                   type="button"
                 >
@@ -181,7 +188,7 @@ export const Navbar = ({
                   }`}
                   onClick={() => {
                     void i18n.changeLanguage('en');
-                    setIsLanguageOpen(false);
+                    setOpenPopover(null);
                   }}
                   type="button"
                 >
@@ -201,7 +208,7 @@ export const Navbar = ({
             </Link>
             <button
               type="button"
-              onClick={() => setIsMenuOpen((current) => !current)}
+              onClick={() => togglePopover('menu')}
               className="hidden rounded-lg p-1 text-slate-500 transition hover:bg-slate-200 sm:block dark:text-slate-300 dark:hover:bg-slate-700"
               aria-label={t('nav.accountMenu')}
             >
@@ -212,7 +219,7 @@ export const Navbar = ({
           <button
             className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 md:hidden dark:hover:bg-slate-800"
             type="button"
-            onClick={() => setIsMenuOpen((current) => !current)}
+            onClick={() => togglePopover('menu')}
           >
             <Menu size={19} />
           </button>
@@ -221,7 +228,7 @@ export const Navbar = ({
             <NotificationDropdown
               items={notifications}
               onOpenItem={(item) => {
-                setIsNotificationOpen(false);
+                setOpenPopover(null);
                 onOpenNotification(item);
               }}
               onAcceptFriendRequest={onAcceptFriendRequest}
@@ -235,7 +242,7 @@ export const Navbar = ({
               <Link
                 to="/settings"
                 className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => setOpenPopover(null)}
               >
                 <Settings size={16} />
                 {t('nav.settings')}
@@ -243,7 +250,7 @@ export const Navbar = ({
               <Link
                 to="/profile"
                 className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => setOpenPopover(null)}
               >
                 <UserRound size={16} />
                 {t('nav.profile')}
@@ -253,7 +260,7 @@ export const Navbar = ({
                 className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
                 onClick={() => {
                   onLogout();
-                  setIsMenuOpen(false);
+                  setOpenPopover(null);
                 }}
               >
                 <LogOut size={16} />
