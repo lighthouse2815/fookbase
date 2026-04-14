@@ -25,4 +25,56 @@ public static class ClaimsPrincipalExtensions
             (claim.Type == ClaimTypes.Role || claim.Type == "role")
             && string.Equals(claim.Value, AppRoles.Admin, StringComparison.OrdinalIgnoreCase));
     }
+
+    public static string? GetUsernameOrNull(this ClaimsPrincipal principal)
+    {
+        var claimCandidates = new[]
+        {
+            "username",
+            ClaimTypes.Name,
+            "preferred_username",
+            "unique_name",
+            "name",
+            ClaimTypes.Email,
+            "email"
+        };
+
+        foreach (var claimType in claimCandidates)
+        {
+            var rawValue = principal.FindFirstValue(claimType);
+            if (string.IsNullOrWhiteSpace(rawValue))
+            {
+                continue;
+            }
+
+            var normalized = NormalizeUsername(rawValue);
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                return normalized;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? NormalizeUsername(string rawValue)
+    {
+        var trimmed = rawValue.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return null;
+        }
+
+        var atIndex = trimmed.IndexOf('@');
+        if (atIndex > 0)
+        {
+            var fromEmail = trimmed[..atIndex].Trim();
+            if (!string.IsNullOrWhiteSpace(fromEmail))
+            {
+                return fromEmail;
+            }
+        }
+
+        return trimmed;
+    }
 }

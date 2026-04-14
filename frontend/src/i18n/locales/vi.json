@@ -350,6 +350,7 @@
     "subtitle": "Quản lý thông tin đăng nhập và đổi mật khẩu an toàn.",
     "accountInfoTitle": "Thông tin tài khoản",
     "usernameLabel": "Tên đăng nhập",
+    "accountInfoLoadError": "Không thể tải thông tin tài khoản.",
     "changePasswordTitle": "Đổi mật khẩu",
     "otpSentDefault": "Mã OTP đã được gửi. Vui lòng kiểm tra email của bạn.",
     "sendOtpError": "Không thể gửi OTP lúc này.",

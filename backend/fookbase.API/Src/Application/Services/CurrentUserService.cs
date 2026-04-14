@@ -71,4 +71,88 @@ public class CurrentUserService : ICurrentUserService
                 "Java profile API is unavailable.");
         }
     }
+
+    public async Task<JavaApiCallResult<SecurityAccountInfoResponseDto>> GetSecurityAccountInfoAsync(
+        Guid userId,
+        string? accessToken,
+        string? usernameFromClaims,
+        CancellationToken cancellationToken)
+    {
+        var resolvedUsername = FirstNonEmpty(usernameFromClaims);
+
+        if (string.IsNullOrWhiteSpace(resolvedUsername)
+            && !string.IsNullOrWhiteSpace(accessToken))
+        {
+            resolvedUsername = await ResolveUsernameFromOverviewAsync(accessToken.Trim(), cancellationToken);
+        }
+
+        if (string.IsNullOrWhiteSpace(resolvedUsername))
+        {
+            resolvedUsername = BuildFallbackUsername(userId);
+            _logger.LogInformation(
+                "Username is unavailable from claim and profile overview for user {UserId}. Using fallback.",
+                userId);
+        }
+
+        var response = new SecurityAccountInfoResponseDto
+        {
+            Username = resolvedUsername
+        };
+
+        return JavaApiCallResult<SecurityAccountInfoResponseDto>.Success(response, StatusCodes.Status200OK);
+    }
+
+    private async Task<string?> ResolveUsernameFromOverviewAsync(string accessToken, CancellationToken cancellationToken)
+    {
+        var overviewResult = await _javaApiService.GetMyProfileOverviewAsync(accessToken, cancellationToken);
+        if (!overviewResult.IsSuccess)
+        {
+            _logger.LogInformation(
+                "Cannot load profile overview while resolving security username. StatusCode={StatusCode}, Error={Error}",
+                overviewResult.StatusCode,
+                overviewResult.ErrorMessage);
+            return null;
+        }
+
+        return ExtractUsernameFromEmail(overviewResult.Data?.Email);
+    }
+
+    private static string? ExtractUsernameFromEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return null;
+        }
+
+        var trimmedEmail = email.Trim();
+        var atIndex = trimmedEmail.IndexOf('@');
+
+        if (atIndex <= 0)
+        {
+            return null;
+        }
+
+        var usernamePart = trimmedEmail[..atIndex].Trim();
+        return string.IsNullOrWhiteSpace(usernamePart)
+            ? null
+            : usernamePart;
+    }
+
+    private static string BuildFallbackUsername(Guid userId)
+    {
+        return $"user_{userId.ToString("N")[..8]}";
+    }
+
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
+    }
 }

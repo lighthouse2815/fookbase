@@ -55,6 +55,13 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
             claims.Add(new Claim("role", role));
         }
 
+        var username = ResolveUsername(accessToken);
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            claims.Add(new Claim(ClaimTypes.Name, username));
+            claims.Add(new Claim("username", username));
+        }
+
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
@@ -297,6 +304,84 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
         }
 
         return null;
+    }
+
+    private static string? ResolveUsername(string token)
+    {
+        var tokenParts = token.Split('.');
+        if (tokenParts.Length < 2)
+        {
+            return null;
+        }
+
+        var payloadJson = DecodeBase64Url(tokenParts[1]);
+        if (string.IsNullOrWhiteSpace(payloadJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(payloadJson);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            var claimCandidates = new[]
+            {
+                "preferred_username",
+                "username",
+                "unique_name",
+                ClaimTypes.Name,
+                "name",
+                ClaimTypes.Email,
+                "email",
+                "upn"
+            };
+
+            foreach (var claimName in claimCandidates)
+            {
+                if (!TryGetString(root, claimName, out var rawValue))
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeUsername(rawValue);
+                if (!string.IsNullOrWhiteSpace(normalized))
+                {
+                    return normalized;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static string? NormalizeUsername(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return null;
+        }
+
+        var atIndex = trimmed.IndexOf('@');
+        if (atIndex > 0)
+        {
+            var fromEmail = trimmed[..atIndex].Trim();
+            if (!string.IsNullOrWhiteSpace(fromEmail))
+            {
+                return fromEmail;
+            }
+        }
+
+        return trimmed;
     }
 
     private static bool TryGetString(JsonElement element, string propertyName, out string value)

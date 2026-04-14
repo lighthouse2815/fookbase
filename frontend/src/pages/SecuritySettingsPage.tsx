@@ -1,17 +1,15 @@
 import { Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOutletContext } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
 import { authService } from '../services/authService';
+import { userService } from '../services/userService';
 import { getApiErrorMessage } from '../utils/apiError';
 
 type Step = 'sendOtp' | 'verifyOtp' | 'resetPassword';
 
 export const SecuritySettingsPage = () => {
   const { t } = useTranslation();
-  const { currentUser } = useOutletContext<MainLayoutOutletContext>();
 
   const [step, setStep] = useState<Step>('sendOtp');
   const [otp, setOtp] = useState('');
@@ -23,6 +21,45 @@ export const SecuritySettingsPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [securityUsername, setSecurityUsername] = useState<string>('user');
+  const [isLoadingSecurityUsername, setIsLoadingSecurityUsername] = useState(true);
+  const [securityUsernameError, setSecurityUsernameError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSecurityAccountInfo = async () => {
+      setIsLoadingSecurityUsername(true);
+      setSecurityUsernameError(null);
+
+      try {
+        const accountInfo = await userService.getSecurityAccountInfo();
+        if (!isMounted) {
+          return;
+        }
+
+        setSecurityUsername(accountInfo.username);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setSecurityUsernameError(
+          getApiErrorMessage(error, t('securitySettings.accountInfoLoadError')),
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoadingSecurityUsername(false);
+        }
+      }
+    };
+
+    void loadSecurityAccountInfo();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [t]);
 
   const handleSendOtp = async () => {
     setIsSubmitting(true);
@@ -132,7 +169,14 @@ export const SecuritySettingsPage = () => {
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('securitySettings.accountInfoTitle')}</h2>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
           <p className="text-xs text-slate-500 dark:text-slate-400">{t('securitySettings.usernameLabel')}</p>
-          <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">@{currentUser.username}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {isLoadingSecurityUsername ? t('common.loading') : `@${securityUsername}`}
+          </p>
+          {securityUsernameError ? (
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+              {securityUsernameError}
+            </p>
+          ) : null}
         </div>
       </section>
 

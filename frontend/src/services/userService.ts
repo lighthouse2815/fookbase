@@ -20,6 +20,10 @@ export interface FriendPresenceResult {
   offlineUsers: User[];
 }
 
+export interface SecurityAccountInfo {
+  username: string;
+}
+
 const mapPresenceToUser = (payload: UserProfilePresencePayload): User => {
   const id = payload.userId;
   const displayName = payload.displayName?.trim() || 'user';
@@ -46,6 +50,19 @@ export const userService = {
     return {
       ...currentUser,
       avatarUrl: currentUser.avatarUrl || `https://i.pravatar.cc/150?u=${currentUser.id}`,
+    };
+  },
+
+  async getSecurityAccountInfo(): Promise<SecurityAccountInfo> {
+    const response = await apiClient.get<ApiEnvelope<SecurityAccountInfo>>('/api/users/me/security-account');
+    const accountInfo = response.data.data;
+
+    if (!accountInfo) {
+      throw new Error(response.data.errors?.[0] ?? 'Failed to load account security information');
+    }
+
+    return {
+      username: accountInfo.username?.trim() || 'user',
     };
   },
 

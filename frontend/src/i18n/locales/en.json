@@ -392,6 +392,7 @@
     "subtitle": "Manage sign-in information and change your password securely.",
     "accountInfoTitle": "Account info",
     "usernameLabel": "Username",
+    "accountInfoLoadError": "Unable to load account information.",
     "changePasswordTitle": "Change password",
     "otpSentDefault": "OTP has been sent. Please check your email.",
     "sendOtpError": "Unable to send OTP right now.",

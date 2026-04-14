@@ -9,4 +9,10 @@ public interface ICurrentUserService
         Guid userId,
         string? accessToken,
         CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<SecurityAccountInfoResponseDto>> GetSecurityAccountInfoAsync(
+        Guid userId,
+        string? accessToken,
+        string? usernameFromClaims,
+        CancellationToken cancellationToken);
 }

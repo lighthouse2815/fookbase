@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +37,33 @@ public class UsersController : ApiControllerBase
         return StatusCode(
             ResolveSuccessStatusCode(result.StatusCode),
             ApiResponse<CurrentUserResponseDto>.Ok(result.Data));
+    }
+
+    [HttpGet("me/security-account")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<SecurityAccountInfoResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SecurityAccountInfoResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<SecurityAccountInfoResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<SecurityAccountInfoResponseDto>>> GetMySecurityAccountInfo(
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var accessToken = ExtractAccessToken();
+        var usernameFromClaims = User.GetUsernameOrNull();
+        var result = await _currentUserService.GetSecurityAccountInfoAsync(
+            userId,
+            accessToken,
+            usernameFromClaims,
+            cancellationToken);
+
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<SecurityAccountInfoResponseDto>(result, "Load security account info failed.");
+        }
+
+        return StatusCode(
+            ResolveSuccessStatusCode(result.StatusCode),
+            ApiResponse<SecurityAccountInfoResponseDto>.Ok(result.Data));
     }
 }
 
