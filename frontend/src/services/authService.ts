@@ -60,6 +60,8 @@ const toNormalizedText = (value: string | undefined): string => {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
     .trim()
     .toLowerCase();
 };
@@ -90,6 +92,7 @@ const isBannedLoginMessage = (message: string | undefined): boolean => {
     normalized.includes('user_banned') ||
     normalized.includes('tai khoan da bi cam') ||
     normalized.includes('tai khoan bi cam') ||
+    normalized.includes('bi cam') ||
     normalized.includes('account is banned') ||
     normalized.includes('account banned') ||
     normalized.includes('banned')
@@ -151,7 +154,7 @@ export const authService = {
       authPayload = extractEnvelopeData(response.data);
     } catch (error) {
       const errorMessage = extractApiErrorMessage(error);
-      if (axios.isAxiosError(error) && error.response?.status === 403 && isBannedLoginMessage(errorMessage)) {
+      if (isBannedLoginMessage(errorMessage)) {
         throw new BannedAccountError(errorMessage ?? 'Account is banned.');
       }
 
