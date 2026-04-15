@@ -168,7 +168,7 @@ export const LoginPage = () => {
             <img
               src="/pic_verify_email.jpg"
               alt={t('auth.verifyEmailTitle')}
-              className="h-auto w-24 max-w-full rounded-xl object-contain sm:w-28 md:w-32"
+              className="h-auto w-32 max-w-full rounded-xl object-contain sm:w-40 md:w-48"
               loading="lazy"
             />
           </div>
