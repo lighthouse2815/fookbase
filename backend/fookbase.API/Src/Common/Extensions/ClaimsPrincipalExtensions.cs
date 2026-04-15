@@ -47,7 +47,7 @@ public static class ClaimsPrincipalExtensions
                 continue;
             }
 
-            var normalized = NormalizeUsername(rawValue);
+            var normalized = rawValue.NormalizeUsernameOrNull();
             if (!string.IsNullOrWhiteSpace(normalized))
             {
                 return normalized;
@@ -55,26 +55,5 @@ public static class ClaimsPrincipalExtensions
         }
 
         return null;
-    }
-
-    private static string? NormalizeUsername(string rawValue)
-    {
-        var trimmed = rawValue.Trim();
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            return null;
-        }
-
-        var atIndex = trimmed.IndexOf('@');
-        if (atIndex > 0)
-        {
-            var fromEmail = trimmed[..atIndex].Trim();
-            if (!string.IsNullOrWhiteSpace(fromEmail))
-            {
-                return fromEmail;
-            }
-        }
-
-        return trimmed;
     }
 }

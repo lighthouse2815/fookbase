@@ -4,6 +4,7 @@ using InteractHub.Api.Application.DTOs.SavedPosts;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Common.Utilities;
@@ -152,14 +153,14 @@ public class SavedPostService : ISavedPostService
         {
             var profileTask = _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
             var profile = await profileTask;
-            var displayName = Normalize(profile?.DisplayName)
+            var displayName = profile?.DisplayName.TrimToNull()
                 ?? "user";
 
             return new AuthorSummaryDto
             {
                 Id = userId,
                 DisplayName = displayName,
-                AvatarUrl = Normalize(profile?.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
+                AvatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
             };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -184,16 +185,6 @@ public class SavedPostService : ISavedPostService
             DisplayName = "user",
             AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
         };
-    }
-
-    private static string? Normalize(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return value.Trim();
     }
 
     private static string? GetCurrentUserReactionType(Post post, Guid currentUserId)

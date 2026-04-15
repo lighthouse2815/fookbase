@@ -2,6 +2,7 @@ using InteractHub.Api.Application.DTOs.Comments;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
@@ -58,8 +59,8 @@ public class CommentReactionService : ICommentReactionService
                 var profile = userProfiles.TryGetValue(reaction.UserId, out var item)
                     ? item
                     : null;
-                var displayName = Normalize(profile?.DisplayName) ?? "user";
-                var avatarUrl = Normalize(profile?.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(reaction.UserId);
+                var displayName = profile?.DisplayName.TrimToNull() ?? "user";
+                var avatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(reaction.UserId);
 
                 return new CommentReactionUserDto
                 {
@@ -184,13 +185,4 @@ public class CommentReactionService : ICommentReactionService
         return results.ToDictionary(item => item.Key, item => item.Value);
     }
 
-    private static string? Normalize(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return value.Trim();
-    }
 }

@@ -2,6 +2,7 @@ using System.Net;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Http;
 
@@ -122,8 +123,8 @@ public class CurrentUserService : ICurrentUserService
         var response = new SecurityAccountInfoResponseDto
         {
             Username = resolvedUsername,
-            Email = NormalizeOptional(privateSecurityResult.Data.Email),
-            PhoneNumber = NormalizeOptional(privateSecurityResult.Data.PhoneNumber)
+            Email = privateSecurityResult.Data.Email.TrimToNull(),
+            PhoneNumber = privateSecurityResult.Data.PhoneNumber.TrimToNull()
         };
 
         var successStatusCode = privateSecurityResult.StatusCode > 0
@@ -146,8 +147,8 @@ public class CurrentUserService : ICurrentUserService
         }
 
         var otp = request.Otp?.Trim();
-        var username = NormalizeOptional(request.Username);
-        var phoneNumber = NormalizeOptional(request.PhoneNumber);
+        var username = request.Username.TrimToNull();
+        var phoneNumber = request.PhoneNumber.TrimToNull();
 
         if (string.IsNullOrWhiteSpace(otp))
         {
@@ -181,20 +182,14 @@ public class CurrentUserService : ICurrentUserService
         return $"user_{userId.ToString("N")[..8]}";
     }
 
-    private static string? NormalizeOptional(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim();
-    }
-
     private static string? FirstNonEmpty(params string?[] values)
     {
         foreach (var value in values)
         {
-            if (!string.IsNullOrWhiteSpace(value))
+            var normalized = value.TrimToNull();
+            if (normalized is not null)
             {
-                return value.Trim();
+                return normalized;
             }
         }
 

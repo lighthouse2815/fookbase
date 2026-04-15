@@ -54,6 +54,10 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
         LoginResponse response = authService.login(request);
 
+        if (response.getRefreshToken() == null || response.getRefreshToken().isBlank()) {
+            return ResponseEntity.ok(response);
+        }
+
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.SET_COOKIE,

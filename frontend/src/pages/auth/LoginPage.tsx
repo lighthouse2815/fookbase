@@ -7,6 +7,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthForm } from '../../components/auth/AuthForm';
 import { InputField } from '../../components/auth/InputField';
 import { useAuth } from '../../contexts/AuthContext';
+import { authService, InactiveAccountError } from '../../services/authService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 interface LoginFormValues {
@@ -15,7 +16,12 @@ interface LoginFormValues {
   rememberMe: boolean;
 }
 
+interface OtpFormValues {
+  otp: string;
+}
+
 const identifierPattern = /^([a-zA-Z0-9._-]{3,}|[\w.-]+@[\w-]+\.[\w.-]{2,})$/;
+const otpPattern = /^[0-9]{4,8}$/;
 
 export const LoginPage = () => {
   const { t } = useTranslation();
@@ -29,14 +35,14 @@ export const LoginPage = () => {
       }
     | null;
 
+  const [step, setStep] = useState<'login' | 'otp'>('login');
+  const [pendingLogin, setPendingLogin] = useState<LoginFormValues | null>(null);
+  const [inactiveEmail, setInactiveEmail] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
+  const [infoMessage, setInfoMessage] = useState<string | undefined>();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({
+  const loginForm = useForm<LoginFormValues>({
     mode: 'onTouched',
     defaultValues: {
       username: '',
@@ -45,20 +51,155 @@ export const LoginPage = () => {
     },
   });
 
+  const otpForm = useForm<OtpFormValues>({
+    mode: 'onTouched',
+    defaultValues: {
+      otp: '',
+    },
+  });
+
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const destination = locationState?.from?.pathname ?? '/';
+
+  const sendVerifyOtp = async (email: string) => {
+    const response = await authService.sendVerifyEmailOtpWhenNotLogin({
+      email,
+      type: 'EMAIL_VERIFY',
+    });
+
+    setInfoMessage(response.result || t('auth.otpSent'));
+  };
+
+  const onSubmitLogin = async (data: LoginFormValues) => {
     try {
       setApiError(undefined);
+      setInfoMessage(undefined);
       await login(data);
-      const destination = locationState?.from?.pathname ?? '/';
       navigate(destination, { replace: true });
     } catch (error) {
+      if (error instanceof InactiveAccountError) {
+        if (!error.email) {
+          setApiError(t('auth.sendOtpError'));
+          return;
+        }
+
+        setPendingLogin(data);
+        setInactiveEmail(error.email);
+        otpForm.reset({ otp: '' });
+        setStep('otp');
+
+        try {
+          await sendVerifyOtp(error.email);
+        } catch (otpError) {
+          setApiError(getApiErrorMessage(otpError, t('auth.sendOtpError')));
+        }
+
+        return;
+      }
+
       setApiError(getApiErrorMessage(error, t('auth.loginError')));
     }
   };
+
+  const onSubmitOtp = async (data: OtpFormValues) => {
+    if (!inactiveEmail || !pendingLogin) {
+      setStep('login');
+      setApiError(t('auth.loginError'));
+      return;
+    }
+
+    try {
+      setApiError(undefined);
+      await authService.verifyEmailOtpWhenNotLogin({
+        email: inactiveEmail,
+        otp: data.otp.trim(),
+      });
+
+      await login(pendingLogin);
+      navigate(destination, { replace: true });
+    } catch (error) {
+      setApiError(getApiErrorMessage(error, t('auth.verifyOtpError')));
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!inactiveEmail) {
+      setApiError(t('auth.sendOtpError'));
+      return;
+    }
+
+    try {
+      setApiError(undefined);
+      await sendVerifyOtp(inactiveEmail);
+    } catch (error) {
+      setApiError(getApiErrorMessage(error, t('auth.sendOtpError')));
+    }
+  };
+
+  if (step === 'otp') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+        <AuthForm
+          title={t('auth.verifyEmailTitle')}
+          subtitle={t('auth.verifyEmailSubtitle')}
+          submitLabel={t('auth.verifyOtpButton')}
+          loadingLabel={t('common.loading')}
+          onSubmit={(event) => void otpForm.handleSubmit(onSubmitOtp)(event)}
+          isSubmitting={otpForm.formState.isSubmitting}
+          errorMessage={apiError}
+          footer={
+            <button
+              type="button"
+              className="font-semibold text-brand-600 hover:text-brand-700"
+              onClick={() => {
+                setStep('login');
+                setApiError(undefined);
+                setInfoMessage(undefined);
+              }}
+            >
+              {t('auth.redirectToLogin')}
+            </button>
+          }
+        >
+          {infoMessage ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              {infoMessage}
+            </div>
+          ) : null}
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+            {t('auth.verifyingFor')}: <span className="font-semibold">{inactiveEmail}</span>
+          </div>
+
+          <InputField
+            label={t('auth.otpCode')}
+            placeholder={t('auth.otpCode')}
+            autoComplete="one-time-code"
+            registration={otpForm.register('otp', {
+              required: t('auth.required'),
+              pattern: {
+                value: otpPattern,
+                message: t('auth.invalidOtp'),
+              },
+            })}
+            error={otpForm.formState.errors.otp?.message}
+          />
+
+          <button
+            type="button"
+            className="w-full rounded-xl border border-brand-200 px-4 py-3 text-sm font-semibold text-brand-700 transition hover:border-brand-300 hover:bg-brand-50"
+            onClick={() => void handleResendOtp()}
+            disabled={otpForm.formState.isSubmitting}
+          >
+            {t('auth.resendOtpButton')}
+          </button>
+        </AuthForm>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
@@ -67,8 +208,8 @@ export const LoginPage = () => {
         subtitle={t('auth.loginSubtitle')}
         submitLabel={t('auth.loginButton')}
         loadingLabel={t('common.loading')}
-        onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-        isSubmitting={isSubmitting}
+        onSubmit={(event) => void loginForm.handleSubmit(onSubmitLogin)(event)}
+        isSubmitting={loginForm.formState.isSubmitting}
         errorMessage={apiError}
         footer={
           <Link className="font-semibold text-brand-600 hover:text-brand-700" to="/register">
@@ -86,14 +227,14 @@ export const LoginPage = () => {
           label={t('auth.identifier')}
           placeholder={t('auth.identifier')}
           autoComplete="username"
-          registration={register('username', {
+          registration={loginForm.register('username', {
             required: t('auth.required'),
             pattern: {
               value: identifierPattern,
               message: t('auth.identifierFormat'),
             },
           })}
-          error={errors.username?.message}
+          error={loginForm.formState.errors.username?.message}
         />
 
         <InputField
@@ -101,10 +242,10 @@ export const LoginPage = () => {
           placeholder={t('auth.password')}
           type={showPassword ? 'text' : 'password'}
           autoComplete="current-password"
-          registration={register('password', {
+          registration={loginForm.register('password', {
             required: t('auth.required'),
           })}
-          error={errors.password?.message}
+          error={loginForm.formState.errors.password?.message}
           rightElement={
             <button
               type="button"
@@ -122,7 +263,7 @@ export const LoginPage = () => {
             <input
               type="checkbox"
               className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-              {...register('rememberMe')}
+              {...loginForm.register('rememberMe')}
             />
             {t('auth.rememberMe')}
           </label>

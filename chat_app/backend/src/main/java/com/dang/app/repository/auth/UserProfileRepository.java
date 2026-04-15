@@ -38,7 +38,25 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
 
     Optional<UserProfile> findByEmail(String email);
 
+    Optional<UserProfile> findByEmailIgnoreCase(String email);
+
     Optional<UserProfile> findByPhoneNumber(String phoneNumber);
+
+    @Query("""
+            SELECT p
+            FROM UserProfile p
+            JOIN FETCH p.user u
+            WHERE lower(p.email) = lower(:email)
+            """)
+    Optional<UserProfile> findByEmailIgnoreCaseWithUser(@Param("email") String email);
+
+    @Query("""
+            SELECT p
+            FROM UserProfile p
+            JOIN FETCH p.user u
+            WHERE p.phoneNumber = :phoneNumber
+            """)
+    Optional<UserProfile> findByPhoneNumberWithUser(@Param("phoneNumber") String phoneNumber);
 
     boolean existsByEmail(String email);
 

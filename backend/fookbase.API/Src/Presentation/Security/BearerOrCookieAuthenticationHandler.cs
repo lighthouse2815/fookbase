@@ -348,7 +348,7 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
                     continue;
                 }
 
-                var normalized = NormalizeUsername(rawValue);
+                var normalized = rawValue.NormalizeUsernameOrNull();
                 if (!string.IsNullOrWhiteSpace(normalized))
                 {
                     return normalized;
@@ -361,27 +361,6 @@ public sealed class BearerOrCookieAuthenticationHandler : AuthenticationHandler<
         }
 
         return null;
-    }
-
-    private static string? NormalizeUsername(string value)
-    {
-        var trimmed = value.Trim();
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            return null;
-        }
-
-        var atIndex = trimmed.IndexOf('@');
-        if (atIndex > 0)
-        {
-            var fromEmail = trimmed[..atIndex].Trim();
-            if (!string.IsNullOrWhiteSpace(fromEmail))
-            {
-                return fromEmail;
-            }
-        }
-
-        return trimmed;
     }
 
     private static bool TryGetString(JsonElement element, string propertyName, out string value)

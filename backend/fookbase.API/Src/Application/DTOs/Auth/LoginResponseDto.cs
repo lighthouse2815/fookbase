@@ -5,7 +5,13 @@ namespace InteractHub.Api.Application.DTOs.Auth;
 public class LoginResponseDto
 {
     [JsonPropertyName("token")]
-    public string Token { get; set; } = string.Empty;
+    public string? Token { get; set; }
+
+    [JsonPropertyName("accessToken")]
+    public string? AccessToken { get; set; }
+
+    [JsonPropertyName("refreshToken")]
+    public string? RefreshToken { get; set; }
 
     [JsonPropertyName("tokenType")]
     public string TokenType { get; set; } = "Bearer";
@@ -24,6 +30,9 @@ public class LoginResponseDto
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
 
     [JsonPropertyName("avatarUrl")]
     public string? AvatarUrl { get; set; }

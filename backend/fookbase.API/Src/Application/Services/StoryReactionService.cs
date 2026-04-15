@@ -2,6 +2,7 @@ using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
@@ -134,22 +135,12 @@ public class StoryReactionService : IStoryReactionService
         try
         {
             var profile = await _javaApiService.GetProfileSummaryByUserId(actorUserId, cancellationToken: cancellationToken);
-            return Normalize(profile?.DisplayName) ?? "Someone";
+            return profile?.DisplayName.TrimToNull() ?? "Someone";
         }
         catch
         {
             return "Someone";
         }
-    }
-
-    private static string? Normalize(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return value.Trim();
     }
 
     private static void EnsureStoryIsActive(Story story)

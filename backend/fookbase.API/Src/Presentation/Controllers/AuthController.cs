@@ -61,8 +61,15 @@ public class AuthController : ApiControllerBase
             return BuildErrorResponse<LoginResponseDto>(result, "Login failed.");
         }
 
-        result.Data.Token = result.Data.Token.NormalizeAccessToken();
-        _authCookieService.SetLoginCookies(HttpContext, result.Data.Token, result.Data.UserId);
+        var normalizedToken = result.Data.Token.NormalizeAccessTokenOrNull();
+        result.Data.Token = normalizedToken;
+        result.Data.AccessToken = normalizedToken;
+
+        if (!string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.UserId);
+        }
+
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 
@@ -83,16 +90,25 @@ public class AuthController : ApiControllerBase
             return BuildErrorResponse<LoginResponseDto>(result, "Admin login failed.");
         }
 
-        result.Data.Token = result.Data.Token.NormalizeAccessToken();
+        var normalizedToken = result.Data.Token.NormalizeAccessTokenOrNull();
+        result.Data.Token = normalizedToken;
+        result.Data.AccessToken = normalizedToken;
 
-        if (!_tokenRoleService.IsAdmin(result.Data.Role, result.Data.Token))
+        if (string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                ApiResponse<LoginResponseDto>.Fail("Admin login failed."));
+        }
+
+        if (!_tokenRoleService.IsAdmin(result.Data.Role, normalizedToken))
         {
             return StatusCode(
                 StatusCodes.Status403Forbidden,
                 ApiResponse<LoginResponseDto>.Fail("This account does not have admin permission."));
         }
 
-        _authCookieService.SetLoginCookies(HttpContext, result.Data.Token, result.Data.UserId);
+        _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.UserId);
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 

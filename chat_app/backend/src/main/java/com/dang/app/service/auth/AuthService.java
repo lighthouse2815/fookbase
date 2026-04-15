@@ -7,6 +7,7 @@ import com.dang.app.repository.auth.UserProfileRepository;
 import com.dang.app.utils.enums.OTPMailType;
 import com.dang.app.utils.enums.AuthProvider;
 import com.dang.app.utils.enums.OTPType;
+import com.dang.app.utils.enums.Status;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.entity.auth.User;
@@ -25,10 +26,15 @@ import org.springframework.stereotype.Service;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^0\\d{9}$");
+    private record LocalLoginResolved(User user, UserProfile userProfile) {}
 
     private final OTPService otpService;
     private final UserService userService;
@@ -89,7 +95,9 @@ public class AuthService {
     * 6. Kiểm tra profile đã bị xóa chưa
     */
     public LoginResponse login(LoginRequest request) {
-        User user = userService.findByUsername(request.getUsername());
+        LocalLoginResolved resolved = resolveUserForLocalLogin(request.getUsername());
+        User user = resolved.user();
+        UserProfile userProfile = resolved.userProfile();
 
         userGuard.requireNotDeleted(user);
         userGuard.requireHasProvider(user, AuthProvider.LOCAL);
@@ -98,11 +106,27 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        TokenResponse tokenResponse = tokenService.issueTokenPair(user);
+        if (userProfile == null) {
+            userProfile = userProfileRepository.findByUser_Id(user.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        }
 
-        UserProfile userProfile = userProfileRepository.findByUser_Id(user.getId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
         userProfileGuard.requireNotDeleted(userProfile);
+
+        if (user.getStatus() == Status.BANNED) {
+            throw new BusinessException(ErrorCode.USER_BANNED);
+        }
+
+        if (user.getStatus() == Status.INACTIVE) {
+            return authMapper.toLoginResponse(
+                    null,
+                    null,
+                    user,
+                    userProfile
+            );
+        }
+
+        TokenResponse tokenResponse = tokenService.issueTokenPair(user);
 
         return authMapper.toLoginResponse(
                 tokenResponse.getAccessToken(),
@@ -110,6 +134,50 @@ public class AuthService {
                 user,
                 userProfile
         );
+    }
+
+    private LocalLoginResolved resolveUserForLocalLogin(String identifier) {
+        String normalizedIdentifier = normalize(identifier);
+        if (normalizedIdentifier == null) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        return userService.findOptionalByUsername(normalizedIdentifier)
+                .map(user -> new LocalLoginResolved(user, null))
+                .orElseGet(() -> resolveUserByEmailOrPhone(normalizedIdentifier));
+    }
+
+    private LocalLoginResolved resolveUserByEmailOrPhone(String identifier) {
+        if (isEmail(identifier)) {
+            return userProfileRepository.findByEmailIgnoreCaseWithUser(identifier)
+                    .map(profile -> new LocalLoginResolved(profile.getUser(), profile))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+        }
+
+        if (isPhoneNumber(identifier)) {
+            return userProfileRepository.findByPhoneNumberWithUser(identifier)
+                    .map(profile -> new LocalLoginResolved(profile.getUser(), profile))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+        }
+
+        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    private boolean isEmail(String identifier) {
+        return EMAIL_PATTERN.matcher(identifier).matches();
+    }
+
+    private boolean isPhoneNumber(String identifier) {
+        return PHONE_PATTERN.matcher(identifier).matches();
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public TokenResponse refreshToken(String refreshToken) {

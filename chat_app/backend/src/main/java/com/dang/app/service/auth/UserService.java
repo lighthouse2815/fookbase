@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -85,6 +86,19 @@ public class UserService {
     public User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() ->  new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+    }
+
+    public Optional<User> findOptionalByUsername(String username) {
+        if (username == null) {
+            return Optional.empty();
+        }
+
+        String normalized = username.trim();
+        if (normalized.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return userRepository.findByUsername(normalized);
     }
 
     public User findById(UUID userId) {

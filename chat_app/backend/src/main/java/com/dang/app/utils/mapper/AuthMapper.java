@@ -32,6 +32,7 @@ public class AuthMapper {
                 .displayName(userProfile.getDisplayName())
                 .profileCompleted(userProfile.isCompleted())
                 .status(user.getStatus())
+                .email(userProfile.getEmail())
                 .avatarUrl(userProfile.getAvatarUrl())
                 .build();
     }

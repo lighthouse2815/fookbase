@@ -14,8 +14,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class LoginResponse {
-
-    @NotBlank
     private String token;
 
     private String accessToken;
@@ -38,6 +36,8 @@ public class LoginResponse {
 
     @NotNull
     private Status status;
+
+    private String email;
 
     private String avatarUrl;
 }
