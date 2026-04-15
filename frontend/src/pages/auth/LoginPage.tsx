@@ -164,6 +164,15 @@ export const LoginPage = () => {
             </button>
           }
         >
+          <div className="flex justify-center">
+            <img
+              src="/pic_verify_email.jpg"
+              alt={t('auth.verifyEmailTitle')}
+              className="h-auto w-24 max-w-full rounded-xl object-contain sm:w-28 md:w-32"
+              loading="lazy"
+            />
+          </div>
+
           {infoMessage ? (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
               {infoMessage}
