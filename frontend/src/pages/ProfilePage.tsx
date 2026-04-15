@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOutletContext, useParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 
 import { CornerToast } from '../components/CornerToast';
 import { PostCard } from '../components/PostCard';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { useCornerToast } from '../hooks/useCornerToast';
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
+import { friendshipService } from '../services/friendshipService';
 import { postService } from '../services/postService';
 import { profileService } from '../services/profileService';
 import type { Post } from '../types/post';
 import type { Profile } from '../types/profile';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const POST_COLUMN_CLASS = 'mx-auto w-full max-w-[980px]';
 
@@ -54,6 +56,38 @@ const createFallbackProfile = (
 };
 
 const PROFILE_POSTS_PAGE_SIZE = 100;
+
+type FriendshipStatusCode = 'NONE' | 'PENDING' | 'INVITED' | 'ACCEPTED' | 'BLOCKED' | 'REJECTED' | 'REMOVED' | 'UNKNOWN';
+type ProfilePrimaryActionType = 'EDIT' | 'ADD' | 'CANCEL' | 'ACCEPT' | 'FRIENDS' | 'BLOCKED' | 'NONE';
+
+interface ProfilePrimaryActionMeta {
+  type: ProfilePrimaryActionType;
+  label: string;
+  buttonClassName: string;
+  disabled: boolean;
+}
+
+const normalizeFriendshipStatus = (value?: string): FriendshipStatusCode => {
+  const normalized = value?.trim().toUpperCase();
+  if (!normalized) {
+    return 'NONE';
+  }
+
+  if (
+    normalized === 'NONE'
+    || normalized === 'PENDING'
+    || normalized === 'INVITED'
+    || normalized === 'ACCEPTED'
+    || normalized === 'BLOCKED'
+    || normalized === 'REJECTED'
+    || normalized === 'REMOVED'
+  ) {
+    return normalized;
+  }
+
+  return 'UNKNOWN';
+};
+
 const formatGender = (
   value: string | undefined,
   emptyValue: string,
@@ -97,6 +131,7 @@ const formatBirthDate = (value: string | undefined, emptyValue: string, locale: 
 
 export const ProfilePage = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const { currentUser } = useOutletContext<MainLayoutOutletContext>();
   const { userId } = useParams<{ userId: string }>();
   const targetUserId = userId ?? currentUser.id;
@@ -104,8 +139,78 @@ export const ProfilePage = () => {
   const [profile, setProfile] = useState<Profile>(() => createFallbackProfile(targetUserId, currentUser));
   const [personalPosts, setPersonalPosts] = useState<Post[]>([]);
   const { toast, showToast } = useCornerToast();
+  const [isPrimaryActionLoading, setIsPrimaryActionLoading] = useState(false);
+  const [menuActionLoading, setMenuActionLoading] = useState<'unfriend' | 'block' | 'report' | null>(null);
   const emptyInfoValue = t('profile.emptyInfoValue');
   const locale = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
+  const friendshipStatus = normalizeFriendshipStatus(profile.friendshipStatus);
+
+  const primaryActionMeta = useMemo<ProfilePrimaryActionMeta>(() => {
+    if (isOwnProfile) {
+      return {
+        type: 'EDIT',
+        label: t('profile.editProfile'),
+        buttonClassName: 'bg-brand-600 text-white hover:bg-brand-700',
+        disabled: false,
+      };
+    }
+
+    if (friendshipStatus === 'PENDING') {
+      return {
+        type: 'CANCEL',
+        label: t('profile.cancelRequest'),
+        buttonClassName:
+          'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
+        disabled: false,
+      };
+    }
+
+    if (friendshipStatus === 'INVITED') {
+      return {
+        type: 'ACCEPT',
+        label: t('profile.acceptRequest'),
+        buttonClassName: 'bg-sky-600 text-white hover:bg-sky-700',
+        disabled: false,
+      };
+    }
+
+    if (friendshipStatus === 'ACCEPTED') {
+      return {
+        type: 'FRIENDS',
+        label: t('profile.friendsButton'),
+        buttonClassName:
+          'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
+        disabled: true,
+      };
+    }
+
+    if (friendshipStatus === 'BLOCKED') {
+      return {
+        type: 'BLOCKED',
+        label: t('profile.blockedButton'),
+        buttonClassName:
+          'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
+        disabled: true,
+      };
+    }
+
+    if (friendshipStatus === 'UNKNOWN') {
+      return {
+        type: 'NONE',
+        label: t('profile.addFriend'),
+        buttonClassName:
+          'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
+        disabled: true,
+      };
+    }
+
+    return {
+      type: 'ADD',
+      label: t('profile.addFriend'),
+      buttonClassName: 'bg-brand-600 text-white hover:bg-brand-700',
+      disabled: false,
+    };
+  }, [friendshipStatus, isOwnProfile, t]);
 
   useEffect(() => {
     setProfile((previous) => ({
@@ -147,6 +252,11 @@ export const ProfilePage = () => {
   }, [currentUser, targetUserId]);
 
   useEffect(() => {
+    setIsPrimaryActionLoading(false);
+    setMenuActionLoading(null);
+  }, [targetUserId]);
+
+  useEffect(() => {
     const loadPersonalPosts = async () => {
       try {
         const response = await postService.getPosts(1, PROFILE_POSTS_PAGE_SIZE);
@@ -162,6 +272,117 @@ export const ProfilePage = () => {
 
   const handlePostDeleted = (postId: string) => {
     setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));
+  };
+
+  const updateFriendshipStatus = (nextStatus: FriendshipStatusCode) => {
+    setProfile((previous) => ({
+      ...previous,
+      friendshipStatus: nextStatus,
+    }));
+  };
+
+  const adjustFriendsCount = (delta: number) => {
+    setProfile((previous) => ({
+      ...previous,
+      friendsCount: Math.max(0, previous.friendsCount + delta),
+    }));
+  };
+
+  const handlePrimaryAction = async () => {
+    if (isOwnProfile) {
+      navigate('/settings?tab=profile-page-info');
+      return;
+    }
+
+    if (isPrimaryActionLoading || primaryActionMeta.disabled) {
+      return;
+    }
+
+    setIsPrimaryActionLoading(true);
+
+    try {
+      if (primaryActionMeta.type === 'ADD') {
+        await friendshipService.sendFriendRequest(targetUserId);
+        updateFriendshipStatus('PENDING');
+        showToast(t('profile.friendRequestSentSuccess'), 'success');
+      } else if (primaryActionMeta.type === 'CANCEL') {
+        await friendshipService.cancelSentRequest(targetUserId);
+        updateFriendshipStatus('NONE');
+        showToast(t('profile.friendRequestCanceledSuccess'), 'success');
+      } else if (primaryActionMeta.type === 'ACCEPT') {
+        await friendshipService.acceptFriendRequest(targetUserId);
+        updateFriendshipStatus('ACCEPTED');
+        adjustFriendsCount(1);
+        showToast(t('profile.friendRequestAcceptedSuccess'), 'success');
+      }
+    } catch (error) {
+      showToast(getApiErrorMessage(error, t('profile.friendActionError')), 'error');
+    } finally {
+      setIsPrimaryActionLoading(false);
+    }
+  };
+
+  const handleUnfriend = async () => {
+    if (menuActionLoading) {
+      return;
+    }
+
+    if (normalizeFriendshipStatus(profile.friendshipStatus) !== 'ACCEPTED') {
+      return;
+    }
+
+    setMenuActionLoading('unfriend');
+
+    try {
+      await friendshipService.unfriend(targetUserId);
+      updateFriendshipStatus('NONE');
+      adjustFriendsCount(-1);
+      showToast(t('profile.unfriendSuccess'), 'success');
+    } catch (error) {
+      showToast(getApiErrorMessage(error, t('profile.friendActionError')), 'error');
+    } finally {
+      setMenuActionLoading(null);
+    }
+  };
+
+  const handleBlockUser = async () => {
+    if (menuActionLoading) {
+      return;
+    }
+
+    setMenuActionLoading('block');
+
+    const wasFriend = normalizeFriendshipStatus(profile.friendshipStatus) === 'ACCEPTED';
+
+    try {
+      await friendshipService.blockUser(targetUserId);
+      updateFriendshipStatus('BLOCKED');
+      if (wasFriend) {
+        adjustFriendsCount(-1);
+      }
+      showToast(t('profile.blockUserSuccess'), 'success');
+    } catch (error) {
+      showToast(getApiErrorMessage(error, t('profile.blockUserError')), 'error');
+    } finally {
+      setMenuActionLoading(null);
+    }
+  };
+
+  const handleReportUser = async () => {
+    if (menuActionLoading) {
+      return;
+    }
+
+    setMenuActionLoading('report');
+
+    try {
+      await friendshipService.reportUser(targetUserId, `User report from profile page for user ${targetUserId}.`);
+      showToast(t('profile.reportUserSuccess'), 'success');
+    } catch (error) {
+      showToast(getApiErrorMessage(error, t('profile.reportUserError')), 'error');
+    } finally {
+      setMenuActionLoading(null);
+    }
   };
 
   const infoItems = [
@@ -205,7 +426,22 @@ export const ProfilePage = () => {
 
   return (
     <div className="space-y-4">
-      <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
+      <ProfileHeader
+        profile={profile}
+        isOwnProfile={isOwnProfile}
+        actionLabel={primaryActionMeta.label}
+        actionButtonClassName={primaryActionMeta.buttonClassName}
+        onPrimaryAction={handlePrimaryAction}
+        isPrimaryActionLoading={isPrimaryActionLoading}
+        primaryActionDisabled={primaryActionMeta.disabled}
+        onUnfriend={handleUnfriend}
+        onBlock={handleBlockUser}
+        onReport={handleReportUser}
+        isUnfriendLoading={menuActionLoading === 'unfriend'}
+        isBlockLoading={menuActionLoading === 'block'}
+        isReportLoading={menuActionLoading === 'report'}
+        isUnfriendDisabled={friendshipStatus !== 'ACCEPTED'}
+      />
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="xl:sticky xl:top-20 xl:self-start">

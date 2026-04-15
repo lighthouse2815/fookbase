@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { apiClient } from './apiClient';
+import { apiClient, javaApiClient } from './apiClient';
 import type { FriendRequest, FriendSuggestion, Friendship, FriendshipStatus, FriendUser } from '../types/friendship';
 
 interface ApiEnvelope<T> {
@@ -14,6 +14,7 @@ interface RequestCandidate {
   method: 'get' | 'post' | 'delete';
   path: string;
   data?: unknown;
+  client?: 'csharp' | 'java';
 }
 
 interface PendingRequesterPayload {
@@ -114,7 +115,8 @@ const requestFromCandidates = async <T>(candidates: RequestCandidate[]): Promise
 
   for (const candidate of candidates) {
     try {
-      const response = await apiClient.request<T | ApiEnvelope<T>>({
+      const client = candidate.client === 'java' ? javaApiClient : apiClient;
+      const response = await client.request<T | ApiEnvelope<T>>({
         method: candidate.method,
         url: candidate.path,
         data: candidate.data,
@@ -319,6 +321,23 @@ export const friendshipService = {
       { method: 'post', path: '/api/friendships/unfriend', data: { friendId, userId: friendId } },
       { method: 'delete', path: `/api/friendships/friends/${friendId}` },
       { method: 'delete', path: `/api/friends/${friendId}` },
+    ]);
+  },
+
+  async blockUser(targetUserId: string): Promise<void> {
+    await requestFromCandidates<unknown>([
+      { method: 'post', path: '/api/friendships/block', data: { userId: targetUserId, targetUserId } },
+      { method: 'post', path: `/api/friendships/block/${targetUserId}` },
+      { method: 'post', path: `/api/messenger/friendships/block/${targetUserId}`, client: 'java' },
+    ]);
+  },
+
+  async reportUser(targetUserId: string, reason: string): Promise<void> {
+    await requestFromCandidates<unknown>([
+      { method: 'post', path: '/api/user-reports', data: { userId: targetUserId, targetUserId, reason } },
+      { method: 'post', path: '/api/reports/users', data: { userId: targetUserId, targetUserId, reason } },
+      { method: 'post', path: `/api/profiles/${targetUserId}/report`, data: { reason } },
+      { method: 'post', path: '/api/messenger/reports/users', data: { targetUserId, reason }, client: 'java' },
     ]);
   },
 };
