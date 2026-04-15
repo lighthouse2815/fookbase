@@ -2,6 +2,7 @@ package com.dang.app.repository.auth;
 
 import com.dang.app.entity.auth.UserProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -73,5 +74,22 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
     """)
     List<Object[]> findDisplayNamesByUserIds(Set<UUID> userIds);
 
+    @Query("""
+            SELECT p
+            FROM UserProfile p
+            JOIN FETCH p.user u
+            WHERE p.deletedAt IS NULL
+              AND u.deletedAt IS NULL
+              AND (
+                    lower(coalesce(u.username, '')) LIKE lower(concat('%', :keyword, '%'))
+                    OR lower(coalesce(p.email, '')) LIKE lower(concat('%', :keyword, '%'))
+                    OR coalesce(p.phoneNumber, '') LIKE concat('%', :keyword, '%')
+                    OR lower(coalesce(p.displayName, '')) LIKE lower(concat('%', :keyword, '%'))
+                  )
+            ORDER BY p.updatedAt DESC
+            """)
+    List<UserProfile> searchForAdmin(@Param("keyword") String keyword, Pageable pageable);
+
+    List<UserProfile> findByDeletedAtIsNullAndUser_DeletedAtIsNullOrderByUpdatedAtDesc(Pageable pageable);
 
 }

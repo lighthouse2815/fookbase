@@ -80,6 +80,25 @@ public class StoryRepository : IStoryRepository
             .FirstOrDefaultAsync(story => story.Id == storyId, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, Guid>> GetOwnerUserIdsByStoryIdsAsync(
+        IReadOnlyCollection<Guid> storyIds,
+        CancellationToken cancellationToken)
+    {
+        if (storyIds.Count == 0)
+        {
+            return new Dictionary<Guid, Guid>();
+        }
+
+        var pairs = await _context.Stories
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(story => storyIds.Contains(story.Id))
+            .Select(story => new { story.Id, story.UserId })
+            .ToListAsync(cancellationToken);
+
+        return pairs.ToDictionary(pair => pair.Id, pair => pair.UserId);
+    }
+
     public Task<bool> HasViewAsync(Guid storyId, Guid viewerId, CancellationToken cancellationToken)
     {
         return _context.StoryViews.AnyAsync(

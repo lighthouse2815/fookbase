@@ -1,3 +1,5 @@
+using InteractHub.Api.Application.DTOs.Common;
+
 namespace InteractHub.Api.Application.DTOs.UserReports;
 
 public class UserReportResponseDto
@@ -19,4 +21,8 @@ public class UserReportResponseDto
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }
+
+    public AuthorSummaryDto? Reporter { get; init; }
+
+    public AuthorSummaryDto? TargetUser { get; init; }
 }

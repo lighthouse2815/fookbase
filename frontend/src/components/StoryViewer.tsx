@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { storyService } from '../services/storyService';
+import { storyReportService } from '../services/storyReportService';
 import type { StoryAuthor, StoryItem, StoryReactionType } from '../types/story';
 import { formatRelativeTime } from '../utils/date';
 
@@ -64,6 +65,7 @@ export const StoryViewer = ({
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportReasonError, setReportReasonError] = useState<string | null>(null);
+  const [isReportingStory, setIsReportingStory] = useState(false);
   const [reactionByStoryId, setReactionByStoryId] = useState<Record<string, StoryReactionType | null>>({});
   const [floatingReactionIcons, setFloatingReactionIcons] = useState<FloatingReactionIcon[]>([]);
   const timerRef = useRef<number | null>(null);
@@ -282,18 +284,30 @@ export const StoryViewer = ({
     }
   };
 
-  const handleConfirmReportStory = () => {
+  const handleConfirmReportStory = async () => {
     const normalizedReason = reportReason.trim();
     if (normalizedReason.length < 3) {
       setReportReasonError(t('story.viewer.reportReasonMinLength'));
       return;
     }
 
-    setIsReportDialogOpen(false);
-    setIsMenuOpen(false);
-    setReportReason('');
-    setReportReasonError(null);
-    onActionToast?.(t('story.viewer.reportSent'), 'success');
+    if (!activeStory || isReportingStory) {
+      return;
+    }
+
+    try {
+      setIsReportingStory(true);
+      await storyReportService.create(activeStory.id, normalizedReason);
+      setIsReportDialogOpen(false);
+      setIsMenuOpen(false);
+      setReportReason('');
+      setReportReasonError(null);
+      onActionToast?.(t('story.viewer.reportSent'), 'success');
+    } catch {
+      onActionToast?.(t('story.viewer.reportError', 'Unable to send story report.'), 'error');
+    } finally {
+      setIsReportingStory(false);
+    }
   };
 
   if (!activeStory) {
@@ -583,10 +597,11 @@ export const StoryViewer = ({
                 </button>
                 <button
                   type="button"
-                  onClick={handleConfirmReportStory}
-                  className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+                  onClick={() => void handleConfirmReportStory()}
+                  disabled={isReportingStory}
+                  className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {t('story.viewer.sendReport')}
+                  {isReportingStory ? t('common.loading') : t('story.viewer.sendReport')}
                 </button>
               </div>
             </div>

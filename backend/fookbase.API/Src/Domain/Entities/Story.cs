@@ -21,4 +21,6 @@ public class Story
     public ICollection<StoryReaction> Reactions { get; set; } = new List<StoryReaction>();
 
     public ICollection<StoryView> Views { get; set; } = new List<StoryView>();
+
+    public ICollection<StoryReport> Reports { get; set; } = new List<StoryReport>();
 }

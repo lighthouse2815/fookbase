@@ -34,6 +34,10 @@ public class AppDbContext : DbContext
 
     public DbSet<UserReport> UserReports => Set<UserReport>();
 
+    public DbSet<StoryReport> StoryReports => Set<StoryReport>();
+
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+
     public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -271,6 +275,49 @@ public class AppDbContext : DbContext
             entity.HasIndex(report => report.TargetUserId);
             entity.HasIndex(report => report.ReportedByUserId);
             entity.HasIndex(report => report.Status);
+        });
+
+        modelBuilder.Entity<StoryReport>(entity =>
+        {
+            entity.ToTable("StoryReport");
+            entity.HasKey(report => report.Id);
+
+            entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(report => report.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+            entity.Property(report => report.UpdatedAt).IsRequired();
+
+            entity.HasOne(report => report.Story)
+                .WithMany(story => story.Reports)
+                .HasForeignKey(report => report.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(report => report.StoryId);
+            entity.HasIndex(report => report.ReportedByUserId);
+            entity.HasIndex(report => report.Status);
+        });
+
+        modelBuilder.Entity<AdminAuditLog>(entity =>
+        {
+            entity.ToTable("AdminAuditLog");
+            entity.HasKey(log => log.Id);
+
+            entity.Property(log => log.ActionType)
+                .HasMaxLength(60)
+                .IsRequired();
+            entity.Property(log => log.EntityType)
+                .HasMaxLength(40)
+                .IsRequired();
+            entity.Property(log => log.Details)
+                .HasMaxLength(1000);
+            entity.Property(log => log.CreatedAt).IsRequired();
+
+            entity.HasIndex(log => log.AdminUserId);
+            entity.HasIndex(log => log.EntityType);
+            entity.HasIndex(log => log.ActionType);
+            entity.HasIndex(log => log.CreatedAt);
         });
 
         modelBuilder.Entity<SavedPost>(entity =>

@@ -20,6 +20,10 @@ public interface IStoryRepository
 
     Task<Story?> GetByIdForUpdateAsync(Guid storyId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyDictionary<Guid, Guid>> GetOwnerUserIdsByStoryIdsAsync(
+        IReadOnlyCollection<Guid> storyIds,
+        CancellationToken cancellationToken);
+
     Task<bool> HasViewAsync(Guid storyId, Guid viewerId, CancellationToken cancellationToken);
 
     Task AddAsync(Story story, CancellationToken cancellationToken);

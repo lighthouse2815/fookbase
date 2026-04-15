@@ -55,10 +55,12 @@ builder.Services.AddScoped<ICommentReactionRepository, CommentReactionRepository
 builder.Services.AddScoped<ILikeRepository, LikeRepository>();
 builder.Services.AddScoped<IStoryRepository, StoryRepository>();
 builder.Services.AddScoped<IStoryReactionRepository, StoryReactionRepository>();
+builder.Services.AddScoped<IStoryReportRepository, StoryReportRepository>();
 builder.Services.AddScoped<IHashtagRepository, HashtagRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IPostReportRepository, PostReportRepository>();
 builder.Services.AddScoped<IUserReportRepository, UserReportRepository>();
+builder.Services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
 builder.Services.AddScoped<ISavedPostRepository, SavedPostRepository>();
 
 builder.Services.AddScoped<IPostService, PostService>();
@@ -67,11 +69,14 @@ builder.Services.AddScoped<ICommentReactionService, CommentReactionService>();
 builder.Services.AddScoped<ILikeService, LikeService>();
 builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IStoryReactionService, StoryReactionService>();
+builder.Services.AddScoped<IStoryReportService, StoryReportService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IHashtagService, HashtagService>();
 builder.Services.AddScoped<IPostReportService, PostReportService>();
 builder.Services.AddScoped<IUserReportService, UserReportService>();
 builder.Services.AddScoped<ISavedPostService, SavedPostService>();
+builder.Services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
+builder.Services.AddScoped<IAdminConsoleService, AdminConsoleService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();

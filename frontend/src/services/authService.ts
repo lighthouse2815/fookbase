@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import { apiClient } from './apiClient';
 import type {
   AuthResponse,
@@ -40,6 +42,59 @@ export class InactiveAccountError extends Error {
     this.email = email?.trim() || undefined;
   }
 }
+
+export class BannedAccountError extends Error {
+  readonly status = 'BANNED';
+
+  constructor(message = 'Account is banned.') {
+    super(message);
+    this.name = 'BannedAccountError';
+  }
+}
+
+const toNormalizedText = (value: string | undefined): string => {
+  if (!value) {
+    return '';
+  }
+
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+};
+
+const extractApiErrorMessage = (error: unknown): string | undefined => {
+  if (!axios.isAxiosError(error)) {
+    return undefined;
+  }
+
+  const payload = error.response?.data as
+    | {
+        message?: string;
+        error?: string;
+        errors?: string[];
+      }
+    | undefined;
+
+  return payload?.message ?? payload?.error ?? payload?.errors?.find(Boolean);
+};
+
+const isBannedLoginMessage = (message: string | undefined): boolean => {
+  const normalized = toNormalizedText(message);
+  if (!normalized) {
+    return false;
+  }
+
+  return (
+    normalized.includes('user_banned') ||
+    normalized.includes('tai khoan da bi cam') ||
+    normalized.includes('tai khoan bi cam') ||
+    normalized.includes('account is banned') ||
+    normalized.includes('account banned') ||
+    normalized.includes('banned')
+  );
+};
 
 const extractEnvelopeData = <T>(payload: T | ApiEnvelope<T>): T => {
   const envelope = payload as ApiEnvelope<T>;
@@ -90,8 +145,19 @@ const normalizeAuthPayload = (payload: RawAuthPayload): AuthResponse | null => {
 
 export const authService = {
   async login(payload: LoginRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>('/api/auth/login', payload);
-    const authPayload = extractEnvelopeData(response.data);
+    let authPayload: RawAuthPayload;
+    try {
+      const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>('/api/auth/login', payload);
+      authPayload = extractEnvelopeData(response.data);
+    } catch (error) {
+      const errorMessage = extractApiErrorMessage(error);
+      if (axios.isAxiosError(error) && error.response?.status === 403 && isBannedLoginMessage(errorMessage)) {
+        throw new BannedAccountError(errorMessage ?? 'Account is banned.');
+      }
+
+      throw error;
+    }
+
     const authResponse = normalizeAuthPayload(authPayload);
 
     if (authResponse) {
@@ -101,6 +167,9 @@ export const authService = {
     const accountStatus = normalizeStatus(authPayload.status);
     if (accountStatus === 'INACTIVE') {
       throw new InactiveAccountError(authPayload.email);
+    }
+    if (accountStatus === 'BANNED') {
+      throw new BannedAccountError('Account is banned.');
     }
 
     throw new Error('Missing token in auth response');

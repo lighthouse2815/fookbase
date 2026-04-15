@@ -63,6 +63,21 @@ public interface IJavaApiService
         string accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<List<AdminUserSearchDto>>> SearchAdminUsersAsync(
+        string? keyword,
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<AdminUserSearchDto>> UpdateAdminUserStatusAsync(
+        Guid userId,
+        string status,
+        string? accessToken = null,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<AdminUserStatsDto>> GetAdminUserStatsAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
     Task<List<FriendshipDto>> GetFriends(
         Guid userId,
         CancellationToken cancellationToken = default,

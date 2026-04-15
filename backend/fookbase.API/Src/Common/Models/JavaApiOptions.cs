@@ -30,6 +30,12 @@ public class JavaApiOptions
 
     public string ProfileSearchByPhonePathTemplate { get; set; } = "profiles/search?phoneNumber={phoneNumber}";
 
+    public string AdminSearchUsersPathTemplate { get; set; } = "admin/users/search?keyword={keyword}";
+
+    public string AdminUpdateUserStatusPathTemplate { get; set; } = "admin/users/{userId}/status";
+
+    public string AdminUserStatsPathTemplate { get; set; } = "admin/users/stats";
+
     public string FriendsByUserIdPathTemplate { get; set; } = "friendships?userId={userId}";
 
     public string UserSuggestionsPathTemplate { get; set; } = "users/suggestions?page={page}&size={size}";

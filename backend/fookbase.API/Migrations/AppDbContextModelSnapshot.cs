@@ -22,6 +22,51 @@ namespace fookbase.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.AdminAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<Guid>("AdminUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionType");
+
+                    b.HasIndex("AdminUserId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("EntityType");
+
+                    b.ToTable("AdminAuditLog", (string)null);
+                });
+
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -435,6 +480,54 @@ namespace fookbase.API.Migrations
                     b.ToTable("StoryReaction", (string)null);
                 });
 
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.StoryReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("ReportedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ResolvedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportedByUserId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("StoryReport", (string)null);
+                });
+
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.StoryView", b =>
                 {
                     b.Property<Guid>("Id")
@@ -615,6 +708,17 @@ namespace fookbase.API.Migrations
                     b.Navigation("Story");
                 });
 
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.StoryReport", b =>
+                {
+                    b.HasOne("InteractHub.Api.Domain.Entities.Story", "Story")
+                        .WithMany("Reports")
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+                });
+
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.StoryView", b =>
                 {
                     b.HasOne("InteractHub.Api.Domain.Entities.Story", "Story")
@@ -654,6 +758,8 @@ namespace fookbase.API.Migrations
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Story", b =>
                 {
                     b.Navigation("Reactions");
+
+                    b.Navigation("Reports");
 
                     b.Navigation("Views");
                 });

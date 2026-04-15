@@ -1,9 +1,12 @@
+using InteractHub.Api.Application.DTOs.Admin;
 using InteractHub.Api.Application.DTOs.Comments;
 using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Hashtags;
+using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.DTOs.PostReports;
 using InteractHub.Api.Application.DTOs.Posts;
+using InteractHub.Api.Application.DTOs.StoryReports;
 using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.DTOs.UserReports;
 using InteractHub.Api.Common.Utilities;
@@ -119,7 +122,11 @@ public static class EntityToDtoMapper
         };
     }
 
-    public static PostReportResponseDto ToResponseDto(this PostReport report)
+    public static PostReportResponseDto ToResponseDto(
+        this PostReport report,
+        Guid? postOwnerUserId = null,
+        AuthorSummaryDto? reporter = null,
+        AuthorSummaryDto? postOwner = null)
     {
         ArgumentNullException.ThrowIfNull(report);
 
@@ -128,16 +135,22 @@ public static class EntityToDtoMapper
             Id = report.Id,
             PostId = report.PostId,
             ReportedByUserId = report.ReportedByUserId,
+            PostOwnerUserId = postOwnerUserId,
             Reason = report.Reason,
             Status = report.Status.ToString(),
             ResolvedByUserId = report.ResolvedByUserId,
             ResolvedAt = report.ResolvedAt,
             CreatedAt = report.CreatedAt,
-            UpdatedAt = report.UpdatedAt
+            UpdatedAt = report.UpdatedAt,
+            Reporter = reporter,
+            PostOwner = postOwner
         };
     }
 
-    public static UserReportResponseDto ToResponseDto(this UserReport report)
+    public static UserReportResponseDto ToResponseDto(
+        this UserReport report,
+        AuthorSummaryDto? reporter = null,
+        AuthorSummaryDto? targetUser = null)
     {
         ArgumentNullException.ThrowIfNull(report);
 
@@ -151,7 +164,72 @@ public static class EntityToDtoMapper
             ResolvedByUserId = report.ResolvedByUserId,
             ResolvedAt = report.ResolvedAt,
             CreatedAt = report.CreatedAt,
-            UpdatedAt = report.UpdatedAt
+            UpdatedAt = report.UpdatedAt,
+            Reporter = reporter,
+            TargetUser = targetUser
+        };
+    }
+
+    public static StoryReportResponseDto ToResponseDto(
+        this StoryReport report,
+        Guid? storyOwnerUserId = null,
+        AuthorSummaryDto? reporter = null,
+        AuthorSummaryDto? storyOwner = null)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        return new StoryReportResponseDto
+        {
+            Id = report.Id,
+            StoryId = report.StoryId,
+            StoryOwnerUserId = storyOwnerUserId,
+            ReportedByUserId = report.ReportedByUserId,
+            Reason = report.Reason,
+            Status = report.Status.ToString(),
+            ResolvedByUserId = report.ResolvedByUserId,
+            ResolvedAt = report.ResolvedAt,
+            CreatedAt = report.CreatedAt,
+            UpdatedAt = report.UpdatedAt,
+            Reporter = reporter,
+            StoryOwner = storyOwner
+        };
+    }
+
+    public static AdminAuditLogResponseDto ToResponseDto(this AdminAuditLog log)
+    {
+        ArgumentNullException.ThrowIfNull(log);
+
+        return new AdminAuditLogResponseDto
+        {
+            Id = log.Id,
+            AdminUserId = log.AdminUserId,
+            ActionType = log.ActionType,
+            EntityType = log.EntityType,
+            EntityId = log.EntityId,
+            TargetUserId = log.TargetUserId,
+            Details = log.Details,
+            CreatedAt = log.CreatedAt
+        };
+    }
+
+    public static AdminUserSearchResponseDto ToResponseDto(this AdminUserSearchDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        return new AdminUserSearchResponseDto
+        {
+            UserId = dto.UserId,
+            Username = dto.Username?.Trim() ?? string.Empty,
+            DisplayName = dto.DisplayName?.Trim() ?? dto.Username?.Trim() ?? "user",
+            AvatarUrl = string.IsNullOrWhiteSpace(dto.AvatarUrl)
+                ? AvatarUrlHelper.BuildDefaultAvatarUrl(dto.UserId)
+                : dto.AvatarUrl.Trim(),
+            Email = dto.Email?.Trim(),
+            PhoneNumber = dto.PhoneNumber?.Trim(),
+            Role = dto.Role?.Trim() ?? "USER",
+            Status = dto.Status?.Trim() ?? "INACTIVE",
+            CreatedAt = dto.CreatedAt,
+            UpdatedAt = dto.UpdatedAt
         };
     }
 

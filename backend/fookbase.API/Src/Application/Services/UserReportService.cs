@@ -1,4 +1,6 @@
 using InteractHub.Api.Application.DTOs.UserReports;
+using InteractHub.Api.Application.DTOs.Common;
+using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
@@ -21,17 +23,27 @@ public class UserReportService : IUserReportService
 
     private readonly IUserReportRepository _userReportRepository;
     private readonly IJavaApiService _javaApiService;
+    private readonly INotificationService _notificationService;
+    private readonly IAdminAuditLogService _adminAuditLogService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UserReportService> _logger;
+
+    private const string UserReportApprovedNotificationType = "USER_REPORT_APPROVED";
+    private const string UserReportRejectedNotificationType = "USER_REPORT_REJECTED";
+    private const string UserReportTargetNotificationType = "USER_REPORT_TARGET_ACTION";
 
     public UserReportService(
         IUserReportRepository userReportRepository,
         IJavaApiService javaApiService,
+        INotificationService notificationService,
+        IAdminAuditLogService adminAuditLogService,
         IUnitOfWork unitOfWork,
         ILogger<UserReportService> logger)
     {
         _userReportRepository = userReportRepository;
         _javaApiService = javaApiService;
+        _notificationService = notificationService;
+        _adminAuditLogService = adminAuditLogService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -42,11 +54,9 @@ public class UserReportService : IUserReportService
 
         var (items, totalCount) = await _userReportRepository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
 
-        return PagedResult<UserReportResponseDto>.Create(
-            items.Select(static report => report.ToResponseDto()).ToList(),
-            query.Page,
-            query.PageSize,
-            totalCount);
+        var mappedItems = await MapReportsAsync(items, cancellationToken);
+
+        return PagedResult<UserReportResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
     public async Task<PagedResult<UserReportResponseDto>> GetMineAsync(Guid userId, PaginationQuery query, CancellationToken cancellationToken)
@@ -55,11 +65,9 @@ public class UserReportService : IUserReportService
 
         var (items, totalCount) = await _userReportRepository.GetPagedByReporterAsync(userId, query.Page, query.PageSize, cancellationToken);
 
-        return PagedResult<UserReportResponseDto>.Create(
-            items.Select(static report => report.ToResponseDto()).ToList(),
-            query.Page,
-            query.PageSize,
-            totalCount);
+        var mappedItems = await MapReportsAsync(items, cancellationToken);
+
+        return PagedResult<UserReportResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
     public Task<int> GetPendingCountAsync(CancellationToken cancellationToken)
@@ -81,7 +89,8 @@ public class UserReportService : IUserReportService
             throw new ForbiddenException("You are not allowed to access this user report.");
         }
 
-        return report.ToResponseDto();
+        var mappedItems = await MapReportsAsync([report], cancellationToken);
+        return mappedItems[0];
     }
 
     public async Task<UserReportResponseDto> CreateAsync(Guid userId, CreateUserReportRequestDto request, CancellationToken cancellationToken)
@@ -118,7 +127,8 @@ public class UserReportService : IUserReportService
         await _userReportRepository.AddAsync(report, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return report.ToResponseDto();
+        var mappedItems = await MapReportsAsync([report], cancellationToken);
+        return mappedItems[0];
     }
 
     public async Task<UserReportResponseDto> ResolveAsync(
@@ -140,12 +150,47 @@ public class UserReportService : IUserReportService
             throw new ArgumentException("Status must be RESOLVED or REJECTED.");
         }
 
+        if (normalizedStatus == ReportStatus.RESOLVED)
+        {
+            var statusUpdateResult = await _javaApiService.UpdateAdminUserStatusAsync(
+                report.TargetUserId,
+                "BANNED",
+                accessToken: null,
+                cancellationToken: cancellationToken);
+
+            if (!statusUpdateResult.IsSuccess || statusUpdateResult.Data is null)
+            {
+                var errorMessage = string.IsNullOrWhiteSpace(statusUpdateResult.ErrorMessage)
+                    ? "Could not ban reported user."
+                    : statusUpdateResult.ErrorMessage;
+                throw new ServiceUnavailableException(errorMessage);
+            }
+        }
+
         report.Status = normalizedStatus;
         report.ResolvedAt = DateTime.UtcNow;
         report.ResolvedByUserId = adminUser.Id;
         report.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await TryCreateResolveNotificationsAsync(report, adminUserId, normalizedStatus, cancellationToken);
+
+        try
+        {
+            await _adminAuditLogService.LogAsync(
+                adminUserId,
+                normalizedStatus == ReportStatus.RESOLVED ? "USER_REPORT_APPROVED" : "USER_REPORT_REJECTED",
+                "USER_REPORT",
+                report.Id,
+                report.TargetUserId,
+                $"UserReportId={report.Id};TargetUserId={report.TargetUserId};Previous={previousStatus};Current={normalizedStatus}.",
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Could not persist audit log for user report resolution. ReportId={ReportId}", report.Id);
+        }
 
         _logger.LogInformation(
             "Admin moderation action on user report. AdminUserId={AdminUserId}, ReportId={ReportId}, TargetUserId={TargetUserId}, ReporterUserId={ReporterUserId}, PreviousStatus={PreviousStatus}, NewStatus={NewStatus}, ResolvedAt={ResolvedAt}.",
@@ -157,7 +202,8 @@ public class UserReportService : IUserReportService
             report.Status,
             report.ResolvedAt);
 
-        return report.ToResponseDto();
+        var mappedItems = await MapReportsAsync([report], cancellationToken);
+        return mappedItems[0];
     }
 
     public async Task DeleteAsync(Guid reportId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
@@ -172,5 +218,144 @@ public class UserReportService : IUserReportService
 
         _userReportRepository.Remove(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<List<UserReportResponseDto>> MapReportsAsync(
+        IReadOnlyList<UserReport> reports,
+        CancellationToken cancellationToken)
+    {
+        if (reports.Count == 0)
+        {
+            return [];
+        }
+
+        var userIds = reports
+            .Select(report => report.ReportedByUserId)
+            .Concat(reports.Select(report => report.TargetUserId))
+            .Distinct()
+            .ToList();
+
+        var summaries = await ResolveUserSummariesAsync(userIds, cancellationToken);
+
+        return reports
+            .Select(report => report.ToResponseDto(
+                reporter: ResolveSummaryOrFallback(report.ReportedByUserId, summaries),
+                targetUser: ResolveSummaryOrFallback(report.TargetUserId, summaries)))
+            .ToList();
+    }
+
+    private async Task<Dictionary<Guid, AuthorSummaryDto>> ResolveUserSummariesAsync(
+        IEnumerable<Guid> userIds,
+        CancellationToken cancellationToken)
+    {
+        var distinctUserIds = userIds.Distinct().ToList();
+        if (distinctUserIds.Count == 0)
+        {
+            return new Dictionary<Guid, AuthorSummaryDto>();
+        }
+
+        var tasks = distinctUserIds.Select(async userId =>
+        {
+            try
+            {
+                var profile = await _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
+                var summary = profile is null
+                    ? BuildFallbackSummary(userId)
+                    : new AuthorSummaryDto
+                    {
+                        Id = userId,
+                        DisplayName = string.IsNullOrWhiteSpace(profile.DisplayName) ? "user" : profile.DisplayName.Trim(),
+                        AvatarUrl = string.IsNullOrWhiteSpace(profile.AvatarUrl)
+                            ? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
+                            : profile.AvatarUrl.Trim()
+                    };
+
+                return new KeyValuePair<Guid, AuthorSummaryDto>(userId, summary);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                _logger.LogWarning(exception, "Could not load profile summary for user report user {UserId}.", userId);
+                return new KeyValuePair<Guid, AuthorSummaryDto>(userId, BuildFallbackSummary(userId));
+            }
+        });
+
+        var pairs = await Task.WhenAll(tasks);
+        return pairs.ToDictionary(pair => pair.Key, pair => pair.Value);
+    }
+
+    private async Task TryCreateResolveNotificationsAsync(
+        UserReport report,
+        Guid adminUserId,
+        ReportStatus status,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (status == ReportStatus.RESOLVED)
+            {
+                await _notificationService.CreateAsync(
+                    new CreateNotificationRequestDto
+                    {
+                        UserId = report.ReportedByUserId,
+                        ActorUserId = adminUserId,
+                        Type = UserReportApprovedNotificationType,
+                        Message = "Bao cao user da duoc duyet. Tai khoan bi bao cao da bi khoa. / Your user report was approved and the reported account was banned."
+                    },
+                    cancellationToken);
+
+                if (report.TargetUserId != report.ReportedByUserId)
+                {
+                    await _notificationService.CreateAsync(
+                        new CreateNotificationRequestDto
+                        {
+                            UserId = report.TargetUserId,
+                            ActorUserId = adminUserId,
+                            Type = UserReportTargetNotificationType,
+                            Message = "Tai khoan cua ban da bi khoa do vi pham. / Your account was banned due to policy violations."
+                        },
+                        cancellationToken);
+                }
+
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                new CreateNotificationRequestDto
+                {
+                    UserId = report.ReportedByUserId,
+                    ActorUserId = adminUserId,
+                    Type = UserReportRejectedNotificationType,
+                    Message = "Bao cao user da bi tu choi sau khi xem xet. / Your user report was rejected after review."
+                },
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not create user report resolve notifications. ReportId={ReportId}, Status={Status}.",
+                report.Id,
+                status);
+        }
+    }
+
+    private static AuthorSummaryDto ResolveSummaryOrFallback(Guid userId, IReadOnlyDictionary<Guid, AuthorSummaryDto> summaries)
+    {
+        if (summaries.TryGetValue(userId, out var summary))
+        {
+            return summary;
+        }
+
+        return BuildFallbackSummary(userId);
+    }
+
+    private static AuthorSummaryDto BuildFallbackSummary(Guid userId)
+    {
+        return new AuthorSummaryDto
+        {
+            Id = userId,
+            DisplayName = "user",
+            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
+        };
     }
 }

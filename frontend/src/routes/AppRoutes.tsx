@@ -2,9 +2,13 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AdminLayout } from '../layouts/AdminLayout';
+import { AdminAuditLogsPage } from '../pages/admin/AdminAuditLogsPage';
 import { MainLayout } from '../layouts/MainLayout';
 import { AdminCommentReportsPage } from '../pages/admin/AdminCommentReportsPage';
+import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { AdminPostReportsPage } from '../pages/admin/AdminPostReportsPage';
+import { AdminProfilePage } from '../pages/admin/AdminProfilePage';
+import { AdminStoryReportsPage } from '../pages/admin/AdminStoryReportsPage';
 import { AdminUserReportsPage } from '../pages/admin/AdminUserReportsPage';
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage';
 import { FriendSearchPage } from '../pages/FriendSearchPage';
@@ -68,12 +72,16 @@ export const AppRoutes = () => {
 
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="/admin/users" replace />} />
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="reports" element={<Navigate to="/admin/reports/posts" replace />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="reports/posts" element={<AdminPostReportsPage />} />
           <Route path="reports/users" element={<AdminUserReportsPage />} />
           <Route path="reports/comments" element={<AdminCommentReportsPage />} />
+          <Route path="reports/stories" element={<AdminStoryReportsPage />} />
+          <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+          <Route path="profile" element={<AdminProfilePage />} />
         </Route>
       </Route>
 

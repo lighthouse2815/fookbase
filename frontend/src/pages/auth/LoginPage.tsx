@@ -7,7 +7,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthForm } from '../../components/auth/AuthForm';
 import { InputField } from '../../components/auth/InputField';
 import { useAuth } from '../../contexts/AuthContext';
-import { authService, InactiveAccountError } from '../../services/authService';
+import { authService, BannedAccountError, InactiveAccountError } from '../../services/authService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 interface LoginFormValues {
@@ -35,9 +35,10 @@ export const LoginPage = () => {
       }
     | null;
 
-  const [step, setStep] = useState<'login' | 'otp'>('login');
+  const [step, setStep] = useState<'login' | 'otp' | 'banned'>('login');
   const [pendingLogin, setPendingLogin] = useState<LoginFormValues | null>(null);
   const [inactiveEmail, setInactiveEmail] = useState<string>('');
+  const [bannedMessage, setBannedMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
   const [infoMessage, setInfoMessage] = useState<string | undefined>();
@@ -97,6 +98,12 @@ export const LoginPage = () => {
           setApiError(getApiErrorMessage(otpError, t('auth.sendOtpError')));
         }
 
+        return;
+      }
+
+      if (error instanceof BannedAccountError) {
+        setBannedMessage(error.message);
+        setStep('banned');
         return;
       }
 
@@ -168,7 +175,7 @@ export const LoginPage = () => {
             <img
               src="/pic_verify_email.jpg"
               alt={t('auth.verifyEmailTitle')}
-              className="h-auto w-32 max-w-full rounded-xl object-contain sm:w-40 md:w-48"
+              className="h-auto w-56 max-w-full rounded-xl object-contain sm:w-64 md:w-72"
               loading="lazy"
             />
           </div>
@@ -206,6 +213,42 @@ export const LoginPage = () => {
             {t('auth.resendOtpButton')}
           </button>
         </AuthForm>
+      </div>
+    );
+  }
+
+  if (step === 'banned') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-4 py-6">
+        <div className="w-full max-w-5xl space-y-5 text-center">
+          <h1 className="text-3xl font-black uppercase tracking-wide text-rose-500 sm:text-5xl">Ban da bi bann</h1>
+          <p className="text-sm text-slate-300 sm:text-base">
+            {bannedMessage || 'Tai khoan cua ban da bi khoa va khong the dang nhap.'}
+          </p>
+
+          <div className="overflow-hidden rounded-2xl border border-rose-500/40 bg-black shadow-2xl">
+            <video
+              src="/bann_user.mp4"
+              className="mx-auto h-auto max-h-[68vh] w-full object-contain"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setStep('login');
+              setBannedMessage('');
+              setApiError(undefined);
+            }}
+            className="rounded-xl bg-white px-5 py-2 text-sm font-bold text-slate-900 transition hover:bg-slate-200"
+          >
+            Quay lai dang nhap
+          </button>
+        </div>
       </div>
     );
   }
