@@ -42,7 +42,7 @@ export const AdminLoginPage = () => {
   });
 
   if (isAuthenticated && isAdmin) {
-    return <Navigate to="/admin/reports" replace />;
+    return <Navigate to="/admin/users" replace />;
   }
 
   if (isAuthenticated && !isAdmin) {
@@ -55,7 +55,7 @@ export const AdminLoginPage = () => {
       await loginAdmin(data);
 
       const requestedPath = locationState?.from?.pathname;
-      const destination = requestedPath?.startsWith('/admin') ? requestedPath : '/admin/reports';
+      const destination = requestedPath?.startsWith('/admin') ? requestedPath : '/admin/users';
       navigate(destination, { replace: true });
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'Dang nhap admin that bai.'));

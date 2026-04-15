@@ -58,6 +58,7 @@ builder.Services.AddScoped<IStoryReactionRepository, StoryReactionRepository>();
 builder.Services.AddScoped<IHashtagRepository, HashtagRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IPostReportRepository, PostReportRepository>();
+builder.Services.AddScoped<IUserReportRepository, UserReportRepository>();
 builder.Services.AddScoped<ISavedPostRepository, SavedPostRepository>();
 
 builder.Services.AddScoped<IPostService, PostService>();
@@ -69,6 +70,7 @@ builder.Services.AddScoped<IStoryReactionService, StoryReactionService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IHashtagService, HashtagService>();
 builder.Services.AddScoped<IPostReportService, PostReportService>();
+builder.Services.AddScoped<IUserReportService, UserReportService>();
 builder.Services.AddScoped<ISavedPostService, SavedPostService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();

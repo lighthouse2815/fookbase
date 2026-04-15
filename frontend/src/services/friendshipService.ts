@@ -334,7 +334,7 @@ export const friendshipService = {
 
   async reportUser(targetUserId: string, reason: string): Promise<void> {
     await requestFromCandidates<unknown>([
-      { method: 'post', path: '/api/user-reports', data: { userId: targetUserId, targetUserId, reason } },
+      { method: 'post', path: '/api/user-reports', data: { targetUserId, reason } },
       { method: 'post', path: '/api/reports/users', data: { userId: targetUserId, targetUserId, reason } },
       { method: 'post', path: `/api/profiles/${targetUserId}/report`, data: { reason } },
       { method: 'post', path: '/api/messenger/reports/users', data: { targetUserId, reason }, client: 'java' },

@@ -5,6 +5,7 @@ using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.DTOs.PostReports;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.DTOs.Stories;
+using InteractHub.Api.Application.DTOs.UserReports;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 using InteractHub.Api.Domain.Enums;
@@ -126,6 +127,24 @@ public static class EntityToDtoMapper
         {
             Id = report.Id,
             PostId = report.PostId,
+            ReportedByUserId = report.ReportedByUserId,
+            Reason = report.Reason,
+            Status = report.Status.ToString(),
+            ResolvedByUserId = report.ResolvedByUserId,
+            ResolvedAt = report.ResolvedAt,
+            CreatedAt = report.CreatedAt,
+            UpdatedAt = report.UpdatedAt
+        };
+    }
+
+    public static UserReportResponseDto ToResponseDto(this UserReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        return new UserReportResponseDto
+        {
+            Id = report.Id,
+            TargetUserId = report.TargetUserId,
             ReportedByUserId = report.ReportedByUserId,
             Reason = report.Reason,
             Status = report.Status.ToString(),

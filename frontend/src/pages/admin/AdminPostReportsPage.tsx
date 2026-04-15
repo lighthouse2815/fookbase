@@ -1,29 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { CornerToast } from '../components/CornerToast';
-import { useCornerToast } from '../hooks/useCornerToast';
-import { postReportService } from '../services/postReportService';
-import type { PostReportItem } from '../types/report';
-import { getApiErrorMessage } from '../utils/apiError';
-import { formatRelativeTime } from '../utils/date';
+import { CornerToast } from '../../components/CornerToast';
+import { useCornerToast } from '../../hooks/useCornerToast';
+import { postReportService } from '../../services/postReportService';
+import type { PostReportItem } from '../../types/report';
+import { getApiErrorMessage } from '../../utils/apiError';
+import { formatRelativeTime } from '../../utils/date';
+import { getStatusBadgeClass, isCommentReportReason, PAGE_SIZE } from './reportUtils';
 
-const PAGE_SIZE = 20;
-
-const getStatusBadgeClass = (status: string) => {
-  const normalized = status.trim().toUpperCase();
-  if (normalized === 'RESOLVED') {
-    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200';
-  }
-
-  if (normalized === 'REJECTED') {
-    return 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200';
-  }
-
-  return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200';
-};
-
-export const AdminReportsPage = () => {
+export const AdminPostReportsPage = () => {
   const [reports, setReports] = useState<PostReportItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -43,12 +29,14 @@ export const AdminReportsPage = () => {
 
     try {
       const response = await postReportService.getAll(targetPage, PAGE_SIZE);
-      setReports((previous) => (replace ? response.items : [...previous, ...response.items]));
+      const postReportsOnly = response.items.filter((item) => !isCommentReportReason(item.reason));
+
+      setReports((previous) => (replace ? postReportsOnly : [...previous, ...postReportsOnly]));
       setHasMore(response.hasMore);
       setPage(targetPage);
       setLoadError(null);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, 'Khong the tai danh sach bao cao cho admin.'));
+      setLoadError(getApiErrorMessage(error, 'Khong the tai danh sach bao cao bai dang.'));
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
@@ -68,12 +56,10 @@ export const AdminReportsPage = () => {
 
     try {
       const updated = await postReportService.resolve(reportId, status);
-      setReports((previous) =>
-        previous.map((item) => (item.id === updated.id ? updated : item)),
-      );
-      showToast(status === 'RESOLVED' ? 'Da duyet bao cao.' : 'Da tu choi bao cao.', 'success');
+      setReports((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
+      showToast(status === 'RESOLVED' ? 'Da duyet bao cao bai dang.' : 'Da tu choi bao cao bai dang.', 'success');
     } catch (error) {
-      showToast(getApiErrorMessage(error, 'Xu ly bao cao that bai.'), 'error');
+      showToast(getApiErrorMessage(error, 'Xu ly bao cao bai dang that bai.'), 'error');
     } finally {
       setPendingActionReportId(null);
     }
@@ -82,9 +68,9 @@ export const AdminReportsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Admin report moderation</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Duyet bao cao bai dang</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Trang danh cho role admin de duyet cac bai viet bi bao cao.
+          Quan ly cac report lien quan den bai dang.
         </p>
       </section>
 
@@ -96,7 +82,7 @@ export const AdminReportsPage = () => {
 
       {reports.length === 0 && !isLoading ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-          Chua co bao cao nao can xu ly.
+          Chua co bao cao bai dang nao can xu ly.
         </section>
       ) : null}
 

@@ -32,6 +32,8 @@ public class AppDbContext : DbContext
 
     public DbSet<PostReport> PostReports => Set<PostReport>();
 
+    public DbSet<UserReport> UserReports => Set<UserReport>();
+
     public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -250,6 +252,23 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(report => report.PostId);
+            entity.HasIndex(report => report.ReportedByUserId);
+            entity.HasIndex(report => report.Status);
+        });
+
+        modelBuilder.Entity<UserReport>(entity =>
+        {
+            entity.ToTable("UserReport");
+            entity.HasKey(report => report.Id);
+
+            entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(report => report.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+            entity.Property(report => report.UpdatedAt).IsRequired();
+
+            entity.HasIndex(report => report.TargetUserId);
             entity.HasIndex(report => report.ReportedByUserId);
             entity.HasIndex(report => report.Status);
         });
