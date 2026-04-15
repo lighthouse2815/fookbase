@@ -615,6 +615,13 @@
   },
   "notifications": {
     "title": "Thông báo",
-    "empty": "Không có thông báo mới"
+    "empty": "Không có thông báo mới",
+    "markAll": "Đánh dấu tất cả",
+    "markingAll": "Đang đánh dấu...",
+    "accept": "Chấp nhận",
+    "reject": "Từ chối",
+    "processing": "Đang xử lý...",
+    "someone": "Ai đó",
+    "friendRequestMessage": "{{name}} đã gửi cho bạn lời mời kết bạn."
   }
 }

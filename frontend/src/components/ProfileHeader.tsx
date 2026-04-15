@@ -97,12 +97,14 @@ export const ProfileHeader = ({
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
-      {profile.coverUrl ? (
-        <img src={profile.coverUrl} alt={normalizedDisplayName} className="h-48 w-full object-cover" />
-      ) : (
-        <div className="h-48 bg-gradient-to-r from-brand-500 to-cyan-400" />
-      )}
+    <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
+      <div className="overflow-hidden rounded-t-2xl">
+        {profile.coverUrl ? (
+          <img src={profile.coverUrl} alt={normalizedDisplayName} className="h-48 w-full object-cover" />
+        ) : (
+          <div className="h-48 bg-gradient-to-r from-brand-500 to-cyan-400" />
+        )}
+      </div>
 
       <div className="relative px-6 pb-6">
         <Link to={`/profile/${profile.id}`} className="inline-flex" aria-label={normalizedDisplayName}>
@@ -152,7 +154,7 @@ export const ProfileHeader = ({
                 </button>
 
                 {isActionMenuOpen ? (
-                  <div className="absolute right-0 top-12 z-20 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                  <div className="absolute right-0 top-12 z-50 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
                     <button
                       type="button"
                       onClick={() => handleMenuAction(isFriend ? onUnfriend : onPrimaryAction)}

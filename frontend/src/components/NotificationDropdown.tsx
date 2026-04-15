@@ -59,7 +59,7 @@ export const NotificationDropdown = ({
   };
 
   return (
-    <div className="absolute right-0 top-12 z-30 w-80 rounded-2xl border border-slate-200 bg-white p-3 shadow-card dark:border-slate-700 dark:bg-slate-900">
+    <div className="absolute right-0 top-12 z-30 w-[min(22rem,calc(100vw-1rem))] rounded-2xl border border-slate-200 bg-white p-3 shadow-card dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center justify-between px-2 py-1">
         <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('notifications.title')}</h3>
         <button
@@ -68,7 +68,7 @@ export const NotificationDropdown = ({
           disabled={activeAction === 'readall' || items.length === 0}
           className="text-xs font-semibold text-brand-600 transition hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-brand-300 dark:hover:text-brand-200"
         >
-          {activeAction === 'readall' ? 'Marking...' : 'Mark all'}
+          {activeAction === 'readall' ? t('notifications.markingAll') : t('notifications.markAll')}
         </button>
       </div>
 
@@ -103,25 +103,29 @@ export const NotificationDropdown = ({
                       void handleAccept(item);
                     }}
                     disabled={activeNotificationId === item.id}
-                    className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Check size={13} />
-                    {activeNotificationId === item.id && activeAction === 'accept' ? 'Processing...' : 'Chap nhan'}
-                  </button>
-                  <button
+                  className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Check size={13} />
+                  {activeNotificationId === item.id && activeAction === 'accept'
+                    ? t('notifications.processing')
+                    : t('notifications.accept')}
+                </button>
+                <button
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
                       void handleReject(item);
                     }}
                     disabled={activeNotificationId === item.id}
-                    className="inline-flex items-center justify-center gap-1 rounded-lg bg-rose-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <X size={13} />
-                    {activeNotificationId === item.id && activeAction === 'reject' ? 'Processing...' : 'Tu choi'}
-                  </button>
-                </div>
-              ) : null}
+                  className="inline-flex items-center justify-center gap-1 rounded-lg bg-rose-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <X size={13} />
+                  {activeNotificationId === item.id && activeAction === 'reject'
+                    ? t('notifications.processing')
+                    : t('notifications.reject')}
+                </button>
+              </div>
+            ) : null}
             </li>
           ))}
         </ul>

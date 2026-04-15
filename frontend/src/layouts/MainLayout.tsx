@@ -1,7 +1,7 @@
-import { House, UserRound, UsersRound } from 'lucide-react';
+import { Bookmark, House, MessageSquareText, UserRound, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { Navbar } from '../components/Navbar';
 import { SidebarLeft } from '../components/SidebarLeft';
@@ -59,7 +59,7 @@ const normalizePresenceUsers = (users: User[], isOnline: boolean): User[] => {
 };
 
 export const MainLayout = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,20 +76,20 @@ export const MainLayout = () => {
   const hideRightSidebar = hideLeftSidebar || isMessagesPage;
 
   const mapReceivedRequestToNotification = useCallback((request: FriendRequest): NotificationItem => {
-    const actorName = request.fullName?.trim() || request.username?.trim() || 'Someone';
+    const actorName = request.fullName?.trim() || request.username?.trim() || t('notifications.someone');
 
     return {
       id: `friend-request-${request.id}`,
       type: 'FRIEND_REQUEST',
       actorUserId: request.id,
       requestId: request.requestId,
-      message: `${actorName} sent you a friend request.`,
+      message: t('notifications.friendRequestMessage', { name: actorName }),
       createdAt: request.requestedAt ?? new Date().toISOString(),
       isRead: false,
       avatarUrl: request.avatarUrl,
       isVirtual: true,
     };
-  }, []);
+  }, [t]);
 
   const loadRealtimeNotifications = useCallback(async () => {
     const [apiNotificationsResult, friendRequestsResult] = await Promise.allSettled([
@@ -248,6 +248,10 @@ export const MainLayout = () => {
     };
   }, [loadRealtimeNotifications]);
 
+  useEffect(() => {
+    void loadRealtimeNotifications();
+  }, [i18n.language, loadRealtimeNotifications]);
+
   const markNotificationAsRead = useCallback(async (notification: NotificationItem) => {
     setNotifications((existing) =>
       existing.map((item) => (item.id === notification.id ? { ...item, isRead: true } : item)),
@@ -360,7 +364,7 @@ export const MainLayout = () => {
       />
 
       <div
-        className={`mx-auto grid max-w-[1600px] gap-4 px-3 pb-24 pt-20 sm:px-4 md:pb-8 lg:px-6 ${
+        className={`mx-auto grid max-w-[1600px] gap-4 px-3 pb-24 pt-28 sm:px-4 md:pb-8 md:pt-20 lg:px-6 ${
           hideLeftSidebar
             ? 'md:grid-cols-[minmax(0,1fr)]'
             : hideRightSidebar
@@ -398,8 +402,8 @@ export const MainLayout = () => {
         )}
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
-        <div className="mx-auto grid max-w-sm grid-cols-3 gap-2">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
+        <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -413,6 +417,7 @@ export const MainLayout = () => {
             <House size={18} />
             <span>{t('nav.home')}</span>
           </NavLink>
+
           <NavLink
             to="/friends"
             className={({ isActive }) =>
@@ -426,13 +431,48 @@ export const MainLayout = () => {
             <UsersRound size={18} />
             <span>{t('nav.friends')}</span>
           </NavLink>
-          <Link
+
+          <NavLink
+            to="/messages"
+            className={({ isActive }) =>
+              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+                isActive
+                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
+                  : 'text-slate-600 dark:text-slate-300'
+              }`
+            }
+          >
+            <MessageSquareText size={18} />
+            <span>{t('nav.messages')}</span>
+          </NavLink>
+
+          <NavLink
+            to="/saved"
+            className={({ isActive }) =>
+              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+                isActive
+                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
+                  : 'text-slate-600 dark:text-slate-300'
+              }`
+            }
+          >
+            <Bookmark size={18} />
+            <span>{t('nav.saved')}</span>
+          </NavLink>
+
+          <NavLink
             to="/profile"
-            className="inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium text-slate-600 dark:text-slate-300"
+            className={({ isActive }) =>
+              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+                isActive
+                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
+                  : 'text-slate-600 dark:text-slate-300'
+              }`
+            }
           >
             <UserRound size={18} />
             <span>{t('nav.profile')}</span>
-          </Link>
+          </NavLink>
         </div>
       </nav>
     </div>

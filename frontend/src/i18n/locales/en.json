@@ -615,6 +615,13 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No new notifications"
+    "empty": "No new notifications",
+    "markAll": "Mark all",
+    "markingAll": "Marking...",
+    "accept": "Accept",
+    "reject": "Reject",
+    "processing": "Processing...",
+    "someone": "Someone",
+    "friendRequestMessage": "{{name}} sent you a friend request."
   }
 }
