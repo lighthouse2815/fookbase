@@ -221,7 +221,7 @@ export const LoginPage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black px-4 py-6">
         <div className="w-full max-w-5xl space-y-5 text-center">
-          <h1 className="text-3xl font-black uppercase tracking-wide text-rose-500 sm:text-5xl">Ban da bi bann</h1>
+          <h1 className="text-3xl font-black tracking-wide text-rose-500 sm:text-5xl">huhuhu bạn đã bị ban</h1>
           <p className="text-sm text-slate-300 sm:text-base">
             {bannedMessage || 'Tai khoan cua ban da bi khoa va khong the dang nhap.'}
           </p>
