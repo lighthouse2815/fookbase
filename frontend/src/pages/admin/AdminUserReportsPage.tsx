@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Flag } from 'lucide-react';
 
 import { CornerToast } from '../../components/CornerToast';
+import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { useCornerToast } from '../../hooks/useCornerToast';
+import { useLocaleText } from '../../hooks/useLocaleText';
 import { userReportService } from '../../services/userReportService';
 import type { UserReportItem } from '../../types/report';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -11,6 +13,7 @@ import { formatRelativeTime } from '../../utils/date';
 import { getStatusBadgeClass, PAGE_SIZE } from './reportUtils';
 
 export const AdminUserReportsPage = () => {
+  const tx = useLocaleText();
   const [reports, setReports] = useState<UserReportItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -36,12 +39,12 @@ export const AdminUserReportsPage = () => {
       setPage(targetPage);
       setLoadError(null);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, 'Khong the tai danh sach bao cao user.'));
+      setLoadError(getApiErrorMessage(error, tx('Không thể tải danh sách báo cáo user.', 'Could not load user reports.')));
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
     }
-  }, []);
+  }, [tx]);
 
   useEffect(() => {
     void loadReports(1, true);
@@ -57,9 +60,14 @@ export const AdminUserReportsPage = () => {
     try {
       const updated = await userReportService.resolve(reportId, status);
       setReports((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
-      showToast(status === 'RESOLVED' ? 'Da duyet bao cao user.' : 'Da tu choi bao cao user.', 'success');
+      showToast(
+        status === 'RESOLVED'
+          ? tx('Đã duyệt báo cáo user.', 'User report approved.')
+          : tx('Đã từ chối báo cáo user.', 'User report rejected.'),
+        'success',
+      );
     } catch (error) {
-      showToast(getApiErrorMessage(error, 'Xu ly bao cao user that bai.'), 'error');
+      showToast(getApiErrorMessage(error, tx('Xử lý báo cáo user thất bại.', 'Failed to process user report.')), 'error');
     } finally {
       setPendingActionReportId(null);
     }
@@ -68,9 +76,9 @@ export const AdminUserReportsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Duyet bao cao user</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyệt báo cáo user', 'Moderate user reports')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Quan ly cac report lien quan den tai khoan nguoi dung.
+          {tx('Quản lý các report liên quan đến tài khoản người dùng.', 'Review reports related to user accounts.')}
         </p>
       </section>
 
@@ -81,9 +89,18 @@ export const AdminUserReportsPage = () => {
       ) : null}
 
       {reports.length === 0 && !isLoading ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-          Chua co bao cao user nao can xu ly.
-        </section>
+        <EmptyStateCard
+          icon={Flag}
+          title={tx('Chưa có báo cáo user', 'No user reports')}
+          description={tx(
+            'Khi có báo cáo user mới, chúng sẽ xuất hiện tại đây.',
+            'New user reports will appear here.',
+          )}
+          actionLabel={tx('Làm mới', 'Refresh')}
+          onAction={() => {
+            void loadReports(1, true);
+          }}
+        />
       ) : null}
 
       <section className="space-y-3">
@@ -110,7 +127,7 @@ export const AdminUserReportsPage = () => {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Nguoi bao cao</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người báo cáo', 'Reporter')}</p>
                   {report.reporter ? (
                     <Link to={`/profile/${report.reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -129,7 +146,7 @@ export const AdminUserReportsPage = () => {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Nguoi bi bao cao</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người bị báo cáo', 'Reported user')}</p>
                   {report.targetUser ? (
                     <Link to={`/profile/${report.targetUser.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -155,7 +172,7 @@ export const AdminUserReportsPage = () => {
                   to={`/profile/${report.targetUserId}`}
                   className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  Xem profile user
+                  {tx('Xem profile user', 'View user profile')}
                 </Link>
 
                 {isPending ? (
@@ -166,7 +183,7 @@ export const AdminUserReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {isActing ? 'Dang xu ly...' : 'Chap nhan'}
+                      {isActing ? tx('Đang xử lý...', 'Processing...') : tx('Chấp nhận', 'Approve')}
                     </button>
                     <button
                       type="button"
@@ -174,7 +191,7 @@ export const AdminUserReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Tu choi
+                      {tx('Từ chối', 'Reject')}
                     </button>
                   </>
                 ) : null}
@@ -192,10 +209,10 @@ export const AdminUserReportsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? 'Dang tai...' : 'Xem them'}
+            {isLoading ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
           </button>
         ) : reports.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Da hien thi het bao cao.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Đã hiển thị hết báo cáo.', 'All reports are shown.')}</p>
         ) : null}
       </div>
 
@@ -210,9 +227,12 @@ export const AdminUserReportsPage = () => {
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Xac nhan duyet bao cao user</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xác nhận duyệt báo cáo user', 'Confirm user report approval')}</h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Chap nhan report nghia la tai khoan bi bao cao se bi khoa (BANNED). Ban chac chan tiep tuc?
+                  {tx(
+                    'Chấp nhận report nghĩa là tài khoản bị báo cáo sẽ bị khóa (BANNED). Bạn chắc chắn tiếp tục?',
+                    'Approving this report will ban the reported account. Continue?',
+                  )}
                 </p>
               </div>
             </div>
@@ -222,7 +242,7 @@ export const AdminUserReportsPage = () => {
                 onClick={() => setApproveConfirmReportId(null)}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Huy
+                {tx('Hủy', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -232,7 +252,7 @@ export const AdminUserReportsPage = () => {
                 }}
                 className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
-                Xac nhan duyet
+                {tx('Xác nhận duyệt', 'Confirm')}
               </button>
             </div>
           </div>

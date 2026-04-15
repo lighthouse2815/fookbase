@@ -19,6 +19,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLocaleText } from '../hooks/useLocaleText';
 
 type AdminPopover = 'language' | 'profile' | null;
 
@@ -31,6 +32,7 @@ const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
 
 export const AdminLayout = () => {
   const { t, i18n } = useTranslation();
+  const tx = useLocaleText();
   const { theme, toggleTheme } = useTheme();
   const { logout, user } = useAuth();
   const [openPopover, setOpenPopover] = useState<AdminPopover>(null);
@@ -82,35 +84,35 @@ export const AdminLayout = () => {
     <nav className="space-y-1">
       <NavLink to="/admin/dashboard" className={navLinkClassName} onClick={closeSidebar}>
         <BarChart3 size={16} />
-        Tong quan
+        {tx('Tổng quan', 'Dashboard')}
       </NavLink>
       <NavLink to="/admin/users" className={navLinkClassName} onClick={closeSidebar}>
         <UserCog size={16} />
-        Quan ly user
+        {tx('Quản lý người dùng', 'User management')}
       </NavLink>
       <NavLink to="/admin/reports/posts" className={navLinkClassName} onClick={closeSidebar}>
         <FileWarning size={16} />
-        Bao cao bai dang
+        {tx('Báo cáo bài đăng', 'Post reports')}
       </NavLink>
       <NavLink to="/admin/reports/users" className={navLinkClassName} onClick={closeSidebar}>
         <Flag size={16} />
-        Bao cao user
+        {tx('Báo cáo người dùng', 'User reports')}
       </NavLink>
       <NavLink to="/admin/reports/comments" className={navLinkClassName} onClick={closeSidebar}>
         <MessageSquareWarning size={16} />
-        Bao cao binh luan
+        {tx('Báo cáo bình luận', 'Comment reports')}
       </NavLink>
       <NavLink to="/admin/reports/stories" className={navLinkClassName} onClick={closeSidebar}>
         <BellRing size={16} />
-        Bao cao story
+        {tx('Báo cáo story', 'Story reports')}
       </NavLink>
       <NavLink to="/admin/audit-logs" className={navLinkClassName} onClick={closeSidebar}>
         <Shield size={16} />
-        Lich su duyet
+        {tx('Lịch sử duyệt', 'Audit logs')}
       </NavLink>
       <NavLink to="/admin/profile" className={navLinkClassName} onClick={closeSidebar}>
         <UserCircle2 size={16} />
-        Ho so admin
+        {tx('Hồ sơ admin', 'Admin profile')}
       </NavLink>
     </nav>
   );
@@ -132,7 +134,7 @@ export const AdminLayout = () => {
               <Shield size={18} />
             </div>
             <div>
-              <p className="text-sm font-semibold leading-5">Admin Console</p>
+              <p className="text-sm font-semibold leading-5">{tx('Bảng điều khiển admin', 'Admin Console')}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">{user?.username ?? 'admin'}</p>
             </div>
           </div>
@@ -210,7 +212,7 @@ export const AdminLayout = () => {
                     onClick={() => setOpenPopover(null)}
                   >
                     <UserCircle2 size={16} />
-                    Ho so admin
+                    {tx('Hồ sơ admin', 'Admin profile')}
                   </Link>
                   <button
                     type="button"
@@ -221,7 +223,7 @@ export const AdminLayout = () => {
                     }}
                   >
                     <LogOut size={16} />
-                    Dang xuat
+                    {tx('Đăng xuất', 'Logout')}
                   </button>
                 </div>
               ) : null}
@@ -251,4 +253,3 @@ export const AdminLayout = () => {
     </div>
   );
 };
-

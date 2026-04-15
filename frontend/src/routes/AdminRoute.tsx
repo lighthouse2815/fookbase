@@ -1,10 +1,12 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+import { useLocaleText } from '../hooks/useLocaleText';
 import { useAuth } from '../contexts/AuthContext';
 
 export const AdminRoute = () => {
   const { t } = useTranslation();
+  const tx = useLocaleText();
   const { isAuthenticated, isAdmin, isInitializing } = useAuth();
   const location = useLocation();
 
@@ -17,7 +19,13 @@ export const AdminRoute = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" state={{ from: location, message: 'Vui long dang nhap admin.' }} replace />;
+    return (
+      <Navigate
+        to="/admin/login"
+        state={{ from: location, message: tx('Vui lòng đăng nhập admin.', 'Please sign in as admin.') }}
+        replace
+      />
+    );
   }
 
   if (!isAdmin) {

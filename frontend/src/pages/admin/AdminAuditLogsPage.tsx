@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { EmptyStateCard } from '../../components/EmptyStateCard';
+import { useLocaleText } from '../../hooks/useLocaleText';
 import { adminService, type AdminAuditLogItem } from '../../services/adminService';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatRelativeTime } from '../../utils/date';
 import { PAGE_SIZE } from './reportUtils';
 
 export const AdminAuditLogsPage = () => {
+  const tx = useLocaleText();
   const [logs, setLogs] = useState<AdminAuditLogItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -28,12 +32,12 @@ export const AdminAuditLogsPage = () => {
       setPage(targetPage);
       setErrorMessage(null);
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Khong the tai lich su thao tac admin.'));
+      setErrorMessage(getApiErrorMessage(error, tx('Không thể tải lịch sử thao tác admin.', 'Could not load admin audit logs.')));
     } finally {
       setIsLoading(false);
       loadingRef.current = false;
     }
-  }, []);
+  }, [tx]);
 
   useEffect(() => {
     void loadLogs(1, true);
@@ -42,9 +46,12 @@ export const AdminAuditLogsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Lich su thao tac admin</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Lịch sử thao tác admin', 'Admin audit logs')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Luu vet ai duyet, duyet gi, doi trang thai gi va thoi gian thuc hien.
+          {tx(
+            'Lưu vết ai duyệt, duyệt gì, đổi trạng thái gì và thời gian thực hiện.',
+            'Track who moderated what, which action was taken, and when.',
+          )}
         </p>
       </section>
 
@@ -55,9 +62,18 @@ export const AdminAuditLogsPage = () => {
       ) : null}
 
       {logs.length === 0 && !isLoading ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-          Chua co ban ghi lich su.
-        </section>
+        <EmptyStateCard
+          icon={ShieldCheck}
+          title={tx('Chưa có bản ghi lịch sử', 'No audit logs yet')}
+          description={tx(
+            'Các hành động duyệt của admin sẽ được lưu và hiển thị tại đây.',
+            'Admin moderation actions will be stored and shown here.',
+          )}
+          actionLabel={tx('Làm mới', 'Refresh')}
+          onAction={() => {
+            void loadLogs(1, true);
+          }}
+        />
       ) : null}
 
       <section className="space-y-3">
@@ -78,24 +94,26 @@ export const AdminAuditLogsPage = () => {
 
             <div className="mt-3 grid gap-2 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
               <p>
-                Admin:{' '}
+                {tx('Admin', 'Admin')}:{' '}
                 <Link to={`/profile/${item.adminUserId}`} className="font-semibold text-brand-600 hover:text-brand-700">
                   {item.adminUserId}
                 </Link>
               </p>
               <p>
-                Target:{' '}
+                {tx('Target', 'Target')}:{' '}
                 {item.targetUserId ? (
                   <Link to={`/profile/${item.targetUserId}`} className="font-semibold text-brand-600 hover:text-brand-700">
                     {item.targetUserId}
                   </Link>
                 ) : (
-                  'N/A'
+                  tx('Không có', 'N/A')
                 )}
               </p>
             </div>
 
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">EntityId: {item.entityId ?? 'N/A'}</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              EntityId: {item.entityId ?? tx('Không có', 'N/A')}
+            </p>
             {item.details ? <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{item.details}</p> : null}
           </article>
         ))}
@@ -109,13 +127,12 @@ export const AdminAuditLogsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? 'Dang tai...' : 'Xem them'}
+            {isLoading ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
           </button>
         ) : logs.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Da hien thi het lich su.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Đã hiển thị hết lịch sử.', 'All logs are shown.')}</p>
         ) : null}
       </div>
     </div>
   );
 };
-

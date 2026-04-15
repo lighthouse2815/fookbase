@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, MessageSquareWarning } from 'lucide-react';
 
 import { CornerToast } from '../../components/CornerToast';
+import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { useCornerToast } from '../../hooks/useCornerToast';
+import { useLocaleText } from '../../hooks/useLocaleText';
 import { postReportService } from '../../services/postReportService';
 import type { PostReportItem } from '../../types/report';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -11,6 +13,7 @@ import { formatRelativeTime } from '../../utils/date';
 import { extractCommentIdFromReason, getStatusBadgeClass, isCommentReportReason, PAGE_SIZE } from './reportUtils';
 
 export const AdminCommentReportsPage = () => {
+  const tx = useLocaleText();
   const [reports, setReports] = useState<PostReportItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -38,12 +41,12 @@ export const AdminCommentReportsPage = () => {
       setPage(targetPage);
       setLoadError(null);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, 'Khong the tai danh sach bao cao binh luan.'));
+      setLoadError(getApiErrorMessage(error, tx('Không thể tải danh sách báo cáo bình luận.', 'Could not load comment reports.')));
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
     }
-  }, []);
+  }, [tx]);
 
   useEffect(() => {
     void loadReports(1, true);
@@ -59,9 +62,14 @@ export const AdminCommentReportsPage = () => {
     try {
       const updated = await postReportService.resolve(reportId, status);
       setReports((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
-      showToast(status === 'RESOLVED' ? 'Da duyet bao cao binh luan.' : 'Da tu choi bao cao binh luan.', 'success');
+      showToast(
+        status === 'RESOLVED'
+          ? tx('Đã duyệt báo cáo bình luận.', 'Comment report approved.')
+          : tx('Đã từ chối báo cáo bình luận.', 'Comment report rejected.'),
+        'success',
+      );
     } catch (error) {
-      showToast(getApiErrorMessage(error, 'Xu ly bao cao binh luan that bai.'), 'error');
+      showToast(getApiErrorMessage(error, tx('Xử lý báo cáo bình luận thất bại.', 'Failed to process comment report.')), 'error');
     } finally {
       setPendingActionReportId(null);
     }
@@ -70,9 +78,9 @@ export const AdminCommentReportsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Duyet bao cao binh luan</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyệt báo cáo bình luận', 'Moderate comment reports')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Quan ly report binh luan (tag [COMMENT:id]).
+          {tx('Quản lý report bình luận (tag [COMMENT:id]).', 'Review comment reports (tag [COMMENT:id]).')}
         </p>
       </section>
 
@@ -83,9 +91,18 @@ export const AdminCommentReportsPage = () => {
       ) : null}
 
       {reports.length === 0 && !isLoading ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-          Chua co bao cao binh luan nao can xu ly.
-        </section>
+        <EmptyStateCard
+          icon={MessageSquareWarning}
+          title={tx('Chưa có báo cáo bình luận', 'No comment reports')}
+          description={tx(
+            'Danh sách đang trống. Báo cáo mới sẽ hiển thị ở đây.',
+            'The list is empty. New reports will appear here.',
+          )}
+          actionLabel={tx('Làm mới', 'Refresh')}
+          onAction={() => {
+            void loadReports(1, true);
+          }}
+        />
       ) : null}
 
       <section className="space-y-3">
@@ -113,7 +130,7 @@ export const AdminCommentReportsPage = () => {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Nguoi bao cao</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người báo cáo', 'Reporter')}</p>
                   {report.reporter ? (
                     <Link to={`/profile/${report.reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -132,7 +149,7 @@ export const AdminCommentReportsPage = () => {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Nguoi bi bao cao</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người bị báo cáo', 'Reported user')}</p>
                   {report.postOwner ? (
                     <Link to={`/profile/${report.postOwner.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -152,7 +169,7 @@ export const AdminCommentReportsPage = () => {
               </div>
 
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                Comment: {commentId ?? 'N/A'} - {formatRelativeTime(report.createdAt)}
+                {tx('Bình luận', 'Comment')}: {commentId ?? 'N/A'} - {formatRelativeTime(report.createdAt)}
               </p>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -160,7 +177,7 @@ export const AdminCommentReportsPage = () => {
                   to={`/posts/${report.postId}`}
                   className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  Xem post goc
+                  {tx('Xem post gốc', 'View parent post')}
                 </Link>
 
                 {isPending ? (
@@ -171,7 +188,7 @@ export const AdminCommentReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {isActing ? 'Dang xu ly...' : 'Chap nhan'}
+                      {isActing ? tx('Đang xử lý...', 'Processing...') : tx('Chấp nhận', 'Approve')}
                     </button>
                     <button
                       type="button"
@@ -179,7 +196,7 @@ export const AdminCommentReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Tu choi
+                      {tx('Từ chối', 'Reject')}
                     </button>
                   </>
                 ) : null}
@@ -197,10 +214,10 @@ export const AdminCommentReportsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? 'Dang tai...' : 'Xem them'}
+            {isLoading ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
           </button>
         ) : reports.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Da hien thi het bao cao.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Đã hiển thị hết báo cáo.', 'All reports are shown.')}</p>
         ) : null}
       </div>
 
@@ -215,9 +232,12 @@ export const AdminCommentReportsPage = () => {
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Xac nhan duyet bao cao</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xác nhận duyệt báo cáo', 'Confirm approval')}</h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Chap nhan report nghia la binh luan bi bao cao se bi xoa. Ban chac chan tiep tuc?
+                  {tx(
+                    'Chấp nhận report nghĩa là bình luận bị báo cáo sẽ bị xóa. Bạn chắc chắn tiếp tục?',
+                    'Approving this report means the reported comment will be deleted. Continue?',
+                  )}
                 </p>
               </div>
             </div>
@@ -227,7 +247,7 @@ export const AdminCommentReportsPage = () => {
                 onClick={() => setApproveConfirmReportId(null)}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Huy
+                {tx('Hủy', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -237,7 +257,7 @@ export const AdminCommentReportsPage = () => {
                 }}
                 className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
-                Xac nhan duyet
+                {tx('Xác nhận duyệt', 'Confirm')}
               </button>
             </div>
           </div>

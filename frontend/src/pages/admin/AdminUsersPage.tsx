@@ -1,9 +1,11 @@
-import { AlertTriangle, Search } from 'lucide-react';
+import { AlertTriangle, Search, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { CornerToast } from '../../components/CornerToast';
+import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { useCornerToast } from '../../hooks/useCornerToast';
+import { useLocaleText } from '../../hooks/useLocaleText';
 import { adminService, type AdminUserItem } from '../../services/adminService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -29,6 +31,7 @@ const getRoleBadgeClass = (role: string): string => {
 };
 
 export const AdminUsersPage = () => {
+  const tx = useLocaleText();
   const [keyword, setKeyword] = useState('');
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,11 +49,11 @@ export const AdminUsersPage = () => {
       setUsers(result);
     } catch (error) {
       setUsers([]);
-      setErrorMessage(getApiErrorMessage(error, 'Khong the tai danh sach user.'));
+      setErrorMessage(getApiErrorMessage(error, tx('Không thể tải danh sách user.', 'Could not load users.')));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [tx]);
 
   useEffect(() => {
     void loadUsers();
@@ -71,12 +74,12 @@ export const AdminUsersPage = () => {
       setUsers((previous) => previous.map((item) => (item.userId === updated.userId ? updated : item)));
 
       if (status === 'BANNED') {
-        showToast('Da khoa tai khoan user.', 'success');
+        showToast(tx('Đã khóa tài khoản user.', 'User account has been banned.'), 'success');
       } else {
-        showToast('Da mo khoa tai khoan user.', 'success');
+        showToast(tx('Đã mở khóa tài khoản user.', 'User account has been unbanned.'), 'success');
       }
     } catch (error) {
-      showToast(getApiErrorMessage(error, 'Cap nhat trang thai user that bai.'), 'error');
+      showToast(getApiErrorMessage(error, tx('Cập nhật trạng thái user thất bại.', 'Failed to update user status.')), 'error');
     } finally {
       setProcessingUserId(null);
     }
@@ -90,9 +93,12 @@ export const AdminUsersPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Quan ly user</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Quản lý user', 'User management')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Tim user theo username, email, so dien thoai va khoa/mo khoa tai khoan.
+          {tx(
+            'Tìm user theo username, email, số điện thoại và khóa/mở khóa tài khoản.',
+            'Search users by username, email, phone and ban/unban accounts.',
+          )}
         </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -108,7 +114,7 @@ export const AdminUsersPage = () => {
                   void handleSearch();
                 }
               }}
-              placeholder="Nhap tu khoa tim user..."
+              placeholder={tx('Nhập từ khóa tìm user...', 'Search users...')}
               className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900"
             />
           </label>
@@ -119,21 +125,21 @@ export const AdminUsersPage = () => {
             disabled={isLoading}
             className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isLoading ? 'Dang tim...' : 'Tim user'}
+            {isLoading ? tx('Đang tìm...', 'Searching...') : tx('Tìm user', 'Search')}
           </button>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <article className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Ket qua</p>
+            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Kết quả', 'Results')}</p>
             <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">{users.length}</p>
           </article>
           <article className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Tai khoan bi khoa</p>
+            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Tài khoản bị khóa', 'Banned accounts')}</p>
             <p className="mt-1 text-xl font-bold text-rose-600 dark:text-rose-300">{bannedCount}</p>
           </article>
           <article className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Admin trong ket qua</p>
+            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Admin trong kết quả', 'Admins in result')}</p>
             <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
               {users.filter((item) => item.role.trim().toUpperCase() === 'ADMIN').length}
             </p>
@@ -148,9 +154,18 @@ export const AdminUsersPage = () => {
       ) : null}
 
       {users.length === 0 && !isLoading ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
-          Chua co user nao trong ket qua tim kiem.
-        </section>
+        <EmptyStateCard
+          icon={Users}
+          title={tx('Không có user phù hợp', 'No matching users')}
+          description={tx(
+            'Thử từ khóa khác như username, email hoặc số điện thoại.',
+            'Try another keyword such as username, email, or phone number.',
+          )}
+          actionLabel={tx('Tải lại danh sách', 'Reload list')}
+          onAction={() => {
+            void loadUsers();
+          }}
+        />
       ) : null}
 
       <section className="space-y-3">
@@ -193,7 +208,7 @@ export const AdminUsersPage = () => {
                   to={`/profile/${item.userId}`}
                   className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  Xem trang ca nhan
+                  {tx('Xem trang cá nhân', 'View profile')}
                 </Link>
                 <button
                   type="button"
@@ -209,7 +224,11 @@ export const AdminUsersPage = () => {
                     isBanned ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
                   }`}
                 >
-                  {isActing ? 'Dang xu ly...' : isBanned ? 'Mo khoa tai khoan' : 'Khoa tai khoan'}
+                  {isActing
+                    ? tx('Đang xử lý...', 'Processing...')
+                    : isBanned
+                      ? tx('Mở khóa tài khoản', 'Unban account')
+                      : tx('Khóa tài khoản', 'Ban account')}
                 </button>
               </div>
             </article>
@@ -226,9 +245,12 @@ export const AdminUsersPage = () => {
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Xac nhan khoa tai khoan</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  {tx('Xác nhận khóa tài khoản', 'Confirm ban account')}
+                </h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Ban chac chan khoa tai khoan <span className="font-semibold">{confirmTarget.displayName}</span>?
+                  {tx('Bạn chắc chắn muốn khóa tài khoản', 'Are you sure you want to ban')}{' '}
+                  <span className="font-semibold">{confirmTarget.displayName}</span>?
                 </p>
               </div>
             </div>
@@ -239,7 +261,7 @@ export const AdminUsersPage = () => {
                 onClick={() => setConfirmTarget(null)}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Huy
+                {tx('Hủy', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -249,7 +271,7 @@ export const AdminUsersPage = () => {
                 }}
                 className="rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
               >
-                Xac nhan khoa
+                {tx('Xác nhận khóa', 'Confirm ban')}
               </button>
             </div>
           </div>
@@ -260,4 +282,3 @@ export const AdminUsersPage = () => {
     </div>
   );
 };
-

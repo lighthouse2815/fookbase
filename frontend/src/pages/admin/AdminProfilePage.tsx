@@ -1,24 +1,32 @@
 import { ShieldCheck, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocaleText } from '../../hooks/useLocaleText';
 
 export const AdminProfilePage = () => {
+  const tx = useLocaleText();
   const { user, roles } = useAuth();
 
   if (!user) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-        Khong the tai thong tin admin.
-      </section>
+      <EmptyStateCard
+        icon={UserRound}
+        title={tx('Không thể tải thông tin admin', 'Unable to load admin profile')}
+        description={tx(
+          'Vui lòng làm mới trang hoặc đăng nhập lại.',
+          'Please refresh the page or login again.',
+        )}
+      />
     );
   }
 
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Ho so admin</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Thong tin tai khoan quan tri dang dang nhap.</p>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Hồ sơ admin', 'Admin profile')}</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{tx('Thông tin tài khoản quản trị đang đăng nhập.', 'Information of the currently logged-in admin account.')}</p>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
@@ -35,7 +43,7 @@ export const AdminProfilePage = () => {
           <article className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
               <ShieldCheck size={16} />
-              Quyen han
+              {tx('Quyền hạn', 'Permissions')}
             </p>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{roles.join(', ') || 'ADMIN'}</p>
           </article>
@@ -43,10 +51,10 @@ export const AdminProfilePage = () => {
           <article className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
               <UserRound size={16} />
-              Trang ca nhan
+              {tx('Trang cá nhân', 'Profile page')}
             </p>
             <Link to={`/profile/${user.id}`} className="mt-2 inline-flex text-sm font-semibold text-brand-600 hover:text-brand-700">
-              Mo profile cong khai
+              {tx('Mở profile công khai', 'Open public profile')}
             </Link>
           </article>
         </div>
@@ -54,4 +62,3 @@ export const AdminProfilePage = () => {
     </div>
   );
 };
-
