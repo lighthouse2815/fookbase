@@ -6,6 +6,7 @@ import com.dang.app.utils.enums.Status;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.entity.auth.User;
+import com.dang.app.repository.auth.UserProfileRepository;
 import com.dang.app.repository.auth.UserRepository;
 import com.dang.app.utils.mapper.UserMapper;
 import jakarta.transaction.Transactional;
@@ -27,6 +28,7 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final UserMapper userMapper;
 
     /*
@@ -127,6 +129,42 @@ public class UserService {
 
     public boolean isUsernameTaken(String username) {
         return userRepository.existsByUsername(username);
+    }
+
+    public void ensureUsernameCanBeUsedByAnotherField(UUID userId, String username) {
+        if (username == null) {
+            return;
+        }
+
+        String normalized = username.trim();
+        if (normalized.isEmpty()) {
+            return;
+        }
+
+        if (userRepository.existsByUsernameAndIdNot(normalized, userId)
+                || userProfileRepository.existsByEmailIgnoreCaseAndUser_IdNot(normalized, userId)
+                || userProfileRepository.existsByPhoneNumberAndUser_IdNot(normalized, userId)) {
+            throw new BusinessException(ErrorCode.USERNAME_EXISTS);
+        }
+    }
+
+    public void updateUsername(User user, String username) {
+        if (user == null) {
+            return;
+        }
+
+        String normalized = username == null ? null : username.trim();
+        if (normalized == null || normalized.isEmpty()) {
+            return;
+        }
+
+        if (normalized.equals(user.getUsername())) {
+            return;
+        }
+
+        ensureUsernameCanBeUsedByAnotherField(user.getId(), normalized);
+        user.setUsername(normalized);
+        userRepository.save(user);
     }
 
     public List<User> findAllById(Set<UUID> memberIds) {

@@ -60,7 +60,11 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
 
     boolean existsByEmail(String email);
 
+    boolean existsByEmailIgnoreCaseAndUser_IdNot(String email, UUID userId);
+
     boolean existsByPhoneNumber(String phoneNumber);
+
+    boolean existsByPhoneNumberAndUser_IdNot(String phoneNumber, UUID userId);
 
     @Query("""
         SELECT p.user.id, p.displayName

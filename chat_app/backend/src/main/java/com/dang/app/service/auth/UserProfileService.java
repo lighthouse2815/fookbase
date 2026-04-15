@@ -238,8 +238,8 @@ public class UserProfileService {
             return;
         }
 
-        if (shouldUpdateUsername && userService.isUsernameTaken(normalizedUsername)) {
-            throw new BusinessException(ErrorCode.USERNAME_EXISTS);
+        if (shouldUpdateUsername) {
+            userService.ensureUsernameCanBeUsedByAnotherField(user.getId(), normalizedUsername);
         }
 
         if (shouldUpdatePhoneNumber) {
@@ -259,8 +259,7 @@ public class UserProfileService {
         otpService.verifyOTP(userId, request.getOtp().trim(), otpType);
 
         if (shouldUpdateUsername) {
-            user.setUsername(normalizedUsername);
-            userService.save(user);
+            userService.updateUsername(user, normalizedUsername);
         }
 
         if (shouldUpdatePhoneNumber) {
