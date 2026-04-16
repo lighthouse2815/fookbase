@@ -44,6 +44,41 @@ public class ProfileService : IProfileService
                     "Profile not found.");
             }
 
+            var relationshipStatus = FirstNonEmpty(profile.Status);
+            var isBlockedRelationship = string.Equals(
+                relationshipStatus,
+                "BLOCKED",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (isBlockedRelationship)
+            {
+                var blockedDisplayName = FirstNonEmpty(profile.DisplayName, "user") ?? "user";
+                var blockedResponse = new ProfileResponseDto
+                {
+                    UserId = profile.UserId == Guid.Empty ? userId : profile.UserId,
+                    DisplayName = blockedDisplayName,
+                    FullName = null,
+                    AvatarUrl = profile.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
+                    FriendsCount = 0,
+                    PostsCount = 0,
+                    PhoneNumber = null,
+                    Email = null,
+                    Gender = null,
+                    BirthDate = null,
+                    FullNameVisible = false,
+                    PhoneVisible = false,
+                    EmailVisible = false,
+                    DateOfBirthVisible = false,
+                    GenderVisible = false,
+                    FriendCountVisible = false,
+                    Status = relationshipStatus,
+                    UserStatus = FirstNonEmpty(profile.UserStatus),
+                    Nickname = null
+                };
+
+                return JavaApiCallResult<ProfileResponseDto>.Success(blockedResponse, StatusCodes.Status200OK);
+            }
+
             var postsCount = await _postRepository.CountByUserIdAsync(userId, cancellationToken);
             var displayName = FirstNonEmpty(profile.DisplayName, "user") ?? "user";
             var response = new ProfileResponseDto
@@ -64,7 +99,8 @@ public class ProfileService : IProfileService
                 DateOfBirthVisible = profile.DateOfBirthVisible ?? true,
                 GenderVisible = profile.GenderVisible ?? true,
                 FriendCountVisible = profile.FriendCountVisible ?? true,
-                Status = FirstNonEmpty(profile.Status),
+                Status = relationshipStatus,
+                UserStatus = FirstNonEmpty(profile.UserStatus),
                 Nickname = FirstNonEmpty(profile.Nickname)
             };
 

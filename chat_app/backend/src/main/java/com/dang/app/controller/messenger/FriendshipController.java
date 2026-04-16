@@ -1,6 +1,7 @@
 package com.dang.app.controller.messenger;
 
 import com.dang.app.dto.messenger.request.FriendshipRequest;
+import com.dang.app.dto.messenger.response.BlockedUserResponse;
 import com.dang.app.dto.messenger.response.FriendshipResponse;
 import com.dang.app.dto.messenger.response.PendingFriendRequesterResponse;
 import com.dang.app.service.messenger.FriendshipService;
@@ -50,6 +51,14 @@ public class FriendshipController {
         return friendshipService.getPendingRequesterInfos(userId);
     }
 
+    @GetMapping("/blocked-users")
+    public List<BlockedUserResponse> getBlockedUsers(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return friendshipService.getBlockedUserInfos(userId);
+    }
+
     @PostMapping("/reject")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void rejectFriendRequest(
@@ -74,6 +83,16 @@ public class FriendshipController {
                 userId,
                 targetUserId
         );
+    }
+
+    @DeleteMapping("/block/{targetUserId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unblockUser(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID targetUserId
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        friendshipService.unblockUser(userId, targetUserId);
     }
 
     @DeleteMapping

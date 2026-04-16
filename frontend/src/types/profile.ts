@@ -20,5 +20,6 @@ export interface Profile {
   friendCountVisible?: boolean;
   nickname?: string;
   friendshipStatus?: string;
+  userStatus?: string;
 }
 

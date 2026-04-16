@@ -52,6 +52,9 @@ public class UserProfileDto
     [JsonPropertyName("status")]
     public string? Status { get; set; }
 
+    [JsonPropertyName("userStatus")]
+    public string? UserStatus { get; set; }
+
     [JsonPropertyName("nickname")]
     public string? Nickname { get; set; }
 }

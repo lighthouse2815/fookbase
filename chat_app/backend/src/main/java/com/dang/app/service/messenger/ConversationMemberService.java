@@ -56,6 +56,10 @@ public class ConversationMemberService {
             Set<UUID> conversationIds,
             UUID currentUserId
     ) {
+        if (conversationIds == null || conversationIds.isEmpty()) {
+            return Map.of();
+        }
+
         return conversationMemberRepository
                 .findOtherUserIdsInConversations(conversationIds, currentUserId, ConversationType.PRIVATE)
                 .stream()
@@ -63,6 +67,13 @@ public class ConversationMemberService {
                         row -> (UUID) row[0], // conversationId
                         row -> (UUID) row[1]  // otherUserId
                 ));
+    }
+
+    public Optional<UUID> getOtherUserIdInPrivateConversation(UUID conversationId, UUID currentUserId) {
+        return getOtherUserIdMapInPrivateConversations(Set.of(conversationId), currentUserId)
+                .values()
+                .stream()
+                .findFirst();
     }
 
     public List<RecentUserChatInfoProjection> getMemberInfoByUserIdAndConversationType(

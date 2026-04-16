@@ -54,6 +54,12 @@ public class JavaApiOptions
 
     public string MessengerUnfriendPathTemplate { get; set; } = "messenger/friendships";
 
+    public string MessengerBlockUserPathTemplate { get; set; } = "messenger/friendships/block/{userId}";
+
+    public string MessengerUnblockUserPathTemplate { get; set; } = "messenger/friendships/block/{userId}";
+
+    public string MessengerBlockedUsersPathTemplate { get; set; } = "messenger/friendships/blocked-users";
+
     public string AuthRegisterPathTemplate { get; set; } = "auth/register";
 
     public string AuthLoginPathTemplate { get; set; } = "auth/login";

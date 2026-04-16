@@ -56,8 +56,28 @@ public class CommentService : ICommentService
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
 
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        if (blockedUserIds.Contains(post.UserId))
+        {
+            throw new NotFoundException("Post not found.");
+        }
+
         var (topLevelComments, _) = await _commentRepository.GetPagedByPostIdAsync(post.Id, query.Page, query.PageSize, cancellationToken);
+        if (blockedUserIds.Count > 0)
+        {
+            topLevelComments = topLevelComments
+                .Where(comment => !blockedUserIds.Contains(comment.UserId))
+                .ToList();
+        }
+
         var allCommentsInPost = await _commentRepository.GetByPostIdAsync(post.Id, cancellationToken);
+        if (blockedUserIds.Count > 0)
+        {
+            allCommentsInPost = allCommentsInPost
+                .Where(comment => !blockedUserIds.Contains(comment.UserId))
+                .ToList();
+        }
+
         var totalCount = allCommentsInPost.Count;
         var childrenByParentId = BuildChildrenLookup(allCommentsInPost);
 
@@ -92,12 +112,30 @@ public class CommentService : ICommentService
         var comment = await _commentRepository.GetByIdAsync(commentId, cancellationToken)
             ?? throw new NotFoundException("Comment not found.");
 
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        if (blockedUserIds.Contains(comment.UserId))
+        {
+            throw new NotFoundException("Comment not found.");
+        }
+
         var allCommentsInPost = await _commentRepository.GetByPostIdAsync(comment.PostId, cancellationToken);
+        if (blockedUserIds.Count > 0)
+        {
+            allCommentsInPost = allCommentsInPost
+                .Where(item => !blockedUserIds.Contains(item.UserId))
+                .ToList();
+        }
+
         var childrenByParentId = BuildChildrenLookup(allCommentsInPost);
         var scopedCommentIds = CollectSubtreeIds([comment.Id], childrenByParentId);
         var scopedComments = allCommentsInPost
             .Where(item => scopedCommentIds.Contains(item.Id))
             .ToList();
+
+        if (scopedComments.Count == 0)
+        {
+            throw new NotFoundException("Comment not found.");
+        }
 
         var authors = await ResolveAuthorsAsync(scopedComments.Select(item => item.UserId), cancellationToken);
         var currentUserReactions = await ResolveCurrentUserReactionsAsync(
@@ -120,6 +158,12 @@ public class CommentService : ICommentService
         var post = await _postRepository.GetByIdForUpdateAsync(request.PostId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
 
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
+        if (blockedUserIds.Contains(post.UserId))
+        {
+            throw new ForbiddenException("You are not allowed to comment on this post.");
+        }
+
         Comment? parentComment = null;
         if (request.ParentCommentId.HasValue)
         {
@@ -129,6 +173,11 @@ public class CommentService : ICommentService
             if (parentComment.PostId != post.Id)
             {
                 throw new ArgumentException("Parent comment does not belong to this post.");
+            }
+
+            if (blockedUserIds.Contains(parentComment.UserId))
+            {
+                throw new ForbiddenException("You are not allowed to reply to this comment.");
             }
         }
 
@@ -476,6 +525,44 @@ public class CommentService : ICommentService
     private static CommentReactionSummary EmptyReactionSummary()
     {
         return new CommentReactionSummary(0, Array.Empty<string>());
+    }
+
+    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid? currentUserId, CancellationToken cancellationToken)
+    {
+        if (!currentUserId.HasValue)
+        {
+            return new HashSet<Guid>();
+        }
+
+        try
+        {
+            var result = await _javaApiService.GetBlockedUsersAsync(string.Empty, cancellationToken);
+            if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
+            {
+                return new HashSet<Guid>();
+            }
+
+            return result.Data
+                .Select(item => item.UserId)
+                .Where(userId => !string.IsNullOrWhiteSpace(userId))
+                .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
+                .Where(parsedUserId => parsedUserId.HasValue)
+                .Select(parsedUserId => parsedUserId!.Value)
+                .ToHashSet();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not resolve blocked users for comments request of user {UserId}.",
+                currentUserId.Value);
+
+            return new HashSet<Guid>();
+        }
     }
 
 }

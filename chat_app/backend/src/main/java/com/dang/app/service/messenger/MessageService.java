@@ -64,6 +64,7 @@ public class MessageService {
 
         Conversation conversation = conversationService.findById(request.getConversationId());
         conversationGuard.requireActiveMember(conversation.getId(), senderId);
+        conversationService.ensureNoBlockedRelationInPrivateConversation(conversation, senderId);
 
         String normalizedContent = normalizeContent(request.getContent());
         List<AttachmentRequest> attachmentsRequest = request.getAttachments();
@@ -114,6 +115,7 @@ public class MessageService {
 
         Conversation conversation = conversationService.findById(conversationId);
         conversationGuard.requireActiveMember(conversation.getId(), userId);
+        conversationService.ensureNoBlockedRelationInPrivateConversation(conversation, userId);
 
         validateCursor(cursorCreatedAt, cursorMessageId);
 

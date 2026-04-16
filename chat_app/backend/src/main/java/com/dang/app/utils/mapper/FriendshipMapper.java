@@ -2,6 +2,7 @@ package com.dang.app.utils.mapper;
 
 import com.dang.app.dto.messenger.response.FriendshipResponse;
 import com.dang.app.dto.messenger.response.FriendSuggestionResponse;
+import com.dang.app.dto.messenger.response.BlockedUserResponse;
 import com.dang.app.dto.messenger.response.PendingFriendRequesterResponse;
 import com.dang.app.entity.messenger.Friendship;
 import com.dang.app.repository.projection.messenger.FriendSuggestionProjection;
@@ -47,6 +48,20 @@ public class FriendshipMapper {
                 .avatarUrl(avatarUrl)
                 .isRequester(isRequester)
                 .createdAt(createdAt)
+                .build();
+    }
+
+    public BlockedUserResponse toBlockedUserResponse(
+            UUID userId,
+            String displayName,
+            String avatarUrl,
+            LocalDateTime blockedAt
+    ) {
+        return BlockedUserResponse.builder()
+                .userId(userId)
+                .displayName(displayName)
+                .avatarUrl(avatarUrl)
+                .blockedAt(blockedAt)
                 .build();
     }
 

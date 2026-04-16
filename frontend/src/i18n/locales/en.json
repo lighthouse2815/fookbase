@@ -224,7 +224,11 @@
     "emptyInfoValue": "Not updated",
     "genderMale": "Male",
     "genderFemale": "Female",
-    "genderOther": "Other"
+    "genderOther": "Other",
+    "bannedUserTitle": "This user has been banned",
+    "bannedUserDescription": "Profile information is unavailable.",
+    "blockedUserTitle": "You cannot view this profile",
+    "blockedUserDescription": "You and this user are blocked from each other."
   },
   "friendsPage": {
     "title": "Friends",
@@ -545,7 +549,16 @@
     "title": "Blocked list",
     "subtitle": "Manage the accounts you have blocked.",
     "emptyTitle": "You have not blocked any account",
-    "emptySubtitle": "When blocked-list sync is available, blocked accounts will appear here."
+    "emptySubtitle": "Blocked accounts will appear here.",
+    "loading": "Loading blocked users...",
+    "loadError": "Unable to load blocked users.",
+    "retry": "Retry",
+    "viewProfile": "View profile",
+    "blockedAt": "Blocked at {{date}}",
+    "unblock": "Unblock",
+    "unblocking": "Unblocking...",
+    "unblockSuccess": "User has been unblocked.",
+    "unblockError": "Unable to unblock this user."
   },
   "auth": {
     "loginTitle": "Welcome back",

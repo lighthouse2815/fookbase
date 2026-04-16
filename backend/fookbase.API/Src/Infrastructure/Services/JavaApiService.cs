@@ -307,6 +307,47 @@ public class JavaApiService : IJavaApiService
             accessToken: accessToken);
     }
 
+    public Task<JavaApiCallResult<object?>> BlockUserAsync(
+        string userId,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerBlockUserPathTemplate, ("userId", userId));
+        return PostNoContentAsync(
+            path,
+            payload: null,
+            cancellationToken,
+            accessToken: accessToken);
+    }
+
+    public Task<JavaApiCallResult<object?>> UnblockUserAsync(
+        string userId,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerUnblockUserPathTemplate, ("userId", userId));
+        return DeleteNoContentAsync(
+            path,
+            payload: null,
+            cancellationToken,
+            accessToken: accessToken);
+    }
+
+    public async Task<JavaApiCallResult<List<BlockedUserDto>>> GetBlockedUsersAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerBlockedUsersPathTemplate);
+        var result = await GetResultAsync<List<BlockedUserDto>>(path, accessToken, cancellationToken);
+
+        if (result.IsSuccess && result.Data is null)
+        {
+            return JavaApiCallResult<List<BlockedUserDto>>.Success(new List<BlockedUserDto>(), result.StatusCode);
+        }
+
+        return result;
+    }
+
     public Task<JavaApiCallResult<RegisterResponseDto>> RegisterAsync(
         RegisterRequestDto request,
         CancellationToken cancellationToken = default)

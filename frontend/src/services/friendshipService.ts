@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { apiClient, javaApiClient } from './apiClient';
-import type { FriendRequest, FriendSuggestion, Friendship, FriendshipStatus, FriendUser } from '../types/friendship';
+import type { BlockedUser, FriendRequest, FriendSuggestion, Friendship, FriendshipStatus, FriendUser } from '../types/friendship';
 
 interface ApiEnvelope<T> {
   success?: boolean;
@@ -49,6 +49,16 @@ interface JavaFriendshipPayload {
   requesterId?: string;
   addresseeId?: string;
   status?: string;
+}
+
+interface BlockedUserPayload {
+  userId?: string;
+  id?: string;
+  username?: string;
+  displayName?: string;
+  fullName?: string;
+  avatarUrl?: string;
+  blockedAt?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -211,6 +221,20 @@ const mapJavaFriendship = (payload: JavaFriendshipPayload, addresseeId: string):
   };
 };
 
+const mapBlockedUser = (payload: BlockedUserPayload, index: number): BlockedUser => {
+  const userId = toSafeId(payload.userId ?? payload.id, `blocked-user-${index}`);
+  const fullName = toDisplayName(payload.displayName ?? payload.fullName ?? payload.username, `User ${index + 1}`);
+  const username = toDisplayName(payload.username ?? payload.displayName, `user_${userId}`);
+
+  return {
+    id: userId,
+    username,
+    fullName,
+    avatarUrl: toAvatarUrl(payload.avatarUrl, userId),
+    blockedAt: typeof payload.blockedAt === 'string' ? payload.blockedAt : undefined,
+  };
+};
+
 export const friendshipService = {
   async getFriendSuggestions(): Promise<FriendSuggestion[]> {
     return requestFromCandidates<FriendSuggestion[]>([
@@ -329,6 +353,22 @@ export const friendshipService = {
       { method: 'post', path: '/api/friendships/block', data: { userId: targetUserId, targetUserId } },
       { method: 'post', path: `/api/friendships/block/${targetUserId}` },
       { method: 'post', path: `/api/messenger/friendships/block/${targetUserId}`, client: 'java' },
+    ]);
+  },
+
+  async getBlockedUsers(): Promise<BlockedUser[]> {
+    const blockedUsers = await requestFromCandidates<BlockedUserPayload[]>([
+      { method: 'get', path: '/api/friendships/blocked-users' },
+      { method: 'get', path: '/api/messenger/friendships/blocked-users', client: 'java' },
+    ]);
+
+    return blockedUsers.map(mapBlockedUser);
+  },
+
+  async unblockUser(targetUserId: string): Promise<void> {
+    await requestFromCandidates<unknown>([
+      { method: 'delete', path: `/api/friendships/block/${targetUserId}` },
+      { method: 'delete', path: `/api/messenger/friendships/block/${targetUserId}`, client: 'java' },
     ]);
   },
 

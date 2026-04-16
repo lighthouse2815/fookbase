@@ -136,6 +136,7 @@ export const ProfilePage = () => {
   const { userId } = useParams<{ userId: string }>();
   const targetUserId = userId ?? currentUser.id;
   const isOwnProfile = targetUserId === currentUser.id;
+  const [isProfileResolved, setIsProfileResolved] = useState(false);
   const [profile, setProfile] = useState<Profile>(() => createFallbackProfile(targetUserId, currentUser));
   const [personalPosts, setPersonalPosts] = useState<Post[]>([]);
   const { toast, showToast } = useCornerToast();
@@ -144,6 +145,9 @@ export const ProfilePage = () => {
   const emptyInfoValue = t('profile.emptyInfoValue');
   const locale = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
   const friendshipStatus = normalizeFriendshipStatus(profile.friendshipStatus);
+  const normalizedUserStatus = profile.userStatus?.trim().toUpperCase();
+  const isTargetUserBanned = !isOwnProfile && normalizedUserStatus === 'BANNED';
+  const isProfileBlocked = !isOwnProfile && friendshipStatus === 'BLOCKED';
 
   const primaryActionMeta = useMemo<ProfilePrimaryActionMeta>(() => {
     if (isOwnProfile) {
@@ -220,6 +224,7 @@ export const ProfilePage = () => {
   }, [personalPosts.length]);
 
   useEffect(() => {
+    setIsProfileResolved(false);
     setProfile(createFallbackProfile(targetUserId, currentUser));
 
     const loadProfile = async () => {
@@ -245,6 +250,8 @@ export const ProfilePage = () => {
             avatarUrl: currentUser.avatarUrl,
           }));
         }
+      } finally {
+        setIsProfileResolved(true);
       }
     };
 
@@ -258,6 +265,15 @@ export const ProfilePage = () => {
 
   useEffect(() => {
     const loadPersonalPosts = async () => {
+      if (!isProfileResolved) {
+        return;
+      }
+
+      if (isTargetUserBanned || isProfileBlocked) {
+        setPersonalPosts([]);
+        return;
+      }
+
       try {
         const response = await postService.getPosts(1, PROFILE_POSTS_PAGE_SIZE);
         const items = response.items.filter((post) => post.author.id === targetUserId);
@@ -268,7 +284,7 @@ export const ProfilePage = () => {
     };
 
     void loadPersonalPosts();
-  }, [targetUserId]);
+  }, [isProfileBlocked, isProfileResolved, isTargetUserBanned, targetUserId]);
 
   const handlePostDeleted = (postId: string) => {
     setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));
@@ -423,6 +439,32 @@ export const ProfilePage = () => {
       value: formatBirthDate(profile.birthDate, emptyInfoValue, locale),
     },
   ].filter((item) => item.visible);
+
+  if (isTargetUserBanned) {
+    return (
+      <div className="space-y-4">
+        <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm dark:border-rose-500/40 dark:bg-rose-500/10">
+          <h1 className="text-lg font-bold text-rose-700 dark:text-rose-200">{t('profile.bannedUserTitle')}</h1>
+          <p className="mt-2 text-sm text-rose-700/90 dark:text-rose-100/90">{t('profile.bannedUserDescription')}</p>
+        </section>
+
+        <CornerToast message={toast?.message ?? null} type={toast?.type} />
+      </div>
+    );
+  }
+
+  if (isProfileBlocked) {
+    return (
+      <div className="space-y-4">
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10">
+          <h1 className="text-lg font-bold text-amber-700 dark:text-amber-200">{t('profile.blockedUserTitle')}</h1>
+          <p className="mt-2 text-sm text-amber-700/90 dark:text-amber-100/90">{t('profile.blockedUserDescription')}</p>
+        </section>
+
+        <CornerToast message={toast?.message ?? null} type={toast?.type} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

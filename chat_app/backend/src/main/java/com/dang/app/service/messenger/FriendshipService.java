@@ -1,10 +1,7 @@
 package com.dang.app.service.messenger;
 
-import com.dang.app.service.auth.UserService;
-import com.dang.app.utils.enums.FriendshipStatus;
-import com.dang.app.utils.error.BusinessException;
-import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.dto.messenger.request.FriendshipRequest;
+import com.dang.app.dto.messenger.response.BlockedUserResponse;
 import com.dang.app.dto.messenger.response.FriendSuggestionResponse;
 import com.dang.app.dto.messenger.response.FriendshipResponse;
 import com.dang.app.dto.messenger.response.PendingFriendRequesterResponse;
@@ -13,6 +10,10 @@ import com.dang.app.entity.auth.UserProfile;
 import com.dang.app.entity.messenger.Friendship;
 import com.dang.app.repository.messenger.FriendshipRepository;
 import com.dang.app.service.auth.UserProfileService;
+import com.dang.app.service.auth.UserService;
+import com.dang.app.utils.enums.FriendshipStatus;
+import com.dang.app.utils.error.BusinessException;
+import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.utils.mapper.FriendshipMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +36,7 @@ public class FriendshipService {
     private final UserService userService;
     private final ContactService contactService;
     private final UserProfileService userProfileService;
-
     private final FriendshipRepository friendshipRepository;
-
     private final FriendshipMapper friendshipMapper;
 
     @Transactional
@@ -46,7 +46,6 @@ public class FriendshipService {
         }
 
         User requester = userService.findById(userId);
-
         User addressee = userService.findById(request.getUserId());
 
         Friendship friendship = friendshipRepository
@@ -60,9 +59,8 @@ public class FriendshipService {
                 case PENDING -> {
                     if (friendship.getRequester().getId().equals(userId)) {
                         throw new BusinessException(ErrorCode.FRIEND_REQUEST_ALREADY_SENT);
-                    } else {
-                        throw new BusinessException(ErrorCode.FRIEND_REQUEST_ALREADY_RECEIVED);
                     }
+                    throw new BusinessException(ErrorCode.FRIEND_REQUEST_ALREADY_RECEIVED);
                 }
                 case REJECTED -> {
                     friendship.setRequester(requester);
@@ -71,11 +69,8 @@ public class FriendshipService {
                 }
             }
         } else {
-            UUID user1 = requester.getId();
-            UUID user2 = addressee.getId();
-
-            UUID userLow = user1.compareTo(user2) < 0 ? user1 : user2;
-            UUID userHigh = user1.compareTo(user2) > 0 ? user1 : user2;
+            UUID userLow = userId.compareTo(request.getUserId()) < 0 ? userId : request.getUserId();
+            UUID userHigh = userId.compareTo(request.getUserId()) > 0 ? userId : request.getUserId();
 
             friendship = Friendship.builder()
                     .userHighId(userHigh)
@@ -97,11 +92,9 @@ public class FriendshipService {
     @Transactional
     public FriendshipResponse acceptFriendRequest(UUID userId, FriendshipRequest request) {
         Friendship friendship = getPendingFriendshipForAddressee(userId, request.getUserId());
-
         friendship.setStatus(FriendshipStatus.ACCEPTED);
 
         UUID friendId = friendship.getRequester().getId();
-
         String displayName = userProfileService
                 .getDisplayNameMap(Set.of(friendId))
                 .get(friendId);
@@ -114,7 +107,6 @@ public class FriendshipService {
     @Transactional
     public void rejectFriendRequest(UUID userId, FriendshipRequest request) {
         Friendship friendship = getPendingFriendshipForParticipant(userId, request.getUserId());
-
         friendship.setStatus(FriendshipStatus.REJECTED);
     }
 
@@ -125,7 +117,6 @@ public class FriendshipService {
         }
 
         User blocker = userService.findById(userId);
-
         User blocked = userService.findById(targetUserId);
 
         Friendship friendship = friendshipRepository
@@ -133,7 +124,12 @@ public class FriendshipService {
                 .orElse(null);
 
         if (friendship == null) {
+            UUID userLow = userId.compareTo(targetUserId) < 0 ? userId : targetUserId;
+            UUID userHigh = userId.compareTo(targetUserId) > 0 ? userId : targetUserId;
+
             friendship = Friendship.builder()
+                    .userLowId(userLow)
+                    .userHighId(userHigh)
                     .requester(blocker)
                     .addressee(blocked)
                     .status(FriendshipStatus.BLOCKED)
@@ -144,7 +140,27 @@ public class FriendshipService {
             friendship.setRequester(blocker);
             friendship.setAddressee(blocked);
         }
+
+        // Block always implies unfriend in both directions.
+        contactService.deleteContact(userId, targetUserId);
     }
+
+    @Transactional
+    public void unblockUser(UUID userId, UUID targetUserId) {
+        Friendship friendship = friendshipRepository.findBetween(userId, targetUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FRIENDSHIP_NOT_FOUND));
+
+        if (friendship.getStatus() != FriendshipStatus.BLOCKED) {
+            throw new BusinessException(ErrorCode.INVALID_FRIENDSHIP_STATUS);
+        }
+
+        if (!friendship.getRequester().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NO_PERMISSION);
+        }
+
+        friendshipRepository.delete(friendship);
+    }
+
     @Transactional
     public void unfriend(UUID userId, FriendshipRequest request) {
         Friendship friendship = friendshipRepository.findBetween(userId, request.getUserId())
@@ -162,37 +178,60 @@ public class FriendshipService {
         friendshipRepository.delete(friendship);
     }
 
-    private Friendship getPendingFriendshipForAddressee(UUID userId, UUID otherUserId) {
-        Friendship friendship = friendshipRepository.findBetween(userId, otherUserId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
-
-        if (friendship.getStatus() != FriendshipStatus.PENDING) {
-            throw new BusinessException(ErrorCode.INVALID_FRIEND_REQUEST_STATUS);
+    public boolean isBlockedBetween(UUID userId, UUID otherUserId) {
+        if (userId == null || otherUserId == null || userId.equals(otherUserId)) {
+            return false;
         }
 
-        if (!friendship.getAddressee().getId().equals(userId)) {
-            throw new BusinessException(ErrorCode.NO_PERMISSION);
-        }
-
-        return friendship;
+        return friendshipRepository.findStatusBetween(userId, otherUserId)
+                .map(status -> status == FriendshipStatus.BLOCKED)
+                .orElse(false);
     }
 
-    private Friendship getPendingFriendshipForParticipant(UUID userId, UUID otherUserId) {
-        Friendship friendship = friendshipRepository.findBetween(userId, otherUserId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
+    public Set<UUID> getBlockedUserIdSet(UUID userId) {
+        return friendshipRepository.findBlockedFriendshipsByUserId(userId)
+                .stream()
+                .map(friendship -> resolveOtherUserId(friendship, userId))
+                .collect(Collectors.toSet());
+    }
 
-        if (friendship.getStatus() != FriendshipStatus.PENDING) {
-            throw new BusinessException(ErrorCode.INVALID_FRIEND_REQUEST_STATUS);
+    public List<BlockedUserResponse> getBlockedUserInfos(UUID userId) {
+        userService.findById(userId);
+
+        List<Friendship> blockedFriendships = friendshipRepository.findBlockedFriendshipsByUserId(userId)
+                .stream()
+                .filter(friendship -> friendship.getRequester().getId().equals(userId))
+                .toList();
+        if (blockedFriendships.isEmpty()) {
+            return List.of();
         }
 
-        UUID requesterId = friendship.getRequester().getId();
-        UUID addresseeId = friendship.getAddressee().getId();
+        Set<UUID> otherUserIds = blockedFriendships.stream()
+                .map(friendship -> resolveOtherUserId(friendship, userId))
+                .collect(Collectors.toSet());
 
-        if (!requesterId.equals(userId) && !addresseeId.equals(userId)) {
-            throw new BusinessException(ErrorCode.NO_PERMISSION);
-        }
+        Map<UUID, UserProfile> profileMap =
+                userProfileService.getProfileMapByUserIds(new ArrayList<>(otherUserIds));
 
-        return friendship;
+        return blockedFriendships.stream()
+                .map(friendship -> {
+                    UUID otherUserId = resolveOtherUserId(friendship, userId);
+                    User otherUser = friendship.getRequester().getId().equals(userId)
+                            ? friendship.getAddressee()
+                            : friendship.getRequester();
+                    UserProfile otherProfile = profileMap.get(otherUserId);
+                    LocalDateTime blockedAt = friendship.getUpdatedAt() != null
+                            ? friendship.getUpdatedAt()
+                            : friendship.getCreatedAt();
+
+                    return friendshipMapper.toBlockedUserResponse(
+                            otherUserId,
+                            resolveDisplayName(otherUser, otherProfile),
+                            otherProfile == null ? null : otherProfile.getAvatarUrl(),
+                            blockedAt
+                    );
+                })
+                .toList();
     }
 
     public List<PendingFriendRequesterResponse> getPendingRequesterInfos(UUID userId) {
@@ -242,15 +281,49 @@ public class FriendshipService {
                 .toList();
     }
 
+    private Friendship getPendingFriendshipForAddressee(UUID userId, UUID otherUserId) {
+        Friendship friendship = friendshipRepository.findBetween(userId, otherUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
+
+        if (friendship.getStatus() != FriendshipStatus.PENDING) {
+            throw new BusinessException(ErrorCode.INVALID_FRIEND_REQUEST_STATUS);
+        }
+
+        if (!friendship.getAddressee().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NO_PERMISSION);
+        }
+
+        return friendship;
+    }
+
+    private Friendship getPendingFriendshipForParticipant(UUID userId, UUID otherUserId) {
+        Friendship friendship = friendshipRepository.findBetween(userId, otherUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
+
+        if (friendship.getStatus() != FriendshipStatus.PENDING) {
+            throw new BusinessException(ErrorCode.INVALID_FRIEND_REQUEST_STATUS);
+        }
+
+        UUID requesterId = friendship.getRequester().getId();
+        UUID addresseeId = friendship.getAddressee().getId();
+
+        if (!requesterId.equals(userId) && !addresseeId.equals(userId)) {
+            throw new BusinessException(ErrorCode.NO_PERMISSION);
+        }
+
+        return friendship;
+    }
+
+    private UUID resolveOtherUserId(Friendship friendship, UUID userId) {
+        return friendship.getRequester().getId().equals(userId)
+                ? friendship.getAddressee().getId()
+                : friendship.getRequester().getId();
+    }
+
     private String resolveDisplayName(User user, UserProfile profile) {
         if (profile != null && profile.getDisplayName() != null) {
             return profile.getDisplayName();
         }
         return user.getUsername();
     }
-
-
-
 }
-
-// han chi cho em thay vai tu donng ngia em da voi nghi ngo cuon tu dien

@@ -136,6 +136,7 @@ public class UserProfileMapper {
                 .userId(userId)
                 .nickname(nickName)
                 .status(status)
+                .userStatus(userProfile.getUser() == null ? null : userProfile.getUser().getStatus())
                 .friendsCount(friendCountVisible ? Math.max(friendsCount, 0) : 0)
                 .avatarUrl(userProfile.getAvatarUrl())
                 .displayName(userProfile.getDisplayName())

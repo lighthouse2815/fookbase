@@ -30,4 +30,27 @@ public static class FriendshipMapper
             MutualFriends = mutualFriends
         };
     }
+
+    public static BlockedUserResponseDto ToResponseDto(this BlockedUserDto blockedUser, int index)
+    {
+        ArgumentNullException.ThrowIfNull(blockedUser);
+
+        var safeId = string.IsNullOrWhiteSpace(blockedUser.UserId)
+            ? $"blocked-user-{index + 1}"
+            : blockedUser.UserId.Trim();
+        var displayName = string.IsNullOrWhiteSpace(blockedUser.DisplayName)
+            ? "Nguoi dung"
+            : blockedUser.DisplayName.Trim();
+        var avatarUrl = string.IsNullOrWhiteSpace(blockedUser.AvatarUrl)
+            ? $"https://i.pravatar.cc/150?u={safeId}"
+            : blockedUser.AvatarUrl.Trim();
+
+        return new BlockedUserResponseDto
+        {
+            UserId = safeId,
+            DisplayName = displayName,
+            AvatarUrl = avatarUrl,
+            BlockedAt = blockedUser.BlockedAt
+        };
+    }
 }

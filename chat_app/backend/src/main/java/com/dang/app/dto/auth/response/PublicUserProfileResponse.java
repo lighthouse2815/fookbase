@@ -2,6 +2,7 @@ package com.dang.app.dto.auth.response;
 
 import com.dang.app.utils.enums.FriendshipStatus;
 import com.dang.app.utils.enums.Gender;
+import com.dang.app.utils.enums.Status;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,6 +29,7 @@ public class PublicUserProfileResponse {
     private boolean friendCountVisible;
 
     private FriendshipStatus status;
+    private Status userStatus;
 
     private String nickname;
 }

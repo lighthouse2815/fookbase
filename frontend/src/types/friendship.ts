@@ -30,3 +30,7 @@ export interface FriendUser extends User {
   since?: string;
 }
 
+export interface BlockedUser extends User {
+  blockedAt?: string;
+}
+

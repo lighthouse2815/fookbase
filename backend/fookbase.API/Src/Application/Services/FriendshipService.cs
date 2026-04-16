@@ -220,6 +220,86 @@ public class FriendshipService : IFriendshipService
         return JavaApiCallResult<object?>.Success(data: null, ResolveSuccessStatusCode(result.StatusCode));
     }
 
+    public async Task<JavaApiCallResult<object?>> BlockUserAsync(
+        BlockUserActionDto request,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return UnauthorizedResult<object?>();
+        }
+
+        var targetUserId = ResolveTargetUserId(request.TargetUserId, request.UserId);
+        if (string.IsNullOrWhiteSpace(targetUserId))
+        {
+            return BadRequestResult<object?>("targetUserId or userId is required.");
+        }
+
+        var result = await _javaApiService.BlockUserAsync(targetUserId, accessToken.Trim(), cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BuildFailure<object?>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Block user failed.");
+        }
+
+        return JavaApiCallResult<object?>.Success(data: null, ResolveSuccessStatusCode(result.StatusCode));
+    }
+
+    public async Task<JavaApiCallResult<object?>> UnblockUserAsync(
+        string targetUserId,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return UnauthorizedResult<object?>();
+        }
+
+        if (string.IsNullOrWhiteSpace(targetUserId))
+        {
+            return BadRequestResult<object?>("targetUserId is required.");
+        }
+
+        var result = await _javaApiService.UnblockUserAsync(targetUserId.Trim(), accessToken.Trim(), cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BuildFailure<object?>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Unblock user failed.");
+        }
+
+        return JavaApiCallResult<object?>.Success(data: null, ResolveSuccessStatusCode(result.StatusCode));
+    }
+
+    public async Task<JavaApiCallResult<List<BlockedUserResponseDto>>> GetBlockedUsersAsync(
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return UnauthorizedResult<List<BlockedUserResponseDto>>();
+        }
+
+        var result = await _javaApiService.GetBlockedUsersAsync(accessToken.Trim(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildFailure<List<BlockedUserResponseDto>>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Load blocked users failed.");
+        }
+
+        var mapped = result.Data
+            .Select((item, index) => item.ToResponseDto(index))
+            .ToList();
+
+        return JavaApiCallResult<List<BlockedUserResponseDto>>.Success(mapped, ResolveSuccessStatusCode(result.StatusCode));
+    }
+
     private static JavaApiCallResult<T> UnauthorizedResult<T>()
     {
         return JavaApiCallResult<T>.Failure(StatusCodes.Status401Unauthorized, "Unauthorized.");

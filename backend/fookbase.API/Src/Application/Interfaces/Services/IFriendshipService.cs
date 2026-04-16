@@ -42,4 +42,18 @@ public interface IFriendshipService
         UnfriendActionDto request,
         string? accessToken,
         CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<object?>> BlockUserAsync(
+        BlockUserActionDto request,
+        string? accessToken,
+        CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<object?>> UnblockUserAsync(
+        string targetUserId,
+        string? accessToken,
+        CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<List<BlockedUserResponseDto>>> GetBlockedUsersAsync(
+        string? accessToken,
+        CancellationToken cancellationToken);
 }

@@ -30,6 +30,17 @@ public interface FriendshipRepository extends JpaRepository<Friendship,UUID> {
     List<Friendship> findPendingFriendshipsByUserId(@Param("userId") UUID userId);
 
     @Query("""
+            SELECT f
+            FROM Friendship f
+            JOIN FETCH f.requester r
+            JOIN FETCH f.addressee a
+            WHERE (r.id = :userId OR a.id = :userId)
+              AND f.status = com.dang.app.utils.enums.FriendshipStatus.BLOCKED
+            ORDER BY f.updatedAt DESC, f.createdAt DESC
+            """)
+    List<Friendship> findBlockedFriendshipsByUserId(@Param("userId") UUID userId);
+
+    @Query("""
             SELECT f.status
             FROM Friendship f
             WHERE

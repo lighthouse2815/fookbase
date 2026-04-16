@@ -51,7 +51,16 @@ public class PostService : IPostService
     {
         query.Normalize();
 
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+
         var (items, totalCount) = await _postRepository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
+        if (blockedUserIds.Count > 0)
+        {
+            items = items
+                .Where(post => !blockedUserIds.Contains(post.UserId))
+                .ToList();
+        }
+
         var authors = await ResolveAuthorsAsync(items.Select(post => post.UserId), cancellationToken);
 
         var mappedItems = items
@@ -79,6 +88,12 @@ public class PostService : IPostService
     {
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
+
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        if (blockedUserIds.Contains(post.UserId))
+        {
+            throw new NotFoundException("Post not found.");
+        }
 
         var dto = post.ToResponseDto();
         var currentUserReactionType = GetCurrentUserReactionType(post, currentUserId);
@@ -457,6 +472,44 @@ public class PostService : IPostService
     private static Guid? ParseGuid(string? value)
     {
         return Guid.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid? currentUserId, CancellationToken cancellationToken)
+    {
+        if (!currentUserId.HasValue)
+        {
+            return new HashSet<Guid>();
+        }
+
+        try
+        {
+            var result = await _javaApiService.GetBlockedUsersAsync(string.Empty, cancellationToken);
+            if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
+            {
+                return new HashSet<Guid>();
+            }
+
+            return result.Data
+                .Select(item => item.UserId)
+                .Where(userId => !string.IsNullOrWhiteSpace(userId))
+                .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
+                .Where(parsedUserId => parsedUserId.HasValue)
+                .Select(parsedUserId => parsedUserId!.Value)
+                .ToHashSet();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not resolve blocked users for post feed of user {UserId}.",
+                currentUserId.Value);
+
+            return new HashSet<Guid>();
+        }
     }
 
 }

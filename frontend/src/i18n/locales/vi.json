@@ -224,7 +224,11 @@
     "emptyInfoValue": "Chưa cập nhật",
     "genderMale": "Nam",
     "genderFemale": "Nữ",
-    "genderOther": "Khác"
+    "genderOther": "Khac",
+    "bannedUserTitle": "Nguoi dung nay da bi ban",
+    "bannedUserDescription": "Thong tin trang ca nhan hien khong kha dung.",
+    "blockedUserTitle": "Ban khong the xem trang ca nhan nay",
+    "blockedUserDescription": "Hai ben da chan nhau nen thong tin khong kha dung."
   },
   "friendsPage": {
     "title": "Bạn bè",
@@ -503,7 +507,16 @@
     "title": "Danh sách chặn",
     "subtitle": "Quản lý những tài khoản bạn đã chặn.",
     "emptyTitle": "Bạn chưa chặn tài khoản nào",
-    "emptySubtitle": "Khi tính năng đồng bộ danh sách chặn sẵn sàng, các tài khoản đã chặn sẽ hiển thị tại đây."
+    "emptySubtitle": "Tai khoan da chan se hien thi tai day.",
+    "loading": "Dang tai danh sach chan...",
+    "loadError": "Khong the tai danh sach chan.",
+    "retry": "Thu lai",
+    "viewProfile": "Xem trang ca nhan",
+    "blockedAt": "Da chan luc {{date}}",
+    "unblock": "Bo chan",
+    "unblocking": "Dang bo chan...",
+    "unblockSuccess": "Da bo chan nguoi dung.",
+    "unblockError": "Khong the bo chan nguoi dung nay."
   },
   "auth": {
     "loginTitle": "Chào mừng quay lại",
@@ -646,3 +659,6 @@
     "friendRequestMessage": "{{name}} đã gửi cho bạn lời mời kết bạn."
   }
 }
+
+
+

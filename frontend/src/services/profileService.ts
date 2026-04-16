@@ -30,6 +30,7 @@ interface ProfilePayload {
   friendCountVisible?: boolean | null;
   nickname?: string | null;
   status?: string | null;
+  userStatus?: string | null;
 }
 
 export interface UserProfileSearchResult {
@@ -129,6 +130,7 @@ export const profileService = {
       friendCountVisible: profile.friendCountVisible ?? true,
       nickname: profile.nickname?.trim() || undefined,
       friendshipStatus: profile.status?.trim()?.toUpperCase() || undefined,
+      userStatus: profile.userStatus?.trim()?.toUpperCase() || undefined,
     };
   },
 

@@ -66,6 +66,14 @@ public class StoryService : IStoryService
         query.Normalize();
 
         var feedUserIds = await ResolveFeedUserIdsAsync(currentUserId, accessToken, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        if (blockedUserIds.Count > 0)
+        {
+            feedUserIds = feedUserIds
+                .Where(userId => !blockedUserIds.Contains(userId))
+                .ToHashSet();
+        }
+
         var (items, totalCount) = await _storyRepository.GetPagedFeedAsync(feedUserIds, query.Page, query.PageSize, cancellationToken);
         var authors = await ResolveAuthorsAsync(items.Select(story => story.UserId), cancellationToken);
         var currentUserReactions = await ResolveCurrentUserReactionsAsync(
@@ -91,6 +99,12 @@ public class StoryService : IStoryService
         CancellationToken cancellationToken)
     {
         query.Normalize();
+
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        if (blockedUserIds.Contains(targetUserId))
+        {
+            return PagedResult<StoryResponseDto>.Create(new List<StoryResponseDto>(), query.Page, query.PageSize, 0);
+        }
 
         var user = await _javaApiService.GetUserById(targetUserId, cancellationToken)
             ?? throw new NotFoundException("User not found.");
@@ -121,6 +135,12 @@ public class StoryService : IStoryService
     {
         var story = await _storyRepository.GetByIdAsync(storyId, cancellationToken)
             ?? throw new NotFoundException("Story not found.");
+
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        if (blockedUserIds.Contains(story.UserId))
+        {
+            throw new NotFoundException("Story not found.");
+        }
 
         EnsureStoryIsActive(story);
 
@@ -162,6 +182,12 @@ public class StoryService : IStoryService
     {
         var story = await _storyRepository.GetByIdForUpdateAsync(storyId, cancellationToken)
             ?? throw new NotFoundException("Story not found.");
+
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(viewerUserId, cancellationToken);
+        if (blockedUserIds.Contains(story.UserId))
+        {
+            throw new NotFoundException("Story not found.");
+        }
 
         EnsureStoryIsActive(story);
 
@@ -468,6 +494,39 @@ public class StoryService : IStoryService
         }
 
         return content.Trim();
+    }
+
+    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid currentUserId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _javaApiService.GetBlockedUsersAsync(string.Empty, cancellationToken);
+            if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
+            {
+                return new HashSet<Guid>();
+            }
+
+            return result.Data
+                .Select(item => item.UserId)
+                .Where(userId => !string.IsNullOrWhiteSpace(userId))
+                .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
+                .Where(parsedUserId => parsedUserId.HasValue)
+                .Select(parsedUserId => parsedUserId!.Value)
+                .ToHashSet();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not resolve blocked users for story request of user {UserId}.",
+                currentUserId);
+
+            return new HashSet<Guid>();
+        }
     }
 
 }

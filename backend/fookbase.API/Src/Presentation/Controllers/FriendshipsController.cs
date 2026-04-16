@@ -148,4 +148,53 @@ public class FriendshipsController : ApiControllerBase
         return NoContent();
     }
 
+    [HttpPost("block")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<object?>>> BlockUser(
+        [FromBody] BlockUserActionDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _friendshipService.BlockUserAsync(request, ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BuildErrorResponse<object?>(result, "Block user failed.");
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("block/{targetUserId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<object?>>> UnblockUser(
+        string targetUserId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _friendshipService.UnblockUserAsync(targetUserId, ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BuildErrorResponse<object?>(result, "Unblock user failed.");
+        }
+
+        return NoContent();
+    }
+
+    [HttpGet("blocked-users")]
+    [ProducesResponseType(typeof(ApiResponse<List<BlockedUserResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<BlockedUserResponseDto>>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<List<BlockedUserResponseDto>>>> GetBlockedUsers(
+        CancellationToken cancellationToken)
+    {
+        var result = await _friendshipService.GetBlockedUsersAsync(ExtractAccessToken(), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<List<BlockedUserResponseDto>>(result, "Load blocked users failed.");
+        }
+
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<BlockedUserResponseDto>>.Ok(result.Data));
+    }
+
 }

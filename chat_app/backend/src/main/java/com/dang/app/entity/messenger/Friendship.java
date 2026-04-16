@@ -44,11 +44,11 @@ public class Friendship {
     private UUID userHighId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requester_id", nullable = false, updatable = false)
+    @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "addressee_id", nullable = false, updatable = false)
+    @JoinColumn(name = "addressee_id", nullable = false)
     private User addressee;
 
     @Enumerated(EnumType.STRING)

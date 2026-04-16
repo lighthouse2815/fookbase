@@ -36,6 +36,7 @@ public class ConversationService {
     private final MessageStatusService messageStatusService;
     private final UserProfileService userProfileService;
     private final ConversationMemberService conversationMemberService;
+    private final FriendshipService friendshipService;
 
     private final ConversationRepository conversationRepository;
 
@@ -76,6 +77,17 @@ public class ConversationService {
             throw new BusinessException(ErrorCode.PRIVATE_CONVERSATION_HAS_NAME);
         }
 
+        if (isPrivate) {
+            UUID otherUserId = memberIds.stream()
+                    .filter(memberId -> !memberId.equals(userId))
+                    .findFirst()
+                    .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+            if (friendshipService.isBlockedBetween(userId, otherUserId)) {
+                throw new BusinessException(ErrorCode.USER_BLOCKED);
+            }
+        }
+
         if (request.getType() == ConversationType.PRIVATE && isPrivate) {
             Optional<Conversation> existingPrivateConversation =
                     conversationMemberService.findExistingPrivateConversationByUserIds(memberIds);
@@ -112,6 +124,8 @@ public class ConversationService {
             return List.of();
         }
 
+        Set<UUID> blockedUserIds = friendshipService.getBlockedUserIdSet(userId);
+
         Set<UUID> conversationIds = conversations.stream()
                 .map(Conversation::getId)
                 .collect(Collectors.toSet());
@@ -120,16 +134,30 @@ public class ConversationService {
                 conversationMemberService
                         .getOtherUserIdMapInPrivateConversations(conversationIds, userId);
 
+        List<Conversation> visibleConversations = conversations.stream()
+                .filter(conversation -> !isPrivateConversationBlocked(conversation, blockedUserIds, otherUserMap))
+                .toList();
+
+        if (visibleConversations.isEmpty()) {
+            return List.of();
+        }
+
+        Set<UUID> privateOtherUserIds = visibleConversations.stream()
+                .filter(conversation -> conversation.getType() == ConversationType.PRIVATE)
+                .map(Conversation::getId)
+                .map(otherUserMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(HashSet::new));
+
         // map tat ca display name
-        Map<UUID, String> displayNameMap =
-                userProfileService.getDisplayNameMap(
-                        new HashSet<>(otherUserMap.values())
-                );
+        Map<UUID, String> displayNameMap = privateOtherUserIds.isEmpty()
+                ? Map.of()
+                : userProfileService.getDisplayNameMap(privateOtherUserIds);
 
         // map tat ca tin nhan chua doc cua user
         Map<UUID, Integer> unreadMap = messageStatusService.getUnreadCountMap(userId);
 
-        return conversations.stream()
+        return visibleConversations.stream()
                 .map(conversation -> conversationMapper.toResponse(
                         conversation,
                         unreadMap,
@@ -184,8 +212,29 @@ public class ConversationService {
         userGuard.requireActiveAndNotDeleted(user);
 
         List<RecentUserChatInfoProjection> results = conversationMemberService.getPrivateMemberInfoByUserId(userId);
+        if (results.isEmpty()) {
+            return List.of();
+        }
 
-        return conversationMapper.toRecentUserChatResponses(results);
+        Set<UUID> blockedUserIds = friendshipService.getBlockedUserIdSet(userId);
+        List<RecentUserChatInfoProjection> visibleResults = results.stream()
+                .filter(result -> !blockedUserIds.contains(result.getUserId()))
+                .toList();
+
+        return conversationMapper.toRecentUserChatResponses(visibleResults);
+    }
+
+    public void ensureNoBlockedRelationInPrivateConversation(Conversation conversation, UUID userId) {
+        if (conversation.getType() != ConversationType.PRIVATE) {
+            return;
+        }
+
+        UUID otherUserId = conversationMemberService.getOtherUserIdInPrivateConversation(conversation.getId(), userId)
+                .orElse(null);
+
+        if (otherUserId != null && friendshipService.isBlockedBetween(userId, otherUserId)) {
+            throw new BusinessException(ErrorCode.USER_BLOCKED);
+        }
     }
 
 
@@ -353,6 +402,23 @@ public class ConversationService {
         if (currentMember.getRole() != MemberRole.ADMIN) {
             throw new BusinessException(ErrorCode.NO_PERMISSION);
         }
+    }
+
+    private boolean isPrivateConversationBlocked(
+            Conversation conversation,
+            Set<UUID> blockedUserIds,
+            Map<UUID, UUID> otherUserMap
+    ) {
+        if (conversation.getType() != ConversationType.PRIVATE) {
+            return false;
+        }
+
+        UUID otherUserId = otherUserMap.get(conversation.getId());
+        if (otherUserId == null) {
+            return false;
+        }
+
+        return blockedUserIds.contains(otherUserId);
     }
 
 
