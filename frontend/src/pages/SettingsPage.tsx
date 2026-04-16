@@ -103,7 +103,13 @@ export const SettingsPage = () => {
   useEffect(() => {
     const queryTab = parseTabId(searchParams.get('tab'));
     if (queryTab && queryTab !== activeTab) {
-      setActiveTab(queryTab);
+      const syncId = window.setTimeout(() => {
+        setActiveTab(queryTab);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(syncId);
+      };
     }
   }, [activeTab, searchParams]);
 
@@ -118,11 +124,17 @@ export const SettingsPage = () => {
     }
 
     const fallbackTab = filteredTabs[0].id;
-    setActiveTab(fallbackTab);
+    const syncId = window.setTimeout(() => {
+      setActiveTab(fallbackTab);
+    }, 0);
 
     const nextSearchParams = new URLSearchParams(searchParams);
     nextSearchParams.set('tab', fallbackTab);
     setSearchParams(nextSearchParams, { replace: true });
+
+    return () => {
+      window.clearTimeout(syncId);
+    };
   }, [activeTab, filteredTabs, searchParams, setSearchParams]);
 
   const handleSelectTab = (tabId: SettingsTabId) => {

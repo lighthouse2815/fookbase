@@ -74,7 +74,13 @@ export const Navbar = ({
     }
 
     const phoneNumber = new URLSearchParams(location.search).get('phoneNumber') ?? '';
-    setSearchKeyword(phoneNumber);
+    const frameId = window.requestAnimationFrame(() => {
+      setSearchKeyword(phoneNumber);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [location.pathname, location.search]);
 
   useEffect(() => {
@@ -107,7 +113,13 @@ export const Navbar = ({
   }, [openPopover]);
 
   useEffect(() => {
-    setOpenPopover(null);
+    const frameId = window.requestAnimationFrame(() => {
+      setOpenPopover(null);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [location.pathname, location.search]);
 
   const handleSearchSubmit = () => {

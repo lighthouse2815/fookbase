@@ -22,6 +22,14 @@ jobs:
   java-backend-build-test-package:
     name: Java Backend Build Test Package
     runs-on: ubuntu-latest
+    env:
+      DB_URL: jdbc:mysql://127.0.0.1:3306/chat_app?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+      DB_USERNAME: root
+      DB_PASSWORD: 123456
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      JWT_SIGNER_KEY: CI_TEST_ONLY_SIGNER_KEY_CHANGE_IN_PROD_123456
+      RESET_TOKEN_SECRET: CI_TEST_ONLY_RESET_SECRET_CHANGE_IN_PROD_123456
     services:
       mysql:
         image: mysql:8.0

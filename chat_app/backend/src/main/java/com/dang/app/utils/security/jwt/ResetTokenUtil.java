@@ -6,8 +6,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -18,13 +18,19 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Component
-@AllArgsConstructor
 public class ResetTokenUtil {
 
-    private final String secret = "reset_password_secret_key_256bit_minimum!!!";
-    private final long expiration = 1000 * 60 * 3;
+    @Value("${auth.reset-token.secret}")
+    private String secret = "CHANGE_ME_USE_ENV_FOR_RESET_TOKEN_SECRET";
+
+    @Value("${auth.reset-token.expiration-ms:180000}")
+    private long expiration = 180000;
 
     private final RedisTemplate<String, String> redisTemplate;
+
+    public ResetTokenUtil(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

@@ -9,6 +9,8 @@
 **/bin/
 **/obj/
 *.pdb
+backend/fookbase.API/artifacts/
+backend/fookbase.API/wwwroot/uploads/
 
 # Node / Frontend
 frontend/node_modules/

@@ -8,7 +8,7 @@ namespace InteractHub.Api.Infrastructure.Services;
 
 public class AuthCookieService : IAuthCookieService
 {
-    public void SetLoginCookies(HttpContext context, string token, Guid userId)
+    public void SetLoginCookies(HttpContext context, string token)
     {
         ArgumentNullException.ThrowIfNull(context);
 
@@ -30,17 +30,6 @@ public class AuthCookieService : IAuthCookieService
             AuthCookieConstants.AccessTokenCookieName,
             normalizedToken,
             tokenCookieOptions);
-
-        if (userId == Guid.Empty)
-        {
-            return;
-        }
-
-        var userIdCookieOptions = CreateAuthCookieOptions(context);
-        context.Response.Cookies.Append(
-            AuthCookieConstants.UserIdCookieName,
-            userId.ToString(),
-            userIdCookieOptions);
     }
 
     public void ClearLoginCookies(HttpContext context)
@@ -49,7 +38,6 @@ public class AuthCookieService : IAuthCookieService
 
         var cookieOptions = CreateAuthCookieOptions(context);
         context.Response.Cookies.Delete(AuthCookieConstants.AccessTokenCookieName, cookieOptions);
-        context.Response.Cookies.Delete(AuthCookieConstants.UserIdCookieName, cookieOptions);
     }
 
     private static CookieOptions CreateAuthCookieOptions(HttpContext context)

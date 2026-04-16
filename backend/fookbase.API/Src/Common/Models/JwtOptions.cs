@@ -12,9 +12,9 @@ public sealed class JwtOptions
 
     public bool ValidateAudience { get; init; } = false;
 
-    public bool ValidateIssuerSigningKey { get; init; } = false;
+    public bool ValidateIssuerSigningKey { get; init; } = true;
 
-    public string SecretKey { get; init; } = "dang_dep_trai_sieu_cap_vip_pro_2k5_2026!!!";
+    public string SecretKey { get; init; } = "CHANGE_ME_USE_ENV_FOR_JWT_SECRET_KEY";
 
     public int ExpirationMinutes { get; init; } = 60;
 }

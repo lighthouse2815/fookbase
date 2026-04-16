@@ -8,17 +8,10 @@ const javaBaseURL = import.meta.env.VITE_JAVA_API_BASE_URL ?? 'http://localhost:
 
 const attachAuthHeader = (config: InternalAxiosRequestConfig) => {
   const token = storage.getToken();
-  const cachedUser = storage.getUser<{ id?: string }>();
-  const userId = cachedUser?.id;
 
   if (token) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  if (userId) {
-    config.headers = config.headers ?? {};
-    config.headers['X-User-Id'] = userId;
   }
 
   return config;

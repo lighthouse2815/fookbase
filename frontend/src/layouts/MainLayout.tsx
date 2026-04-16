@@ -194,7 +194,9 @@ export const MainLayout = () => {
   }, [loadFriendPresence]);
 
   useEffect(() => {
-    void loadRealtimeNotifications();
+    const initialSyncId = window.setTimeout(() => {
+      void loadRealtimeNotifications();
+    }, 0);
 
     const connection = createNotificationRealtimeConnection({
       onCreated: (notification) => {
@@ -232,6 +234,7 @@ export const MainLayout = () => {
     }, 45000);
 
     return () => {
+      window.clearTimeout(initialSyncId);
       window.clearInterval(fallbackSyncIntervalId);
       void connection.stop();
     };
@@ -249,7 +252,13 @@ export const MainLayout = () => {
   }, [loadRealtimeNotifications]);
 
   useEffect(() => {
-    void loadRealtimeNotifications();
+    const syncId = window.setTimeout(() => {
+      void loadRealtimeNotifications();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(syncId);
+    };
   }, [i18n.language, loadRealtimeNotifications]);
 
   const markNotificationAsRead = useCallback(async (notification: NotificationItem) => {

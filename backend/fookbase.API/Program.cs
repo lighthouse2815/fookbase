@@ -1,19 +1,22 @@
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Middleware;
 using InteractHub.Api.Common.Models;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Infrastructure.Data;
 using InteractHub.Api.Infrastructure.Repositories;
 using InteractHub.Api.Infrastructure.Services;
 using InteractHub.Api.Presentation.Hubs;
-using InteractHub.Api.Presentation.Security;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Authentication;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -106,11 +109,86 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services
     .AddAuthentication(options =>
     {
-        options.DefaultAuthenticateScheme = "BearerOrCookie";
-        options.DefaultChallengeScheme = "BearerOrCookie";
-        options.DefaultForbidScheme = "BearerOrCookie";
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultForbidScheme = JwtBearerDefaults.AuthenticationScheme;
     })
-    .AddScheme<AuthenticationSchemeOptions, BearerOrCookieAuthenticationHandler>("BearerOrCookie", _ => { });
+    .AddJwtBearer(options =>
+    {
+        var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+        var secretKey = builder.Configuration["JWT_SECRET_KEY"];
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            secretKey = jwtOptions.SecretKey;
+        }
+
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            throw new InvalidOperationException("JWT secret is missing. Provide Jwt:SecretKey or JWT_SECRET_KEY.");
+        }
+
+        options.MapInboundClaims = false;
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.SaveToken = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = jwtOptions.ValidateIssuer,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = jwtOptions.ValidateAudience,
+            ValidAudience = jwtOptions.Audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            NameClaimType = "sub",
+            RoleClaimType = "role",
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var tokenFromAuthorization = context.Request.Headers.Authorization.ToString().NormalizeAccessTokenOrNull();
+                if (!string.IsNullOrWhiteSpace(tokenFromAuthorization))
+                {
+                    context.Token = tokenFromAuthorization;
+                    return Task.CompletedTask;
+                }
+
+                if (context.Request.Path.StartsWithSegments("/hubs")
+                    && context.Request.Query.TryGetValue("access_token", out var accessTokenQueryValue))
+                {
+                    var tokenFromQuery = accessTokenQueryValue.ToString().NormalizeAccessTokenOrNull();
+                    if (!string.IsNullOrWhiteSpace(tokenFromQuery))
+                    {
+                        context.Token = tokenFromQuery;
+                        return Task.CompletedTask;
+                    }
+                }
+
+                if (context.Request.Cookies.TryGetValue(AuthCookieConstants.AccessTokenCookieName, out var cookieToken)
+                    && !string.IsNullOrWhiteSpace(cookieToken))
+                {
+                    context.Token = cookieToken.NormalizeAccessTokenOrNull();
+                }
+
+                return Task.CompletedTask;
+            },
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail("Unauthorized."));
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail("Forbidden."));
+            }
+        };
+    });
 
 builder.Services.AddAuthorization();
 builder.Services.AddRateLimiter(options =>
@@ -160,7 +238,7 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         Reference = new OpenApiReference
         {
-            Id = "BearerOrCookie",
+            Id = JwtBearerDefaults.AuthenticationScheme,
             Type = ReferenceType.SecurityScheme
         }
     };

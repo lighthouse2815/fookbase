@@ -67,7 +67,7 @@ public class AuthController : ApiControllerBase
 
         if (!string.IsNullOrWhiteSpace(normalizedToken))
         {
-            _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.UserId);
+            _authCookieService.SetLoginCookies(HttpContext, normalizedToken);
         }
 
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
@@ -108,7 +108,7 @@ public class AuthController : ApiControllerBase
                 ApiResponse<LoginResponseDto>.Fail("This account does not have admin permission."));
         }
 
-        _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.UserId);
+        _authCookieService.SetLoginCookies(HttpContext, normalizedToken);
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 

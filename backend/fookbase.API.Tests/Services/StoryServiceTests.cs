@@ -3,12 +3,9 @@ using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
-using InteractHub.Api.Common.Models;
 using InteractHub.Api.Domain.Entities;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace InteractHub.Api.Tests.Services;
@@ -19,23 +16,17 @@ public class StoryServiceTests
     private readonly Mock<IStoryReactionRepository> _storyReactionRepositoryMock = new();
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IHttpClientFactory> _httpClientFactoryMock = new();
-    private readonly Mock<IWebHostEnvironment> _webHostEnvironmentMock = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
     private readonly Mock<ILogger<StoryService>> _loggerMock = new();
 
     private StoryService CreateService()
     {
-        var options = Options.Create(new CloudinaryOptions());
         return new StoryService(
             _storyRepositoryMock.Object,
             _storyReactionRepositoryMock.Object,
             _javaApiServiceMock.Object,
             _unitOfWorkMock.Object,
-            _httpClientFactoryMock.Object,
-            _webHostEnvironmentMock.Object,
             _httpContextAccessorMock.Object,
-            options,
             _loggerMock.Object);
     }
 
