@@ -189,6 +189,7 @@ export const FriendsPage = () => {
   const [activeTab, setActiveTab] = useState<FriendsTab>(() => parseFriendsTab(searchParams.get('tab')));
   const [fetchState, setFetchState] = useState<FetchState>('loading');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isProfilePreviewVisible, setIsProfilePreviewVisible] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -237,6 +238,7 @@ export const FriendsPage = () => {
   }, [offlineUsers, onlineUsers]);
   const sidebarSuggestionsRef = useRef(sidebarSuggestions);
   const presenceByUserIdRef = useRef(presenceByUserId);
+  const profilePreviewRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     sidebarSuggestionsRef.current = sidebarSuggestions;
@@ -335,6 +337,17 @@ export const FriendsPage = () => {
     setSearchParams(nextSearchParams);
   };
 
+  const handleSelectUser = useCallback(
+    (userId: string) => {
+      setSelectedUserId(userId);
+
+      if (activeTab === 'friends') {
+        setIsProfilePreviewVisible(true);
+      }
+    },
+    [activeTab],
+  );
+
   useEffect(() => {
     if (selectedUserId) {
       const exists =
@@ -407,6 +420,31 @@ export const FriendsPage = () => {
 
     return null;
   }, [selectedFriend, selectedReceivedRequest, selectedSentRequest, selectedSuggestion]);
+
+  const shouldShowProfilePreview = activeTab !== 'friends' || isProfilePreviewVisible;
+
+  useEffect(() => {
+    if (activeTab !== 'friends' || !isProfilePreviewVisible) {
+      return;
+    }
+
+    const handlePointerDownOutsidePreview = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!profilePreviewRef.current || (target && profilePreviewRef.current.contains(target))) {
+        return;
+      }
+
+      setIsProfilePreviewVisible(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDownOutsidePreview);
+    document.addEventListener('touchstart', handlePointerDownOutsidePreview);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDownOutsidePreview);
+      document.removeEventListener('touchstart', handlePointerDownOutsidePreview);
+    };
+  }, [activeTab, isProfilePreviewVisible]);
 
   const filteredFriends = useMemo(() => {
     const normalizedQuery = friendSearch.trim().toLowerCase();
@@ -607,7 +645,14 @@ export const FriendsPage = () => {
         ) : null}
       </header>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_340px]">
+      <div
+        className={clsx(
+          'grid grid-cols-1 gap-4',
+          shouldShowProfilePreview
+            ? 'xl:grid-cols-[260px_minmax(0,1fr)_340px]'
+            : 'xl:grid-cols-[260px_minmax(0,1fr)]',
+        )}
+      >
         {isSidebarOpen ? (
           <button
             type="button"
@@ -685,7 +730,7 @@ export const FriendsPage = () => {
                         request={request}
                         mode="received"
                         selected={selectedUserId === request.id}
-                        onSelect={() => setSelectedUserId(request.id)}
+                        onSelect={() => handleSelectUser(request.id)}
                         onConfirm={() => void handleConfirmRequest(request.requestId)}
                         onDelete={() => void handleDeleteReceivedRequest(request.requestId)}
                       />
@@ -712,7 +757,7 @@ export const FriendsPage = () => {
                         request={request}
                         mode="sent"
                         selected={selectedUserId === request.id}
-                        onSelect={() => setSelectedUserId(request.id)}
+                        onSelect={() => handleSelectUser(request.id)}
                         onCancel={() => void handleCancelSentRequest(request.requestId)}
                       />
                     ))}
@@ -738,7 +783,7 @@ export const FriendsPage = () => {
                         user={suggestion}
                         variant="grid"
                         selected={selectedUserId === suggestion.id}
-                        onSelect={() => setSelectedUserId(suggestion.id)}
+                        onSelect={() => handleSelectUser(suggestion.id)}
                         primaryActionLabel={t('friendsPage.actions.addFriend')}
                         onPrimaryAction={() => void handleAddFriend(suggestion.id)}
                       />
@@ -779,7 +824,7 @@ export const FriendsPage = () => {
                           request={request}
                           mode="received"
                           selected={selectedUserId === request.id}
-                          onSelect={() => setSelectedUserId(request.id)}
+                          onSelect={() => handleSelectUser(request.id)}
                           onConfirm={() => void handleConfirmRequest(request.requestId)}
                           onDelete={() => void handleDeleteReceivedRequest(request.requestId)}
                         />
@@ -806,7 +851,7 @@ export const FriendsPage = () => {
                           request={request}
                           mode="sent"
                           selected={selectedUserId === request.id}
-                          onSelect={() => setSelectedUserId(request.id)}
+                          onSelect={() => handleSelectUser(request.id)}
                           onCancel={() => void handleCancelSentRequest(request.requestId)}
                         />
                       ))}
@@ -834,7 +879,7 @@ export const FriendsPage = () => {
                       user={suggestion}
                       variant="grid"
                       selected={selectedUserId === suggestion.id}
-                      onSelect={() => setSelectedUserId(suggestion.id)}
+                      onSelect={() => handleSelectUser(suggestion.id)}
                       primaryActionLabel={t('friendsPage.actions.addFriend')}
                       onPrimaryAction={() => void handleAddFriend(suggestion.id)}
                     />
@@ -892,7 +937,7 @@ export const FriendsPage = () => {
                       user={friend}
                       variant="list"
                       selected={selectedUserId === friend.id}
-                      onSelect={() => setSelectedUserId(friend.id)}
+                      onSelect={() => handleSelectUser(friend.id)}
                       statusText={friend.isOnline ? t('friendsPage.status.online') : t('friendsPage.status.offline')}
                       primaryActionLabel={t('friendsPage.actions.message')}
                       onPrimaryAction={() => handleMessageUser(friend.id)}
@@ -906,54 +951,63 @@ export const FriendsPage = () => {
           ) : null}
         </main>
 
-        <div className="xl:sticky xl:top-20 xl:h-fit">
-          <ProfilePreview
-            user={selectedProfile?.user ?? null}
-            relation={(selectedProfile?.relation ?? null) as ProfileRelation}
-            onAddFriend={
-              selectedSuggestion
-                ? () => {
-                    void handleAddFriend(selectedSuggestion.id);
-                  }
-                : undefined
-            }
-            onConfirmRequest={
-              selectedReceivedRequest
-                ? () => {
-                    void handleConfirmRequest(selectedReceivedRequest.requestId);
-                  }
-                : undefined
-            }
-            onDeleteRequest={
-              selectedReceivedRequest
-                ? () => {
-                    void handleDeleteReceivedRequest(selectedReceivedRequest.requestId);
-                  }
-                : undefined
-            }
-            onCancelRequest={
-              selectedSentRequest
-                ? () => {
-                    void handleCancelSentRequest(selectedSentRequest.requestId);
-                  }
-                : undefined
-            }
-            onUnfriend={
-              selectedFriend
-                ? () => {
-                    requestUnfriend(selectedFriend.id);
-                  }
-                : undefined
-            }
-            onMessage={
-              selectedFriend
-                ? () => {
-                    handleMessageUser(selectedFriend.id);
-                  }
-                : undefined
-            }
-          />
-        </div>
+        {shouldShowProfilePreview ? (
+          <div ref={profilePreviewRef} className="xl:sticky xl:top-20 xl:h-fit">
+            <ProfilePreview
+              user={selectedProfile?.user ?? null}
+              relation={(selectedProfile?.relation ?? null) as ProfileRelation}
+              onClose={
+                activeTab === 'friends'
+                  ? () => {
+                      setIsProfilePreviewVisible(false);
+                    }
+                  : undefined
+              }
+              onAddFriend={
+                selectedSuggestion
+                  ? () => {
+                      void handleAddFriend(selectedSuggestion.id);
+                    }
+                  : undefined
+              }
+              onConfirmRequest={
+                selectedReceivedRequest
+                  ? () => {
+                      void handleConfirmRequest(selectedReceivedRequest.requestId);
+                    }
+                  : undefined
+              }
+              onDeleteRequest={
+                selectedReceivedRequest
+                  ? () => {
+                      void handleDeleteReceivedRequest(selectedReceivedRequest.requestId);
+                    }
+                  : undefined
+              }
+              onCancelRequest={
+                selectedSentRequest
+                  ? () => {
+                      void handleCancelSentRequest(selectedSentRequest.requestId);
+                    }
+                  : undefined
+              }
+              onUnfriend={
+                selectedFriend
+                  ? () => {
+                      requestUnfriend(selectedFriend.id);
+                    }
+                  : undefined
+              }
+              onMessage={
+                selectedFriend
+                  ? () => {
+                      handleMessageUser(selectedFriend.id);
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        ) : null}
       </div>
 
       {confirmUnfriendUser ? (

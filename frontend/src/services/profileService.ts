@@ -134,17 +134,22 @@ export const profileService = {
     };
   },
 
-  async searchProfilesByPhoneNumber(phoneNumber: string): Promise<UserProfileSearchResult[]> {
+  async searchProfiles(keyword: string): Promise<UserProfileSearchResult[]> {
     const response = await apiClient.get<ApiEnvelope<UserProfileSearchResult[]>>('/api/profiles/search', {
-      params: { phoneNumber },
+      params: { keyword },
     });
 
     const results = response.data.data ?? [];
 
     return results.map((item) => ({
       ...item,
+      phoneNumber: item.phoneNumber?.trim() || '',
       avatarUrl: item.avatarUrl || `https://i.pravatar.cc/150?u=${item.userId}`,
     }));
+  },
+
+  async searchProfilesByPhoneNumber(phoneNumber: string): Promise<UserProfileSearchResult[]> {
+    return this.searchProfiles(phoneNumber);
   },
 
   async getMyProfileSettings(): Promise<MyProfileSettings> {

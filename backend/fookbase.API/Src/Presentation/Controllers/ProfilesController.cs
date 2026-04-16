@@ -5,6 +5,7 @@ using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace InteractHub.Api.Controllers;
 
@@ -149,11 +150,52 @@ public class ProfilesController : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<UserProfileSearchDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<List<UserProfileSearchDto>>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<List<UserProfileSearchDto>>), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<List<UserProfileSearchDto>>>> SearchByPhoneNumber(
-        [FromQuery] string phoneNumber,
+    public async Task<ActionResult<ApiResponse<List<UserProfileSearchDto>>>> SearchProfiles(
+        [FromQuery] string? keyword,
+        [FromQuery] string? phoneNumber,
+        [FromQuery] string? displayName,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.SearchByPhoneNumberAsync(phoneNumber, ExtractAccessToken(), cancellationToken);
+        var normalizedKeyword = keyword?.Trim();
+        var normalizedPhoneNumber = phoneNumber?.Trim();
+        var normalizedDisplayName = displayName?.Trim();
+
+        JavaApiCallResult<List<UserProfileSearchDto>> result;
+
+        if (!string.IsNullOrWhiteSpace(normalizedPhoneNumber))
+        {
+            result = await _profileService.SearchByPhoneNumberAsync(
+                normalizedPhoneNumber,
+                ExtractAccessToken(),
+                cancellationToken);
+        }
+        else
+        {
+            var resolvedDisplayName = !string.IsNullOrWhiteSpace(normalizedDisplayName)
+                ? normalizedDisplayName
+                : normalizedKeyword;
+
+            if (string.IsNullOrWhiteSpace(resolvedDisplayName))
+            {
+                return BadRequest(ApiResponse<List<UserProfileSearchDto>>.Fail("keyword, phoneNumber, or displayName is required."));
+            }
+
+            if (Regex.IsMatch(resolvedDisplayName, "^0\\d{9}$"))
+            {
+                result = await _profileService.SearchByPhoneNumberAsync(
+                    resolvedDisplayName,
+                    ExtractAccessToken(),
+                    cancellationToken);
+            }
+            else
+            {
+                result = await _profileService.SearchByDisplayNameAsync(
+                    resolvedDisplayName,
+                    ExtractAccessToken(),
+                    cancellationToken);
+            }
+        }
+
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildErrorResponse<List<UserProfileSearchDto>>(

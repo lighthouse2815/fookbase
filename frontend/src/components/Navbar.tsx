@@ -64,9 +64,10 @@ export const Navbar = ({
       return;
     }
 
-    const phoneNumber = new URLSearchParams(location.search).get('phoneNumber') ?? '';
+    const params = new URLSearchParams(location.search);
+    const keyword = params.get('keyword') ?? params.get('phoneNumber') ?? '';
     const frameId = window.requestAnimationFrame(() => {
-      setSearchKeyword(phoneNumber);
+      setSearchKeyword(keyword);
     });
 
     return () => {
@@ -119,7 +120,7 @@ export const Navbar = ({
       return;
     }
 
-    navigate(`/friends/search?phoneNumber=${encodeURIComponent(normalizedKeyword)}`);
+    navigate(`/friends/search?keyword=${encodeURIComponent(normalizedKeyword)}`);
   };
 
   const togglePopover = (popover: Exclude<NavbarPopover, null>) => {

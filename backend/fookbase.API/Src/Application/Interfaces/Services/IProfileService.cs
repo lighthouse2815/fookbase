@@ -37,4 +37,9 @@ public interface IProfileService
         string phoneNumber,
         string? accessToken,
         CancellationToken cancellationToken);
+
+    Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchByDisplayNameAsync(
+        string displayName,
+        string? accessToken,
+        CancellationToken cancellationToken);
 }

@@ -348,6 +348,46 @@ public class ProfileService : IProfileService
         return JavaApiCallResult<List<UserProfileSearchDto>>.Success(profiles, statusCode);
     }
 
+    public async Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchByDisplayNameAsync(
+        string displayName,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            return JavaApiCallResult<List<UserProfileSearchDto>>.Failure(
+                StatusCodes.Status400BadRequest,
+                "displayName is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return JavaApiCallResult<List<UserProfileSearchDto>>.Failure(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized.");
+        }
+
+        var result = await _javaApiService.SearchProfilesByDisplayNameAsync(
+            displayName.Trim(),
+            accessToken.Trim(),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BuildFailure<List<UserProfileSearchDto>>(
+                result.StatusCode,
+                result.ErrorMessage,
+                "Search profile failed.");
+        }
+
+        var profiles = result.Data ?? new List<UserProfileSearchDto>();
+        var statusCode = result.StatusCode > 0
+            ? result.StatusCode
+            : StatusCodes.Status200OK;
+
+        return JavaApiCallResult<List<UserProfileSearchDto>>.Success(profiles, statusCode);
+    }
+
     private static JavaApiCallResult<TDestination> BuildFailure<TDestination>(
         int statusCode,
         string? errorMessage,

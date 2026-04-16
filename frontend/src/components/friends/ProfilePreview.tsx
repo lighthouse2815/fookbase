@@ -1,5 +1,5 @@
 ﻿import clsx from 'clsx';
-import { Image, Info, MessageCircle, Newspaper, UserRoundCheck, UserRoundPlus, UserRoundX } from 'lucide-react';
+import { Image, Info, MessageCircle, Newspaper, UserRoundCheck, UserRoundPlus, UserRoundX, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -15,6 +15,7 @@ type ProfilePreviewUser = FriendSuggestion | FriendRequest | FriendUser;
 interface ProfilePreviewProps {
   user: ProfilePreviewUser | null;
   relation: PreviewRelation;
+  onClose?: () => void;
   onAddFriend?: () => void;
   onMessage?: () => void;
   onConfirmRequest?: () => void;
@@ -26,6 +27,7 @@ interface ProfilePreviewProps {
 export const ProfilePreview = ({
   user,
   relation,
+  onClose,
   onAddFriend,
   onMessage,
   onConfirmRequest,
@@ -46,7 +48,17 @@ export const ProfilePreview = ({
 
   if (!user) {
     return (
-      <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+      <aside className="relative rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            aria-label={t('friendsPage.preview.closeAria')}
+          >
+            <X size={14} />
+          </button>
+        ) : null}
         <div className="flex min-h-80 flex-col items-center justify-center text-center">
           <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
             <UserRoundPlus size={22} />
@@ -59,7 +71,17 @@ export const ProfilePreview = ({
   }
 
   return (
-    <aside className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+    <aside className="relative rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/70 bg-white/90 text-slate-500 backdrop-blur transition hover:bg-white hover:text-slate-700 dark:border-slate-600 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+          aria-label={t('friendsPage.preview.closeAria')}
+        >
+          <X size={14} />
+        </button>
+      ) : null}
       <div className="h-24 rounded-t-3xl bg-gradient-to-r from-sky-500 via-brand-500 to-indigo-500" />
       <div className="px-5 pb-5">
         <div className="-mt-12 flex items-end gap-3">

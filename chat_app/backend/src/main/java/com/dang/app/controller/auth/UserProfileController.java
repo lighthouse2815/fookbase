@@ -165,6 +165,17 @@ public class UserProfileController {
         );
     }
 
+    @GetMapping("/search/display-name")
+    public ResponseEntity<List<UserProfileSearchResponse>> searchUserProfileByDisplayName(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam String displayName
+    ) {
+        UUID myId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(
+                userProfileService.searchUserProfileByDisplayName(myId, displayName)
+        );
+    }
+
     @PostMapping("/me/complete-profile")
     public void completeProfile(
             @AuthenticationPrincipal Jwt jwt,

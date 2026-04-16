@@ -302,6 +302,7 @@
     "preview": {
       "emptyTitle": "Select a user to preview profile",
       "emptyDescription": "Click a card on the left to quickly view profile, photos, and friend actions.",
+      "closeAria": "Close profile preview",
       "tabs": {
         "posts": "Posts",
         "photos": "Photos",

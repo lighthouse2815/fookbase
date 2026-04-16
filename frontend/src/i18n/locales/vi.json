@@ -302,6 +302,7 @@
     "preview": {
       "emptyTitle": "Chọn một người để xem trước hồ sơ",
       "emptyDescription": "Nhấn vào card bên trái để xem nhanh thông tin, ảnh và thao tác kết bạn.",
+      "closeAria": "Đóng khung xem trước hồ sơ",
       "tabs": {
         "posts": "Bài viết",
         "photos": "Ảnh",

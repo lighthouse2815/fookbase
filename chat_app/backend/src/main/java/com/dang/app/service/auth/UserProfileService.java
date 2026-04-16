@@ -35,6 +35,7 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -48,6 +49,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class UserProfileService {
+    private static final int DISPLAY_NAME_SEARCH_LIMIT = 20;
+
     private final UserService userService;
     private final OTPService otpService;
 
@@ -387,6 +390,23 @@ public class UserProfileService {
         FriendshipStatus status = getStatus(myId, userProfile.getUser().getId());
 
         return userProfileMapper.toUserProfileSearchResponse(userProfile, status);
+    }
+
+    public List<UserProfileSearchResponse> searchUserProfileByDisplayName(UUID myId, String displayName) {
+        String normalizedDisplayName = normalize(displayName);
+        if (normalizedDisplayName == null) {
+            return List.of();
+        }
+
+        List<UserProfile> profiles = userProfileRepository.searchByDisplayName(
+                normalizedDisplayName,
+                PageRequest.of(0, DISPLAY_NAME_SEARCH_LIMIT));
+
+        return profiles.stream()
+                .map(profile -> userProfileMapper.toUserProfileSearchResponse(
+                        profile,
+                        getStatus(myId, profile.getUser().getId())))
+                .toList();
     }
 
 

@@ -143,6 +143,22 @@ public class JavaApiService : IJavaApiService
         return GetResultAsync<UserProfileSearchDto>(path, accessToken, cancellationToken);
     }
 
+    public async Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchProfilesByDisplayNameAsync(
+        string displayName,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.ProfileSearchByDisplayNamePathTemplate, ("displayName", displayName));
+        var result = await GetResultAsync<List<UserProfileSearchDto>>(path, accessToken, cancellationToken);
+
+        if (result.IsSuccess && result.Data is null)
+        {
+            return JavaApiCallResult<List<UserProfileSearchDto>>.Success(new List<UserProfileSearchDto>(), result.StatusCode);
+        }
+
+        return result;
+    }
+
     public async Task<JavaApiCallResult<List<AdminUserSearchDto>>> SearchAdminUsersAsync(
         string? keyword,
         string accessToken,

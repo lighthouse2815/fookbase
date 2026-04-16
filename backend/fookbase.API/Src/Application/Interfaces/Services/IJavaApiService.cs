@@ -63,6 +63,11 @@ public interface IJavaApiService
         string accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchProfilesByDisplayNameAsync(
+        string displayName,
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<List<AdminUserSearchDto>>> SearchAdminUsersAsync(
         string? keyword,
         string accessToken,

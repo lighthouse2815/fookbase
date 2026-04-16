@@ -90,6 +90,18 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
             """)
     List<UserProfile> searchForAdmin(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("""
+            SELECT p
+            FROM UserProfile p
+            JOIN FETCH p.user u
+            WHERE p.deletedAt IS NULL
+              AND u.deletedAt IS NULL
+              AND u.status = com.dang.app.utils.enums.Status.ACTIVE
+              AND lower(coalesce(p.displayName, '')) LIKE lower(concat('%', :displayName, '%'))
+            ORDER BY p.updatedAt DESC
+            """)
+    List<UserProfile> searchByDisplayName(@Param("displayName") String displayName, Pageable pageable);
+
     List<UserProfile> findByDeletedAtIsNullAndUser_DeletedAtIsNullOrderByUpdatedAtDesc(Pageable pageable);
 
 }
