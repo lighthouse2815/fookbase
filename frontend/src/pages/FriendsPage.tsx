@@ -340,12 +340,9 @@ export const FriendsPage = () => {
   const handleSelectUser = useCallback(
     (userId: string) => {
       setSelectedUserId(userId);
-
-      if (activeTab === 'friends') {
-        setIsProfilePreviewVisible(true);
-      }
+      setIsProfilePreviewVisible(true);
     },
-    [activeTab],
+    [],
   );
 
   useEffect(() => {
@@ -421,10 +418,10 @@ export const FriendsPage = () => {
     return null;
   }, [selectedFriend, selectedReceivedRequest, selectedSentRequest, selectedSuggestion]);
 
-  const shouldShowProfilePreview = activeTab !== 'friends' || isProfilePreviewVisible;
+  const shouldShowProfilePreview = isProfilePreviewVisible;
 
   useEffect(() => {
-    if (activeTab !== 'friends' || !isProfilePreviewVisible) {
+    if (!isProfilePreviewVisible) {
       return;
     }
 
@@ -444,7 +441,7 @@ export const FriendsPage = () => {
       document.removeEventListener('mousedown', handlePointerDownOutsidePreview);
       document.removeEventListener('touchstart', handlePointerDownOutsidePreview);
     };
-  }, [activeTab, isProfilePreviewVisible]);
+  }, [isProfilePreviewVisible]);
 
   const filteredFriends = useMemo(() => {
     const normalizedQuery = friendSearch.trim().toLowerCase();
@@ -645,14 +642,7 @@ export const FriendsPage = () => {
         ) : null}
       </header>
 
-      <div
-        className={clsx(
-          'grid grid-cols-1 gap-4',
-          shouldShowProfilePreview
-            ? 'xl:grid-cols-[260px_minmax(0,1fr)_340px]'
-            : 'xl:grid-cols-[260px_minmax(0,1fr)]',
-        )}
-      >
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_340px]">
         {isSidebarOpen ? (
           <button
             type="button"
@@ -956,13 +946,9 @@ export const FriendsPage = () => {
             <ProfilePreview
               user={selectedProfile?.user ?? null}
               relation={(selectedProfile?.relation ?? null) as ProfileRelation}
-              onClose={
-                activeTab === 'friends'
-                  ? () => {
-                      setIsProfilePreviewVisible(false);
-                    }
-                  : undefined
-              }
+              onClose={() => {
+                setIsProfilePreviewVisible(false);
+              }}
               onAddFriend={
                 selectedSuggestion
                   ? () => {
