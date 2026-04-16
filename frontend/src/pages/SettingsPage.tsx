@@ -73,7 +73,7 @@ export const SettingsPage = () => {
         id: 'reports',
         label: t('settings.tabs.reports.label'),
         description: t('settings.tabs.reports.description'),
-        keywords: ['report', 'bao cao', 'post', 'bai viet'],
+        keywords: ['report', 'bao cao', 'post', 'comment', 'story', 'user'],
         icon: Flag,
       },
       {

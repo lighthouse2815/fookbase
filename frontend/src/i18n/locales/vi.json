@@ -359,8 +359,8 @@
         "description": "Thông tin công khai hiển thị trên profile"
       },
       "reports": {
-        "label": "Bài viết đã báo cáo",
-        "description": "Danh sách bài viết bạn đã báo cáo"
+        "label": "Báo cáo",
+        "description": "Danh sách báo cáo bạn đã gửi: user, bài viết, bình luận, story"
       },
       "blocked": {
         "label": "Danh sách chặn",
@@ -493,15 +493,29 @@
     "noMorePosts": "Đã hiển thị hết bài viết đã lưu."
   },
   "reportedPosts": {
-    "title": "Bài viết đã báo cáo",
-    "subtitle": "Danh sách bài viết bạn đã báo cáo.",
+    "title": "Báo cáo",
+    "subtitle": "Xem các báo cáo bạn đã gửi theo từng mục.",
     "loadError": "Không thể tải danh sách báo cáo.",
-    "empty": "Chưa có báo cáo nào.",
+    "emptyTitle": "Tab này chưa có báo cáo",
+    "emptyDescription": "Khi bạn gửi báo cáo trong mục này, dữ liệu sẽ hiển thị ở đây.",
+    "refresh": "Làm mới",
     "reportLabel": "Báo cáo #{{id}}",
+    "reporter": "Người báo cáo",
+    "reportedUser": "Người bị báo cáo",
+    "unknownUser": "Người dùng không xác định",
     "viewPost": "Xem bài viết",
+    "viewProfile": "Xem trang cá nhân",
+    "commentIdLabel": "Mã bình luận: {{id}}",
+    "storyIdLabel": "Mã story: {{id}}",
     "loadingButton": "Đang tải...",
     "loadMoreButton": "Xem thêm",
-    "noMoreReports": "Đã hiển thị hết báo cáo."
+    "noMoreReports": "Đã hiển thị hết báo cáo.",
+    "tabs": {
+      "user": "Người dùng",
+      "post": "Bài viết",
+      "comment": "Bình luận",
+      "story": "Story"
+    }
   },
   "blockedUsersSettings": {
     "title": "Danh sách chặn",
@@ -659,6 +673,3 @@
     "friendRequestMessage": "{{name}} đã gửi cho bạn lời mời kết bạn."
   }
 }
-
-
-

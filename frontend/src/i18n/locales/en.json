@@ -401,8 +401,8 @@
         "description": "Public information shown on your profile"
       },
       "reports": {
-        "label": "Reported posts",
-        "description": "Posts you have reported"
+        "label": "Reports",
+        "description": "Items you have reported: user, post, comment, story"
       },
       "blocked": {
         "label": "Blocked list",
@@ -535,15 +535,29 @@
     "noMorePosts": "All saved posts are shown."
   },
   "reportedPosts": {
-    "title": "Reported posts",
-    "subtitle": "List of posts you have reported.",
+    "title": "Reports",
+    "subtitle": "Review your submitted reports by category.",
     "loadError": "Unable to load reports.",
-    "empty": "No reports yet.",
+    "emptyTitle": "No reports in this tab",
+    "emptyDescription": "Reports you submit in this category will appear here.",
+    "refresh": "Refresh",
     "reportLabel": "Report #{{id}}",
+    "reporter": "Reporter",
+    "reportedUser": "Reported user",
+    "unknownUser": "Unknown user",
     "viewPost": "View post",
+    "viewProfile": "View profile",
+    "commentIdLabel": "Comment ID: {{id}}",
+    "storyIdLabel": "Story ID: {{id}}",
     "loadingButton": "Loading...",
     "loadMoreButton": "Load more",
-    "noMoreReports": "All reports are shown."
+    "noMoreReports": "All reports are shown.",
+    "tabs": {
+      "user": "User",
+      "post": "Post",
+      "comment": "Comment",
+      "story": "Story"
+    }
   },
   "blockedUsersSettings": {
     "title": "Blocked list",
