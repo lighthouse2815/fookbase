@@ -364,6 +364,28 @@ public class JavaApiService : IJavaApiService
         return PostAsync<LoginResponseDto>(path, request, cancellationToken);
     }
 
+    public Task<JavaApiCallResult<TokenResponseDto>> RefreshTokenAsync(
+        string refreshToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthRefreshTokenPathTemplate);
+        return PostAsync<TokenResponseDto>(
+            path,
+            new RefreshTokenRequestDto { RefreshToken = refreshToken },
+            cancellationToken);
+    }
+
+    public Task<JavaApiCallResult<object?>> LogoutAsync(
+        string refreshToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthLogoutPathTemplate);
+        return PostNoContentAsync(
+            path,
+            new LogoutRequestDto { RefreshToken = refreshToken },
+            cancellationToken);
+    }
+
     public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenNotLoginAsync(
         OtpRequestDto request,
         CancellationToken cancellationToken = default)

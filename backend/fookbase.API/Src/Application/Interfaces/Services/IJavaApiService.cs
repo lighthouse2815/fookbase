@@ -143,6 +143,14 @@ public interface IJavaApiService
         LoginRequestDto request,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<TokenResponseDto>> RefreshTokenAsync(
+        string refreshToken,
+        CancellationToken cancellationToken = default);
+
+    Task<JavaApiCallResult<object?>> LogoutAsync(
+        string refreshToken,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenNotLoginAsync(
         OtpRequestDto request,
         CancellationToken cancellationToken = default);

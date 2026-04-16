@@ -8,28 +8,46 @@ namespace InteractHub.Api.Infrastructure.Services;
 
 public class AuthCookieService : IAuthCookieService
 {
-    public void SetLoginCookies(HttpContext context, string token)
+    public void SetLoginCookies(HttpContext context, string accessToken, string? refreshToken = null)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var normalizedToken = token.NormalizeAccessToken();
-        if (string.IsNullOrWhiteSpace(normalizedToken))
+        var normalizedAccessToken = accessToken.NormalizeAccessToken();
+        if (string.IsNullOrWhiteSpace(normalizedAccessToken))
         {
             return;
         }
 
-        var tokenCookieOptions = CreateAuthCookieOptions(context);
-        var expiration = TryReadJwtExpiration(normalizedToken);
+        var accessTokenCookieOptions = CreateAuthCookieOptions(context);
+        var accessExpiration = TryReadJwtExpiration(normalizedAccessToken);
 
-        if (expiration.HasValue)
+        if (accessExpiration.HasValue)
         {
-            tokenCookieOptions.Expires = expiration.Value;
+            accessTokenCookieOptions.Expires = accessExpiration.Value;
         }
 
         context.Response.Cookies.Append(
             AuthCookieConstants.AccessTokenCookieName,
-            normalizedToken,
-            tokenCookieOptions);
+            normalizedAccessToken,
+            accessTokenCookieOptions);
+
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return;
+        }
+
+        var normalizedRefreshToken = refreshToken.Trim();
+        var refreshTokenCookieOptions = CreateAuthCookieOptions(context);
+        var refreshExpiration = TryReadJwtExpiration(normalizedRefreshToken);
+        if (refreshExpiration.HasValue)
+        {
+            refreshTokenCookieOptions.Expires = refreshExpiration.Value;
+        }
+
+        context.Response.Cookies.Append(
+            AuthCookieConstants.RefreshTokenCookieName,
+            normalizedRefreshToken,
+            refreshTokenCookieOptions);
     }
 
     public void ClearLoginCookies(HttpContext context)
@@ -38,6 +56,7 @@ public class AuthCookieService : IAuthCookieService
 
         var cookieOptions = CreateAuthCookieOptions(context);
         context.Response.Cookies.Delete(AuthCookieConstants.AccessTokenCookieName, cookieOptions);
+        context.Response.Cookies.Delete(AuthCookieConstants.RefreshTokenCookieName, cookieOptions);
     }
 
     private static CookieOptions CreateAuthCookieOptions(HttpContext context)

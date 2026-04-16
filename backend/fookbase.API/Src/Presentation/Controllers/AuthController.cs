@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -67,7 +68,7 @@ public class AuthController : ApiControllerBase
 
         if (!string.IsNullOrWhiteSpace(normalizedToken))
         {
-            _authCookieService.SetLoginCookies(HttpContext, normalizedToken);
+            _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.RefreshToken);
         }
 
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
@@ -108,8 +109,45 @@ public class AuthController : ApiControllerBase
                 ApiResponse<LoginResponseDto>.Fail("This account does not have admin permission."));
         }
 
-        _authCookieService.SetLoginCookies(HttpContext, normalizedToken);
+        _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.RefreshToken);
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
+    }
+
+    [HttpPost("refresh-token")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<TokenResponseDto>>> RefreshToken(
+        [FromBody] RefreshTokenRequestDto? request,
+        CancellationToken cancellationToken)
+    {
+        var refreshToken = ResolveRefreshToken(request?.RefreshToken);
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return UnauthorizedApiResponse<TokenResponseDto>();
+        }
+
+        var result = await _javaApiService.RefreshTokenAsync(refreshToken, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<TokenResponseDto>(result, "Refresh token failed.");
+        }
+
+        var normalizedToken = (result.Data.AccessToken ?? result.Data.Token).NormalizeAccessTokenOrNull();
+        if (string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            return BuildErrorResponse<TokenResponseDto>(
+                StatusCodes.Status502BadGateway,
+                "Java auth API returned an invalid access token.",
+                "Refresh token failed.");
+        }
+
+        result.Data.AccessToken = normalizedToken;
+        result.Data.Token = normalizedToken;
+        _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.RefreshToken);
+
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<TokenResponseDto>.Ok(result.Data));
     }
 
     [HttpPost("otp/send/verify-email")]
@@ -397,9 +435,33 @@ public class AuthController : ApiControllerBase
     [HttpPost("logout")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public ActionResult Logout()
+    public async Task<ActionResult> Logout(
+        [FromBody] LogoutRequestDto? request,
+        CancellationToken cancellationToken)
     {
+        var refreshToken = ResolveRefreshToken(request?.RefreshToken);
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            await _javaApiService.LogoutAsync(refreshToken, cancellationToken);
+        }
+
         _authCookieService.ClearLoginCookies(HttpContext);
         return NoContent();
+    }
+
+    private string? ResolveRefreshToken(string? refreshTokenFromBody)
+    {
+        if (!string.IsNullOrWhiteSpace(refreshTokenFromBody))
+        {
+            return refreshTokenFromBody.Trim();
+        }
+
+        if (Request.Cookies.TryGetValue(AuthCookieConstants.RefreshTokenCookieName, out var refreshTokenFromCookie)
+            && !string.IsNullOrWhiteSpace(refreshTokenFromCookie))
+        {
+            return refreshTokenFromCookie.Trim();
+        }
+
+        return null;
     }
 }

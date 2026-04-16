@@ -64,6 +64,10 @@ public class JavaApiOptions
 
     public string AuthLoginPathTemplate { get; set; } = "auth/login";
 
+    public string AuthRefreshTokenPathTemplate { get; set; } = "auth/refresh-token";
+
+    public string AuthLogoutPathTemplate { get; set; } = "auth/logout";
+
     public string AuthSendVerifyEmailOtpWhenNotLoginPathTemplate { get; set; } = "auth/otp/send/verify-email";
 
     public string AuthSendVerifyEmailOtpWhenLoginPathTemplate { get; set; } = "auth/me/otp/send/verify-email";
