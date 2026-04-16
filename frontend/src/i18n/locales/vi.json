@@ -571,6 +571,27 @@
     "usernameMin": "Tên đăng nhập tối thiểu 3 ký tự",
     "identifierFormat": "Nhập email hoặc tên đăng nhập hợp lệ"
   },
+  "completeProfile": {
+    "title": "Hoàn thiện hồ sơ",
+    "subtitle": "Tài khoản của bạn cần bổ sung thêm thông tin trước khi tiếp tục.",
+    "loadError": "Không thể tải thông tin hồ sơ của bạn.",
+    "invalidImageFile": "Vui lòng chọn file ảnh hợp lệ.",
+    "requiredFields": "Vui lòng nhập đủ tên hiển thị, ngày sinh, giới tính và avatar.",
+    "submitSuccess": "Hoàn thiện hồ sơ thành công.",
+    "submitError": "Không thể hoàn thiện hồ sơ. Vui lòng thử lại.",
+    "avatarAlt": "Ảnh đại diện",
+    "avatarButton": "Chọn avatar",
+    "displayName": "Tên hiển thị",
+    "displayNamePlaceholder": "Nhập tên hiển thị",
+    "birthDate": "Ngày sinh",
+    "gender": "Giới tính",
+    "genderPlaceholder": "Chọn giới tính",
+    "genderMale": "Nam",
+    "genderFemale": "Nữ",
+    "genderOther": "Khác",
+    "saving": "Đang lưu...",
+    "saveAndContinue": "Lưu và tiếp tục"
+  },
   "messagesPage": {
     "title": "Tin nhan",
     "createGroup": "Tao nhom",

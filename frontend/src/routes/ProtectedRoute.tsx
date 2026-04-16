@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export const ProtectedRoute = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, isInitializing } = useAuth();
+  const { isAuthenticated, isInitializing, requiresProfileCompletion } = useAuth();
   const location = useLocation();
 
   if (isInitializing) {
@@ -18,6 +18,14 @@ export const ProtectedRoute = () => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (requiresProfileCompletion && location.pathname !== '/complete-profile') {
+    return <Navigate to="/complete-profile" replace />;
+  }
+
+  if (!requiresProfileCompletion && location.pathname === '/complete-profile') {
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

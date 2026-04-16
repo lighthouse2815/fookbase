@@ -32,7 +32,7 @@ const otpPattern = /^[0-9]{4,8}$/;
 export const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { register: registerUser, isAuthenticated } = useAuth();
+  const { register: registerUser, login, isAuthenticated, requiresProfileCompletion } = useAuth();
 
   const [step, setStep] = useState<'register' | 'otp'>('register');
   const [registeredEmail, setRegisteredEmail] = useState<string>('');
@@ -69,7 +69,7 @@ export const RegisterPage = () => {
   const strength = useMemo(() => getPasswordStrength(passwordValue), [passwordValue]);
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={requiresProfileCompletion ? '/complete-profile' : '/'} replace />;
   }
 
   const sendVerifyOtp = async (email: string) => {
@@ -118,12 +118,35 @@ export const RegisterPage = () => {
         otp: data.otp.trim(),
       });
 
-      navigate('/login', {
-        replace: true,
-        state: {
-          message: response.result || t('auth.verifyEmailSuccess'),
-        },
-      });
+      const loginIdentifier = registerForm.getValues('phone').trim();
+      const loginPassword = registerForm.getValues('password');
+
+      if (!loginIdentifier || !loginPassword) {
+        navigate('/login', {
+          replace: true,
+          state: {
+            message: response.result || t('auth.verifyEmailSuccess'),
+          },
+        });
+        return;
+      }
+
+      try {
+        const session = await login({
+          username: loginIdentifier,
+          password: loginPassword,
+          rememberMe: true,
+        });
+
+        navigate(session.requiresProfileCompletion ? '/complete-profile' : '/', { replace: true });
+      } catch {
+        navigate('/login', {
+          replace: true,
+          state: {
+            message: response.result || t('auth.verifyEmailSuccess'),
+          },
+        });
+      }
     } catch (error) {
       setApiError(getApiErrorMessage(error, t('auth.verifyOtpError')));
     }

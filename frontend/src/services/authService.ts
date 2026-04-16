@@ -18,6 +18,9 @@ interface RawAuthPayload {
   accessToken?: string;
   jwt?: string;
   status?: string;
+  profileCompleted?: boolean | null;
+  isComplete?: boolean | null;
+  isCompleted?: boolean | null;
   user?: AuthResponse['user'];
   userId?: string;
   username?: string;
@@ -125,6 +128,29 @@ const normalizeStatus = (status: string | undefined): string | undefined => {
   return normalizedStatus || undefined;
 };
 
+const normalizeBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') {
+      return true;
+    }
+
+    if (normalized === 'false') {
+      return false;
+    }
+  }
+
+  return undefined;
+};
+
+const normalizeProfileCompleted = (payload: RawAuthPayload): boolean | undefined => {
+  return normalizeBoolean(payload.profileCompleted ?? payload.isComplete ?? payload.isCompleted);
+};
+
 const normalizeUserPayload = (payload: RawAuthPayload): AuthResponse['user'] => {
   return (
     payload.user ?? {
@@ -143,7 +169,11 @@ const normalizeAuthPayload = (payload: RawAuthPayload): AuthResponse | null => {
     return null;
   }
 
-  return { token, user: normalizeUserPayload(payload) };
+  return {
+    token,
+    user: normalizeUserPayload(payload),
+    profileCompleted: normalizeProfileCompleted(payload),
+  };
 };
 
 export const authService = {

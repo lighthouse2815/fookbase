@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   theme: 'interacthub_theme',
   language: 'interacthub_language',
   rememberMe: 'interacthub_remember_me',
+  profileCompletionRequired: 'interacthub_profile_completion_required',
 } as const;
 
 export const storage = {
@@ -31,6 +32,13 @@ export const storage = {
   },
   clearUser: (): void => {
     localStorage.removeItem(STORAGE_KEYS.user);
+  },
+  getProfileCompletionRequired: (): boolean => localStorage.getItem(STORAGE_KEYS.profileCompletionRequired) === 'true',
+  setProfileCompletionRequired: (required: boolean): void => {
+    localStorage.setItem(STORAGE_KEYS.profileCompletionRequired, String(required));
+  },
+  clearProfileCompletionRequired: (): void => {
+    localStorage.removeItem(STORAGE_KEYS.profileCompletionRequired);
   },
 };
 

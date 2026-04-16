@@ -24,6 +24,7 @@ import { SecuritySettingsPage } from '../pages/SecuritySettingsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { BlockedUsersSettingsPage } from '../pages/BlockedUsersSettingsPage';
 import { AdminLoginPage } from '../pages/auth/AdminLoginPage';
+import { CompleteProfilePage } from '../pages/auth/CompleteProfilePage';
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
@@ -53,6 +54,7 @@ export const AppRoutes = () => {
       />
 
       <Route element={<ProtectedRoute />}>
+        <Route path="/complete-profile" element={<CompleteProfilePage />} />
         <Route element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="/friends" element={<FriendsPage />} />

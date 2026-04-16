@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { apiClient, javaApiClient } from './apiClient';
 import type { Profile } from '../types/profile';
 
 interface ApiEnvelope<T> {
@@ -58,6 +58,13 @@ export interface UpdateMyProfileRequest {
   lastName?: string;
   birthday?: string;
   gender?: string;
+  avatarUrl?: string;
+  displayName?: string;
+}
+
+export interface CompleteMyProfileRequest {
+  birthday: string;
+  gender: string;
   avatarUrl?: string;
   displayName?: string;
 }
@@ -162,6 +169,10 @@ export const profileService = {
 
   async updateMyProfile(payload: UpdateMyProfileRequest): Promise<void> {
     await apiClient.patch('/api/profiles/me', payload);
+  },
+
+  async completeMyProfile(payload: CompleteMyProfileRequest): Promise<void> {
+    await javaApiClient.post('/api/profiles/me/complete-profile', payload);
   },
 
   async getMyProfilePageInfoSettings(): Promise<ProfilePageInfoSettings> {

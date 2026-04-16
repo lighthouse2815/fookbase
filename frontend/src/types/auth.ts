@@ -22,6 +22,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   token: string;
   user: AuthUser;
+  profileCompleted?: boolean;
 }
 
 export interface RegisterResponse {

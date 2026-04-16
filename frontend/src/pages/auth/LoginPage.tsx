@@ -27,7 +27,7 @@ export const LoginPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, requiresProfileCompletion } = useAuth();
   const locationState = location.state as
     | {
         from?: { pathname?: string };
@@ -60,7 +60,7 @@ export const LoginPage = () => {
   });
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={requiresProfileCompletion ? '/complete-profile' : '/'} replace />;
   }
 
   const destination = locationState?.from?.pathname ?? '/';
@@ -78,8 +78,8 @@ export const LoginPage = () => {
     try {
       setApiError(undefined);
       setInfoMessage(undefined);
-      await login(data);
-      navigate(destination, { replace: true });
+      const session = await login(data);
+      navigate(session.requiresProfileCompletion ? '/complete-profile' : destination, { replace: true });
     } catch (error) {
       if (error instanceof InactiveAccountError) {
         if (!error.email) {
@@ -125,8 +125,8 @@ export const LoginPage = () => {
         otp: data.otp.trim(),
       });
 
-      await login(pendingLogin);
-      navigate(destination, { replace: true });
+      const session = await login(pendingLogin);
+      navigate(session.requiresProfileCompletion ? '/complete-profile' : destination, { replace: true });
     } catch (error) {
       setApiError(getApiErrorMessage(error, t('auth.verifyOtpError')));
     }
