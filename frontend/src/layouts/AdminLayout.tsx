@@ -33,7 +33,7 @@ const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
 export const AdminLayout = () => {
   const { t, i18n } = useTranslation();
   const tx = useLocaleText();
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const { logout, user } = useAuth();
   const [openPopover, setOpenPopover] = useState<AdminPopover>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -146,7 +146,7 @@ export const AdminLayout = () => {
               title={t('theme.switch')}
               className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
             <div className="relative">

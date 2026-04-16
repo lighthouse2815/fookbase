@@ -58,8 +58,10 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore backend
-        run: dotnet restore backend/fookbase.API/fookbase.API.csproj
+      - name: Restore backend and test projects
+        run: |
+          dotnet restore backend/fookbase.API/fookbase.API.csproj
+          dotnet restore backend/fookbase.API.Tests/fookbase.API.Tests.csproj
 
       - name: Build backend
         run: dotnet build backend/fookbase.API/fookbase.API.csproj --configuration Release --no-restore

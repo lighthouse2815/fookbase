@@ -3,14 +3,11 @@ import {
   Bookmark,
   ChevronDown,
   House,
-  Languages,
   LogOut,
   Menu,
   MessageSquareText,
-  Moon,
   Search,
   Settings,
-  Sun,
   UserRound,
   UsersRound,
 } from 'lucide-react';
@@ -18,7 +15,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { useTheme } from '../contexts/ThemeContext';
 import type { NotificationItem } from '../types/notification';
 import type { User } from '../types/user';
 import { NotificationDropdown } from './NotificationDropdown';
@@ -33,7 +29,7 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
-type NavbarPopover = 'menu' | 'notification' | 'language' | null;
+type NavbarPopover = 'menu' | 'notification' | null;
 
 export const Navbar = ({
   currentUser,
@@ -44,8 +40,7 @@ export const Navbar = ({
   onMarkAllNotificationsAsRead,
   onLogout,
 }: NavbarProps) => {
-  const { t, i18n } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [openPopover, setOpenPopover] = useState<NavbarPopover>(null);
@@ -53,11 +48,7 @@ export const Navbar = ({
   const popoverRootRef = useRef<HTMLDivElement | null>(null);
   const isMenuOpen = openPopover === 'menu';
   const isNotificationOpen = openPopover === 'notification';
-  const isLanguageOpen = openPopover === 'language';
   const isSettingsPage = location.pathname.startsWith('/settings');
-  const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
-  const isVietnameseActive = currentLanguage.startsWith('vi');
-  const isEnglishActive = currentLanguage.startsWith('en');
 
   const navItems = [
     { key: 'home', icon: House, path: '/' },
@@ -194,57 +185,6 @@ export const Navbar = ({
                 <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500" />
               ) : null}
             </button>
-
-            <button
-              type="button"
-              onClick={toggleTheme}
-              title={t('theme.switch')}
-              className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
-            </button>
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => togglePopover('language')}
-                className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                <Languages size={19} />
-              </button>
-              {isLanguageOpen ? (
-                <div className="absolute right-0 top-11 min-w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-                  <button
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                      isVietnameseActive
-                        ? 'bg-brand-100 font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200'
-                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                    onClick={() => {
-                      void i18n.changeLanguage('vi');
-                      setOpenPopover(null);
-                    }}
-                    type="button"
-                  >
-                    {t('language.vietnamese')}
-                  </button>
-                  <button
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                      isEnglishActive
-                        ? 'bg-brand-100 font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200'
-                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                    onClick={() => {
-                      void i18n.changeLanguage('en');
-                      setOpenPopover(null);
-                    }}
-                    type="button"
-                  >
-                    {t('language.english')}
-                  </button>
-                </div>
-              ) : null}
-            </div>
 
             <div className="flex items-center gap-1 rounded-xl px-1 py-1 transition hover:bg-slate-100 dark:hover:bg-slate-800">
               <Link to="/profile" className="inline-flex rounded-full" aria-label={currentUser.fullName}>

@@ -1,4 +1,4 @@
-﻿import { Ban, Flag, Search, ShieldCheck, UserRound, UserSquare2, type LucideIcon } from 'lucide-react';
+﻿import { Ban, Flag, Monitor, Search, ShieldCheck, UserRound, UserSquare2, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
@@ -8,8 +8,9 @@ import { PersonalInfoSettingsPage } from './PersonalInfoSettingsPage';
 import { ProfilePageInfoSettingsPage } from './ProfilePageInfoSettingsPage';
 import { ReportedPostsPage } from './ReportedPostsPage';
 import { SecuritySettingsPage } from './SecuritySettingsPage';
+import { SystemInterfaceSettingsPage } from './SystemInterfaceSettingsPage';
 
-type SettingsTabId = 'security' | 'personal-info' | 'profile-page-info' | 'reports' | 'blocked';
+type SettingsTabId = 'security' | 'personal-info' | 'profile-page-info' | 'reports' | 'blocked' | 'system-interface';
 
 interface SettingsTab {
   id: SettingsTabId;
@@ -26,6 +27,7 @@ const parseTabId = (value: string | null): SettingsTabId | null => {
     || value === 'profile-page-info'
     || value === 'reports'
     || value === 'blocked'
+    || value === 'system-interface'
   ) {
     return value;
   }
@@ -41,8 +43,10 @@ const normalizeKeyword = (value: string): string =>
     .replace(/[\u0300-\u036f]/g, '');
 
 export const SettingsPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentLanguage = (i18n.resolvedLanguage ?? i18n.language).toLowerCase();
+  const isVietnamese = currentLanguage.startsWith('vi');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => parseTabId(searchParams.get('tab')) ?? 'security');
 
@@ -83,8 +87,15 @@ export const SettingsPage = () => {
         keywords: ['chan', 'block', 'blocked', 'danh sach chan'],
         icon: Ban,
       },
+      {
+        id: 'system-interface',
+        label: isVietnamese ? 'Giao diện hệ thống' : 'System interface',
+        description: isVietnamese ? 'Chế độ sáng/tối và ngôn ngữ hiển thị' : 'Light/dark mode and app language',
+        keywords: ['giao dien', 'system', 'theme', 'dark mode', 'ngon ngu', 'language'],
+        icon: Monitor,
+      },
     ],
-    [t],
+    [isVietnamese, t],
   );
 
   const normalizedSearchKeyword = normalizeKeyword(searchKeyword);
@@ -216,9 +227,11 @@ export const SettingsPage = () => {
             {activeTab === 'profile-page-info' ? <ProfilePageInfoSettingsPage /> : null}
             {activeTab === 'reports' ? <ReportedPostsPage /> : null}
             {activeTab === 'blocked' ? <BlockedUsersSettingsPage /> : null}
+            {activeTab === 'system-interface' ? <SystemInterfaceSettingsPage /> : null}
           </>
         ) : null}
       </section>
     </div>
   );
 };
+
