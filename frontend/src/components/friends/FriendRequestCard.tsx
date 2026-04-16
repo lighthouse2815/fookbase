@@ -67,7 +67,12 @@ export const FriendRequestCard = ({
           : 'border-slate-200 hover:border-brand-300 dark:border-slate-700 dark:hover:border-brand-500/60',
       )}
     >
-      <button type="button" onClick={onSelect} className="group mb-3 flex w-full items-center gap-3 text-left">
+      <button
+        type="button"
+        onClick={onSelect}
+        data-profile-preview-trigger="true"
+        className="group mb-3 flex w-full items-center gap-3 text-left"
+      >
         <img
           src={request.avatarUrl}
           alt={request.fullName}

@@ -28,6 +28,11 @@ import { CompleteProfilePage } from '../pages/auth/CompleteProfilePage';
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
+import { GamesPage } from '../pages/games/GamesPage';
+import { ChessPage } from '../pages/games/ChessPage';
+import { CaroPage } from '../pages/games/CaroPage';
+import { SnakeDuoPage } from '../pages/games/SnakeDuoPage';
+import { FlappyDuoPage } from '../pages/games/FlappyDuoPage';
 import { AdminRoute } from './AdminRoute';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -60,6 +65,12 @@ export const AppRoutes = () => {
           <Route path="/friends" element={<FriendsPage />} />
           <Route path="/friends/search" element={<FriendSearchPage />} />
           <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/games" element={<GamesPage />} />
+          <Route path="/games/chess" element={<ChessPage />} />
+          <Route path="/games/caro" element={<CaroPage />} />
+          <Route path="/games/tictactoe" element={<Navigate to="/games/caro" replace />} />
+          <Route path="/games/snake-duo" element={<SnakeDuoPage />} />
+          <Route path="/games/flappy-duo" element={<FlappyDuoPage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/saved" element={<SavedPostsPage />} />
           <Route path="/reports" element={<ReportedPostsPage />} />

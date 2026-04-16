@@ -1,4 +1,4 @@
-import { Bookmark, House, MessageSquareText, UserRound, UsersRound } from 'lucide-react';
+import { Bookmark, Gamepad2, House, MessageSquareText, UserRound, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -412,7 +412,7 @@ export const MainLayout = () => {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
+        <div className="mx-auto grid max-w-xl grid-cols-6 gap-1">
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -453,6 +453,20 @@ export const MainLayout = () => {
           >
             <MessageSquareText size={18} />
             <span>{t('nav.messages')}</span>
+          </NavLink>
+
+          <NavLink
+            to="/games"
+            className={({ isActive }) =>
+              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+                isActive
+                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
+                  : 'text-slate-600 dark:text-slate-300'
+              }`
+            }
+          >
+            <Gamepad2 size={18} />
+            <span>{t('nav.games', { defaultValue: 'Games' })}</span>
           </NavLink>
 
           <NavLink

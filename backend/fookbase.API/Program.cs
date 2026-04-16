@@ -1,6 +1,8 @@
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Application.Interfaces.Services.Games;
 using InteractHub.Api.Application.Services;
+using InteractHub.Api.Application.Services.Games;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Middleware;
 using InteractHub.Api.Common.Models;
@@ -88,6 +90,13 @@ builder.Services.AddScoped<IAuthCookieService, AuthCookieService>();
 builder.Services.AddScoped<ICloudinarySigningService, CloudinarySigningService>();
 builder.Services.AddScoped<INotificationRealtimeService, SignalRNotificationRealtimeService>();
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddSingleton<IGameRoomService, GameRoomService>();
+builder.Services.AddSingleton<IChessService, ChessService>();
+builder.Services.AddSingleton<ICaroService, CaroService>();
+builder.Services.AddSingleton<ISnakeGameService, SnakeGameService>();
+builder.Services.AddSingleton<IFlappyGameService, FlappyGameService>();
+builder.Services.AddSingleton<IGameRealtimeService, SignalRGameRealtimeService>();
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
@@ -327,6 +336,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationsHub>("/hubs/notifications");
+app.MapHub<GamesHub>("/hubs/games");
 
 app.Run();
 

@@ -1,4 +1,4 @@
-import { Bookmark, House, MessageSquareText, UsersRound } from 'lucide-react';
+import { Bookmark, Gamepad2, House, MessageSquareText, UsersRound } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -15,6 +15,7 @@ export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
     { label: t('nav.home'), path: '/', icon: House },
     { label: t('nav.friends'), path: '/friends', icon: UsersRound },
     { label: t('nav.messages'), path: '/messages', icon: MessageSquareText },
+    { label: t('nav.games', { defaultValue: 'Games' }), path: '/games', icon: Gamepad2 },
     { label: t('nav.saved'), path: '/saved', icon: Bookmark },
   ];
 

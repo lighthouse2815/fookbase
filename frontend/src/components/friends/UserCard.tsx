@@ -44,6 +44,7 @@ export const UserCard = ({
       <button
         type="button"
         onClick={onSelect}
+        data-profile-preview-trigger="true"
         className={clsx(
           'flex w-full text-left',
           variant === 'grid' ? 'flex-col' : 'items-center gap-3 p-3 sm:gap-4 sm:p-4',

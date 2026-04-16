@@ -427,6 +427,10 @@ export const FriendsPage = () => {
 
     const handlePointerDownOutsidePreview = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node | null;
+      if (target instanceof Element && target.closest('[data-profile-preview-trigger="true"]')) {
+        return;
+      }
+
       if (!profilePreviewRef.current || (target && profilePreviewRef.current.contains(target))) {
         return;
       }
@@ -442,6 +446,11 @@ export const FriendsPage = () => {
       document.removeEventListener('touchstart', handlePointerDownOutsidePreview);
     };
   }, [isProfilePreviewVisible]);
+
+  const isProfileCardSelected = useCallback(
+    (userId: string) => shouldShowProfilePreview && selectedUserId === userId,
+    [selectedUserId, shouldShowProfilePreview],
+  );
 
   const filteredFriends = useMemo(() => {
     const normalizedQuery = friendSearch.trim().toLowerCase();
@@ -719,7 +728,7 @@ export const FriendsPage = () => {
                         key={request.requestId}
                         request={request}
                         mode="received"
-                        selected={selectedUserId === request.id}
+                        selected={isProfileCardSelected(request.id)}
                         onSelect={() => handleSelectUser(request.id)}
                         onConfirm={() => void handleConfirmRequest(request.requestId)}
                         onDelete={() => void handleDeleteReceivedRequest(request.requestId)}
@@ -746,7 +755,7 @@ export const FriendsPage = () => {
                         key={request.requestId}
                         request={request}
                         mode="sent"
-                        selected={selectedUserId === request.id}
+                        selected={isProfileCardSelected(request.id)}
                         onSelect={() => handleSelectUser(request.id)}
                         onCancel={() => void handleCancelSentRequest(request.requestId)}
                       />
@@ -772,7 +781,7 @@ export const FriendsPage = () => {
                         key={suggestion.id}
                         user={suggestion}
                         variant="grid"
-                        selected={selectedUserId === suggestion.id}
+                        selected={isProfileCardSelected(suggestion.id)}
                         onSelect={() => handleSelectUser(suggestion.id)}
                         primaryActionLabel={t('friendsPage.actions.addFriend')}
                         onPrimaryAction={() => void handleAddFriend(suggestion.id)}
@@ -813,7 +822,7 @@ export const FriendsPage = () => {
                           key={request.requestId}
                           request={request}
                           mode="received"
-                          selected={selectedUserId === request.id}
+                          selected={isProfileCardSelected(request.id)}
                           onSelect={() => handleSelectUser(request.id)}
                           onConfirm={() => void handleConfirmRequest(request.requestId)}
                           onDelete={() => void handleDeleteReceivedRequest(request.requestId)}
@@ -840,7 +849,7 @@ export const FriendsPage = () => {
                           key={request.requestId}
                           request={request}
                           mode="sent"
-                          selected={selectedUserId === request.id}
+                          selected={isProfileCardSelected(request.id)}
                           onSelect={() => handleSelectUser(request.id)}
                           onCancel={() => void handleCancelSentRequest(request.requestId)}
                         />
@@ -868,7 +877,7 @@ export const FriendsPage = () => {
                       key={suggestion.id}
                       user={suggestion}
                       variant="grid"
-                      selected={selectedUserId === suggestion.id}
+                      selected={isProfileCardSelected(suggestion.id)}
                       onSelect={() => handleSelectUser(suggestion.id)}
                       primaryActionLabel={t('friendsPage.actions.addFriend')}
                       onPrimaryAction={() => void handleAddFriend(suggestion.id)}
@@ -926,7 +935,7 @@ export const FriendsPage = () => {
                       key={friend.id}
                       user={friend}
                       variant="list"
-                      selected={selectedUserId === friend.id}
+                      selected={isProfileCardSelected(friend.id)}
                       onSelect={() => handleSelectUser(friend.id)}
                       statusText={friend.isOnline ? t('friendsPage.status.online') : t('friendsPage.status.offline')}
                       primaryActionLabel={t('friendsPage.actions.message')}

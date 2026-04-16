@@ -2,6 +2,7 @@ import {
   Bell,
   Bookmark,
   ChevronDown,
+  Gamepad2,
   House,
   LogOut,
   Menu,
@@ -54,6 +55,7 @@ export const Navbar = ({
     { key: 'home', icon: House, path: '/' },
     { key: 'friends', icon: UsersRound, path: '/friends' },
     { key: 'messages', icon: MessageSquareText, path: '/messages' },
+    { key: 'games', icon: Gamepad2, path: '/games' },
     { key: 'saved', icon: Bookmark, path: '/saved' },
   ] as const;
 
@@ -167,7 +169,7 @@ export const Navbar = ({
                       : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                   }`
                 }
-                title={t(`nav.${key}`)}
+                title={t(`nav.${key}`, { defaultValue: key === 'games' ? 'Games' : key })}
               >
                 <Icon size={20} />
               </NavLink>
