@@ -1,252 +1,27 @@
 import { Loader2, Phone, Search, UserCheck, UserPlus, UsersRound, X } from 'lucide-react';
-import { type FormEvent, useEffect, useState } from 'react';
-import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
-import { friendshipService } from '@/services/friendshipService';
-import type { UserProfileSearchResult } from '@/interface/profile';
-import { profileService } from '@/services/profileService';
-import { getApiErrorMessage } from '@/utils/apiError';
-
-type FetchState = 'idle' | 'loading' | 'success' | 'error';
-
-interface StatusMeta {
-  label: string;
-  action: 'send' | 'cancel' | 'respond' | 'none';
-  buttonLabel: string;
-  buttonClassName: string;
-  badgeClassName: string;
-}
-
-const normalizeStatus = (status?: string | null): string => status?.trim().toUpperCase() ?? 'NONE';
-
-const getStatusMeta = (status: string, isSelf: boolean): StatusMeta => {
-  if (isSelf) {
-    return {
-      label: 'Tai khoan cua ban',
-      action: 'none',
-      buttonLabel: 'Khong the ket ban',
-      buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-      badgeClassName:
-        'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
-    };
-  }
-
-  switch (status) {
-    case 'PENDING':
-      return {
-        label: 'Da gui loi moi',
-        action: 'cancel',
-        buttonLabel: 'Huy loi moi',
-        buttonClassName: 'bg-slate-600 text-white hover:bg-slate-700',
-        badgeClassName:
-          'border border-amber-300/60 bg-amber-100 text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-200',
-      };
-    case 'INVITED':
-      return {
-        label: 'Da nhan loi moi tu nguoi nay',
-        action: 'respond',
-        buttonLabel: 'Chap nhan',
-        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-        badgeClassName:
-          'border border-sky-300/60 bg-sky-100 text-sky-800 dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-200',
-      };
-    case 'ACCEPTED':
-      return {
-        label: 'Da la ban be',
-        action: 'none',
-        buttonLabel: 'Da ket ban',
-        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-        badgeClassName:
-          'border border-emerald-300/60 bg-emerald-100 text-emerald-800 dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-200',
-      };
-    case 'REJECTED':
-    case 'REMOVED':
-    case 'NONE':
-      return {
-        label: 'Chua ket ban',
-        action: 'send',
-        buttonLabel: 'Gui ket ban',
-        buttonClassName: 'bg-brand-600 text-white hover:bg-brand-700',
-        badgeClassName:
-          'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
-      };
-    case 'BLOCKED':
-      return {
-        label: 'Khong the ket ban luc nay',
-        action: 'none',
-        buttonLabel: 'Khong kha dung',
-        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-        badgeClassName:
-          'border border-rose-300/60 bg-rose-100 text-rose-800 dark:border-rose-500/50 dark:bg-rose-500/15 dark:text-rose-200',
-      };
-    default:
-      return {
-        label: `Trang thai: ${status}`,
-        action: 'none',
-        buttonLabel: 'Khong kha dung',
-        buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-        badgeClassName:
-          'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
-      };
-  }
-};
+import { useFriendSearchPage } from './hooks/useFriendSearchPage';
+import { getFriendSearchStatusMeta, normalizeFriendSearchStatus } from './util';
 
 export const FriendSearchPage = () => {
-  const { currentUser } = useOutletContext<MainLayoutOutletContext>();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [searchInput, setSearchInput] = useState('');
-  const [fetchState, setFetchState] = useState<FetchState>('idle');
-  const [results, setResults] = useState<UserProfileSearchResult[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [actionUserId, setActionUserId] = useState<string | null>(null);
-  const [actionType, setActionType] = useState<'send' | 'cancel' | 'accept' | 'reject' | null>(null);
-
-  const phoneNumberQuery = searchParams.get('phoneNumber')?.trim() ?? '';
-
-  useEffect(() => {
-    setSearchInput(phoneNumberQuery);
-  }, [phoneNumberQuery]);
-
-  useEffect(() => {
-    if (!phoneNumberQuery) {
-      setFetchState('idle');
-      setResults([]);
-      setErrorMessage(null);
-      return;
-    }
-
-    let isCancelled = false;
-
-    const loadResults = async () => {
-      setFetchState('loading');
-      setErrorMessage(null);
-      setActionMessage(null);
-
-      try {
-        const response = await profileService.searchProfilesByPhoneNumber(phoneNumberQuery);
-        if (isCancelled) {
-          return;
-        }
-
-        setResults(response);
-        setFetchState('success');
-      } catch (error) {
-        if (isCancelled) {
-          return;
-        }
-
-        setResults([]);
-        setFetchState('error');
-        setErrorMessage(getApiErrorMessage(error, 'Khong tim thay nguoi dung phu hop.'));
-      }
-    };
-
-    void loadResults();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [phoneNumberQuery]);
-
-  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const normalizedPhoneNumber = searchInput.trim();
-
-    if (!normalizedPhoneNumber) {
-      setSearchParams({});
-      return;
-    }
-
-    setSearchParams({ phoneNumber: normalizedPhoneNumber });
-  };
-
-  const handleSendFriendRequest = async (targetUserId: string) => {
-    setActionUserId(targetUserId);
-    setActionType('send');
-    setActionMessage(null);
-    setErrorMessage(null);
-
-    try {
-      await friendshipService.sendFriendRequest(targetUserId);
-
-      setResults((existing) =>
-        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'PENDING' } : item)),
-      );
-      setActionMessage('Da gui loi moi ket ban.');
-    } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Gui loi moi ket ban that bai.'));
-    } finally {
-      setActionUserId(null);
-      setActionType(null);
-    }
-  };
-
-  const handleCancelSentRequest = async (targetUserId: string) => {
-    setActionUserId(targetUserId);
-    setActionType('cancel');
-    setActionMessage(null);
-    setErrorMessage(null);
-
-    try {
-      await friendshipService.cancelSentRequest(targetUserId);
-
-      setResults((existing) =>
-        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'NONE' } : item)),
-      );
-      setActionMessage('Da huy loi moi ket ban.');
-    } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Huy loi moi ket ban that bai.'));
-    } finally {
-      setActionUserId(null);
-      setActionType(null);
-    }
-  };
-
-  const handleAcceptReceivedRequest = async (targetUserId: string) => {
-    setActionUserId(targetUserId);
-    setActionType('accept');
-    setActionMessage(null);
-    setErrorMessage(null);
-
-    try {
-      await friendshipService.acceptFriendRequest(targetUserId);
-
-      setResults((existing) =>
-        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'ACCEPTED' } : item)),
-      );
-      setActionMessage('Da chap nhan loi moi ket ban.');
-    } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Chap nhan loi moi that bai.'));
-    } finally {
-      setActionUserId(null);
-      setActionType(null);
-    }
-  };
-
-  const handleRejectReceivedRequest = async (targetUserId: string) => {
-    setActionUserId(targetUserId);
-    setActionType('reject');
-    setActionMessage(null);
-    setErrorMessage(null);
-
-    try {
-      await friendshipService.deleteFriendRequest(targetUserId);
-
-      setResults((existing) =>
-        existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'NONE' } : item)),
-      );
-      setActionMessage('Da tu choi loi moi ket ban.');
-    } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Tu choi loi moi that bai.'));
-    } finally {
-      setActionUserId(null);
-      setActionType(null);
-    }
-  };
-
-  const showEmptyState = fetchState === 'success' && results.length === 0;
+  const {
+    currentUser,
+    searchInput,
+    setSearchInput,
+    fetchState,
+    results,
+    errorMessage,
+    actionMessage,
+    actionUserId,
+    actionType,
+    handleSearchSubmit,
+    handleSendFriendRequest,
+    handleCancelSentRequest,
+    handleAcceptReceivedRequest,
+    handleRejectReceivedRequest,
+    showEmptyState,
+  } = useFriendSearchPage();
 
   return (
     <div className="space-y-4">
@@ -313,9 +88,9 @@ export const FriendSearchPage = () => {
       {results.length > 0 ? (
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((profile) => {
-            const status = normalizeStatus(profile.status);
+            const status = normalizeFriendSearchStatus(profile.status);
             const isSelf = profile.userId === currentUser.id;
-            const statusMeta = getStatusMeta(status, isSelf);
+            const statusMeta = getFriendSearchStatusMeta(status, isSelf);
             const isProcessingAction = actionUserId === profile.userId;
             const isActionEnabled = statusMeta.action !== 'none';
 
