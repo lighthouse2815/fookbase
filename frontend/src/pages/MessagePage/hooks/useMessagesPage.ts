@@ -46,7 +46,7 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
   const loadedConversationIdsRef = useRef<Set<string>>(new Set());
-  const messagesViewportRef = useRef<HTMLDivElement | null>(null);
+  const messagesViewportRef = useRef<HTMLDivElement>(null);
   const pendingUserChatCreationRef = useRef<string | null>(null);
   const realtimeConnectionRef = useRef<ChatRealtimeConnection | null>(null);
   const selectedConversationIdRef = useRef<string | null>(null);

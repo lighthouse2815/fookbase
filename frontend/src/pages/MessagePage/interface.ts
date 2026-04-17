@@ -40,7 +40,7 @@ export interface UseMessagesPageReturn {
   groupError: string | null;
   isCreatingGroup: boolean;
   friendCandidates: User[];
-  messagesViewportRef: RefObject<HTMLDivElement | null>;
+  messagesViewportRef: RefObject<HTMLDivElement>;
   handleSendMessage: () => Promise<void>;
   closeGroupDialog: () => void;
   handleToggleMember: (userId: string) => void;

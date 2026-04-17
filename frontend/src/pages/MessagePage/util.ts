@@ -1,7 +1,7 @@
 import type { ChatMessage, ConversationSummary } from '@/interface/message';
 import type { User } from '@/interface/user';
 
-export const HAS_TIMEZONE_SUFFIX = /(Z|[+-]\d{2}:\d{2})$/i;
+const HAS_TIMEZONE_SUFFIX = /(Z|[+-]\d{2}:\d{2})$/i;
 
 export const toComparableTimestamp = (value?: string | null): number => {
   if (!value || value.trim().length === 0) {
