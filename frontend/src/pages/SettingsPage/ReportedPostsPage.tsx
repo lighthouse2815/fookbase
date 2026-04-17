@@ -1,61 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import { postReportService } from '@/services/postReportService';
-import type { PostReportItem } from '@/interface/report';
-import { getApiErrorMessage } from '@/utils/apiError';
 import { formatRelativeTime } from '@/utils/date';
 
-const PAGE_SIZE = 10;
-
-const getStatusBadgeClass = (status: string) => {
-  const normalized = status.trim().toUpperCase();
-  if (normalized === 'RESOLVED') {
-    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200';
-  }
-
-  if (normalized === 'REJECTED') {
-    return 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200';
-  }
-
-  return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200';
-};
+import { useReportedPage } from './hooks/useReportedPage';
+import { getReportStatusBadgeClass } from './util';
 
 export const ReportedPostsPage = () => {
-  const { t } = useTranslation();
-  const [reports, setReports] = useState<PostReportItem[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const loadingRef = useRef(false);
-
-  const loadReports = useCallback(async (targetPage: number, replace = false) => {
-    if (loadingRef.current) {
-      return;
-    }
-
-    loadingRef.current = true;
-    setIsLoading(true);
-
-    try {
-      const response = await postReportService.getMine(targetPage, PAGE_SIZE);
-      setReports((previous) => (replace ? response.items : [...previous, ...response.items]));
-      setHasMore(response.hasMore);
-      setPage(targetPage);
-      setLoadError(null);
-    } catch (error) {
-      setLoadError(getApiErrorMessage(error, t('reportedPosts.loadError')));
-    } finally {
-      loadingRef.current = false;
-      setIsLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void loadReports(1, true);
-  }, [loadReports]);
+  const { t, reports, page, hasMore, isLoading, loadError, loadReports } = useReportedPage();
 
   return (
     <div className="space-y-4">
@@ -86,7 +37,7 @@ export const ReportedPostsPage = () => {
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {t('reportedPosts.reportLabel', { id: report.id.slice(0, 8) })}
               </p>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(report.status)}`}>
+              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getReportStatusBadgeClass(report.status)}`}>
                 {report.status}
               </span>
             </div>

@@ -1,208 +1,27 @@
 import { Camera, Save, UserRound } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { CornerToast } from '@/components/CornerToast';
-import { useCornerToast } from '@/hooks/useCornerToast';
-import { cloudinaryService } from '@/services/cloudinaryService';
-import type { MyProfileSettings, UpdateMyProfileRequest } from '@/interface/profile';
-import { profileService } from '@/services/profileService';
-import { getApiErrorMessage } from '@/utils/apiError';
 
-interface FormState {
-  displayName: string;
-  firstName: string;
-  lastName: string;
-  birthday: string;
-  gender: string;
-  avatarUrl: string;
-}
-
-const EMPTY_FORM: FormState = {
-  displayName: '',
-  firstName: '',
-  lastName: '',
-  birthday: '',
-  gender: '',
-  avatarUrl: '',
-};
-
-const normalizeGender = (value?: string | null): string => value?.trim().toUpperCase() ?? '';
-const toFallbackAvatarUrl = (seed?: string) => `https://i.pravatar.cc/150?u=${seed ?? 'me'}`;
-const isImageFile = (file: File) => file.type.trim().toLowerCase().startsWith('image/');
+import { usePersonalInfoSettings } from './hooks/usePersonalInforSettings';
 
 export const PersonalInfoSettingsPage = () => {
-  const { t } = useTranslation();
-  const [profile, setProfile] = useState<MyProfileSettings | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const { toast, showToast } = useCornerToast();
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    const loadMyProfile = async () => {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const data = await profileService.getMyProfileSettings();
-        if (isCancelled) {
-          return;
-        }
-
-        setProfile(data);
-        setForm({
-          displayName: data.displayName ?? '',
-          firstName: data.firstName ?? '',
-          lastName: data.lastName ?? '',
-          birthday: data.birthDate ?? '',
-          gender: normalizeGender(data.gender),
-          avatarUrl: data.avatarUrl ?? '',
-        });
-        setSelectedAvatarFile(null);
-        setAvatarPreviewUrl(null);
-      } catch (error) {
-        if (isCancelled) {
-          return;
-        }
-
-        setErrorMessage(getApiErrorMessage(error, t('personalInfoSettings.loadError')));
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadMyProfile();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (avatarPreviewUrl) {
-        URL.revokeObjectURL(avatarPreviewUrl);
-      }
-    };
-  }, [avatarPreviewUrl]);
-
-  const handleFieldChange = (field: keyof FormState, value: string) => {
-    if (!isEditing) {
-      return;
-    }
-
-    setForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-  };
-
-  const openAvatarPicker = () => {
-    if (!isEditing || isSaving) {
-      return;
-    }
-
-    avatarInputRef.current?.click();
-  };
-
-  const handleAvatarFileChange = (file: File | null) => {
-    if (!file || !isEditing) {
-      return;
-    }
-
-    if (!isImageFile(file)) {
-      setErrorMessage(t('personalInfoSettings.invalidImageFile'));
-      showToast(t('personalInfoSettings.invalidImageFile'), 'error');
-      return;
-    }
-
-    setSelectedAvatarFile(file);
-    setErrorMessage(null);
-
-    setAvatarPreviewUrl((previous) => {
-      if (previous) {
-        URL.revokeObjectURL(previous);
-      }
-
-      return URL.createObjectURL(file);
-    });
-  };
-
-  const handleSave = async () => {
-    if (!isEditing || isSaving) {
-      return;
-    }
-
-    setIsSaving(true);
-    setErrorMessage(null);
-
-    try {
-      let uploadedAvatarUrl: string | undefined;
-      if (selectedAvatarFile) {
-        uploadedAvatarUrl = await cloudinaryService.uploadMedia(selectedAvatarFile);
-      }
-
-      const payload: UpdateMyProfileRequest = {
-        displayName: form.displayName.trim() || undefined,
-        firstName: form.firstName.trim() || undefined,
-        lastName: form.lastName.trim() || undefined,
-        birthday: form.birthday.trim() || undefined,
-        gender: form.gender.trim() || undefined,
-        avatarUrl: uploadedAvatarUrl || undefined,
-      };
-
-      await profileService.updateMyProfile(payload);
-
-      const refreshed = await profileService.getMyProfileSettings();
-      setProfile(refreshed);
-      setForm((previous) => ({
-        ...previous,
-        displayName: refreshed.displayName ?? previous.displayName,
-        firstName: refreshed.firstName ?? previous.firstName,
-        lastName: refreshed.lastName ?? previous.lastName,
-        birthday: refreshed.birthDate ?? previous.birthday,
-        gender: normalizeGender(refreshed.gender) || previous.gender,
-        avatarUrl: refreshed.avatarUrl ?? previous.avatarUrl,
-      }));
-      setIsEditing(false);
-      setSelectedAvatarFile(null);
-      setAvatarPreviewUrl((previous) => {
-        if (previous) {
-          URL.revokeObjectURL(previous);
-        }
-
-        return null;
-      });
-
-      if (avatarInputRef.current) {
-        avatarInputRef.current.value = '';
-      }
-
-      showToast(t('personalInfoSettings.updateSuccess'), 'success');
-    } catch (error) {
-      const message = getApiErrorMessage(error, t('personalInfoSettings.updateError'));
-      setErrorMessage(message);
-      showToast(message, 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const avatarSource =
-    avatarPreviewUrl
-    || form.avatarUrl.trim()
-    || profile?.avatarUrl?.trim()
-    || toFallbackAvatarUrl(profile?.userId);
+  const {
+    t,
+    profile,
+    form,
+    isLoading,
+    isSaving,
+    isEditing,
+    setIsEditing,
+    errorMessage,
+    avatarInputRef,
+    toast,
+    handleFieldChange,
+    openAvatarPicker,
+    handleAvatarFileChange,
+    handleSave,
+    avatarSource,
+  } = usePersonalInfoSettings();
 
   if (isLoading) {
     return (
@@ -392,13 +211,13 @@ export const PersonalInfoSettingsPage = () => {
               type="button"
               onClick={() => void handleSave()}
               disabled={isSaving}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            <Save size={16} />
-            {isSaving ? t('personalInfoSettings.savingButton') : t('personalInfoSettings.saveButton')}
-          </button>
-        </div>
-      ) : null}
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <Save size={16} />
+              {isSaving ? t('personalInfoSettings.savingButton') : t('personalInfoSettings.saveButton')}
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <CornerToast message={toast?.message ?? null} type={toast?.type} />
