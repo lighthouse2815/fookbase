@@ -1,22 +1,9 @@
 ﻿import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-import type { FriendSuggestion, FriendUser } from '@/interface/friendship';
-
-type UserCardVariant = 'grid' | 'list';
-
-interface UserCardProps {
-  user: FriendSuggestion | FriendUser;
-  variant?: UserCardVariant;
-  selected?: boolean;
-  statusText?: string;
-  primaryActionLabel?: string;
-  onPrimaryAction?: () => void;
-  secondaryActionLabel?: string;
-  onSecondaryAction?: () => void;
-  onSelect?: () => void;
-}
+import type { UserCardProps } from './interface';
+import { useFriendAvatarNavigate } from './hooks/useFriendAvatarNavigate';
 
 export const UserCard = ({
   user,
@@ -30,7 +17,7 @@ export const UserCard = ({
   onSelect,
 }: UserCardProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigateToProfile = useFriendAvatarNavigate();
 
   return (
     <article
@@ -52,10 +39,7 @@ export const UserCard = ({
         <img
           src={user.avatarUrl}
           alt={user.fullName}
-          onClick={(event) => {
-            event.stopPropagation();
-            void navigate(`/profile/${user.id}`);
-          }}
+          onClick={navigateToProfile(user.id)}
           className={clsx(
             'cursor-pointer object-cover',
             variant === 'grid' ? 'h-40 w-full' : 'h-14 w-14 rounded-full sm:h-16 sm:w-16',

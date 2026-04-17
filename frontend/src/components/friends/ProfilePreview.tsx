@@ -1,27 +1,10 @@
 ﻿import clsx from 'clsx';
 import { Image, Info, MessageCircle, Newspaper, UserRoundCheck, UserRoundPlus, UserRoundX } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import type { FriendRequest, FriendSuggestion, FriendUser } from '@/interface/friendship';
-
-type PreviewTab = 'posts' | 'photos' | 'about';
-
-type PreviewRelation = 'received' | 'sent' | 'suggestion' | 'friend' | null;
-
-type ProfilePreviewUser = FriendSuggestion | FriendRequest | FriendUser;
-
-interface ProfilePreviewProps {
-  user: ProfilePreviewUser | null;
-  relation: PreviewRelation;
-  onAddFriend?: () => void;
-  onMessage?: () => void;
-  onConfirmRequest?: () => void;
-  onDeleteRequest?: () => void;
-  onCancelRequest?: () => void;
-  onUnfriend?: () => void;
-}
+import type { ProfilePreviewProps } from './interface';
+import { useProfilePreview } from './hooks/useProfilePreview';
 
 export const ProfilePreview = ({
   user,
@@ -34,15 +17,7 @@ export const ProfilePreview = ({
   onUnfriend,
 }: ProfilePreviewProps) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<PreviewTab>('posts');
-  const previewTabs: Array<{ id: PreviewTab; label: string; icon: typeof Newspaper }> = useMemo(
-    () => [
-      { id: 'posts', label: t('friendsPage.preview.tabs.posts'), icon: Newspaper },
-      { id: 'photos', label: t('friendsPage.preview.tabs.photos'), icon: Image },
-      { id: 'about', label: t('friendsPage.preview.tabs.about'), icon: Info },
-    ],
-    [t],
-  );
+  const { activeTab, setActiveTab, previewTabs } = useProfilePreview();
 
   if (!user) {
     return (
