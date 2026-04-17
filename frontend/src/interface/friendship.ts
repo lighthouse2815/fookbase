@@ -34,6 +34,7 @@ export interface RequestCandidate {
   method: 'get' | 'post' | 'delete';
   path: string;
   data?: unknown;
+  client?: 'csharp' | 'java';
 }
 
 export interface PendingRequesterPayload {
@@ -68,4 +69,18 @@ export interface JavaFriendshipPayload {
   requesterId?: string;
   addresseeId?: string;
   status?: string;
+}
+
+export interface BlockedUserPayload {
+  userId?: string;
+  id?: string;
+  username?: string;
+  displayName?: string;
+  fullName?: string;
+  avatarUrl?: string;
+  blockedAt?: string;
+}
+
+export interface BlockedUser extends User {
+  blockedAt?: string;
 }

@@ -35,7 +35,7 @@ export interface OtpRequest {
 }
 
 export interface VerifyOtpRequest {
-  email: string;
+  email?: string;
   otp: string;
 }
 

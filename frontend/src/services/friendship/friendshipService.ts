@@ -7,6 +7,8 @@ import type {
   Friendship,
   FriendUser,
   JavaFriendshipPayload,
+  BlockedUserPayload,
+  BlockedUser,
 } from '@/interface/friendship';
 import {
   getPendingRequestersFromJava,
@@ -15,6 +17,7 @@ import {
   mapPendingRequesterToRequest,
   requestFromCandidates,
   isFriendshipPayloadRecord,
+  mapBlockedUser,
 } from '@/services/friendship/util';
 
 const FW = API_CONFIG.ENDPOINTS.FRIENDSHIPS;
@@ -129,5 +132,34 @@ export const friendshipService = {
       { method: 'delete', path: FW.FRIEND_BY_ID(friendId) },
     ]);
   },
-  
+  async blockUser(targetUserId: string): Promise<void> {
+    await requestFromCandidates<unknown>([
+      { method: 'post', path: '/api/friendships/block', data: { userId: targetUserId, targetUserId } },
+      { method: 'post', path: `/api/friendships/block/${targetUserId}` },
+      { method: 'post', path: `/api/messenger/friendships/block/${targetUserId}`, client: 'java' },
+    ]);
+  },
+  async getBlockedUsers(): Promise<BlockedUser[]> {
+    const blockedUsers = await requestFromCandidates<BlockedUserPayload[]>([
+      { method: 'get', path: '/api/friendships/blocked-users' },
+      { method: 'get', path: '/api/messenger/friendships/blocked-users', client: 'java' },
+    ]);
+
+    return blockedUsers.map(mapBlockedUser);
+  },
+
+  async unblockUser(targetUserId: string): Promise<void> {
+    await requestFromCandidates<unknown>([
+      { method: 'delete', path: `/api/friendships/block/${targetUserId}` },
+      { method: 'delete', path: `/api/messenger/friendships/block/${targetUserId}`, client: 'java' },
+    ]);
+  },
+  async reportUser(targetUserId: string, reason: string): Promise<void> {
+    await requestFromCandidates<unknown>([
+      { method: 'post', path: '/api/user-reports', data: { targetUserId, reason } },
+      { method: 'post', path: '/api/reports/users', data: { userId: targetUserId, targetUserId, reason } },
+      { method: 'post', path: `/api/profiles/${targetUserId}/report`, data: { reason } },
+      { method: 'post', path: '/api/messenger/reports/users', data: { targetUserId, reason }, client: 'java' },
+    ]);
+  },
 };

@@ -2,9 +2,9 @@ import { Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { authService } from '../services/authService';
-import { userService } from '../services/userService';
-import { getApiErrorMessage } from '../utils/apiError';
+import { authService } from '@/services/auth/authService';
+import { userService } from '@/services/user/userService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 type Step = 'sendOtp' | 'verifyOtp' | 'resetPassword';
 type SecurityFieldKey = 'username' | 'phoneNumber';

@@ -12,6 +12,8 @@ import type {
   PendingRequesterPayload,
   ContactPayload,
   JavaFriendshipPayload,
+  BlockedUser,
+  BlockedUserPayload,
 } from '@/interface/friendship';
 
 const FW = API_CONFIG.ENDPOINTS.FRIENDSHIPS;
@@ -176,3 +178,17 @@ export const mapJavaFriendship = (payload: JavaFriendshipPayload, addresseeId: s
 };
 
 export const isFriendshipPayloadRecord = isRecord;
+
+export const mapBlockedUser = (payload: BlockedUserPayload, index: number): BlockedUser => {
+  const userId = toSafeId(payload.userId ?? payload.id, `blocked-user-${index}`);
+  const fullName = toDisplayName(payload.displayName ?? payload.fullName ?? payload.username, `User ${index + 1}`);
+  const username = toDisplayName(payload.username ?? payload.displayName, `user_${userId}`);
+
+  return {
+    id: userId,
+    username,
+    fullName,
+    avatarUrl: toAvatarUrl(payload.avatarUrl, userId),
+    blockedAt: typeof payload.blockedAt === 'string' ? payload.blockedAt : undefined,
+  };
+};

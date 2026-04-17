@@ -2,19 +2,44 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 
-import { CornerToast } from '../components/CornerToast';
-import { PostCard } from '../components/PostCard';
-import { ProfileHeader } from '../components/ProfileHeader';
-import { useCornerToast } from '../hooks/useCornerToast';
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
-import { friendshipService } from '../services/friendshipService';
-import { postService } from '../services/postService';
-import { profileService } from '../services/profileService';
-import type { Post } from '../types/post';
-import type { Profile } from '../types/profile';
-import { getApiErrorMessage } from '../utils/apiError';
+import { CornerToast } from '@/components/CornerToast';
+import { PostCard } from '@/components/PostCard';
+import { ProfileHeader } from '@/components/ProfileHeader';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { friendshipService } from '@/services/friendship/friendshipService';
+import { postService } from '@/services/postService';
+import { profileService } from '@/services/profileService';
+import type { Post } from '@/interface/post';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const POST_COLUMN_CLASS = 'mx-auto w-full max-w-[980px]';
+
+interface Profile {
+  id: string;
+  username?: string;
+  displayName: string;
+  fullName?: string;
+  avatarUrl: string;
+  bio?: string;
+  coverUrl?: string;
+  friendsCount: number;
+  postsCount: number;
+  phoneNumber?: string;
+  email?: string;
+  gender?: string;
+  birthDate?: string;
+  fullNameVisible?: boolean;
+  phoneVisible?: boolean;
+  emailVisible?: boolean;
+  dateOfBirthVisible?: boolean;
+  genderVisible?: boolean;
+  friendCountVisible?: boolean;
+  nickname?: string;
+  friendshipStatus?: string;
+  userStatus?: string;
+}
+
 
 const DEFAULT_PROFILE = (user: MainLayoutOutletContext['currentUser']): Profile => ({
   id: user.id,
@@ -32,6 +57,7 @@ const DEFAULT_PROFILE = (user: MainLayoutOutletContext['currentUser']): Profile 
   dateOfBirthVisible: true,
   genderVisible: true,
   friendCountVisible: true,
+  
 });
 
 const DEFAULT_PUBLIC_USERNAME = 'user';
@@ -50,7 +76,7 @@ const createFallbackProfile = (
     id: targetUserId,
     username: DEFAULT_PUBLIC_USERNAME,
     displayName: DEFAULT_PUBLIC_DISPLAY_NAME,
-    fullName: undefined,
+    fullName: '',
     avatarUrl: `https://i.pravatar.cc/150?u=${targetUserId}`,
   };
 };

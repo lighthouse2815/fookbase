@@ -2,15 +2,31 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, FileWarning } from 'lucide-react';
 
-import { CornerToast } from '../../components/CornerToast';
-import { EmptyStateCard } from '../../components/EmptyStateCard';
-import { useCornerToast } from '../../hooks/useCornerToast';
-import { useLocaleText } from '../../hooks/useLocaleText';
-import { postReportService } from '../../services/postReportService';
-import type { PostReportItem } from '../../types/report';
-import { getApiErrorMessage } from '../../utils/apiError';
-import { formatRelativeTime } from '../../utils/date';
+import { CornerToast } from '@/components/CornerToast';
+import { EmptyStateCard } from '@/components/EmptyStateCard';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import { useLocaleText } from '@/hooks/useLocaleText';
+import { postReportService } from '@/services/post/postReportService';
+// import type { PostReportItem } from '@/interface/report';
+import { getApiErrorMessage } from '@/utils/apiError';
+import { formatRelativeTime } from '@/utils/date';
 import { getStatusBadgeClass, isCommentReportReason, PAGE_SIZE } from './reportUtils';
+import type { ReportUserSummary } from '@/interface/report';
+
+interface PostReportItem {
+  id: string;
+  postId: string;
+  reportedByUserId: string;
+  postOwnerUserId?: string | null;
+  reason: string;
+  status: string;
+  resolvedByUserId?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reporter?: ReportUserSummary | null;
+  postOwner?: ReportUserSummary | null;
+}
 
 export const AdminPostReportsPage = () => {
   const tx = useLocaleText();
