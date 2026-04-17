@@ -13,15 +13,6 @@ import type {
 } from '@/interface/profile';
 const { PROFILES } = API_CONFIG.ENDPOINTS;
 
-export type {
-  UserProfileSearchResult,
-  MyProfileSettings,
-  UpdateMyProfileRequest,
-  ProfileInfoVisibility,
-  ProfilePageInfoSettings,
-  UpdateProfileInfoVisibilityRequest,
-};
-
 export const profileService = {
   async getProfileById(profileId: string): Promise<Profile> {
     const response = await apiClient.get<ApiEnvelope<Profile>>(PROFILES.BY_ID(profileId));

@@ -2,11 +2,8 @@ import { AtSign, CalendarDays, Eye, EyeOff, HeartHandshake, Phone, UserRound } f
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  profileService,
-  type ProfileInfoVisibility,
-  type ProfilePageInfoSettings,
-} from '../services/profileService';
+import type { ProfileInfoVisibility, ProfilePageInfoSettings } from '@/interface/profile';
+import { profileService } from '../services/profileService';
 import { getApiErrorMessage } from '../utils/apiError';
 
 const DEFAULT_VISIBILITY: ProfileInfoVisibility = {

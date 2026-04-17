@@ -6,33 +6,11 @@ import type {
   SecurityAccountInfo,
   UpdateSecurityAccountRequest,
 } from '@/interface/user';
-
-export type { FriendPresenceResult, SecurityAccountInfo, UpdateSecurityAccountRequest } from '@/interface/user';
 import type { ApiEnvelope } from '@/interface/api';
+import type { UserProfilePresencePayload } from '@/services/user/interface';
+import { mapPresenceToUser } from '@/services/user/util';
 
 const { USERS, FRIENDSHIPS } = API_CONFIG.ENDPOINTS;
-
-interface UserProfilePresencePayload {
-  userId: string;
-  displayName?: string;
-  avatarUrl?: string;
-  isOnline: boolean;
-  lastSeenAt?: string | null;
-}
-
-const mapPresenceToUser = (payload: UserProfilePresencePayload): User => {
-  const id = payload.userId;
-  const displayName = payload.displayName?.trim() || 'user';
-
-  return {
-    id,
-    username: displayName,
-    fullName: displayName,
-    avatarUrl: payload.avatarUrl?.trim() || `https://i.pravatar.cc/150?u=${id}`,
-    isOnline: payload.isOnline,
-    lastSeenAt: payload.lastSeenAt ?? undefined,
-  };
-};
 
 export const userService = {
   async getCurrentUser(): Promise<User> {

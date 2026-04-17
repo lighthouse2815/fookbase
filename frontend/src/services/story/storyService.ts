@@ -12,19 +12,12 @@ import type {
   StoryCreatePayload,
   StoryViewedResponse,
 } from '@/interface/story';
-import type {
-  ApiEnvelope,
-  PagedResult,
-  PaginatedResult,
-} from '@/interface/api';
-import { mapStory, 
-  normalizeReactionType 
-} from '@/services/story/util';
-
-export type PaginatedStories = PaginatedResult<StoryItem>;
+import type { ApiEnvelope, PagedResult } from '@/interface/api';
+import { mapStory, normalizeReactionType } from '@/services/story/util';
+import type { PaginatedStories } from '@/type/story.type';
 
 export const storyService = {
-  async getFeed(page: number, pageSize: number): Promise<PaginatedResult<StoryItem>> {
+  async getFeed(page: number, pageSize: number): Promise<PaginatedStories> {
     const response = await apiClient.get<ApiEnvelope<PagedResult<StoryPayload>>>(STORIES.LIST, {
       params: { page, pageSize },
     });
@@ -40,7 +33,7 @@ export const storyService = {
     };
   },
 
-  async getByUser(userId: string, page = 1, pageSize = 30): Promise<PaginatedResult<StoryItem>> {
+  async getByUser(userId: string, page = 1, pageSize = 30): Promise<PaginatedStories> {
     const response = await apiClient.get<ApiEnvelope<PagedResult<StoryPayload>>>(STORIES.BY_USER_ID(userId), {
       params: { page, pageSize },
     });

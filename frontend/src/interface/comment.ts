@@ -1,4 +1,4 @@
-import type { CommentReactionUserPayload } from "@/services/comment/interface";
+import type { CommentReactionUserPayload } from '@/interface/post';
 
 export interface CommentAuthorPayload {
     id: string;

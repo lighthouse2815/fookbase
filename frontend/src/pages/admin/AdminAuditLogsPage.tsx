@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { useLocaleText } from '../../hooks/useLocaleText';
-import { adminService, type AdminAuditLogItem } from '../../services/adminService';
+import type { AdminAuditLogItem } from '@/interface/admin';
+import { adminService } from '../../services/adminService';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatRelativeTime } from '../../utils/date';
 import { PAGE_SIZE } from './reportUtils';

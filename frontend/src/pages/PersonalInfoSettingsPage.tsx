@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { CornerToast } from '../components/CornerToast';
 import { useCornerToast } from '../hooks/useCornerToast';
 import { cloudinaryService } from '../services/cloudinaryService';
-import { profileService, type MyProfileSettings, type UpdateMyProfileRequest } from '../services/profileService';
+import type { MyProfileSettings, UpdateMyProfileRequest } from '@/interface/profile';
+import { profileService } from '../services/profileService';
 import { getApiErrorMessage } from '../utils/apiError';
 
 interface FormState {

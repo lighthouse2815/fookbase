@@ -67,3 +67,21 @@ export interface ResolveStoryReportRequest {
 export interface ResolveUserReportRequest {
   status: 'RESOLVED' | 'REJECTED';
 }
+
+export interface CreateUserReportRequest {
+  targetUserId: string;
+  reason: string;
+}
+
+export interface PaginatedUserReports {
+  items: UserReportItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+export interface PendingCountPayloadOptional {
+  pendingCount?: number;
+}

@@ -6,7 +6,8 @@ import { CornerToast } from '../../components/CornerToast';
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { useCornerToast } from '../../hooks/useCornerToast';
 import { useLocaleText } from '../../hooks/useLocaleText';
-import { adminService, type AdminUserItem } from '../../services/adminService';
+import type { AdminUserItem } from '@/interface/admin';
+import { adminService } from '../../services/adminService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 const getStatusBadgeClass = (status: string): string => {

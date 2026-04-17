@@ -1,7 +1,6 @@
-import axios from 'axios';
-
 import { API_CONFIG } from '@/config/apiConfig';
 import { apiClient } from '@/services/apiClient';
+import { extractEnvelopeData } from '@/services/util';
 import type { ApiEnvelope } from '@/interface/api';
 
 const AUTH = API_CONFIG.ENDPOINTS.AUTH;
@@ -16,19 +15,13 @@ import type {
   ResetPasswordRequest,
   VerifyOtpRequest,
 } from '@/interface/auth';
-
-interface RawAuthPayload {
-  token?: string;
-  accessToken?: string;
-  jwt?: string;
-  status?: string;
-  user?: AuthResponse['user'];
-  userId?: string;
-  username?: string;
-  displayName?: string;
-  email?: string;
-  avatarUrl?: string;
-}
+import type { RawAuthPayload } from '@/services/auth/interface';
+import {
+  extractApiErrorMessage,
+  isBannedLoginMessage,
+  normalizeAuthPayload,
+  normalizeStatus,
+} from '@/services/auth/util';
 
 export class InactiveAccountError extends Error {
   readonly status = 'INACTIVE';
@@ -49,100 +42,6 @@ export class BannedAccountError extends Error {
     this.name = 'BannedAccountError';
   }
 }
-
-const toNormalizedText = (value: string | undefined): string => {
-  if (!value) {
-    return '';
-  }
-
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .trim()
-    .toLowerCase();
-};
-
-const extractApiErrorMessage = (error: unknown): string | undefined => {
-  if (!axios.isAxiosError(error)) {
-    return undefined;
-  }
-
-  const payload = error.response?.data as
-    | {
-        message?: string;
-        error?: string;
-        errors?: string[];
-      }
-    | undefined;
-
-  return payload?.message ?? payload?.error ?? payload?.errors?.find(Boolean);
-};
-
-const isBannedLoginMessage = (message: string | undefined): boolean => {
-  const normalized = toNormalizedText(message);
-  if (!normalized) {
-    return false;
-  }
-
-  return (
-    normalized.includes('user_banned') ||
-    normalized.includes('tai khoan da bi cam') ||
-    normalized.includes('tai khoan bi cam') ||
-    normalized.includes('bi cam') ||
-    normalized.includes('account is banned') ||
-    normalized.includes('account banned') ||
-    normalized.includes('banned')
-  );
-};
-
-const extractEnvelopeData = <T>(payload: T | ApiEnvelope<T>): T => {
-  const envelope = payload as ApiEnvelope<T>;
-  if (typeof envelope === 'object' && envelope !== null && 'data' in envelope && envelope.data !== undefined) {
-    return envelope.data;
-  }
-
-  return payload as T;
-};
-
-const normalizeToken = (token: string | undefined): string | undefined => {
-  if (!token) {
-    return undefined;
-  }
-
-  return token.replace(/^Bearer\s+/i, '').trim();
-};
-
-const normalizeStatus = (status: string | undefined): string | undefined => {
-  if (!status) {
-    return undefined;
-  }
-
-  const normalizedStatus = status.trim().toUpperCase();
-  return normalizedStatus || undefined;
-};
-
-const normalizeUserPayload = (payload: RawAuthPayload): AuthResponse['user'] => {
-  return (
-    payload.user ?? {
-      id: payload.userId ?? 'unknown',
-      username: payload.username ?? payload.displayName ?? 'user',
-      email: payload.email ?? '',
-      avatarUrl: payload.avatarUrl,
-    }
-  );
-};
-
-const normalizeAuthPayload = (payload: RawAuthPayload): AuthResponse | null => {
-  const token = normalizeToken(payload.token ?? payload.accessToken ?? payload.jwt);
-
-  if (!token) {
-    return null;
-  }
-
-  return { token, user: normalizeUserPayload(payload) };
-};
 
 export const authService = {
   async login(payload: LoginRequest): Promise<AuthResponse> {

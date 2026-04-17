@@ -1,14 +1,10 @@
 import { API_CONFIG } from '@/config/apiConfig';
 import { apiClient } from '@/services/apiClient';
 import { extractData, mapPaged } from '@/services/util';
-import type { StoryReportItem, ResolveStoryReportRequest } from '@/interface/report';
+import type { StoryReportItem, ResolveStoryReportRequest, PendingCountPayload } from '@/interface/report';
 import type { ApiEnvelope, PagedResult, PaginatedResult } from '@/interface/api';
 
 const { STORY_REPORTS } = API_CONFIG.ENDPOINTS;
-
-interface PendingCountPayload {
-  pendingCount: number;
-}
 
 export const storyReportService = {
   async create(storyId: string, reason: string): Promise<StoryReportItem> {

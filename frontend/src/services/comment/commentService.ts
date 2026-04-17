@@ -1,11 +1,7 @@
 import { API_CONFIG } from '@/config/apiConfig';
 import { apiClient } from '@/services/apiClient';
 import { extractData } from '@/services/util';
-import type { 
-  ApiEnvelope, 
-  PagedResult, 
-  PaginatedResult 
-} from '@/interface/api';
+import type { ApiEnvelope, PagedResult } from '@/interface/api';
 import type { 
   CommentPayload, 
   CommentReactionUsersPayload 
@@ -17,18 +13,13 @@ import type {
   CommentReactionUser,
   CommentReactionStatePayload,
   Comment } from '@/interface/post';
-import { 
-  parseReactionType,
-  mapReactionUser ,
-  mapComment
-} from './util';
+import { parseReactionType, mapReactionUser, mapComment } from './util';
+import type { PaginatedComments } from '@/type/comment.type';
 
 const { COMMENTS } = API_CONFIG.ENDPOINTS;
 
-export type PaginatedComments = PaginatedResult<Comment>;
-
 export const commentService = {
-  async getCommentsByPostId(postId: string, page: number, pageSize: number): Promise<PaginatedResult<Comment>> {
+  async getCommentsByPostId(postId: string, page: number, pageSize: number): Promise<PaginatedComments> {
     const response = await apiClient.get<ApiEnvelope<PagedResult<CommentPayload>>>(COMMENTS.BY_POST_ID(postId), {
       params: {
         page,

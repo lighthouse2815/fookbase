@@ -1,77 +1,16 @@
 import { API_CONFIG } from '@/config/apiConfig';
 import { apiClient } from '@/services/apiClient';
 import { extractData } from '@/services/util';
+import { mapPagedAuditLogs, normalizeAdminUser } from '@/services/admin/util';
 import type { ApiEnvelope, PagedResult } from '@/interface/api';
+import type {
+  AdminAuditLogItem,
+  AdminDashboard,
+  AdminUserItem,
+  PaginatedAdminAuditLogs,
+} from '@/interface/admin';
 
 const { ADMIN } = API_CONFIG.ENDPOINTS;
-
-export interface AdminUserItem {
-  userId: string;
-  username: string;
-  displayName: string;
-  avatarUrl?: string | null;
-  email?: string | null;
-  phoneNumber?: string | null;
-  role: string;
-  status: string;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-}
-
-export interface AdminMonthlyMetric {
-  month: string;
-  users: number;
-  posts: number;
-}
-
-export interface AdminDashboard {
-  totalUsers: number;
-  activeUsers: number;
-  bannedUsers: number;
-  inactiveUsers: number;
-  totalPosts: number;
-  pendingPostReports: number;
-  pendingUserReports: number;
-  pendingStoryReports: number;
-  monthlyMetrics: AdminMonthlyMetric[];
-}
-
-export interface AdminAuditLogItem {
-  id: string;
-  adminUserId: string;
-  actionType: string;
-  entityType: string;
-  entityId?: string | null;
-  targetUserId?: string | null;
-  details?: string | null;
-  createdAt: string;
-}
-
-export interface PaginatedAdminAuditLogs {
-  items: AdminAuditLogItem[];
-  page: number;
-  pageSize: number;
-  hasMore: boolean;
-}
-
-const normalizeAdminUser = (item: AdminUserItem): AdminUserItem => ({
-  ...item,
-  username: item.username?.trim() || 'user',
-  displayName: item.displayName?.trim() || item.username?.trim() || 'user',
-  role: item.role?.trim().toUpperCase() || 'USER',
-  status: item.status?.trim().toUpperCase() || 'INACTIVE',
-  avatarUrl: item.avatarUrl || `https://i.pravatar.cc/150?u=${item.userId}`,
-});
-
-const mapPagedAuditLogs = (paged: PagedResult<AdminAuditLogItem>): PaginatedAdminAuditLogs => {
-  const loadedCount = paged.page * paged.pageSize;
-  return {
-    items: paged.items,
-    page: paged.page,
-    pageSize: paged.pageSize,
-    hasMore: loadedCount < paged.totalCount,
-  };
-};
 
 export const adminService = {
   async searchUsers(keyword?: string): Promise<AdminUserItem[]> {

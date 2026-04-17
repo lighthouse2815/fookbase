@@ -4,7 +4,8 @@ import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 
 import type { MainLayoutOutletContext } from '../layouts/MainLayout';
 import { friendshipService } from '../services/friendshipService';
-import { profileService, type UserProfileSearchResult } from '../services/profileService';
+import type { UserProfileSearchResult } from '@/interface/profile';
+import { profileService } from '../services/profileService';
 import { getApiErrorMessage } from '../utils/apiError';
 
 type FetchState = 'idle' | 'loading' | 'success' | 'error';

@@ -62,7 +62,12 @@ export interface Post {
   comments: Comment[];
 }
 
-
+export interface PostAuthorPayload {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl?: string | null;
+}
 
 export interface PostPayload {
   id: string;
@@ -77,15 +82,6 @@ export interface PostPayload {
   topReactionTypes?: string[] | null;
   commentCount: number;
   likedByCurrentUser?: boolean;
-}
-
-
-//////////////////////////////////////    ///////////////////////////////////////////////////  /////////////////////////////////////////////////// 
-interface PostAuthorPayload {
-  id: string;
-  username: string;
-  displayName: string;
-  avatarUrl?: string | null;
 }
 
 export interface CreatePostDraft {

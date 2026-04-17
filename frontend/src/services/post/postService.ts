@@ -20,15 +20,12 @@ import type {
   PostReactionStatePayload
 } from '@/interface/post';
 import { mapReactionUser, parseReactionType, parseReactionTypes } from '../comment/util';
+import type { PaginatedPosts } from '@/type/post.type';
 
 const { POSTS } = API_CONFIG.ENDPOINTS;
 
-export { mapPost } from './util';
-export type PaginatedPosts = PaginatedResult<Post>;
-export type { PostPayload, CreatePostRequest } from '@/interface/post';
-
 export const postService = {
-  async getPosts(page: number, pageSize: number): Promise<PaginatedResult<Post>> {
+  async getPosts(page: number, pageSize: number): Promise<PaginatedPosts> {
     const response = await apiClient.get<ApiEnvelope<PagedResult<PostPayload>>>(POSTS.LIST, {
       params: {
         page,

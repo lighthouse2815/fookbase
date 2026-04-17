@@ -1,7 +1,7 @@
 import type { PostPayload } from "@/interface/post";
 import type { Post } from "@/interface/post";
 import { parseReactionType, parseReactionTypes } from "../comment/util";
-import type { PostReactionType } from "@/type/post.type";
+import type { PostReactionType } from '@/type/post.type';
 
 export const mapPost = (payload: PostPayload): Post => {
   const authorName = payload.author?.displayName?.trim() || payload.author?.username?.trim() || 'user';

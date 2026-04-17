@@ -3,7 +3,8 @@ import { Activity, BarChart3, FileWarning, UserRoundX, Users } from 'lucide-reac
 
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { useLocaleText } from '../../hooks/useLocaleText';
-import { adminService, type AdminDashboard } from '../../services/adminService';
+import type { AdminDashboard } from '@/interface/admin';
+import { adminService } from '../../services/adminService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 const defaultDashboard: AdminDashboard = {

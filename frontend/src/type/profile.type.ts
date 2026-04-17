@@ -1,4 +1,4 @@
-import type { FriendRequest, FriendSuggestion, FriendUser } from "../interface/friendship";
+import type { FriendRequest, FriendSuggestion, FriendUser } from '@/interface/friendship';
 
 export type PreviewTab = 'posts' | 'photos' | 'about';
 
