@@ -5,9 +5,11 @@ import {
   LogLevel,
 } from '@microsoft/signalr';
 
-import type { NotificationItem } from '../types/notification';
-import { storage } from '../utils/storage';
-import { mapNotificationPayload, type NotificationPayload } from './notificationService';
+import type { NotificationItem, NotificationPayload } from '@/interface/notification';
+import { storage } from '@/utils/storage';
+import { mapNotificationPayload } from '@/services/notification/notificationService';
+
+export type { NotificationPayload };
 
 interface NotificationRealtimeHandlers {
   onCreated: (notification: NotificationItem) => void;

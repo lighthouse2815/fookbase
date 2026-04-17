@@ -1,55 +1,26 @@
 import axios from 'axios';
-import { apiClient, javaApiClient } from './apiClient';
-import type { FriendRequest, FriendSuggestion, Friendship, FriendshipStatus, FriendUser } from '../types/friendship';
+import { API_CONFIG } from '@/config/apiConfig';
 
-interface ApiEnvelope<T> {
-  success?: boolean;
-  data?: T;
-  result?: T;
-  errors?: string[];
-  message?: string;
-}
+import { apiClient } from '@/services/apiClient';
 
-interface RequestCandidate {
-  method: 'get' | 'post' | 'delete';
-  path: string;
-  data?: unknown;
-  client?: 'csharp' | 'java';
-}
+import type { ApiEnvelope } from '@/interface/api';
 
-interface PendingRequesterPayload {
-  userId?: string;
-  id?: string;
-  username?: string;
-  displayName?: string;
-  fullName?: string;
-  avatarUrl?: string;
-  requester?: boolean;
-  createdAt?: string;
-  requestedAt?: string;
-}
+import type { 
+  FriendRequest, 
+  FriendSuggestion, 
+  Friendship, 
+  FriendshipStatus, 
+  FriendUser,
+  RequestCandidate,
+  PendingRequesterPayload,
+  ContactPayload,
+  JavaFriendshipPayload 
+} from '@/interface/friendship';
 
-interface ContactPayload {
-  contactId?: string;
-  userId?: string;
-  id?: string;
-  username?: string;
-  nickName?: string;
-  fullName?: string;
-  avatarUrl?: string;
-  phoneNumber?: string;
-  mutualFriends?: number;
-  friendsCount?: number;
-}
+const FW = API_CONFIG.ENDPOINTS.FRIENDSHIPS;
 
-interface JavaFriendshipPayload {
-  friendshipId?: string;
-  id?: string;
-  userId?: string;
-  requesterId?: string;
-  addresseeId?: string;
-  status?: string;
-}
+
+
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -115,8 +86,7 @@ const requestFromCandidates = async <T>(candidates: RequestCandidate[]): Promise
 
   for (const candidate of candidates) {
     try {
-      const client = candidate.client === 'java' ? javaApiClient : apiClient;
-      const response = await client.request<T | ApiEnvelope<T>>({
+      const response = await apiClient.request<T | ApiEnvelope<T>>({
         method: candidate.method,
         url: candidate.path,
         data: candidate.data,
@@ -142,7 +112,7 @@ let pendingRequestersPromise: Promise<PendingRequesterPayload[]> | null = null;
 const getPendingRequestersFromJava = async (): Promise<PendingRequesterPayload[]> => {
   if (!pendingRequestersPromise) {
     pendingRequestersPromise = requestFromCandidates<PendingRequesterPayload[]>([
-      { method: 'get', path: '/api/friendships/pending-requesters' },
+      { method: 'get', path: FW.PENDING_REQUESTERS },
     ]);
   }
 
@@ -214,8 +184,8 @@ const mapJavaFriendship = (payload: JavaFriendshipPayload, addresseeId: string):
 export const friendshipService = {
   async getFriendSuggestions(): Promise<FriendSuggestion[]> {
     return requestFromCandidates<FriendSuggestion[]>([
-      { method: 'get', path: '/api/friendships/suggestions' },
-      { method: 'get', path: '/api/friends/suggestions' },
+      { method: 'get', path: FW.SUGGESTIONS },
+      { method: 'get', path: FW.FRIENDS_SUGGESTIONS },
     ]);
   },
 
@@ -223,14 +193,13 @@ export const friendshipService = {
     try {
       const pending = await getPendingRequestersFromJava();
       return pending
-        // requester=true means current user is the sender.
         .filter((item) => item.requester !== true)
         .map((item, index) => mapPendingRequesterToRequest(item, index, 'received'));
     } catch {
       return requestFromCandidates<FriendRequest[]>([
-        { method: 'get', path: '/api/friendships/requests/received' },
-        { method: 'get', path: '/api/friendships/received' },
-        { method: 'get', path: '/api/friends/requests/received' },
+        { method: 'get', path: FW.REQUESTS_RECEIVED },
+        { method: 'get', path: FW.RECEIVED },
+        { method: 'get', path: FW.FRIENDS_REQUESTS_RECEIVED },
       ]);
     }
   },
@@ -239,14 +208,13 @@ export const friendshipService = {
     try {
       const pending = await getPendingRequestersFromJava();
       return pending
-        // requester=true means current user is the sender.
         .filter((item) => item.requester === true)
         .map((item, index) => mapPendingRequesterToRequest(item, index, 'sent'));
     } catch {
       return requestFromCandidates<FriendRequest[]>([
-        { method: 'get', path: '/api/friendships/requests/sent' },
-        { method: 'get', path: '/api/friendships/sent' },
-        { method: 'get', path: '/api/friends/requests/sent' },
+        { method: 'get', path: FW.REQUESTS_SENT },
+        { method: 'get', path: FW.SENT },
+        { method: 'get', path: FW.FRIENDS_REQUESTS_SENT },
       ]);
     }
   },
@@ -254,13 +222,13 @@ export const friendshipService = {
   async getFriends(): Promise<FriendUser[]> {
     try {
       const contacts = await requestFromCandidates<ContactPayload[]>([
-        { method: 'get', path: '/api/friendships/contacts' },
+        { method: 'get', path: FW.CONTACTS },
       ]);
       return contacts.map(mapContactToFriend);
     } catch {
       return requestFromCandidates<FriendUser[]>([
-        { method: 'get', path: '/api/friendships/friends' },
-        { method: 'get', path: '/api/friends' },
+        { method: 'get', path: FW.FRIENDS_LIST },
+        { method: 'get', path: FW.FRIENDS_ROOT },
       ]);
     }
   },
@@ -269,12 +237,12 @@ export const friendshipService = {
     const payload = await requestFromCandidates<JavaFriendshipPayload | Friendship>([
       {
         method: 'post',
-        path: '/api/friendships/request',
+        path: FW.REQUEST,
         data: { addresseeId, userId: addresseeId },
       },
       {
         method: 'post',
-        path: '/api/friends/request',
+        path: FW.FRIENDS_REQUEST,
         data: { addresseeId },
       },
     ]);
@@ -293,51 +261,34 @@ export const friendshipService = {
 
   async acceptFriendRequest(requestId: string): Promise<void> {
     await requestFromCandidates<unknown>([
-      { method: 'post', path: '/api/friendships/accept', data: { requestId, userId: requestId } },
-      { method: 'post', path: `/api/friendships/requests/${requestId}/accept` },
-      { method: 'post', path: `/api/friendships/${requestId}/accept` },
+      { method: 'post', path: FW.ACCEPT, data: { requestId, userId: requestId } },
+      { method: 'post', path: FW.ACCEPT_BY_REQUEST_ID(requestId) },
+      { method: 'post', path: FW.ACCEPT_BY_ID(requestId) },
     ]);
   },
 
   async deleteFriendRequest(requestId: string): Promise<void> {
     await requestFromCandidates<unknown>([
-      { method: 'post', path: '/api/friendships/reject', data: { requestId, userId: requestId } },
-      { method: 'delete', path: `/api/friendships/requests/${requestId}` },
-      { method: 'delete', path: `/api/friendships/${requestId}` },
+      { method: 'post', path: FW.REJECT, data: { requestId, userId: requestId } },
+      { method: 'delete', path: FW.REQUEST_BY_ID(requestId) },
+      { method: 'delete', path: FW.BY_ID(requestId) },
     ]);
   },
 
   async cancelSentRequest(requestId: string): Promise<void> {
     await requestFromCandidates<unknown>([
-      { method: 'post', path: '/api/friendships/reject', data: { requestId, userId: requestId } },
-      { method: 'delete', path: `/api/friendships/requests/${requestId}/cancel` },
-      { method: 'delete', path: `/api/friendships/requests/${requestId}` },
-      { method: 'post', path: '/api/friendships/cancel', data: { requestId } },
+      { method: 'post', path: FW.REJECT, data: { requestId, userId: requestId } },
+      { method: 'delete', path: FW.CANCEL_REQUEST(requestId) },
+      { method: 'delete', path: FW.REQUEST_BY_ID(requestId) },
+      { method: 'post', path: FW.CANCEL, data: { requestId } },
     ]);
   },
 
   async unfriend(friendId: string): Promise<void> {
     await requestFromCandidates<unknown>([
-      { method: 'post', path: '/api/friendships/unfriend', data: { friendId, userId: friendId } },
-      { method: 'delete', path: `/api/friendships/friends/${friendId}` },
-      { method: 'delete', path: `/api/friends/${friendId}` },
-    ]);
-  },
-
-  async blockUser(targetUserId: string): Promise<void> {
-    await requestFromCandidates<unknown>([
-      { method: 'post', path: '/api/friendships/block', data: { userId: targetUserId, targetUserId } },
-      { method: 'post', path: `/api/friendships/block/${targetUserId}` },
-      { method: 'post', path: `/api/messenger/friendships/block/${targetUserId}`, client: 'java' },
-    ]);
-  },
-
-  async reportUser(targetUserId: string, reason: string): Promise<void> {
-    await requestFromCandidates<unknown>([
-      { method: 'post', path: '/api/user-reports', data: { targetUserId, reason } },
-      { method: 'post', path: '/api/reports/users', data: { userId: targetUserId, targetUserId, reason } },
-      { method: 'post', path: `/api/profiles/${targetUserId}/report`, data: { reason } },
-      { method: 'post', path: '/api/messenger/reports/users', data: { targetUserId, reason }, client: 'java' },
+      { method: 'post', path: FW.UNFRIEND, data: { friendId, userId: friendId } },
+      { method: 'delete', path: FW.FRIENDS_BY_ID(friendId) },
+      { method: 'delete', path: FW.FRIEND_BY_ID(friendId) },
     ]);
   },
 };

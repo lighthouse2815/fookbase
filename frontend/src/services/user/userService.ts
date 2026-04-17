@@ -1,11 +1,16 @@
-import { apiClient, javaApiClient } from './apiClient';
-import type { User } from '../types/user';
+import { API_CONFIG } from '@/config/apiConfig';
+import { apiClient, javaApiClient } from '@/services/apiClient';
+import type {
+  User,
+  FriendPresenceResult,
+  SecurityAccountInfo,
+  UpdateSecurityAccountRequest,
+} from '@/interface/user';
 
-interface ApiEnvelope<T> {
-  success: boolean;
-  data?: T;
-  errors?: string[];
-}
+export type { FriendPresenceResult, SecurityAccountInfo, UpdateSecurityAccountRequest } from '@/interface/user';
+import type { ApiEnvelope } from '@/interface/api';
+
+const { USERS, FRIENDSHIPS } = API_CONFIG.ENDPOINTS;
 
 interface UserProfilePresencePayload {
   userId: string;
@@ -13,23 +18,6 @@ interface UserProfilePresencePayload {
   avatarUrl?: string;
   isOnline: boolean;
   lastSeenAt?: string | null;
-}
-
-export interface FriendPresenceResult {
-  onlineUsers: User[];
-  offlineUsers: User[];
-}
-
-export interface SecurityAccountInfo {
-  username: string;
-  email: string | null;
-  phoneNumber: string | null;
-}
-
-export interface UpdateSecurityAccountRequest {
-  otp: string;
-  username?: string;
-  phoneNumber?: string;
 }
 
 const mapPresenceToUser = (payload: UserProfilePresencePayload): User => {
@@ -48,7 +36,7 @@ const mapPresenceToUser = (payload: UserProfilePresencePayload): User => {
 
 export const userService = {
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<ApiEnvelope<User>>('/api/users/me');
+    const response = await apiClient.get<ApiEnvelope<User>>(USERS.ME);
     const currentUser = response.data.data;
 
     if (!currentUser) {
@@ -62,7 +50,7 @@ export const userService = {
   },
 
   async getSecurityAccountInfo(): Promise<SecurityAccountInfo> {
-    const response = await apiClient.get<ApiEnvelope<SecurityAccountInfo>>('/api/users/me/security-account');
+    const response = await apiClient.get<ApiEnvelope<SecurityAccountInfo>>(USERS.SECURITY_ACCOUNT);
     const accountInfo = response.data.data;
 
     if (!accountInfo) {
@@ -77,16 +65,16 @@ export const userService = {
   },
 
   async updateSecurityAccountInfo(payload: UpdateSecurityAccountRequest): Promise<void> {
-    await apiClient.patch('/api/users/me/security-account', payload);
+    await apiClient.patch(USERS.SECURITY_ACCOUNT, payload);
   },
 
   async getOnlineUsers(): Promise<User[]> {
-    const response = await javaApiClient.get<User[]>('/api/users/online');
+    const response = await javaApiClient.get<User[]>(USERS.ONLINE);
     return response.data;
   },
 
   async getFriendPresence(): Promise<FriendPresenceResult> {
-    const response = await apiClient.get<ApiEnvelope<UserProfilePresencePayload[]>>('/api/friendships/presence');
+    const response = await apiClient.get<ApiEnvelope<UserProfilePresencePayload[]>>(FRIENDSHIPS.PRESENCE);
     const payload = response.data.data;
     if (!payload) {
       throw new Error(response.data.errors?.[0] ?? 'Failed to load friend presence list.');

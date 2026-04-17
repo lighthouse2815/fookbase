@@ -1,11 +1,10 @@
-import { apiClient } from './apiClient';
-import type { UserReportItem } from '../types/report';
+import { API_CONFIG } from '@/config/apiConfig';
+import { apiClient } from '@/services/apiClient';
+import { extractData } from '@/services/util';
+import type { UserReportItem, ResolveUserReportRequest } from '@/interface/report';
+import type { ApiEnvelope } from '@/interface/api';
 
-interface ApiEnvelope<T> {
-  success?: boolean;
-  data?: T;
-  errors?: string[];
-}
+const { USER_REPORTS } = API_CONFIG.ENDPOINTS;
 
 interface PagedResult<T> {
   items?: T[];
@@ -22,10 +21,6 @@ interface CreateUserReportRequest {
   reason: string;
 }
 
-interface ResolveUserReportRequest {
-  status: 'RESOLVED' | 'REJECTED';
-}
-
 interface PendingCountPayload {
   pendingCount?: number;
 }
@@ -38,14 +33,6 @@ export interface PaginatedUserReports {
   totalPages: number;
   hasMore: boolean;
 }
-
-const extractData = <T>(payload: ApiEnvelope<T>, fallbackMessage: string): T => {
-  if (payload.data === undefined || payload.data === null) {
-    throw new Error(payload.errors?.[0] ?? fallbackMessage);
-  }
-
-  return payload.data;
-};
 
 const mapPaged = (paged: PagedResult<UserReportItem>): PaginatedUserReports => {
   const page = paged.page ?? 1;
@@ -65,7 +52,7 @@ const mapPaged = (paged: PagedResult<UserReportItem>): PaginatedUserReports => {
 
 export const userReportService = {
   async create(targetUserId: string, reason: string): Promise<UserReportItem> {
-    const response = await apiClient.post<ApiEnvelope<UserReportItem>>('/api/user-reports', {
+    const response = await apiClient.post<ApiEnvelope<UserReportItem>>(USER_REPORTS.CREATE, {
       targetUserId,
       reason,
     } satisfies CreateUserReportRequest);
@@ -74,7 +61,7 @@ export const userReportService = {
   },
 
   async getMine(page: number, pageSize: number): Promise<PaginatedUserReports> {
-    const response = await apiClient.get<ApiEnvelope<PagedResult<UserReportItem>>>('/api/user-reports/my', {
+    const response = await apiClient.get<ApiEnvelope<PagedResult<UserReportItem>>>(USER_REPORTS.MY, {
       params: { page, pageSize },
     });
 
@@ -82,7 +69,7 @@ export const userReportService = {
   },
 
   async getAll(page: number, pageSize: number): Promise<PaginatedUserReports> {
-    const response = await apiClient.get<ApiEnvelope<PagedResult<UserReportItem>>>('/api/user-reports', {
+    const response = await apiClient.get<ApiEnvelope<PagedResult<UserReportItem>>>(USER_REPORTS.LIST, {
       params: { page, pageSize },
     });
 
@@ -90,7 +77,7 @@ export const userReportService = {
   },
 
   async resolve(reportId: string, status: ResolveUserReportRequest['status']): Promise<UserReportItem> {
-    const response = await apiClient.patch<ApiEnvelope<UserReportItem>>(`/api/user-reports/${reportId}/resolve`, {
+    const response = await apiClient.patch<ApiEnvelope<UserReportItem>>(USER_REPORTS.RESOLVE(reportId), {
       status,
     } satisfies ResolveUserReportRequest);
 
@@ -98,7 +85,7 @@ export const userReportService = {
   },
 
   async getPendingCount(): Promise<number> {
-    const response = await apiClient.get<ApiEnvelope<PendingCountPayload>>('/api/user-reports/pending-count');
+    const response = await apiClient.get<ApiEnvelope<PendingCountPayload>>(USER_REPORTS.PENDING_COUNT);
     const payload = extractData(response.data, 'Failed to load pending user report count');
     return payload.pendingCount ?? 0;
   },

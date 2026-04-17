@@ -1,17 +1,9 @@
-import { apiClient } from './apiClient';
+import { API_CONFIG } from '@/config/apiConfig';
+import { apiClient } from '@/services/apiClient';
+import { extractData } from '@/services/util';
+import type { ApiEnvelope, PagedResult } from '@/interface/api';
 
-interface ApiEnvelope<T> {
-  success?: boolean;
-  data?: T;
-  errors?: string[];
-}
-
-interface PagedResult<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-}
+const { ADMIN } = API_CONFIG.ENDPOINTS;
 
 export interface AdminUserItem {
   userId: string;
@@ -62,14 +54,6 @@ export interface PaginatedAdminAuditLogs {
   hasMore: boolean;
 }
 
-const extractData = <T>(response: ApiEnvelope<T>, fallbackError: string): T => {
-  if (!response.data) {
-    throw new Error(response.errors?.[0] ?? fallbackError);
-  }
-
-  return response.data;
-};
-
 const normalizeAdminUser = (item: AdminUserItem): AdminUserItem => ({
   ...item,
   username: item.username?.trim() || 'user',
@@ -91,7 +75,7 @@ const mapPagedAuditLogs = (paged: PagedResult<AdminAuditLogItem>): PaginatedAdmi
 
 export const adminService = {
   async searchUsers(keyword?: string): Promise<AdminUserItem[]> {
-    const response = await apiClient.get<ApiEnvelope<AdminUserItem[]>>('/api/admin/users/search', {
+    const response = await apiClient.get<ApiEnvelope<AdminUserItem[]>>(ADMIN.USERS_SEARCH, {
       params: keyword?.trim() ? { keyword: keyword.trim() } : undefined,
     });
     const users = extractData(response.data, 'Failed to search users');
@@ -99,12 +83,12 @@ export const adminService = {
   },
 
   async updateUserStatus(userId: string, status: 'ACTIVE' | 'BANNED' | 'INACTIVE'): Promise<AdminUserItem> {
-    const response = await apiClient.patch<ApiEnvelope<AdminUserItem>>(`/api/admin/users/${userId}/status`, { status });
+    const response = await apiClient.patch<ApiEnvelope<AdminUserItem>>(ADMIN.USER_STATUS(userId), { status });
     return normalizeAdminUser(extractData(response.data, 'Failed to update user status'));
   },
 
   async getDashboard(): Promise<AdminDashboard> {
-    const response = await apiClient.get<ApiEnvelope<AdminDashboard>>('/api/admin/dashboard');
+    const response = await apiClient.get<ApiEnvelope<AdminDashboard>>(ADMIN.DASHBOARD);
     const dashboard = extractData(response.data, 'Failed to load admin dashboard');
 
     return {
@@ -126,10 +110,9 @@ export const adminService = {
   },
 
   async getAuditLogs(page: number, pageSize: number): Promise<PaginatedAdminAuditLogs> {
-    const response = await apiClient.get<ApiEnvelope<PagedResult<AdminAuditLogItem>>>('/api/admin/audit-logs', {
+    const response = await apiClient.get<ApiEnvelope<PagedResult<AdminAuditLogItem>>>(ADMIN.AUDIT_LOGS, {
       params: { page, pageSize },
     });
     return mapPagedAuditLogs(extractData(response.data, 'Failed to load admin audit logs'));
   },
 };
-

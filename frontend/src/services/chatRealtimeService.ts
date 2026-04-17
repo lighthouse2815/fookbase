@@ -1,7 +1,7 @@
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs';
 
-import { storage } from '../utils/storage';
-import type { ChatMessage } from '../types/message';
+import { storage } from '@/utils/storage';
+import type { ChatMessage } from '@/interface/message';
 
 interface ChatRealtimeHandlers {
   onMessage: (message: ChatMessage) => void;

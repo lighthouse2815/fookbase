@@ -1,10 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 
-import { storage } from '../utils/storage';
-
-const csharpBaseURL = import.meta.env.VITE_API_BASE_URL ?? 'https://localhost:7000';
-const javaBaseURL = import.meta.env.VITE_JAVA_API_BASE_URL ?? 'http://localhost:8080';
-
+import { API_CONFIG } from '@/config/apiConfig';
+import { storage } from '@/utils/storage';
 
 const attachAuthHeader = (config: InternalAxiosRequestConfig) => {
   const token = storage.getToken();
@@ -25,13 +22,13 @@ const attachAuthHeader = (config: InternalAxiosRequestConfig) => {
 };
 
 export const apiClient = axios.create({
-  baseURL: csharpBaseURL,
+  baseURL: API_CONFIG.BASE_URL,
   timeout: 10000,
   withCredentials: true,
 });
 
 export const javaApiClient = axios.create({
-  baseURL: javaBaseURL,
+  baseURL: import.meta.env.VITE_BASE_URL ?? 'https://interacthub-api-java-fxdbf3fegqhrb3fz.japanwest-01.azurewebsites.net',
   timeout: 10000,
   withCredentials: true,
 });

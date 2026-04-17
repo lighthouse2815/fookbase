@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-import { apiClient } from './apiClient';
+import { API_CONFIG } from '@/config/apiConfig';
+import { apiClient } from '@/services/apiClient';
+import type { ApiEnvelope } from '@/interface/api';
+
+const AUTH = API_CONFIG.ENDPOINTS.AUTH;
 import type {
   AuthResponse,
   LoginRequest,
@@ -11,7 +15,7 @@ import type {
   RegisterResponse,
   ResetPasswordRequest,
   VerifyOtpRequest,
-} from '../types/auth';
+} from '@/interface/auth';
 
 interface RawAuthPayload {
   token?: string;
@@ -24,12 +28,6 @@ interface RawAuthPayload {
   displayName?: string;
   email?: string;
   avatarUrl?: string;
-}
-
-interface ApiEnvelope<T> {
-  success?: boolean;
-  data?: T;
-  errors?: string[];
 }
 
 export class InactiveAccountError extends Error {
@@ -150,7 +148,7 @@ export const authService = {
   async login(payload: LoginRequest): Promise<AuthResponse> {
     let authPayload: RawAuthPayload;
     try {
-      const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>('/api/auth/login', payload);
+      const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>(AUTH.LOGIN, payload);
       authPayload = extractEnvelopeData(response.data);
     } catch (error) {
       const errorMessage = extractApiErrorMessage(error);
@@ -179,7 +177,7 @@ export const authService = {
   },
 
   async loginAdmin(payload: LoginRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>('/api/auth/admin/login', payload);
+    const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>(AUTH.ADMIN_LOGIN, payload);
     const authPayload = extractEnvelopeData(response.data);
     const authResponse = normalizeAuthPayload(authPayload);
 
@@ -191,13 +189,13 @@ export const authService = {
   },
 
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
-    const response = await apiClient.post<RegisterResponse | ApiEnvelope<RegisterResponse>>('/api/auth/register', payload);
+    const response = await apiClient.post<RegisterResponse | ApiEnvelope<RegisterResponse>>(AUTH.REGISTER, payload);
     return extractEnvelopeData(response.data);
   },
 
   async sendVerifyEmailOtpWhenNotLogin(payload: OtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/otp/send/verify-email',
+      AUTH.OTP_SEND_VERIFY_EMAIL,
       payload,
     );
     return extractEnvelopeData(response.data);
@@ -205,28 +203,28 @@ export const authService = {
 
   async sendVerifyEmailOtpWhenLogin(): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/me/otp/send/verify-email',
+      AUTH.ME_OTP_SEND_VERIFY_EMAIL,
     );
     return extractEnvelopeData(response.data);
   },
 
   async sendChangeUsernameOtpWhenLogin(): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/me/otp/send/change-username',
+      AUTH.ME_OTP_SEND_CHANGE_USERNAME,
     );
     return extractEnvelopeData(response.data);
   },
 
   async sendChangePhoneNumberOtpWhenLogin(): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/me/otp/send/change-phone-number',
+      AUTH.ME_OTP_SEND_CHANGE_PHONE_NUMBER,
     );
     return extractEnvelopeData(response.data);
   },
 
   async verifyChangeUsernameOtpWhenLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/me/otp/verify/change-username',
+      AUTH.ME_OTP_VERIFY_CHANGE_USERNAME,
       payload,
     );
     return extractEnvelopeData(response.data);
@@ -234,7 +232,7 @@ export const authService = {
 
   async verifyChangePhoneNumberOtpWhenLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/me/otp/verify/change-phone-number',
+      AUTH.ME_OTP_VERIFY_CHANGE_PHONE_NUMBER,
       payload,
     );
     return extractEnvelopeData(response.data);
@@ -242,7 +240,7 @@ export const authService = {
 
   async verifyEmailOtpWhenNotLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/otp/verify/email',
+      AUTH.OTP_VERIFY_EMAIL,
       payload,
     );
     return extractEnvelopeData(response.data);
@@ -250,7 +248,7 @@ export const authService = {
 
   async sendResetPasswordOtpWhenNotLogin(payload: OtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/otp/send/reset-password',
+      AUTH.OTP_SEND_RESET_PASSWORD,
       payload,
     );
     return extractEnvelopeData(response.data);
@@ -258,14 +256,14 @@ export const authService = {
 
   async sendResetPasswordOtpWhenLogin(): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/me/otp/send/reset-password',
+      AUTH.ME_OTP_SEND_RESET_PASSWORD,
     );
     return extractEnvelopeData(response.data);
   },
 
   async verifyResetPasswordOtpWhenNotLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/otp/verify/password',
+      AUTH.OTP_VERIFY_PASSWORD,
       payload,
     );
     return extractEnvelopeData(response.data);
@@ -273,14 +271,14 @@ export const authService = {
 
   async verifyResetPasswordOtpWhenLogin(payload: VerifyOtpRequest): Promise<OtpVerifyResponse> {
     const response = await apiClient.post<OtpVerifyResponse | ApiEnvelope<OtpVerifyResponse>>(
-      '/api/auth/me/otp/verify/password',
+      AUTH.ME_OTP_VERIFY_PASSWORD,
       payload,
     );
     return extractEnvelopeData(response.data);
   },
 
   async resetPassword(resetToken: string, payload: ResetPasswordRequest): Promise<MessageResponse> {
-    const response = await apiClient.post<MessageResponse | ApiEnvelope<MessageResponse>>('/api/auth/reset-password', payload, {
+    const response = await apiClient.post<MessageResponse | ApiEnvelope<MessageResponse>>(AUTH.RESET_PASSWORD, payload, {
       headers: {
         'X-Reset-Token': resetToken,
       },
@@ -289,7 +287,6 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await apiClient.post('/api/auth/logout');
+    await apiClient.post(AUTH.LOGOUT);
   },
 };
-

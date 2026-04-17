@@ -1,34 +1,18 @@
-import { apiClient } from './apiClient';
+import { API_CONFIG } from '@/config/apiConfig';
+import { apiClient } from '@/services/apiClient';
+import type { ApiEnvelope } from '@/interface/api';
+import type { 
+  CloudinarySignaturePayload, 
+  CloudinaryUploadErrorPayload, 
+  CloudinaryUploadSuccessPayload 
+} from '@/interface/cloudinary';
+const { MEDIA } = API_CONFIG.ENDPOINTS;
 
-interface ApiEnvelope<T> {
-  success: boolean;
-  data?: T;
-  errors?: string[];
-}
 
-interface CloudinarySignaturePayload {
-  cloudName: string;
-  apiKey: string;
-  uploadPreset: string;
-  folder: string;
-  publicId: string;
-  overwrite: boolean;
-  timestamp: number;
-  signature: string;
-}
 
-interface CloudinaryUploadErrorPayload {
-  error?: {
-    message?: string;
-  };
-}
-
-interface CloudinaryUploadSuccessPayload {
-  secure_url?: string;
-}
 
 const getCloudinarySignature = async (): Promise<CloudinarySignaturePayload> => {
-  const response = await apiClient.get<ApiEnvelope<CloudinarySignaturePayload>>('/api/media/cloudinary-signature');
+  const response = await apiClient.get<ApiEnvelope<CloudinarySignaturePayload>>(MEDIA.CLOUDINARY_SIGNATURE);
   const payload = response.data.data;
 
   if (!payload) {
@@ -52,7 +36,7 @@ export const cloudinaryService = {
     formData.append('timestamp', String(signaturePayload.timestamp));
     formData.append('signature', signaturePayload.signature);
 
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${signaturePayload.cloudName}/auto/upload`, {
+    const response = await fetch(API_CONFIG.cloudinaryUploadUrl(signaturePayload.cloudName), {
       method: 'POST',
       body: formData,
     });
