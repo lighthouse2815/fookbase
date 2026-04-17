@@ -2,11 +2,11 @@
 import axios from 'axios';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { authService } from '../services/authService';
-import { userService } from '../services/userService';
-import type { AuthResponse, LoginRequest, RegisterRequest, RegisterResponse } from '../types/auth';
-import type { User } from '../types/user';
-import { STORAGE_KEYS, storage } from '../utils/storage';
+import { authService } from '@/services/authService';
+import { userService } from '@/services/userService';
+import type { AuthResponse, LoginRequest, RegisterRequest, RegisterResponse } from '@/interface/auth';
+import type { User } from '@/interface/user';
+import { STORAGE_KEYS, storage } from '@/utils/storage';
 
 interface AuthContextValue {
   user: User | null;

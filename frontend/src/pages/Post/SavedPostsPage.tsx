@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 
-import { CornerToast } from '../components/CornerToast';
-import { PostCard } from '../components/PostCard';
-import { useCornerToast } from '../hooks/useCornerToast';
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
-import { savedPostService } from '../services/savedPostService';
-import type { Post } from '../types/post';
-import { getApiErrorMessage } from '../utils/apiError';
+import { CornerToast } from '@/components/CornerToast';
+import { PostCard } from '@/components/PostCard';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { savedPostService } from '@/services/savedPostService';
+import type { Post } from '@/interface/post';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const PAGE_SIZE = 6;
 

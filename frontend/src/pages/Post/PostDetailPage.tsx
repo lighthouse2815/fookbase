@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
 
-import { CornerToast } from '../components/CornerToast';
-import { PostCard } from '../components/PostCard';
-import { useCornerToast } from '../hooks/useCornerToast';
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
-import { postService } from '../services/postService';
-import type { Post } from '../types/post';
-import { getApiErrorMessage } from '../utils/apiError';
+import { CornerToast } from '@/components/CornerToast';
+import { PostCard } from '@/components/PostCard';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { postService } from '@/services/postService';
+import type { Post } from '@/interface/post';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 export const PostDetailPage = () => {
   const { postId } = useParams<{ postId: string }>();

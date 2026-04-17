@@ -12,6 +12,7 @@ export interface Profile {
   birthDate?: string;
   nickname?: string;
   friendshipStatus?: string;
+  fullName?: string;
 }
 
 export interface UserProfileSearchResult {

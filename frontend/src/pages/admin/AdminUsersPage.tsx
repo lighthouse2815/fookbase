@@ -2,13 +2,13 @@ import { AlertTriangle, Search, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { CornerToast } from '../../components/CornerToast';
-import { EmptyStateCard } from '../../components/EmptyStateCard';
-import { useCornerToast } from '../../hooks/useCornerToast';
-import { useLocaleText } from '../../hooks/useLocaleText';
+import { CornerToast } from '@/components/CornerToast';
+import { EmptyStateCard } from '@/components/EmptyStateCard';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import { useLocaleText } from '@/hooks/useLocaleText';
 import type { AdminUserItem } from '@/interface/admin';
-import { adminService } from '../../services/adminService';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { adminService } from '@/services/adminService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const getStatusBadgeClass = (status: string): string => {
   const normalized = status.trim().toUpperCase();

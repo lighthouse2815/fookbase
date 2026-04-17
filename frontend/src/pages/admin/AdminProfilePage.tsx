@@ -1,9 +1,9 @@
 import { ShieldCheck, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { EmptyStateCard } from '../../components/EmptyStateCard';
-import { useAuth } from '../../contexts/AuthContext';
-import { useLocaleText } from '../../hooks/useLocaleText';
+import { EmptyStateCard } from '@/components/EmptyStateCard';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocaleText } from '@/hooks/useLocaleText';
 
 export const AdminProfilePage = () => {
   const tx = useLocaleText();

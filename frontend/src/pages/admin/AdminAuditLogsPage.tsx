@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { EmptyStateCard } from '../../components/EmptyStateCard';
-import { useLocaleText } from '../../hooks/useLocaleText';
+import { EmptyStateCard } from '@/components/EmptyStateCard';
+import { useLocaleText } from '@/hooks/useLocaleText';
 import type { AdminAuditLogItem } from '@/interface/admin';
-import { adminService } from '../../services/adminService';
-import { getApiErrorMessage } from '../../utils/apiError';
-import { formatRelativeTime } from '../../utils/date';
+import { adminService } from '@/services/adminService';
+import { getApiErrorMessage } from '@/utils/apiError';
+import { formatRelativeTime } from '@/utils/date';
 import { PAGE_SIZE } from './reportUtils';
 
 export const AdminAuditLogsPage = () => {

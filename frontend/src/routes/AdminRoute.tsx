@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { useLocaleText } from '../hooks/useLocaleText';
-import { useAuth } from '../contexts/AuthContext';
+import { useLocaleText } from '@/hooks/useLocaleText';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const AdminRoute = () => {
   const { t } = useTranslation();

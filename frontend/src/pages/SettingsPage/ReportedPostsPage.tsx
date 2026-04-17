@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import { postReportService } from '../services/postReportService';
-import type { PostReportItem } from '../types/report';
-import { getApiErrorMessage } from '../utils/apiError';
-import { formatRelativeTime } from '../utils/date';
+import { postReportService } from '@/services/postReportService';
+import type { PostReportItem } from '@/interface/report';
+import { getApiErrorMessage } from '@/utils/apiError';
+import { formatRelativeTime } from '@/utils/date';
 
 const PAGE_SIZE = 10;
 

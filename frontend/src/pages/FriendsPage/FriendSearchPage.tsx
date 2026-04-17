@@ -2,11 +2,11 @@ import { Loader2, Phone, Search, UserCheck, UserPlus, UsersRound, X } from 'luci
 import { type FormEvent, useEffect, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
-import { friendshipService } from '../services/friendshipService';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { friendshipService } from '@/services/friendshipService';
 import type { UserProfileSearchResult } from '@/interface/profile';
-import { profileService } from '../services/profileService';
-import { getApiErrorMessage } from '../utils/apiError';
+import { profileService } from '@/services/profileService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 type FetchState = 'idle' | 'loading' | 'success' | 'error';
 

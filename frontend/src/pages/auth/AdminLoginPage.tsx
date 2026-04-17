@@ -4,11 +4,11 @@ import { useForm } from 'react-hook-form';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { AuthForm } from '../../components/auth/AuthForm';
-import { InputField } from '../../components/auth/InputField';
-import { useAuth } from '../../contexts/AuthContext';
-import { useLocaleText } from '../../hooks/useLocaleText';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { AuthForm } from '@/components/auth/AuthForm';
+import { InputField } from '@/components/auth/InputField';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocaleText } from '@/hooks/useLocaleText';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 interface AdminLoginFormValues {
   username: string;

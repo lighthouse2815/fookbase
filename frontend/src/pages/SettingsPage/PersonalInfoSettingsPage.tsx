@@ -2,12 +2,12 @@ import { Camera, Save, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { CornerToast } from '../components/CornerToast';
-import { useCornerToast } from '../hooks/useCornerToast';
-import { cloudinaryService } from '../services/cloudinaryService';
+import { CornerToast } from '@/components/CornerToast';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import { cloudinaryService } from '@/services/cloudinaryService';
 import type { MyProfileSettings, UpdateMyProfileRequest } from '@/interface/profile';
-import { profileService } from '../services/profileService';
-import { getApiErrorMessage } from '../utils/apiError';
+import { profileService } from '@/services/profileService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 interface FormState {
   displayName: string;

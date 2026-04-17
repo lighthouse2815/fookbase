@@ -4,11 +4,11 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 
-import { AuthForm } from '../../components/auth/AuthForm';
-import { InputField } from '../../components/auth/InputField';
-import { useAuth } from '../../contexts/AuthContext';
-import { authService } from '../../services/authService';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { AuthForm } from '@/components/auth/AuthForm';
+import { InputField } from '@/components/auth/InputField';
+import { useAuth } from '@/contexts/AuthContext';
+import { authService } from '@/services/authService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 interface EmailFormValues {
   email: string;

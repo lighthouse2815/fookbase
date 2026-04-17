@@ -4,11 +4,11 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
-import { AuthForm } from '../../components/auth/AuthForm';
-import { InputField } from '../../components/auth/InputField';
-import { useAuth } from '../../contexts/AuthContext';
-import { authService, BannedAccountError, InactiveAccountError } from '../../services/authService';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { AuthForm } from '@/components/auth/AuthForm';
+import { InputField } from '@/components/auth/InputField';
+import { useAuth } from '@/contexts/AuthContext';
+import { authService, BannedAccountError, InactiveAccountError } from '@/services/authService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 interface LoginFormValues {
   username: string;

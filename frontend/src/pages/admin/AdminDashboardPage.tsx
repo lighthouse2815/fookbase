@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, BarChart3, FileWarning, UserRoundX, Users } from 'lucide-react';
 
-import { EmptyStateCard } from '../../components/EmptyStateCard';
-import { useLocaleText } from '../../hooks/useLocaleText';
+import { EmptyStateCard } from '@/components/EmptyStateCard';
+import { useLocaleText } from '@/hooks/useLocaleText';
 import type { AdminDashboard } from '@/interface/admin';
-import { adminService } from '../../services/adminService';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { adminService } from '@/services/adminService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const defaultDashboard: AdminDashboard = {
   totalUsers: 0,

@@ -18,7 +18,7 @@ createRoot(document.getElementById('root')!).render(
             <App />
           </BrowserRouter>
         </StoryProvider>
-      </AuthProvider>
+      </AuthProvider> 
     </ThemeProvider>
   </StrictMode>,
 );

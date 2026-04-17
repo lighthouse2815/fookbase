@@ -1,8 +1,9 @@
-import type { FriendRequest, FriendSuggestion, FriendUser } from '../types/friendship';
-import type { NotificationItem } from '../types/notification';
-import type { Post, Story } from '../types/post';
-import type { Profile } from '../types/profile';
-import type { User } from '../types/user';
+import type { FriendRequest, FriendSuggestion, FriendUser } from '@/interface/friendship';
+import type { NotificationItem } from '@/interface/notification';
+import type { Post } from '@/interface/post';
+import type { Story } from '@/interface/story';
+import type { Profile } from '@/interface/profile';
+import type { User } from '@/interface/user';
 
 export const currentUser: User = {
   id: 'u-100',

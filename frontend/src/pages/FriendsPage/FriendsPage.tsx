@@ -15,19 +15,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 
-import { FriendRequestCard } from '../components/friends/FriendRequestCard';
-import { FriendsPageSkeleton } from '../components/friends/FriendsPageSkeleton';
-import { ProfilePreview } from '../components/friends/ProfilePreview';
-import { SidebarItem } from '../components/friends/SidebarItem';
-import { UserCard } from '../components/friends/UserCard';
+import { FriendRequestCard } from '@/components/friends/FriendRequestCard';
+import { FriendsPageSkeleton } from '@/components/friends/FriendsPageSkeleton';
+import { ProfilePreview } from '@/components/friends/ProfilePreview';
+import { SidebarItem } from '@/components/friends/SidebarItem';
+import { UserCard } from '@/components/friends/UserCard';
 import {
   friendsMock,
   receivedFriendRequestsMock,
   sentFriendRequestsMock,
-} from '../data/mockData';
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
-import { friendshipService } from '../services/friendshipService';
-import type { FriendRequest, FriendSuggestion, FriendUser } from '../types/friendship';
+} from '@/data/mockData';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { friendshipService } from '@/services/friendshipService';
+import type { FriendRequest, FriendSuggestion, FriendUser } from './friendship.type';
 
 type FriendsTab = 'home' | 'requests' | 'suggestions' | 'friends';
 type FriendFilter = 'all' | 'online' | 'sameFaculty';

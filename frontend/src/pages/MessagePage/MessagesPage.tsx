@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
-import { createChatRealtimeConnection, type ChatRealtimeConnection } from '../services/chatRealtimeService';
-import { messageService } from '../services/messageService';
-import type { ChatMessage, ConversationSummary } from '../types/message';
-import type { User } from '../types/user';
-import { formatRelativeTime } from '../utils/date';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { createChatRealtimeConnection, type ChatRealtimeConnection } from '@/services/chatRealtimeService';
+import { messageService } from '@/services/messageService';
+import type { ChatMessage, ConversationSummary } from '@/interface/message';
+import type { User } from '@/interface/user';
+import { formatRelativeTime } from '@/utils/date';
 
 type ChatFilterTab = 'all' | 'friends' | 'groups';
 type FetchState = 'loading' | 'success' | 'error';

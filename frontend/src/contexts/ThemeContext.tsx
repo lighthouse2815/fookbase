@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { STORAGE_KEYS } from '../utils/storage';
+import { STORAGE_KEYS } from '@/utils/storage';
 
 export type ThemeMode = 'light' | 'dark';
 

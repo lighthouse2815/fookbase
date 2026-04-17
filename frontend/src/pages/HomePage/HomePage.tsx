@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 
-import { CreatePostBox } from '../components/CreatePostBox';
-import type { CreatePostDraft } from '../components/CreatePostBox';
-import { CornerToast } from '../components/CornerToast';
-import { PostCard } from '../components/PostCard';
-import { StoryList } from '../components/StoryList';
-import { useCornerToast } from '../hooks/useCornerToast';
-import type { MainLayoutOutletContext } from '../layouts/MainLayout';
-import { cloudinaryService } from '../services/cloudinaryService';
-import { postService } from '../services/postService';
-import type { Post } from '../types/post';
-import { getApiErrorMessage } from '../utils/apiError';
+import { CreatePostBox } from '@/components/CreatePostBox';
+import type { CreatePostDraft } from '@/interface/post';
+import { CornerToast } from '@/components/CornerToast';
+import { PostCard } from '@/components/PostCard';
+import { StoryList } from '@/components/StoryList';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { cloudinaryService } from '@/services/cloudinaryService';
+import { postService } from '@/services/postService';
+import type { Post } from '@/interface/post';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const PAGE_SIZE = 2;
 const POST_COLUMN_CLASS = 'mx-auto w-full max-w-[980px]';

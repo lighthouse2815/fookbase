@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, BellRing } from 'lucide-react';
 
-import { CornerToast } from '../../components/CornerToast';
-import { EmptyStateCard } from '../../components/EmptyStateCard';
-import { useCornerToast } from '../../hooks/useCornerToast';
-import { useLocaleText } from '../../hooks/useLocaleText';
-import { storyReportService } from '../../services/storyReportService';
-import type { StoryReportItem } from '../../types/report';
-import { getApiErrorMessage } from '../../utils/apiError';
-import { formatRelativeTime } from '../../utils/date';
+import { CornerToast } from '@/components/CornerToast';
+import { EmptyStateCard } from '@/components/EmptyStateCard';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import { useLocaleText } from '@/hooks/useLocaleText';
+import { storyReportService } from '@/services/storyReportService';
+import type { StoryReportItem } from '@/interface/report';
+import { getApiErrorMessage } from '@/utils/apiError';
+import { formatRelativeTime } from '@/utils/date';
 import { getStatusBadgeClass, PAGE_SIZE } from './reportUtils';
 
 export const AdminStoryReportsPage = () => {

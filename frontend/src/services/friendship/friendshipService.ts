@@ -129,4 +129,5 @@ export const friendshipService = {
       { method: 'delete', path: FW.FRIEND_BY_ID(friendId) },
     ]);
   },
+  
 };
