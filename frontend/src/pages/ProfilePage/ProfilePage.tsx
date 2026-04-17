@@ -1,6 +1,6 @@
 import { CornerToast } from '@/components/CornerToast';
 import { PostCard } from '@/components/PostCard';
-import { ProfileHeader } from '@/components/ProfileHeader';
+import { ProfileHeader } from '@/components/header/ProfileHeader';
 
 import { useProfilePage } from './hooks/useProfilePage';
 

@@ -1,100 +1,41 @@
 import { Ban, Ellipsis, Flag, Loader2, UserCheck, UserMinus, UserPlus, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import type { Profile } from '@/interface/profile';
+import type { ProfileHeaderProps } from './interface';
+import { useProfileHeader } from './useProfileHeader';
 
-interface ProfileHeaderProps {
-  profile: Profile;
-  isOwnProfile?: boolean;
-  actionLabel?: string;
-  actionButtonClassName?: string;
-  onPrimaryAction?: () => void | Promise<void>;
-  isPrimaryActionLoading?: boolean;
-  primaryActionDisabled?: boolean;
-  onUnfriend?: () => void | Promise<void>;
-  onBlock?: () => void | Promise<void>;
-  onReport?: () => void | Promise<void>;
-  isUnfriendLoading?: boolean;
-  isBlockLoading?: boolean;
-  isReportLoading?: boolean;
-  isUnfriendDisabled?: boolean;
-}
+export type { ProfileHeaderProps } from './interface';
 
-export const ProfileHeader = ({
-  profile,
-  isOwnProfile = false,
-  actionLabel,
-  actionButtonClassName,
-  onPrimaryAction,
-  isPrimaryActionLoading = false,
-  primaryActionDisabled = false,
-  onUnfriend,
-  onBlock,
-  onReport,
-  isUnfriendLoading = false,
-  isBlockLoading = false,
-  isReportLoading = false,
-  isUnfriendDisabled = false,
-}: ProfileHeaderProps) => {
-  const { t } = useTranslation();
-  const normalizedDisplayName = profile.displayName?.trim() || 'user';
-  const normalizedNickname = profile.nickname?.trim();
-  const visibleFriendCount = (profile.friendCountVisible ?? true) ? profile.friendsCount : 0;
-  const normalizedStatus = profile.friendshipStatus?.trim().toUpperCase();
-  const isFriend = normalizedStatus === 'ACCEPTED';
-  const resolvedActionLabel =
-    actionLabel ?? (isOwnProfile ? t('profile.editProfile') : isFriend ? t('profile.friendsButton') : t('profile.addFriend'));
-  const resolvedActionButtonClass = actionButtonClassName ?? (isOwnProfile || !isFriend
-    ? 'bg-brand-600 hover:bg-brand-700 text-white'
-    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-100');
-  const isAnyMenuActionLoading = isUnfriendLoading || isBlockLoading || isReportLoading;
-  const isPending = normalizedStatus === 'PENDING';
-  const isInvited = normalizedStatus === 'INVITED';
-  const relationshipActionLabel = isFriend
-    ? t('profile.unfriendAction')
-    : isPending
-      ? t('profile.cancelRequest')
-      : isInvited
-        ? t('profile.acceptRequest')
-        : t('profile.addFriend');
-  const isRelationshipActionLoading = isFriend ? isUnfriendLoading : isPrimaryActionLoading;
-  const isRelationshipActionDisabled = isFriend
-    ? isUnfriendDisabled || isAnyMenuActionLoading
-    : primaryActionDisabled || isPrimaryActionLoading || isAnyMenuActionLoading;
-
-  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
-  const actionMenuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isActionMenuOpen) {
-      return;
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (!actionMenuRef.current || (target && actionMenuRef.current.contains(target))) {
-        return;
-      }
-
-      setIsActionMenuOpen(false);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isActionMenuOpen]);
-
-  const handleMenuAction = (action?: () => void | Promise<void>) => {
-    if (!action || isAnyMenuActionLoading) {
-      return;
-    }
-
-    setIsActionMenuOpen(false);
-    void action();
-  };
+export const ProfileHeader = (props: ProfileHeaderProps) => {
+  const {
+    t,
+    profile,
+    isOwnProfile,
+    onPrimaryAction,
+    isPrimaryActionLoading,
+    primaryActionDisabled,
+    onUnfriend,
+    onBlock,
+    onReport,
+    isBlockLoading,
+    isReportLoading,
+    normalizedDisplayName,
+    normalizedNickname,
+    visibleFriendCount,
+    isFriend,
+    resolvedActionLabel,
+    resolvedActionButtonClass,
+    isAnyMenuActionLoading,
+    isPending,
+    isInvited,
+    relationshipActionLabel,
+    isRelationshipActionLoading,
+    isRelationshipActionDisabled,
+    isActionMenuOpen,
+    setIsActionMenuOpen,
+    actionMenuRef,
+    handleMenuAction,
+  } = useProfileHeader(props);
 
   return (
     <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
@@ -217,4 +158,3 @@ export const ProfileHeader = ({
     </section>
   );
 };
-
