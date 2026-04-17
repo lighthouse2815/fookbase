@@ -10,7 +10,7 @@ import { postReportService } from '@/services/post/postReportService';
 import type { ReportUserSummary } from '@/interface/report';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { formatRelativeTime } from '@/utils/date';
-import { extractCommentIdFromReason, getStatusBadgeClass, isCommentReportReason, PAGE_SIZE } from './reportUtils';
+import { extractCommentIdFromReason, getStatusBadgeClass, isCommentReportReason, PAGE_SIZE } from '../reportUtils';
 
 export interface PostReportItem {
   id: string;

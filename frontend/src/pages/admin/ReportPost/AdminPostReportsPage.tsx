@@ -1,20 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Flag } from 'lucide-react';
+import { AlertTriangle, FileWarning } from 'lucide-react';
 
 import { CornerToast } from '@/components/CornerToast';
 import { EmptyStateCard } from '@/components/EmptyStateCard';
 import { useCornerToast } from '@/hooks/useCornerToast';
 import { useLocaleText } from '@/hooks/useLocaleText';
-import { userReportService } from '@/services/userReportService';
-import type { UserReportItem } from '@/interface/report';
+import { postReportService } from '@/services/post/postReportService';
+// import type { PostReportItem } from '@/interface/report';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { formatRelativeTime } from '@/utils/date';
-import { getStatusBadgeClass, PAGE_SIZE } from './reportUtils';
+import { getStatusBadgeClass, isCommentReportReason, PAGE_SIZE } from '../reportUtils';
+import type { ReportUserSummary } from '@/interface/report';
 
-export const AdminUserReportsPage = () => {
+interface PostReportItem {
+  id: string;
+  postId: string;
+  reportedByUserId: string;
+  postOwnerUserId?: string | null;
+  reason: string;
+  status: string;
+  resolvedByUserId?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reporter?: ReportUserSummary | null;
+  postOwner?: ReportUserSummary | null;
+}
+
+export const AdminPostReportsPage = () => {
   const tx = useLocaleText();
-  const [reports, setReports] = useState<UserReportItem[]>([]);
+  const [reports, setReports] = useState<PostReportItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,13 +49,15 @@ export const AdminUserReportsPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await userReportService.getAll(targetPage, PAGE_SIZE);
-      setReports((previous) => (replace ? response.items : [...previous, ...response.items]));
+      const response = await postReportService.getAll(targetPage, PAGE_SIZE);
+      const postReportsOnly = response.items.filter((item) => !isCommentReportReason(item.reason));
+
+      setReports((previous) => (replace ? postReportsOnly : [...previous, ...postReportsOnly]));
       setHasMore(response.hasMore);
       setPage(targetPage);
       setLoadError(null);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, tx('Không thể tải danh sách báo cáo user.', 'Could not load user reports.')));
+      setLoadError(getApiErrorMessage(error, tx('Không thể tải danh sách báo cáo bài đăng.', 'Could not load post reports.')));
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
@@ -58,16 +76,16 @@ export const AdminUserReportsPage = () => {
     setPendingActionReportId(reportId);
 
     try {
-      const updated = await userReportService.resolve(reportId, status);
+      const updated = await postReportService.resolve(reportId, status);
       setReports((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
       showToast(
         status === 'RESOLVED'
-          ? tx('Đã duyệt báo cáo user.', 'User report approved.')
-          : tx('Đã từ chối báo cáo user.', 'User report rejected.'),
+          ? tx('Đã duyệt báo cáo bài đăng.', 'Post report approved.')
+          : tx('Đã từ chối báo cáo bài đăng.', 'Post report rejected.'),
         'success',
       );
     } catch (error) {
-      showToast(getApiErrorMessage(error, tx('Xử lý báo cáo user thất bại.', 'Failed to process user report.')), 'error');
+      showToast(getApiErrorMessage(error, tx('Xử lý báo cáo bài đăng thất bại.', 'Failed to process post report.')), 'error');
     } finally {
       setPendingActionReportId(null);
     }
@@ -76,9 +94,9 @@ export const AdminUserReportsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyệt báo cáo user', 'Moderate user reports')}</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyệt báo cáo bài đăng', 'Moderate post reports')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {tx('Quản lý các report liên quan đến tài khoản người dùng.', 'Review reports related to user accounts.')}
+          {tx('Quản lý các report liên quan đến bài đăng.', 'Review reports related to posts.')}
         </p>
       </section>
 
@@ -90,11 +108,11 @@ export const AdminUserReportsPage = () => {
 
       {reports.length === 0 && !isLoading ? (
         <EmptyStateCard
-          icon={Flag}
-          title={tx('Chưa có báo cáo user', 'No user reports')}
+          icon={FileWarning}
+          title={tx('Chưa có báo cáo bài đăng', 'No post reports')}
           description={tx(
-            'Khi có báo cáo user mới, chúng sẽ xuất hiện tại đây.',
-            'New user reports will appear here.',
+            'Khi có báo cáo mới, chúng sẽ hiển thị ở đây để admin xử lý.',
+            'When new reports arrive, they will appear here for moderation.',
           )}
           actionLabel={tx('Làm mới', 'Refresh')}
           onAction={() => {
@@ -124,10 +142,11 @@ export const AdminUserReportsPage = () => {
               </div>
 
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{report.reason}</p>
-
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người báo cáo', 'Reporter')}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                    {tx('Người báo cáo', 'Reporter')}
+                  </p>
                   {report.reporter ? (
                     <Link to={`/profile/${report.reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -146,33 +165,34 @@ export const AdminUserReportsPage = () => {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người bị báo cáo', 'Reported user')}</p>
-                  {report.targetUser ? (
-                    <Link to={`/profile/${report.targetUser.id}`} className="mt-2 flex items-center gap-2">
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                    {tx('Người bị báo cáo', 'Reported user')}
+                  </p>
+                  {report.postOwner ? (
+                    <Link to={`/profile/${report.postOwner.id}`} className="mt-2 flex items-center gap-2">
                       <img
-                        src={report.targetUser.avatarUrl || `https://i.pravatar.cc/150?u=${report.targetUser.id}`}
-                        alt={report.targetUser.displayName}
+                        src={report.postOwner.avatarUrl || `https://i.pravatar.cc/150?u=${report.postOwner.id}`}
+                        alt={report.postOwner.displayName}
                         className="h-9 w-9 rounded-full object-cover"
                       />
                       <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{report.targetUser.displayName}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{report.targetUserId}</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{report.postOwner.displayName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{report.postOwnerUserId ?? 'N/A'}</p>
                       </div>
                     </Link>
                   ) : (
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{report.targetUserId}</p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{report.postOwnerUserId ?? 'N/A'}</p>
                   )}
                 </div>
               </div>
-
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{formatRelativeTime(report.createdAt)}</p>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Link
-                  to={`/profile/${report.targetUserId}`}
+                  to={`/posts/${report.postId}`}
                   className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  {tx('Xem profile user', 'View user profile')}
+                  {tx('Xem bài viết', 'View post')}
                 </Link>
 
                 {isPending ? (
@@ -227,11 +247,11 @@ export const AdminUserReportsPage = () => {
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xác nhận duyệt báo cáo user', 'Confirm user report approval')}</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xác nhận duyệt báo cáo', 'Confirm approval')}</h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   {tx(
-                    'Chấp nhận report nghĩa là tài khoản bị báo cáo sẽ bị khóa (BANNED). Bạn chắc chắn tiếp tục?',
-                    'Approving this report will ban the reported account. Continue?',
+                    'Chấp nhận report nghĩa là nội dung bị báo cáo sẽ bị xóa. Bạn chắc chắn tiếp tục?',
+                    'Approving this report means the reported content will be deleted. Continue?',
                   )}
                 </p>
               </div>

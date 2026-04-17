@@ -10,7 +10,7 @@ import { storyReportService } from '@/services/storyReportService';
 import type { StoryReportItem } from '@/interface/report';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { formatRelativeTime } from '@/utils/date';
-import { getStatusBadgeClass, PAGE_SIZE } from './reportUtils';
+import { getStatusBadgeClass, PAGE_SIZE } from '../reportUtils';
 
 export const AdminStoryReportsPage = () => {
   const tx = useLocaleText();
