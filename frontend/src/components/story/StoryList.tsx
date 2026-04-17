@@ -3,10 +3,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import { useStories } from '../contexts/StoryContext';
-import type { StoryGroup, StoryItem } from '../types/story';
-import type { User } from '../types/user';
-import { formatRelativeTime } from '../utils/date';
+import { useStories } from '@/contexts/StoryContext';
+import type { StoryGroup, StoryItem } from '@/interface/story';
+import type { User } from '@/interface/user';
+import { formatRelativeTime } from '@/utils/date';
 import { StoryViewer } from './StoryViewer';
 
 interface StoryListProps {

@@ -2,7 +2,7 @@ import { Bookmark, House, MessageSquareText, UsersRound } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import type { User } from '../types/user';
+import type { User } from '@/interface/user';
 
 interface SidebarLeftProps {
   currentUser: User;

@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
-import type { FriendRequest } from '../../types/friendship';
+import type { FriendRequest } from '@/interface/friendship';
 
 type FriendRequestCardMode = 'received' | 'sent';
 

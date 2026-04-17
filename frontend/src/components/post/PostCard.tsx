@@ -3,15 +3,15 @@ import { AlertTriangle, BookmarkPlus, Ellipsis, Flag, MessageCircle, Share2, Thu
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import { postReportService } from '../services/postReportService';
-import { postService } from '../services/postService';
-import { savedPostService } from '../services/savedPostService';
-import type { Post, PostReactionType } from '../types/post';
-import type { User } from '../types/user';
-import { getApiErrorMessage } from '../utils/apiError';
-import { formatRelativeTime } from '../utils/date';
-import { detectMediaKind } from '../utils/media';
-import { CommentSection } from './CommentSection';
+import { postReportService } from '@/services/postReportService';
+import { postService } from '@/services/postService';
+import { savedPostService } from '@/services/savedPostService';
+import type { Post, PostReactionType } from '@/interface/post';
+import type { User } from '@/interface/user';
+import { getApiErrorMessage } from '@/utils/apiError';
+import { formatRelativeTime } from '@/utils/date';
+import { detectMediaKind } from '@/utils/media';
+import { CommentSection } from '@/components/comment/CommentSection';
 import { PostReactionViewerModal } from './PostReactionViewerModal';
 
 interface PostCardProps {

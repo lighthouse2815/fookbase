@@ -2,9 +2,9 @@ import { Moon, UserPlus, Wifi } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import type { FriendSuggestion } from '../types/friendship';
-import type { User } from '../types/user';
-import { FriendCard } from './FriendCard';
+import type { FriendSuggestion } from '@/interface/friendship';
+import type { User } from '@/interface/user';
+import { FriendCard } from '@/components/FriendCard';
 
 interface SidebarRightProps {
   suggestions: FriendSuggestion[];

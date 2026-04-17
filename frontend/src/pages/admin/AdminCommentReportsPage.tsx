@@ -12,7 +12,7 @@ import { getApiErrorMessage } from '@/utils/apiError';
 import { formatRelativeTime } from '@/utils/date';
 import { extractCommentIdFromReason, getStatusBadgeClass, isCommentReportReason, PAGE_SIZE } from './reportUtils';
 
-interface PostReportItem {
+export interface PostReportItem {
   id: string;
   postId: string;
   reportedByUserId: string;

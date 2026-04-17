@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2, UserCheck, UserPlus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { friendshipService } from '../services/friendshipService';
-import { postService } from '../services/postService';
+import { friendshipService } from '@/services/friendshipService';
+import { postService } from '@/services/postService';
 import type {
   CommentReactionFriendshipStatus,
   PostReactionType,
   PostReactionUser,
-} from '../types/post';
-import { getApiErrorMessage } from '../utils/apiError';
+} from '@/interface/post';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 type ReactionFilterTab = 'ALL' | PostReactionType;
 

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import type { FriendRequest, FriendSuggestion, FriendUser } from '../../types/friendship';
+import type { FriendRequest, FriendSuggestion, FriendUser } from '@/interface/friendship';
 
 type PreviewTab = 'posts' | 'photos' | 'about';
 

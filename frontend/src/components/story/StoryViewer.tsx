@@ -3,10 +3,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import { storyService } from '../services/storyService';
-import { storyReportService } from '../services/storyReportService';
-import type { StoryAuthor, StoryItem, StoryReactionType } from '../types/story';
-import { formatRelativeTime } from '../utils/date';
+import { storyService } from '@/services/storyService';
+import { storyReportService } from '@/services/story/storyReportService';
+import type { StoryAuthor, StoryItem, StoryReactionType } from '@/interface/story';
+import { formatRelativeTime } from '@/utils/date';
 
 interface StoryViewerProps {
   author: StoryAuthor;

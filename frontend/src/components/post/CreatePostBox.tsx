@@ -3,7 +3,7 @@ import { ImagePlus, Smile, Video, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import type { User } from '../types/user';
+import type { User } from '@/interface/user';
 
 const MAX_IMAGE_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_VIDEO_FILE_SIZE_BYTES = 20 * 1024 * 1024;

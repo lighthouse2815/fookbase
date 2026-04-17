@@ -18,10 +18,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { useTheme } from '../contexts/ThemeContext';
-import type { NotificationItem } from '../types/notification';
-import type { User } from '../types/user';
-import { NotificationDropdown } from './NotificationDropdown';
+import { useTheme } from '@/contexts/ThemeContext';
+import type { NotificationItem } from '@/interface/notification';
+import type { User } from '@/interface/user';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
 
 interface NavbarProps {
   currentUser: User;
