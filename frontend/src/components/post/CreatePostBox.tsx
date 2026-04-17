@@ -1,141 +1,29 @@
-import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Smile, Video, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import type { User } from '@/interface/user';
-
-const MAX_IMAGE_FILE_SIZE_BYTES = 8 * 1024 * 1024;
-const MAX_VIDEO_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-const ICON_OPTIONS = ['^_^', ':)', '<3', ':D', ':P'];
-
-export interface CreatePostDraft {
-  content: string;
-  mediaFile?: File;
-}
-
-interface CreatePostBoxProps {
-  currentUser: User;
-  isSubmitting?: boolean;
-  onCreatePost: (draft: CreatePostDraft) => Promise<boolean> | boolean;
-}
+import { useCreatePostBox } from './hooks/useCreatePostBox';
+import type { CreatePostBoxProps } from './interface';
 
 export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost }: CreatePostBoxProps) => {
-  const { t } = useTranslation();
-  const [content, setContent] = useState('');
-  const [selectedMediaFile, setSelectedMediaFile] = useState<File | undefined>(undefined);
-  const [selectedMediaPreviewUrl, setSelectedMediaPreviewUrl] = useState<string | undefined>(undefined);
-  const [selectedMediaKind, setSelectedMediaKind] = useState<'image' | 'video' | null>(null);
-  const [mediaError, setMediaError] = useState<string | null>(null);
-  const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const videoInputRef = useRef<HTMLInputElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useEffect(() => {
-    if (!textareaRef.current) {
-      return;
-    }
-
-    textareaRef.current.style.height = 'auto';
-    textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 320)}px`;
-  }, [content]);
-
-  useEffect(() => {
-    return () => {
-      if (selectedMediaPreviewUrl) {
-        URL.revokeObjectURL(selectedMediaPreviewUrl);
-      }
-    };
-  }, [selectedMediaPreviewUrl]);
-
-  const detectKindFromFile = (file: File): 'image' | 'video' | null => {
-    const mimeType = file.type.trim().toLowerCase();
-    if (mimeType.startsWith('image/')) {
-      return 'image';
-    }
-
-    if (mimeType.startsWith('video/')) {
-      return 'video';
-    }
-
-    return null;
-  };
-
-  const updateMediaPreview = (nextPreviewUrl?: string) => {
-    setSelectedMediaPreviewUrl((previous) => {
-      if (previous) {
-        URL.revokeObjectURL(previous);
-      }
-
-      return nextPreviewUrl;
-    });
-  };
-
-  const handleMediaFileChange = (file: File) => {
-    const detectedKind = detectKindFromFile(file);
-    if (!detectedKind) {
-      setMediaError(t('home.mediaTypeNotSupported'));
-      return;
-    }
-
-    if (detectedKind === 'image' && file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
-      setMediaError(t('home.imageTooLarge'));
-      return;
-    }
-
-    if (detectedKind === 'video' && file.size > MAX_VIDEO_FILE_SIZE_BYTES) {
-      setMediaError(t('home.videoTooLarge'));
-      return;
-    }
-
-    setSelectedMediaFile(file);
-    setSelectedMediaKind(detectedKind);
-    updateMediaPreview(URL.createObjectURL(file));
-    setMediaError(null);
-  };
-
-  const clearSelectedMedia = () => {
-    setSelectedMediaFile(undefined);
-    setSelectedMediaKind(null);
-    updateMediaPreview(undefined);
-    setMediaError(null);
-
-    if (imageInputRef.current) {
-      imageInputRef.current.value = '';
-    }
-
-    if (videoInputRef.current) {
-      videoInputRef.current.value = '';
-    }
-  };
-
-  const handleSubmit = async () => {
-    const trimmed = content.trim();
-
-    if (!trimmed && !selectedMediaFile) {
-      return;
-    }
-
-    const isCreated = await onCreatePost({
-      content: trimmed,
-      mediaFile: selectedMediaFile,
-    });
-
-    if (isCreated) {
-      setContent('');
-      clearSelectedMedia();
-      setIsIconPickerOpen(false);
-    }
-  };
-
-  const handleCancelDraft = () => {
-    setContent('');
-    clearSelectedMedia();
-    setIsIconPickerOpen(false);
-  };
-
-  const hasDraft = Boolean(content.trim() || selectedMediaFile);
+  const {
+    t,
+    content,
+    setContent,
+    selectedMediaPreviewUrl,
+    selectedMediaKind,
+    mediaError,
+    isIconPickerOpen,
+    setIsIconPickerOpen,
+    imageInputRef,
+    videoInputRef,
+    textareaRef,
+    handleMediaFileChange,
+    clearSelectedMedia,
+    handleSubmit,
+    handleCancelDraft,
+    hasDraft,
+    iconOptions,
+  } = useCreatePostBox({ onCreatePost });
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
@@ -215,7 +103,7 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
 
             {isIconPickerOpen ? (
               <div className="absolute left-0 top-11 z-20 flex gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-                {ICON_OPTIONS.map((icon) => (
+                {iconOptions.map((icon) => (
                   <button
                     key={icon}
                     type="button"
