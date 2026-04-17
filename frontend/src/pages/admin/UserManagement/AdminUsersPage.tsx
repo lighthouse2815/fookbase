@@ -1,95 +1,30 @@
 import { AlertTriangle, Search, Users } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { CornerToast } from '@/components/CornerToast';
 import { EmptyStateCard } from '@/components/EmptyStateCard';
-import { useCornerToast } from '@/hooks/useCornerToast';
-import { useLocaleText } from '@/hooks/useLocaleText';
-import type { AdminUserItem } from '@/interface/admin';
-import { adminService } from '@/services/adminService';
-import { getApiErrorMessage } from '@/utils/apiError';
 
-const getStatusBadgeClass = (status: string): string => {
-  const normalized = status.trim().toUpperCase();
-
-  if (normalized === 'ACTIVE') {
-    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200';
-  }
-
-  if (normalized === 'BANNED') {
-    return 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200';
-  }
-
-  return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200';
-};
-
-const getRoleBadgeClass = (role: string): string => {
-  const normalized = role.trim().toUpperCase();
-  return normalized === 'ADMIN'
-    ? 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200'
-    : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100';
-};
+import { useUser } from './useUser';
+import { getRoleBadgeClass, getStatusBadgeClass } from './util';
 
 export const AdminUsersPage = () => {
-  const tx = useLocaleText();
-  const [keyword, setKeyword] = useState('');
-  const [users, setUsers] = useState<AdminUserItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [processingUserId, setProcessingUserId] = useState<string | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<AdminUserItem | null>(null);
-  const { toast, showToast } = useCornerToast();
-
-  const loadUsers = useCallback(async (searchKeyword?: string) => {
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const result = await adminService.searchUsers(searchKeyword);
-      setUsers(result);
-    } catch (error) {
-      setUsers([]);
-      setErrorMessage(getApiErrorMessage(error, tx('Không thể tải danh sách user.', 'Could not load users.')));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [tx]);
-
-  useEffect(() => {
-    void loadUsers();
-  }, [loadUsers]);
-
-  const handleSearch = async () => {
-    await loadUsers(keyword.trim() || undefined);
-  };
-
-  const handleUpdateUserStatus = async (user: AdminUserItem, status: 'ACTIVE' | 'BANNED') => {
-    if (processingUserId) {
-      return;
-    }
-
-    setProcessingUserId(user.userId);
-    try {
-      const updated = await adminService.updateUserStatus(user.userId, status);
-      setUsers((previous) => previous.map((item) => (item.userId === updated.userId ? updated : item)));
-
-      if (status === 'BANNED') {
-        showToast(tx('Đã khóa tài khoản user.', 'User account has been banned.'), 'success');
-      } else {
-        showToast(tx('Đã mở khóa tài khoản user.', 'User account has been unbanned.'), 'success');
-      }
-    } catch (error) {
-      showToast(getApiErrorMessage(error, tx('Cập nhật trạng thái user thất bại.', 'Failed to update user status.')), 'error');
-    } finally {
-      setProcessingUserId(null);
-    }
-  };
-
-  const bannedCount = useMemo(
-    () => users.filter((item) => item.status.trim().toUpperCase() === 'BANNED').length,
-    [users],
-  );
+  const {
+    tx,
+    keyword,
+    setKeyword,
+    users,
+    isLoading,
+    errorMessage,
+    processingUserId,
+    confirmTarget,
+    setConfirmTarget,
+    loadUsers,
+    handleSearch,
+    handleUpdateUserStatus,
+    bannedCount,
+    adminCount,
+    toast,
+  } = useUser();
 
   return (
     <div className="space-y-4">
@@ -141,9 +76,7 @@ export const AdminUsersPage = () => {
           </article>
           <article className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
             <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Admin trong kết quả', 'Admins in result')}</p>
-            <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
-              {users.filter((item) => item.role.trim().toUpperCase() === 'ADMIN').length}
-            </p>
+            <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">{adminCount}</p>
           </article>
         </div>
       </section>
