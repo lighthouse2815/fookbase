@@ -1,49 +1,26 @@
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Navigate } from 'react-router-dom';
 
 import { AuthForm } from '@/components/auth/AuthForm';
 import { InputField } from '@/components/auth/InputField';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLocaleText } from '@/hooks/useLocaleText';
-import { getApiErrorMessage } from '@/utils/apiError';
-
-interface AdminLoginFormValues {
-  username: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-interface AdminLoginLocationState {
-  from?: { pathname?: string };
-  message?: string;
-}
+import { useAdminLogin } from '@/pages/auth/hooks/useAdminLogin';
 
 export const AdminLoginPage = () => {
-  const { t } = useTranslation();
-  const tx = useLocaleText();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { loginAdmin, isAuthenticated, isAdmin } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [apiError, setApiError] = useState<string | undefined>();
-
-  const locationState = (location.state as AdminLoginLocationState | null) ?? null;
-
   const {
+    t,
+    tx,
+    isAuthenticated,
+    isAdmin,
+    showPassword,
+    setShowPassword,
+    apiError,
+    locationState,
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<AdminLoginFormValues>({
-    mode: 'onTouched',
-    defaultValues: {
-      username: '',
-      password: '',
-      rememberMe: true,
-    },
-  });
+    formErrors,
+    isSubmitting,
+    onSubmit,
+  } = useAdminLogin();
 
   if (isAuthenticated && isAdmin) {
     return <Navigate to="/admin/dashboard" replace />;
@@ -52,19 +29,6 @@ export const AdminLoginPage = () => {
   if (isAuthenticated && !isAdmin) {
     return <Navigate to="/" replace />;
   }
-
-  const onSubmit = async (data: AdminLoginFormValues) => {
-    try {
-      setApiError(undefined);
-      await loginAdmin(data);
-
-      const requestedPath = locationState?.from?.pathname;
-      const destination = requestedPath?.startsWith('/admin') ? requestedPath : '/admin/dashboard';
-      navigate(destination, { replace: true });
-    } catch (error) {
-      setApiError(getApiErrorMessage(error, tx('Đăng nhập admin thất bại.', 'Admin login failed.')));
-    }
-  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
@@ -96,7 +60,7 @@ export const AdminLoginPage = () => {
           registration={register('username', {
             required: tx('Vui lòng nhập username.', 'Username is required.'),
           })}
-          error={errors.username?.message}
+          error={formErrors.username?.message}
         />
 
         <InputField
@@ -107,7 +71,7 @@ export const AdminLoginPage = () => {
           registration={register('password', {
             required: tx('Vui lòng nhập mật khẩu.', 'Password is required.'),
           })}
-          error={errors.password?.message}
+          error={formErrors.password?.message}
           rightElement={
             <button
               type="button"
