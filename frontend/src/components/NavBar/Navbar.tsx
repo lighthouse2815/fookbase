@@ -1,127 +1,50 @@
 import {
   Bell,
-  Bookmark,
   ChevronDown,
-  House,
   Languages,
   LogOut,
   Menu,
-  MessageSquareText,
-  Moon,
   Search,
   Settings,
   Sun,
+  Moon,
   UserRound,
-  UsersRound,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Link, NavLink } from 'react-router-dom';
 
-import { useTheme } from '@/contexts/ThemeContext';
-import type { NotificationItem } from '@/interface/notification';
-import type { User } from '@/interface/user';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
 
-interface NavbarProps {
-  currentUser: User;
-  notifications: NotificationItem[];
-  onOpenNotification: (item: NotificationItem) => void;
-  onAcceptFriendRequest: (item: NotificationItem) => Promise<void>;
-  onRejectFriendRequest: (item: NotificationItem) => Promise<void>;
-  onMarkAllNotificationsAsRead: () => Promise<void>;
-  onLogout: () => void;
-}
+import type { NavbarProps } from './interface';
+import { NAV_ITEMS } from './util';
+import { useNavBar } from './useNavBar';
 
-type NavbarPopover = 'menu' | 'notification' | 'language' | null;
-
-export const Navbar = ({
-  currentUser,
-  notifications,
-  onOpenNotification,
-  onAcceptFriendRequest,
-  onRejectFriendRequest,
-  onMarkAllNotificationsAsRead,
-  onLogout,
-}: NavbarProps) => {
-  const { t, i18n } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [openPopover, setOpenPopover] = useState<NavbarPopover>(null);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const popoverRootRef = useRef<HTMLDivElement | null>(null);
-  const isMenuOpen = openPopover === 'menu';
-  const isNotificationOpen = openPopover === 'notification';
-  const isLanguageOpen = openPopover === 'language';
-  const isSettingsPage = location.pathname.startsWith('/settings');
-  const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
-  const isVietnameseActive = currentLanguage.startsWith('vi');
-  const isEnglishActive = currentLanguage.startsWith('en');
-
-  const navItems = [
-    { key: 'home', icon: House, path: '/' },
-    { key: 'friends', icon: UsersRound, path: '/friends' },
-    { key: 'messages', icon: MessageSquareText, path: '/messages' },
-    { key: 'saved', icon: Bookmark, path: '/saved' },
-  ] as const;
-
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
-
-  useEffect(() => {
-    if (!location.pathname.startsWith('/friends/search')) {
-      return;
-    }
-
-    const phoneNumber = new URLSearchParams(location.search).get('phoneNumber') ?? '';
-    setSearchKeyword(phoneNumber);
-  }, [location.pathname, location.search]);
-
-  useEffect(() => {
-    if (!openPopover) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (!popoverRootRef.current || (target && popoverRootRef.current.contains(target))) {
-        return;
-      }
-
-      setOpenPopover(null);
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpenPopover(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [openPopover]);
-
-  useEffect(() => {
-    setOpenPopover(null);
-  }, [location.pathname, location.search]);
-
-  const handleSearchSubmit = () => {
-    const normalizedKeyword = searchKeyword.trim();
-    if (!normalizedKeyword) {
-      return;
-    }
-
-    navigate(`/friends/search?phoneNumber=${encodeURIComponent(normalizedKeyword)}`);
-  };
-
-  const togglePopover = (popover: Exclude<NavbarPopover, null>) => {
-    setOpenPopover((current) => (current === popover ? null : popover));
-  };
+export const Navbar = (props: NavbarProps) => {
+  const { currentUser } = props;
+  const {
+    t,
+    i18n,
+    theme,
+    toggleTheme,
+    searchKeyword,
+    setSearchKeyword,
+    popoverRootRef,
+    setOpenPopover,
+    isMenuOpen,
+    isNotificationOpen,
+    isLanguageOpen,
+    isSettingsPage,
+    isVietnameseActive,
+    isEnglishActive,
+    unreadCount,
+    handleSearchSubmit,
+    togglePopover,
+    notifications,
+    onOpenNotification,
+    onAcceptFriendRequest,
+    onRejectFriendRequest,
+    onMarkAllNotificationsAsRead,
+    onLogout,
+  } = useNavBar(props);
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-900/85">
@@ -151,7 +74,7 @@ export const Navbar = ({
           </div>
 
           <nav className="hidden items-center gap-1 md:flex">
-            {navItems.map(({ key, icon: Icon, path }) => (
+            {NAV_ITEMS.map(({ key, icon: Icon, path }) => (
               <NavLink
                 key={key}
                 to={path}
@@ -338,4 +261,3 @@ export const Navbar = ({
     </header>
   );
 };
-
