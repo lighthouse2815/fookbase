@@ -1,5 +1,5 @@
 import { API_CONFIG } from '@/config/apiConfig';
-import { apiClient } from '@/services/apiClient';
+import { apiClient, javaApiClient } from '@/services/apiClient';
 
 import type { Profile } from '@/interface/profile';
 import type { ApiEnvelope } from '@/interface/api';
@@ -10,6 +10,7 @@ import type {
   ProfileInfoVisibility,
   ProfilePageInfoSettings,
   UpdateProfileInfoVisibilityRequest,
+  CompleteMyProfileRequest,
 } from '@/interface/profile';
 const { PROFILES } = API_CONFIG.ENDPOINTS;
 
@@ -107,5 +108,12 @@ export const profileService = {
   async updateMyProfilePageInfoVisibility(payload: UpdateProfileInfoVisibilityRequest): Promise<void> {
     await apiClient.patch(PROFILES.ME_PAGE_INFO_VISIBILITY, payload);
   },
+  async completeMyProfile(payload: CompleteMyProfileRequest): Promise<void> {
+    await javaApiClient.post('/api/profiles/me/complete-profile', payload);
+  },
+
+
+
+
 };
 

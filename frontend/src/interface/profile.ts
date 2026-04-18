@@ -81,3 +81,10 @@ export interface UpdateProfileInfoVisibilityRequest {
   genderVisible: boolean;
   friendCountVisible: boolean;
 }
+
+export interface CompleteMyProfileRequest {
+  birthday: string;
+  gender: string;
+  avatarUrl?: string;
+  displayName?: string;
+}
