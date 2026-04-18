@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { GAME_HUB_EVENTS } from '../../types/games/common';
-import type { GameOverEvent, GameStateUpdatedEvent, GameStartedEvent, MoveRejectedEvent } from '../../types/games/common';
-import type { ChessMoveInput, ChessState } from '../../types/games/chess';
+import { GAME_HUB_EVENTS } from '../../type/games/common';
+import type { GameOverEvent, GameStateUpdatedEvent, GameStartedEvent, MoveRejectedEvent } from '../../type/games/common';
+import type { ChessMoveInput, ChessState } from '../../type/games/chess';
 import type { User } from '../../types/user';
 import { useGameLobby } from './useGameLobby';
 

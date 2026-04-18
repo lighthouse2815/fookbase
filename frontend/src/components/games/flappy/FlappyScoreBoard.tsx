@@ -1,4 +1,4 @@
-import type { FlappyPlayerState } from '../../../types/games/flappy';
+import type { FlappyPlayerState } from '../../../type/games/flappy';
 
 interface FlappyScoreBoardProps {
   players: FlappyPlayerState[];

@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { User } from '../../types/user';
 import { useGameLobby } from './useGameLobby';
-import { GAME_HUB_EVENTS } from '../../types/games/common';
-import type { GameOverEvent, GameStartedEvent, GameStateUpdatedEvent } from '../../types/games/common';
-import type { SnakeInput, SnakeState } from '../../types/games/snake';
+import { GAME_HUB_EVENTS } from '../../type/games/common';
+import type { GameOverEvent, GameStartedEvent, GameStateUpdatedEvent } from '../../type/games/common';
+import type { SnakeInput, SnakeState } from '../../type/games/snake';
 
 interface UseSnakeGameOptions {
   currentUser: User;

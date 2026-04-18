@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import type { GameDefinition } from '../../../types/games/common';
+import type { GameDefinition } from '../../../type/games/common';
 
 interface GameCardProps {
   game: GameDefinition;

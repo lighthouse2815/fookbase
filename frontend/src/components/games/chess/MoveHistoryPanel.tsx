@@ -1,4 +1,4 @@
-import type { ChessMoveRecord } from '../../../types/games/chess';
+import type { ChessMoveRecord } from '../../../type/games/chess';
 
 interface MoveHistoryPanelProps {
   moves: ChessMoveRecord[];

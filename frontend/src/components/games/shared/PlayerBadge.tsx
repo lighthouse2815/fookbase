@@ -1,4 +1,4 @@
-import type { GameRoomPlayer } from '../../../types/games/common';
+import type { GameRoomPlayer } from '../../../type/games/common';
 
 interface PlayerBadgeProps {
   player: GameRoomPlayer;

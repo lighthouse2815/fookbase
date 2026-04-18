@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import type { FlappyState } from '../../../types/games/flappy';
+import type { FlappyState } from '../../../type/games/flappy';
 
 interface FlappyCanvasProps {
   state: FlappyState;

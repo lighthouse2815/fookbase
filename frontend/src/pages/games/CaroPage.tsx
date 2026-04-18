@@ -1,13 +1,13 @@
 import { useSearchParams } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '../../layouts/MainLayout';
-import { useCaroGame } from '../../hooks/games/useCaroGame';
-import { CaroBoard } from '../../components/games/caro/CaroBoard';
-import { ConnectionStatus } from '../../components/games/shared/ConnectionStatus';
-import { GameHeader } from '../../components/games/shared/GameHeader';
-import { GameLobby } from '../../components/games/shared/GameLobby';
-import { GameResultModal } from '../../components/games/shared/GameResultModal';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { useCaroGame } from '@/hooks/games/useCaroGame';
+import { CaroBoard } from '@/components/games/caro/CaroBoard';
+import { ConnectionStatus } from '@/components/games/shared/ConnectionStatus';
+import { GameHeader } from '@/components/games/shared/GameHeader';
+import { GameLobby } from '@/components/games/shared/GameLobby';
+import { GameResultModal } from '@/components/games/shared/GameResultModal';
 
 export const CaroPage = () => {
   const [searchParams] = useSearchParams();

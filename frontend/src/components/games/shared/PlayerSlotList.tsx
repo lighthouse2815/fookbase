@@ -1,4 +1,4 @@
-import type { GameRoom } from '../../../types/games/common';
+import type { GameRoom } from '../../../type/games/common';
 import { PlayerBadge } from './PlayerBadge';
 
 interface PlayerSlotListProps {

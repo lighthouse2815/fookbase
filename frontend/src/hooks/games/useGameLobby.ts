@@ -9,8 +9,8 @@ import type {
   RematchRequestedEvent,
   PlayerPresenceChangedEvent,
   GameRoomStatus,
-} from '../../types/games/common';
-import { GAME_HUB_EVENTS } from '../../types/games/common';
+} from '../../type/games/common';
+import { GAME_HUB_EVENTS } from '../../type/games/common';
 import type { User } from '../../types/user';
 
 interface UseGameLobbyOptions {

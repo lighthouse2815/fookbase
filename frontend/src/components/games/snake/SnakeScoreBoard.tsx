@@ -1,4 +1,4 @@
-import type { SnakePlayerState } from '../../../types/games/snake';
+import type { SnakePlayerState } from '../../../type/games/snake';
 
 interface SnakeScoreBoardProps {
   players: SnakePlayerState[];

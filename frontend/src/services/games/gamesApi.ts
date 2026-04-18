@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient';
-import type { GameDefinition, GameRoom, GameType } from '../../types/games/common';
+import type { GameDefinition, GameRoom, GameType } from '../../type/games/common';
 
 interface ApiEnvelope<T> {
   success: boolean;

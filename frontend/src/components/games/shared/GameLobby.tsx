@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import type { GameRoom } from '../../../types/games/common';
+import type { GameRoom } from '../../../type/games/common';
 import { CreateRoomModal } from './CreateRoomModal';
 import { JoinRoomForm } from './JoinRoomForm';
 import { PlayerSlotList } from './PlayerSlotList';

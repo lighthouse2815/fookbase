@@ -1,4 +1,4 @@
-import type { CaroMoveRecord } from '../../../types/games/caro';
+import type { CaroMoveRecord } from '../../../type/games/caro';
 import { CaroCell } from './CaroCell';
 
 interface CaroBoardProps {

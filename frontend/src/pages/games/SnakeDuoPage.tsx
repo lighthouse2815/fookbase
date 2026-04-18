@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '../../layouts/MainLayout';
-import { useSnakeGame } from '../../hooks/games/useSnakeGame';
-import { ConnectionStatus } from '../../components/games/shared/ConnectionStatus';
-import { CountdownOverlay } from '../../components/games/shared/CountdownOverlay';
-import { GameHeader } from '../../components/games/shared/GameHeader';
-import { GameLobby } from '../../components/games/shared/GameLobby';
-import { GameResultModal } from '../../components/games/shared/GameResultModal';
-import { SnakeCanvas } from '../../components/games/snake/SnakeCanvas';
-import { SnakeScoreBoard } from '../../components/games/snake/SnakeScoreBoard';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { useSnakeGame } from '@/hooks/games/useSnakeGame';
+import { ConnectionStatus } from '@/components/games/shared/ConnectionStatus';
+import { CountdownOverlay } from '@/components/games/shared/CountdownOverlay';
+import { GameHeader } from '@/components/games/shared/GameHeader';
+import { GameLobby } from '@/components/games/shared/GameLobby';
+import { GameResultModal } from '@/components/games/shared/GameResultModal';
+import { SnakeCanvas } from '@/components/games/snake/SnakeCanvas';
+import { SnakeScoreBoard } from '@/components/games/snake/SnakeScoreBoard';
 
 const keyToDirection: Record<string, 'up' | 'down' | 'left' | 'right'> = {
   ArrowUp: 'up',

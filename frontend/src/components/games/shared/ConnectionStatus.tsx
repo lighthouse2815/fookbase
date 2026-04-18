@@ -1,4 +1,4 @@
-import type { GameConnectionStatus } from '../../../types/games/common';
+import type { GameConnectionStatus } from '../../../type/games/common';
 
 interface ConnectionStatusProps {
   status: GameConnectionStatus;

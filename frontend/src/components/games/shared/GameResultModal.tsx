@@ -1,5 +1,5 @@
-import type { GameOverEvent } from '../../../types/games/common';
-import type { GameRoomPlayer } from '../../../types/games/common';
+import type { GameOverEvent } from '../../../type/games/common';
+import type { GameRoomPlayer } from '../../../type/games/common';
 
 interface GameResultModalProps {
   isOpen: boolean;

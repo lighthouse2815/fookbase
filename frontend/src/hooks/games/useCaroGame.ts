@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { User } from '../../types/user';
 import { useGameLobby } from './useGameLobby';
-import { GAME_HUB_EVENTS } from '../../types/games/common';
+import { GAME_HUB_EVENTS } from '../../type/games/common';
 import type {
   GameOverEvent,
   GameStartedEvent,
   GameStateUpdatedEvent,
   MoveRejectedEvent,
-} from '../../types/games/common';
-import type { CaroMoveInput, CaroState } from '../../types/games/caro';
+} from '../../type/games/common';
+import type { CaroMoveInput, CaroState } from '../../type/games/caro';
 
 interface CaroMoveOutcomePayload {
   accepted: boolean;

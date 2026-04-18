@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import type { SnakeState } from '../../../types/games/snake';
+import type { SnakeState } from '../../../type/games/snake';
 
 interface SnakeCanvasProps {
   state: SnakeState;

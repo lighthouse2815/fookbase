@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '../../layouts/MainLayout';
-import { useFlappyGame } from '../../hooks/games/useFlappyGame';
-import { ConnectionStatus } from '../../components/games/shared/ConnectionStatus';
-import { CountdownOverlay } from '../../components/games/shared/CountdownOverlay';
-import { GameHeader } from '../../components/games/shared/GameHeader';
-import { GameLobby } from '../../components/games/shared/GameLobby';
-import { GameResultModal } from '../../components/games/shared/GameResultModal';
-import { FlappyCanvas } from '../../components/games/flappy/FlappyCanvas';
-import { FlappyScoreBoard } from '../../components/games/flappy/FlappyScoreBoard';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { useFlappyGame } from '@/hooks/games/useFlappyGame';
+import { ConnectionStatus } from '@/components/games/shared/ConnectionStatus';
+import { CountdownOverlay } from '@/components/games/shared/CountdownOverlay';
+import { GameHeader } from '@/components/games/shared/GameHeader';
+import { GameLobby } from '@/components/games/shared/GameLobby';
+import { GameResultModal } from '@/components/games/shared/GameResultModal';
+import { FlappyCanvas } from '@/components/games/flappy/FlappyCanvas';
+import { FlappyScoreBoard } from '@/components/games/flappy/FlappyScoreBoard';
 
 export const FlappyDuoPage = () => {
   const [searchParams] = useSearchParams();

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { gamesApi } from '../../services/games/gamesApi';
-import type { GameDefinition, GameRoom } from '../../types/games/common';
-import { GameCard } from '../../components/games/shared/GameCard';
+import { gamesApi } from '@/services/games/gamesApi';
+import type { GameDefinition, GameRoom } from '@/type/games/common';
+import { GameCard } from '@/components/games/shared/GameCard';
 
 const gameTypeToRoute: Record<string, string> = {
   chess: '/games/chess',

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HubConnection } from '@microsoft/signalr';
 
 import { createGamesHubConnection, startGamesHubConnection } from '../../services/games/gamesHub';
-import type { GameConnectionStatus } from '../../types/games/common';
+import type { GameConnectionStatus } from '../../type/games/common';
 
 interface UseSignalRGameRoomResult {
   connectionStatus: GameConnectionStatus;

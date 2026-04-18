@@ -2,14 +2,14 @@ import { useMemo, useState } from 'react';
 import { Chess, type Move, type Square } from 'chess.js';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 
-import type { MainLayoutOutletContext } from '../../layouts/MainLayout';
-import { useChessGame } from '../../hooks/games/useChessGame';
-import { ChessBoard } from '../../components/games/chess/ChessBoard';
-import { MoveHistoryPanel } from '../../components/games/chess/MoveHistoryPanel';
-import { ConnectionStatus } from '../../components/games/shared/ConnectionStatus';
-import { GameHeader } from '../../components/games/shared/GameHeader';
-import { GameLobby } from '../../components/games/shared/GameLobby';
-import { GameResultModal } from '../../components/games/shared/GameResultModal';
+import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
+import { useChessGame } from '@/hooks/games/useChessGame';
+import { ChessBoard } from '@/components/games/chess/ChessBoard';
+import { MoveHistoryPanel } from '@/components/games/chess/MoveHistoryPanel';
+import { ConnectionStatus } from '@/components/games/shared/ConnectionStatus';
+import { GameHeader } from '@/components/games/shared/GameHeader';
+import { GameLobby } from '@/components/games/shared/GameLobby';
+import { GameResultModal } from '@/components/games/shared/GameResultModal';
 
 const getLegalTargets = (
   fen: string,
