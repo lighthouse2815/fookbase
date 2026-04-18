@@ -29,6 +29,7 @@ export function useProfileHeader({
   const visibleFriendCount = getVisibleFriendsCount(profile);
   const normalizedStatus = normalizeFriendshipStatus(profile.friendshipStatus);
   const isFriend = normalizedStatus === 'ACCEPTED';
+  console.log(isFriend);
   const resolvedActionLabel =
     actionLabel ??
     (isOwnProfile ? t('profile.editProfile') : isFriend ? t('profile.friendsButton') : t('profile.addFriend'));
