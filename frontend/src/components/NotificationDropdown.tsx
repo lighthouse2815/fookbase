@@ -2,7 +2,7 @@ import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { NotificationItem } from '../types/notification';
+import type { NotificationItem } from '@/interface/notification';
 import { formatRelativeTime } from '../utils/date';
 
 interface NotificationDropdownProps {

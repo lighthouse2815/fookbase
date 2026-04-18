@@ -53,7 +53,6 @@ const normalizeToken = (token: string | undefined): string | undefined => {
 const clearSessionAndRedirect = () => {
   storage.clearToken();
   storage.clearUser();
-  storage.clearProfileCompletionRequired();
   localStorage.removeItem(STORAGE_KEYS.rememberMe);
 
   const currentPath = window.location.pathname;

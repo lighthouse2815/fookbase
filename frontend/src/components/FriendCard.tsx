@@ -2,7 +2,7 @@ import { UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import type { FriendSuggestion } from '../types/friendship';
+import type { FriendSuggestion } from '@/interface/friendship';
 
 interface FriendCardProps {
   suggestion: FriendSuggestion;

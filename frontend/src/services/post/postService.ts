@@ -5,7 +5,6 @@ import { mapPost } from '@/services/post/util';
 import type { 
   PagedResult, 
   ApiEnvelope, 
-  PaginatedResult 
 } from '@/interface/api';
 
 import type { 

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { GAME_HUB_EVENTS } from '../../type/games/common';
 import type { GameOverEvent, GameStateUpdatedEvent, GameStartedEvent, MoveRejectedEvent } from '../../type/games/common';
 import type { ChessMoveInput, ChessState } from '../../type/games/chess';
-import type { User } from '../../types/user';
+import type { User } from '@/interface/user';
 import { useGameLobby } from './useGameLobby';
 
 interface ChessMoveOutcomePayload {

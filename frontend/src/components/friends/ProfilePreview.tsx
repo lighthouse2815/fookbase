@@ -1,5 +1,5 @@
 ﻿import clsx from 'clsx';
-import { Image, Info, MessageCircle, Newspaper, UserRoundCheck, UserRoundPlus, UserRoundX } from 'lucide-react';
+import { MessageCircle, UserRoundCheck, UserRoundPlus, UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 

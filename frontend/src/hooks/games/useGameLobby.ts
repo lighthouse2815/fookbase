@@ -11,7 +11,7 @@ import type {
   GameRoomStatus,
 } from '../../type/games/common';
 import { GAME_HUB_EVENTS } from '../../type/games/common';
-import type { User } from '../../types/user';
+import type { User } from '@/interface/user';
 
 interface UseGameLobbyOptions {
   gameType: GameType;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { User } from '../../types/user';
+import type { User } from '@/interface/user';
 import { useGameLobby } from './useGameLobby';
 import { GAME_HUB_EVENTS } from '../../type/games/common';
 import type {
