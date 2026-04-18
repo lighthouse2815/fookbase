@@ -3,20 +3,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-import { Navbar } from '../components/Navbar';
-import { SidebarLeft } from '../components/SidebarLeft';
-import { SidebarRight } from '../components/SidebarRight';
-import { useAuth } from '../contexts/AuthContext';
-import { friendshipService } from '../services/friendshipService';
+import { Navbar } from '@/components/NavBar/Navbar';
+import { SidebarLeft } from '@/components/sideBar/SidebarLeft';
+import { SidebarRight } from '@/components/sideBar/SidebarRight';
+import { useAuth } from '@/contexts/AuthContext';
+import { friendshipService } from '@/services/friendshipService';
 import {
   createNotificationRealtimeConnection,
   startNotificationRealtimeConnection,
-} from '../services/notificationRealtimeService';
+} from '@/services/notificationRealtimeService';
 import { notificationService } from '../services/notificationService';
-import { userService } from '../services/userService';
-import type { FriendRequest, FriendSuggestion } from '../types/friendship';
-import type { NotificationItem } from '../types/notification';
-import type { User } from '../types/user';
+import { userService } from '@/services/userService';
+import type { FriendRequest, FriendSuggestion } from '@/interface/friendship';
+import type { NotificationItem } from '@/interface/notification';
+import type { User } from '@/interface/user';
 
 export interface MainLayoutOutletContext {
   currentUser: User;

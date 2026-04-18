@@ -1,66 +1,10 @@
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs';
 
-import { storage } from '../utils/storage';
-import type { ChatMessage } from '../types/message';
-
-interface ChatRealtimeHandlers {
-  onMessage: (message: ChatMessage) => void;
-  onConnectionChange?: (isConnected: boolean) => void;
-  onError?: (message: string) => void;
-}
-
-interface SendRealtimeMessageInput {
-  conversationId: string;
-  content: string;
-}
-
-const getJavaApiBaseUrl = (): string =>
-  import.meta.env.VITE_JAVA_API_BASE_URL ?? 'http://localhost:8080';
-
-const toWebSocketUrl = (httpUrl: string): string => {
-  try {
-    const parsed = new URL(httpUrl);
-    parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
-    parsed.pathname = '/ws';
-    parsed.search = '';
-    parsed.hash = '';
-    return parsed.toString();
-  } catch {
-    return 'ws://localhost:8080/ws';
-  }
-};
-
-const sanitizeIncomingMessage = (payload: unknown): ChatMessage | null => {
-  if (typeof payload !== 'object' || payload === null) {
-    return null;
-  }
-
-  const typed = payload as Partial<ChatMessage>;
-  if (!typed.messageId || !typed.conversationId || !typed.senderId || !typed.createdAt) {
-    return null;
-  }
-
-  return {
-    messageId: typed.messageId,
-    conversationId: typed.conversationId,
-    senderId: typed.senderId,
-    senderName: typeof typed.senderName === 'string' ? typed.senderName : 'Unknown',
-    content: typeof typed.content === 'string' ? typed.content : '',
-    attachments: Array.isArray(typed.attachments) ? typed.attachments : [],
-    status: typed.status,
-    type: typed.type,
-    createdAt: typed.createdAt,
-  };
-};
-
-export interface ChatRealtimeConnection {
-  connect: () => void;
-  disconnect: () => void;
-  subscribeConversation: (conversationId: string) => void;
-  unsubscribeConversation: (conversationId: string) => void;
-  sendMessage: (input: SendRealtimeMessageInput) => void;
-  isConnected: () => boolean;
-}
+import { storage } from '@/utils/storage';
+import type { ChatRealtimeConnection } from '@/interface/chatRealtime';
+import type { SendRealtimeMessageInput } from '@/interface/chatRealtime';
+import type { ChatRealtimeHandlers } from '@/services/chatRealtime/interface';
+import { getJavaApiBaseUrl, sanitizeIncomingMessage, toWebSocketUrl } from '@/services/chatRealtime/util';
 
 export const createChatRealtimeConnection = (handlers: ChatRealtimeHandlers): ChatRealtimeConnection => {
   const socketUrl = toWebSocketUrl(getJavaApiBaseUrl());
@@ -191,3 +135,5 @@ export const createChatRealtimeConnection = (handlers: ChatRealtimeHandlers): Ch
     isConnected: () => client.connected,
   };
 };
+
+export type { ChatRealtimeConnection, SendRealtimeMessageInput } from '@/interface/chatRealtime';

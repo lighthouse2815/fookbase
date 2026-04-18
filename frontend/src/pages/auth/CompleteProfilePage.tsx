@@ -3,12 +3,12 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router-dom';
 
-import { CornerToast } from '../../components/CornerToast';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCornerToast } from '../../hooks/useCornerToast';
-import { cloudinaryService } from '../../services/cloudinaryService';
-import { profileService } from '../../services/profileService';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { CornerToast } from '@/components/CornerToast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCornerToast } from '@/hooks/useCornerToast';
+import { cloudinaryService } from '@/services/cloudinaryService';
+import { profileService } from '@/services/profileService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 interface CompleteProfileFormState {
   displayName: string;

@@ -1,4 +1,6 @@
-﻿const SkeletonBox = ({ className }: { className: string }) => (
+﻿import type { FriendsSkeletonBoxProps } from './interface';
+
+const SkeletonBox = ({ className }: FriendsSkeletonBoxProps) => (
   <div className={`animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800/80 ${className}`} />
 );
 

@@ -1,13 +1,6 @@
 ﻿import clsx from 'clsx';
-import type { LucideIcon } from 'lucide-react';
 
-interface SidebarItemProps {
-  label: string;
-  icon: LucideIcon;
-  active?: boolean;
-  count?: number;
-  onClick: () => void;
-}
+import type { SidebarItemProps } from './interface';
 
 export const SidebarItem = ({ label, icon: Icon, active = false, count, onClick }: SidebarItemProps) => {
   return (

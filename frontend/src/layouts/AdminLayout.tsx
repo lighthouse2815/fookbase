@@ -17,9 +17,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { useLocaleText } from '../hooks/useLocaleText';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useLocaleText } from '@/hooks/useLocaleText';
 
 type AdminPopover = 'language' | 'profile' | null;
 

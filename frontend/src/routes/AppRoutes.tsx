@@ -1,40 +1,34 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { AdminLayout } from '../layouts/AdminLayout';
-import { AdminAuditLogsPage } from '../pages/admin/AdminAuditLogsPage';
-import { MainLayout } from '../layouts/MainLayout';
-import { AdminCommentReportsPage } from '../pages/admin/AdminCommentReportsPage';
-import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
-import { AdminPostReportsPage } from '../pages/admin/AdminPostReportsPage';
-import { AdminProfilePage } from '../pages/admin/AdminProfilePage';
-import { AdminStoryReportsPage } from '../pages/admin/AdminStoryReportsPage';
-import { AdminUserReportsPage } from '../pages/admin/AdminUserReportsPage';
-import { AdminUsersPage } from '../pages/admin/AdminUsersPage';
-import { FriendSearchPage } from '../pages/FriendSearchPage';
-import { FriendsPage } from '../pages/FriendsPage';
-import { HomePage } from '../pages/HomePage';
-import { MessagesPage } from '../pages/MessagesPage';
-import { PersonalInfoSettingsPage } from '../pages/PersonalInfoSettingsPage';
-import { PostDetailPage } from '../pages/PostDetailPage';
-import { ProfilePage } from '../pages/ProfilePage';
-import { ReportedPostsPage } from '../pages/ReportedPostsPage';
-import { SavedPostsPage } from '../pages/SavedPostsPage';
-import { SecuritySettingsPage } from '../pages/SecuritySettingsPage';
-import { SettingsPage } from '../pages/SettingsPage';
-import { BlockedUsersSettingsPage } from '../pages/BlockedUsersSettingsPage';
-import { AdminLoginPage } from '../pages/auth/AdminLoginPage';
-import { CompleteProfilePage } from '../pages/auth/CompleteProfilePage';
-import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
-import { LoginPage } from '../pages/auth/LoginPage';
-import { RegisterPage } from '../pages/auth/RegisterPage';
-import { GamesPage } from '../pages/games/GamesPage';
-import { ChessPage } from '../pages/games/ChessPage';
-import { CaroPage } from '../pages/games/CaroPage';
-import { SnakeDuoPage } from '../pages/games/SnakeDuoPage';
-import { FlappyDuoPage } from '../pages/games/FlappyDuoPage';
-import { AdminRoute } from './AdminRoute';
-import { ProtectedRoute } from './ProtectedRoute';
+import { AdminLayout } from '@/layouts/AdminLayout';
+import { AdminAuditLogsPage } from '@/pages/admin/AuditLog/AdminAuditLogsPage';
+import { MainLayout } from '@/layouts/MainLayout';
+import { AdminCommentReportsPage } from '@/pages/admin/ReportComment/AdminCommentReportsPage';
+import { AdminDashboardPage } from '@/pages/admin/DashBoard/AdminDashboardPage';
+import { AdminPostReportsPage } from '@/pages/admin/ReportPost/AdminPostReportsPage';
+import { AdminProfilePage } from '@/pages/admin/Profile/AdminProfilePage';
+import { AdminStoryReportsPage } from '@/pages/admin/ReportStory/AdminStoryReportsPage';
+import { AdminUserReportsPage } from '@/pages/admin/ReportUser/AdminUserReportsPage';
+import { AdminUsersPage } from '@/pages/admin/UserManagement/AdminUsersPage';
+import { FriendSearchPage } from '@/pages/FriendsPage/FriendSearchPage';
+import { FriendsPage } from '@/pages/FriendsPage/FriendsPage';
+import { HomePage } from '@/pages/HomePage/HomePage';
+import { MessagesPage } from '@/pages/MessagePage/MessagesPage';
+import { PersonalInfoSettingsPage } from '@/pages/SettingsPage/PersonalInfoSettingsPage';
+import { PostDetailPage } from '@/pages/Post/PostDetailPage';
+import { ProfilePage } from '@/pages/ProfilePage/ProfilePage';
+import { ReportedPostsPage } from '@/pages/SettingsPage/ReportedPostsPage';
+import { SavedPostsPage } from '@/pages/Post/SavedPostsPage';
+import { SecuritySettingsPage } from '@/pages/SettingsPage/SecuritySettingsPage';
+import { SettingsPage } from '@/pages/SettingsPage/SettingsPage';
+import { BlockedUsersSettingsPage } from '@/pages/SettingsPage/BlockedUsersSettingsPage';
+import { AdminLoginPage } from '@/pages/auth/AdminLoginPage';
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
+import { LoginPage } from '@/pages/auth/LoginPage';
+import { RegisterPage } from '@/pages/auth/RegisterPage';
+import { AdminRoute } from '@/routes/AdminRoute';
+import { ProtectedRoute } from '@/routes/ProtectedRoute';
 
 const BloodFortressPage = lazy(() => import('../pages/BloodFortressPage'));
 
@@ -59,18 +53,11 @@ export const AppRoutes = () => {
       />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/complete-profile" element={<CompleteProfilePage />} />
         <Route element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="/friends" element={<FriendsPage />} />
           <Route path="/friends/search" element={<FriendSearchPage />} />
           <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/games" element={<GamesPage />} />
-          <Route path="/games/chess" element={<ChessPage />} />
-          <Route path="/games/caro" element={<CaroPage />} />
-          <Route path="/games/tictactoe" element={<Navigate to="/games/caro" replace />} />
-          <Route path="/games/snake-duo" element={<SnakeDuoPage />} />
-          <Route path="/games/flappy-duo" element={<FlappyDuoPage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/saved" element={<SavedPostsPage />} />
           <Route path="/reports" element={<ReportedPostsPage />} />

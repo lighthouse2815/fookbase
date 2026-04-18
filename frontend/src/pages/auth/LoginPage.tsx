@@ -1,150 +1,36 @@
 import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 
-import { AuthForm } from '../../components/auth/AuthForm';
-import { InputField } from '../../components/auth/InputField';
-import { useAuth } from '../../contexts/AuthContext';
-import { authService, BannedAccountError, InactiveAccountError } from '../../services/authService';
-import { getApiErrorMessage } from '../../utils/apiError';
-
-interface LoginFormValues {
-  username: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-interface OtpFormValues {
-  otp: string;
-}
-
-const identifierPattern = /^([a-zA-Z0-9._-]{3,}|[\w.-]+@[\w-]+\.[\w.-]{2,})$/;
-const otpPattern = /^[0-9]{4,8}$/;
+import { AuthForm } from '@/components/auth/AuthForm';
+import { InputField } from '@/components/auth/InputField';
+import { useLogin } from '@/pages/auth/hooks/useLogin';
 
 export const LoginPage = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { login, isAuthenticated, requiresProfileCompletion } = useAuth();
-  const locationState = location.state as
-    | {
-        from?: { pathname?: string };
-        message?: string;
-      }
-    | null;
-
-  const [step, setStep] = useState<'login' | 'otp' | 'banned'>('login');
-  const [pendingLogin, setPendingLogin] = useState<LoginFormValues | null>(null);
-  const [inactiveEmail, setInactiveEmail] = useState<string>('');
-  const [bannedMessage, setBannedMessage] = useState<string>('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [apiError, setApiError] = useState<string | undefined>();
-  const [infoMessage, setInfoMessage] = useState<string | undefined>();
-
-  const loginForm = useForm<LoginFormValues>({
-    mode: 'onTouched',
-    defaultValues: {
-      username: '',
-      password: '',
-      rememberMe: true,
-    },
-  });
-
-  const otpForm = useForm<OtpFormValues>({
-    mode: 'onTouched',
-    defaultValues: {
-      otp: '',
-    },
-  });
+  const {
+    t,
+    isAuthenticated,
+    step,
+    locationState,
+    apiError,
+    infoMessage,
+    loginForm,
+    otpForm,
+    showPassword,
+    setShowPassword,
+    inactiveEmail,
+    bannedMessage,
+    identifierPattern,
+    otpPattern,
+    onSubmitLogin,
+    onSubmitOtp,
+    handleResendOtp,
+    goBackToLoginFromOtp,
+    goBackToLoginFromBanned,
+  } = useLogin();
 
   if (isAuthenticated) {
-    return <Navigate to={requiresProfileCompletion ? '/complete-profile' : '/'} replace />;
+    return <Navigate to="/" replace />;
   }
-
-  const destination = locationState?.from?.pathname ?? '/';
-
-  const sendVerifyOtp = async (email: string) => {
-    const response = await authService.sendVerifyEmailOtpWhenNotLogin({
-      email,
-      type: 'EMAIL_VERIFY',
-    });
-
-    setInfoMessage(response.result || t('auth.otpSent'));
-  };
-
-  const onSubmitLogin = async (data: LoginFormValues) => {
-    try {
-      setApiError(undefined);
-      setInfoMessage(undefined);
-      const session = await login(data);
-      navigate(session.requiresProfileCompletion ? '/complete-profile' : destination, { replace: true });
-    } catch (error) {
-      if (error instanceof InactiveAccountError) {
-        if (!error.email) {
-          setApiError(t('auth.sendOtpError'));
-          return;
-        }
-
-        setPendingLogin(data);
-        setInactiveEmail(error.email);
-        otpForm.reset({ otp: '' });
-        setStep('otp');
-
-        try {
-          await sendVerifyOtp(error.email);
-        } catch (otpError) {
-          setApiError(getApiErrorMessage(otpError, t('auth.sendOtpError')));
-        }
-
-        return;
-      }
-
-      if (error instanceof BannedAccountError) {
-        setBannedMessage(error.message);
-        setStep('banned');
-        return;
-      }
-
-      setApiError(getApiErrorMessage(error, t('auth.loginError')));
-    }
-  };
-
-  const onSubmitOtp = async (data: OtpFormValues) => {
-    if (!inactiveEmail || !pendingLogin) {
-      setStep('login');
-      setApiError(t('auth.loginError'));
-      return;
-    }
-
-    try {
-      setApiError(undefined);
-      await authService.verifyEmailOtpWhenNotLogin({
-        email: inactiveEmail,
-        otp: data.otp.trim(),
-      });
-
-      const session = await login(pendingLogin);
-      navigate(session.requiresProfileCompletion ? '/complete-profile' : destination, { replace: true });
-    } catch (error) {
-      setApiError(getApiErrorMessage(error, t('auth.verifyOtpError')));
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (!inactiveEmail) {
-      setApiError(t('auth.sendOtpError'));
-      return;
-    }
-
-    try {
-      setApiError(undefined);
-      await sendVerifyOtp(inactiveEmail);
-    } catch (error) {
-      setApiError(getApiErrorMessage(error, t('auth.sendOtpError')));
-    }
-  };
 
   if (step === 'otp') {
     return (
@@ -161,11 +47,7 @@ export const LoginPage = () => {
             <button
               type="button"
               className="font-semibold text-brand-600 hover:text-brand-700"
-              onClick={() => {
-                setStep('login');
-                setApiError(undefined);
-                setInfoMessage(undefined);
-              }}
+              onClick={goBackToLoginFromOtp}
             >
               {t('auth.redirectToLogin')}
             </button>
@@ -239,11 +121,7 @@ export const LoginPage = () => {
 
           <button
             type="button"
-            onClick={() => {
-              setStep('login');
-              setBannedMessage('');
-              setApiError(undefined);
-            }}
+            onClick={goBackToLoginFromBanned}
             className="rounded-xl bg-white px-5 py-2 text-sm font-bold text-slate-900 transition hover:bg-slate-200"
           >
             Quay lai dang nhap

@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 
 import en from './locales/en.json';
 import vi from './locales/vi.json';
-import { STORAGE_KEYS } from '../utils/storage';
+import { STORAGE_KEYS } from '@/utils/storage';
 
 const resources = {
   en: { translation: en },

@@ -5,16 +5,10 @@ import {
   LogLevel,
 } from '@microsoft/signalr';
 
-import type { NotificationItem } from '../types/notification';
-import { storage } from '../utils/storage';
-import { mapNotificationPayload, type NotificationPayload } from './notificationService';
-
-interface NotificationRealtimeHandlers {
-  onCreated: (notification: NotificationItem) => void;
-  onUpdated: (notification: NotificationItem) => void;
-  onDeleted: (notificationId: string) => void;
-  onMarkedAllRead: () => void;
-}
+import type { NotificationPayload } from '@/interface/notification';
+import { storage } from '@/utils/storage';
+import { mapNotificationPayload } from '@/services/notification/util';
+import type { NotificationRealtimeHandlers } from '@/services/notificationRealtime/interface';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'https://localhost:7000';
 const notificationsHubUrl = `${apiBaseUrl.replace(/\/+$/, '')}/hubs/notifications`;

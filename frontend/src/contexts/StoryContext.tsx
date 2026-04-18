@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useAuth } from './AuthContext';
-import { cloudinaryService } from '../services/cloudinaryService';
-import { storyService } from '../services/storyService';
-import type { StoryAuthor, StoryGroup, StoryItem, StoryMediaType } from '../types/story';
+import { useAuth } from '@/contexts/AuthContext';
+import { cloudinaryService } from '@/services/cloudinaryService';
+import { storyService } from '@/services/storyService';
+import type { StoryAuthor, StoryGroup, StoryItem, StoryMediaType } from '@/interface/story';
 
 interface StoryContextValue {
   stories: StoryItem[];

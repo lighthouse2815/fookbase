@@ -1,182 +1,39 @@
 import { Eye, EyeOff } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 
-import { AuthForm } from '../../components/auth/AuthForm';
-import { InputField } from '../../components/auth/InputField';
-import { useAuth } from '../../contexts/AuthContext';
-import { authService } from '../../services/authService';
-import { getApiErrorMessage } from '../../utils/apiError';
-import { getPasswordStrength } from '../../utils/passwordStrength';
-
-interface RegisterFormValues {
-  phone: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  password: string;
-  confirmPassword: string;
-  acceptTerms: boolean;
-}
-
-interface OtpFormValues {
-  otp: string;
-}
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phonePattern = /^\+?[0-9]{9,15}$/;
-const otpPattern = /^[0-9]{4,8}$/;
+import { AuthForm } from '@/components/auth/AuthForm';
+import { InputField } from '@/components/auth/InputField';
+import { useRegister } from '@/pages/auth/hooks/useRegister';
 
 export const RegisterPage = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { register: registerUser, login, isAuthenticated, requiresProfileCompletion } = useAuth();
-
-  const [step, setStep] = useState<'register' | 'otp'>('register');
-  const [registeredEmail, setRegisteredEmail] = useState<string>('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [apiError, setApiError] = useState<string | undefined>();
-  const [infoMessage, setInfoMessage] = useState<string | undefined>();
-
-  const registerForm = useForm<RegisterFormValues>({
-    mode: 'onChange',
-    defaultValues: {
-      phone: '',
-      email: '',
-      firstName: '',
-      lastName: '',
-      password: '',
-      confirmPassword: '',
-      acceptTerms: false,
-    },
-  });
-
-  const otpForm = useForm<OtpFormValues>({
-    mode: 'onChange',
-    defaultValues: {
-      otp: '',
-    },
-  });
-
-  const passwordValue = useWatch({
-    control: registerForm.control,
-    name: 'password',
-    defaultValue: '',
-  });
-  const strength = useMemo(() => getPasswordStrength(passwordValue), [passwordValue]);
+  const {
+    t,
+    isAuthenticated,
+    step,
+    registeredEmail,
+    showPassword,
+    setShowPassword,
+    showConfirmPassword,
+    setShowConfirmPassword,
+    apiError,
+    infoMessage,
+    registerForm,
+    otpForm,
+    strength,
+    strengthLabelMap,
+    strengthColorMap,
+    emailPattern,
+    phonePattern,
+    otpPattern,
+    onSubmitRegister,
+    onSubmitOtp,
+    handleResendOtp,
+    backToRegister,
+  } = useRegister();
 
   if (isAuthenticated) {
-    return <Navigate to={requiresProfileCompletion ? '/complete-profile' : '/'} replace />;
+    return <Navigate to="/" replace />;
   }
-
-  const sendVerifyOtp = async (email: string) => {
-    const response = await authService.sendVerifyEmailOtpWhenNotLogin({
-      email,
-      type: 'EMAIL_VERIFY',
-    });
-
-    setInfoMessage(response.result || t('auth.otpSent'));
-  };
-
-  const onSubmitRegister = async (data: RegisterFormValues) => {
-    try {
-      setApiError(undefined);
-      setInfoMessage(undefined);
-
-      await registerUser({
-        username: data.phone.trim(),
-        email: data.email.trim(),
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        password: data.password,
-      });
-
-      setRegisteredEmail(data.email.trim());
-      otpForm.reset({ otp: '' });
-      setStep('otp');
-
-      await sendVerifyOtp(data.email.trim());
-    } catch (error) {
-      setApiError(getApiErrorMessage(error, t('auth.registerError')));
-    }
-  };
-
-  const onSubmitOtp = async (data: OtpFormValues) => {
-    if (!registeredEmail) {
-      setApiError(t('auth.registerAgain'));
-      setStep('register');
-      return;
-    }
-
-    try {
-      setApiError(undefined);
-      const response = await authService.verifyEmailOtpWhenNotLogin({
-        email: registeredEmail,
-        otp: data.otp.trim(),
-      });
-
-      const loginIdentifier = registerForm.getValues('phone').trim();
-      const loginPassword = registerForm.getValues('password');
-
-      if (!loginIdentifier || !loginPassword) {
-        navigate('/login', {
-          replace: true,
-          state: {
-            message: response.result || t('auth.verifyEmailSuccess'),
-          },
-        });
-        return;
-      }
-
-      try {
-        const session = await login({
-          username: loginIdentifier,
-          password: loginPassword,
-          rememberMe: true,
-        });
-
-        navigate(session.requiresProfileCompletion ? '/complete-profile' : '/', { replace: true });
-      } catch {
-        navigate('/login', {
-          replace: true,
-          state: {
-            message: response.result || t('auth.verifyEmailSuccess'),
-          },
-        });
-      }
-    } catch (error) {
-      setApiError(getApiErrorMessage(error, t('auth.verifyOtpError')));
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (!registeredEmail) {
-      setApiError(t('auth.registerAgain'));
-      return;
-    }
-
-    try {
-      setApiError(undefined);
-      await sendVerifyOtp(registeredEmail);
-    } catch (error) {
-      setApiError(getApiErrorMessage(error, t('auth.sendOtpError')));
-    }
-  };
-
-  const strengthLabelMap = {
-    weak: t('auth.passwordWeak'),
-    medium: t('auth.passwordMedium'),
-    strong: t('auth.passwordStrong'),
-  } as const;
-
-  const strengthColorMap = {
-    weak: 'bg-rose-500',
-    medium: 'bg-amber-500',
-    strong: 'bg-emerald-500',
-  } as const;
 
   if (step === 'otp') {
     return (
@@ -193,11 +50,7 @@ export const RegisterPage = () => {
             <button
               type="button"
               className="font-semibold text-brand-600 hover:text-brand-700"
-              onClick={() => {
-                setStep('register');
-                setApiError(undefined);
-                setInfoMessage(undefined);
-              }}
+              onClick={backToRegister}
             >
               {t('auth.backToRegister')}
             </button>
