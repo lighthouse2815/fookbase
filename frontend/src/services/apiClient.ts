@@ -146,13 +146,13 @@ const applyAuthRefreshInterceptor = (client: AxiosInstance) => {
 };
 
 export const apiClient = axios.create({
-  baseURL: API_CONFIG.BASE_URL,
+  baseURL: csharpBaseURL,
   timeout: 10000,
   withCredentials: true,
 });
 
 export const javaApiClient = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL ?? 'https://interacthub-api-java-fxdbf3fegqhrb3fz.japanwest-01.azurewebsites.net',
+  baseURL: javaBaseURL,
   timeout: 10000,
   withCredentials: true,
 });
