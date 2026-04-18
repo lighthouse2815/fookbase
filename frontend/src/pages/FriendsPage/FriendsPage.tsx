@@ -372,7 +372,7 @@ export const FriendsPage = () => {
                   ))}
                 </div>
               </div>
-
+// unfriend button
               {filteredFriends.length === 0 ? (
                 <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.friendsFiltered')}</p>
               ) : (
@@ -396,7 +396,7 @@ export const FriendsPage = () => {
             </section>
           ) : null}
         </main>
-
+// addFriend
         <div className="xl:sticky xl:top-20 xl:h-fit">
           <ProfilePreview
             user={selectedProfile?.user ?? null}

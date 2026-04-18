@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { normalizeFriendshipStatus } from '@/utils/friendshipStatusCode';
+
 import type { ProfileHeaderProps } from './interface';
 import type { ProfileHeaderAsyncCallback } from './type';
-import {
-  getVisibleFriendsCount,
-  normalizeFriendshipStatus,
-  normalizeOptionalTrimmed,
-  normalizeProfileDisplayName,
-} from './util';
+import { getVisibleFriendsCount, normalizeOptionalTrimmed, normalizeProfileDisplayName } from './util';
 
 export function useProfileHeader({
   profile,

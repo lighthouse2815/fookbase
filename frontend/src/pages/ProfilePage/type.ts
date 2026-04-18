@@ -1,12 +1,4 @@
-export type FriendshipStatusCode =
-  | 'NONE'
-  | 'PENDING'
-  | 'INVITED'
-  | 'ACCEPTED'
-  | 'BLOCKED'
-  | 'REJECTED'
-  | 'REMOVED'
-  | 'UNKNOWN';
+export type { FriendshipStatusCode } from '@/utils/friendshipStatusCode';
 
 export type ProfilePrimaryActionType =
   | 'EDIT'

@@ -1,7 +1,8 @@
 import type { MainLayoutOutletContext } from '@/layouts/MainLayout';
 
 import type { Profile } from './interface';
-import type { FriendshipStatusCode } from './type';
+
+export { normalizeFriendshipStatus } from '@/utils/friendshipStatusCode';
 
 export const PROFILE_POST_COLUMN_CLASS = 'mx-auto w-full max-w-[980px]';
 
@@ -46,27 +47,6 @@ export const createFallbackProfile = (
     fullName: '',
     avatarUrl: `https://i.pravatar.cc/150?u=${targetUserId}`,
   };
-};
-
-export const normalizeFriendshipStatus = (value?: string): FriendshipStatusCode => {
-  const normalized = value?.trim().toUpperCase();
-  if (!normalized) {
-    return 'NONE';
-  }
-
-  if (
-    normalized === 'NONE'
-    || normalized === 'PENDING'
-    || normalized === 'INVITED'
-    || normalized === 'ACCEPTED'
-    || normalized === 'BLOCKED'
-    || normalized === 'REJECTED'
-    || normalized === 'REMOVED'
-  ) {
-    return normalized;
-  }
-
-  return 'UNKNOWN';
 };
 
 export const formatGender = (
