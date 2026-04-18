@@ -22,6 +22,8 @@ export interface RegisterRequest {
 export interface AuthResponse {
   token: string;
   user: AuthUser;
+  /** When false, the user must complete onboarding profile fields before using the app. */
+  profileCompleted: boolean;
 }
 
 export interface RegisterResponse {

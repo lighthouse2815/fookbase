@@ -85,5 +85,9 @@ export const normalizeAuthPayload = (payload: RawAuthPayload): AuthResponse | nu
     return null;
   }
 
-  return { token, user: normalizeUserPayload(payload) };
+  return {
+    token,
+    user: normalizeUserPayload(payload),
+    profileCompleted: payload.profileCompleted ?? true,
+  };
 };

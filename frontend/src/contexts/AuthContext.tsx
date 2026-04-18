@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import axios from 'axios';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { authService } from '@/services/authService';
 import { userService } from '@/services/userService';
@@ -19,6 +19,8 @@ interface AuthContextValue {
   loginAdmin: (payload: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => void;
+  requiresProfileCompletion: boolean;
+  markProfileCompleted: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -116,6 +118,9 @@ const isUnauthorizedError = (error: unknown): boolean => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(storage.getToken());
   const [user, setUser] = useState<User | null>(storage.getUser<User>());
+  const [profileCompleted, setProfileCompleted] = useState<boolean>(
+    () => storage.getProfileCompleted() ?? true,
+  );
   const [isInitializing, setIsInitializing] = useState(true);
   const roles = useMemo(() => extractRolesFromToken(token), [token]);
   const isAdmin = useMemo(
@@ -123,13 +128,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [roles],
   );
 
+  const requiresProfileCompletion = useMemo(
+    () => Boolean(token) && !profileCompleted,
+    [token, profileCompleted],
+  );
+
+  const markProfileCompleted = useCallback(async () => {
+    setProfileCompleted(true);
+    storage.setProfileCompleted(true);
+  }, []);
+
   useEffect(() => {
     const bootstrap = async () => {
       const savedToken = storage.getToken();
 
       if (!savedToken) {
         storage.clearUser();
+        storage.clearProfileCompleted();
         setUser(null);
+        setProfileCompleted(true);
         setIsInitializing(false);
         return;
       }
@@ -142,9 +159,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (isUnauthorizedError(error)) {
           storage.clearToken();
           storage.clearUser();
+          storage.clearProfileCompleted();
           localStorage.removeItem(STORAGE_KEYS.rememberMe);
           setToken(null);
           setUser(null);
+          setProfileCompleted(true);
           return;
         }
 
@@ -155,9 +174,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           storage.clearToken();
           storage.clearUser();
+          storage.clearProfileCompleted();
           localStorage.removeItem(STORAGE_KEYS.rememberMe);
           setToken(null);
           setUser(null);
+          setProfileCompleted(true);
         }
       } finally {
         setIsInitializing(false);
@@ -170,6 +191,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const establishSession = async (response: AuthResponse, rememberMe: boolean | undefined) => {
     storage.setToken(response.token);
     localStorage.setItem(STORAGE_KEYS.rememberMe, String(Boolean(rememberMe)));
+    storage.setProfileCompleted(response.profileCompleted);
+    setProfileCompleted(response.profileCompleted);
 
     setToken(response.token);
 
@@ -202,10 +225,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     void authService.logout().catch(() => undefined);
     storage.clearToken();
     storage.clearUser();
+    storage.clearProfileCompleted();
     localStorage.removeItem(STORAGE_KEYS.rememberMe);
 
     setToken(null);
     setUser(null);
+    setProfileCompleted(true);
   };
 
   const contextValue = useMemo(
@@ -220,8 +245,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loginAdmin,
       register,
       logout,
+      requiresProfileCompletion,
+      markProfileCompleted,
     }),
-    [isAdmin, isInitializing, roles, token, user],
+    [isAdmin, isInitializing, markProfileCompleted, requiresProfileCompletion, roles, token, user],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

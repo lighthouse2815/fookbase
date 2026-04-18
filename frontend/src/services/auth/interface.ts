@@ -11,4 +11,5 @@ export interface RawAuthPayload {
   displayName?: string;
   email?: string;
   avatarUrl?: string;
+  profileCompleted?: boolean;
 }
