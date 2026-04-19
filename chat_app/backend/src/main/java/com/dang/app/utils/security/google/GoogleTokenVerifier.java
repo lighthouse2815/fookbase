@@ -8,6 +8,8 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.*;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class GoogleTokenVerifier {
+
+    private static final Logger log = LoggerFactory.getLogger(GoogleTokenVerifier.class);
 
     @Value("${google.oauth.client-id}")
     private String clientId;
@@ -69,6 +73,7 @@ public class GoogleTokenVerifier {
             boolean validAudience = audiences != null
                     && audiences.stream().anyMatch(allowedClientIds::contains);
             if (!validAudience) {
+                log.warn("Invalid Google audience. tokenAudiences={}, allowedClientIds={}", audiences, allowedClientIds);
                 throw new BusinessException(ErrorCode.INVALID_GOOGLE_AUDIENCE);
             }
 
@@ -96,4 +101,3 @@ public class GoogleTokenVerifier {
                 .collect(Collectors.toSet());
     }
 }
-
