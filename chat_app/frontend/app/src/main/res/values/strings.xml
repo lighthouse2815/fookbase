@@ -70,6 +70,20 @@
     <string name="cd_google">Google</string>
     <string name="cd_facebook">Facebook</string>
     <string name="cd_zalo">Zalo</string>
+    <string name="complete_profile_title">Hoan thien ho so</string>
+    <string name="complete_profile_subtitle_local">Bo sung thong tin con thieu de tiep tuc su dung app</string>
+    <string name="complete_profile_subtitle_google">Xac nhan day du thong tin tai khoan Google</string>
+    <string name="complete_profile_display_name">Ten hien thi</string>
+    <string name="complete_profile_birthday">Ngay sinh</string>
+    <string name="complete_profile_gender">Gioi tinh</string>
+    <string name="complete_profile_button">Luu va tiep tuc</string>
+    <string name="gender_male">Nam</string>
+    <string name="gender_female">Nu</string>
+    <string name="gender_other">Khac</string>
+    <string name="error_required_field">Truong nay la bat buoc</string>
+    <string name="error_invalid_phone">So dien thoai khong hop le</string>
+    <string name="banned_title">Tai khoan da bi cam</string>
+    <string name="banned_default_message">Tai khoan cua ban da bi khoa va khong the dang nhap.</string>
 
     <!-- ========== CHAT APP ACTIVITY ========== -->
 

@@ -15,6 +15,7 @@ export const RegisterPage = () => {
     setShowPassword,
     showConfirmPassword,
     setShowConfirmPassword,
+    isGoogleSubmitting,
     apiError,
     infoMessage,
     registerForm,
@@ -29,6 +30,7 @@ export const RegisterPage = () => {
     onSubmitOtp,
     handleResendOtp,
     backToRegister,
+    onSubmitGoogle,
   } = useRegister();
 
   if (isAuthenticated) {
@@ -222,6 +224,15 @@ export const RegisterPage = () => {
             </button>
           }
         />
+
+        <button
+          type="button"
+          onClick={() => void onSubmitGoogle()}
+          disabled={isGoogleSubmitting || registerForm.formState.isSubmitting}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
+        >
+          {isGoogleSubmitting ? t('common.loading') : t('auth.googleRegisterButton')}
+        </button>
 
         <div className="space-y-1">
           <label className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">

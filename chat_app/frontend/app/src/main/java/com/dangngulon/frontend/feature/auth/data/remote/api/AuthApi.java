@@ -3,6 +3,7 @@ package com.dangngulon.frontend.feature.auth.data.remote.api;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.GoogleTokenRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.LoginRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.OTPRequest;
+import com.dangngulon.frontend.feature.auth.data.remote.dto.request.CompleteProfileRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.RefreshTokenRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.RegisterRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.ResetPasswordRequest;
@@ -59,6 +60,9 @@ public interface AuthApi {
 
     @POST("api/auth/google")
     Call<GoogleAuthResponse> authWithGoogle(@Body GoogleTokenRequest request);
+
+    @POST("api/profiles/me/complete-profile")
+    Call<Void> completeProfile(@Body CompleteProfileRequest request);
 
     @POST("api/auth/reset-password")
     Call<MessageResponse> resetPassword(@Header("X-Reset-Token") String resetToken, @Body ResetPasswordRequest request);

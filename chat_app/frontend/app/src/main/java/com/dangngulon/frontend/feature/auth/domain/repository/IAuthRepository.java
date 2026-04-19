@@ -57,5 +57,15 @@ public interface IAuthRepository {
 
     CompletableFuture<AppResult<GoogleAuthResult>> authWithGoogle(String token);
 
+    CompletableFuture<AppResult<Void>> completeProfile(
+            String firstName,
+            String lastName,
+            String phoneNumber,
+            String birthday,
+            String gender,
+            String avatarUrl,
+            String displayName
+    );
+
     CompletableFuture<AppResult<Void>> resetPassword(String resetToken, String newPassword);
 }

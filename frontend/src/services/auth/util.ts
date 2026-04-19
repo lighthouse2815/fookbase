@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+import type { CompleteProfilePrefill } from '@/interface/auth';
 import type { AuthResponse } from '@/interface/auth';
 import type { RawAuthPayload } from '@/services/auth/interface';
 
@@ -91,3 +92,14 @@ export const normalizeAuthPayload = (payload: RawAuthPayload): AuthResponse | nu
     profileCompleted: payload.profileCompleted ?? true,
   };
 };
+
+export const extractCompleteProfilePrefill = (payload: RawAuthPayload): CompleteProfilePrefill => ({
+  displayName: payload.displayName?.trim() || undefined,
+  firstName: payload.firstName?.trim() || undefined,
+  lastName: payload.lastName?.trim() || undefined,
+  email: payload.email?.trim() || undefined,
+  phoneNumber: payload.phoneNumber?.trim() || undefined,
+  avatarUrl: payload.avatarUrl?.trim() || undefined,
+  birthDate: payload.birthDate?.trim() || undefined,
+  gender: normalizeStatus(payload.gender),
+});

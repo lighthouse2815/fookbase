@@ -28,4 +28,14 @@
         android:name="com.dangngulon.frontend.feature.auth.presentation.ui.fragments.ForgotPasswordFragment"
         android:label="Forgot Password"/>
 
+    <fragment
+        android:id="@+id/completeProfileFragment"
+        android:name="com.dangngulon.frontend.feature.auth.presentation.ui.fragments.CompleteProfileFragment"
+        android:label="Complete Profile"/>
+
+    <fragment
+        android:id="@+id/bannedAccountFragment"
+        android:name="com.dangngulon.frontend.feature.auth.presentation.ui.fragments.BannedAccountFragment"
+        android:label="Banned Account"/>
+
 </navigation>

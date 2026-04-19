@@ -1,6 +1,7 @@
 package com.dangngulon.frontend.feature.auth.presentation.ui.fragments;
 
 import android.os.Bundle;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,29 +11,57 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
+import androidx.credentials.ClearCredentialStateRequest;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.ClearCredentialException;
+import androidx.credentials.exceptions.GetCredentialException;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.dangngulon.frontend.R;
+import com.dangngulon.frontend.BuildConfig;
 import com.dangngulon.frontend.databinding.FragmentRegisterBinding;
+import com.dangngulon.frontend.feature.auth.domain.model.GoogleAuthResult;
 import com.dangngulon.frontend.feature.auth.domain.model.OtpVerificationResult;
 import com.dangngulon.frontend.feature.auth.domain.model.RegisterAccountResult;
 import com.dangngulon.frontend.feature.auth.presentation.error.AuthErrorMapper;
 import com.dangngulon.frontend.core.common.ui.animation.AuthAnimation;
 import com.dangngulon.frontend.core.utils.enums.RegisterState;
+import com.dangngulon.frontend.core.utils.enums.Status;
 import com.dangngulon.frontend.core.common.ui.helpers.UiHelper;
 import com.dangngulon.frontend.core.common.viewmodel.state.Result;
 import com.dangngulon.frontend.feature.auth.presentation.sharedstate.AuthSharedViewModel;
+import com.dangngulon.frontend.feature.auth.presentation.viewmodel.LoginViewModel;
 import com.dangngulon.frontend.feature.auth.presentation.viewmodel.RegisterViewModel;
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+
+import java.text.Normalizer;
+import java.util.Locale;
+import java.util.concurrent.Executor;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
 public class RegisterFragment extends Fragment {
+    private static final String CHAT_APP_ACTIVITY_CLASS =
+            "com.dangngulon.frontend.feature.zola.presentation.ui.ChatAppActivity";
+    private static final String GOOGLE_LOGIN_NOT_CONFIGURED = "Google login chua duoc cau hinh";
+    private static final String GOOGLE_LOGIN_FAILED = "Dang nhap Google that bai";
+
     private RegisterViewModel registerViewModel;
+    private LoginViewModel loginViewModel;
     private FragmentRegisterBinding binding;
+    private CredentialManager credentialManager;
+    private String googleWebClientId;
 
 
     @Override
@@ -60,6 +89,7 @@ public class RegisterFragment extends Fragment {
         }
 
         initViewModel();
+        initGoogleSignIn();
         initEvents();
         observeViewModel();
     }
@@ -73,6 +103,16 @@ public class RegisterFragment extends Fragment {
     private void initViewModel() {
         registerViewModel = new ViewModelProvider(this)
                 .get(RegisterViewModel.class);
+        loginViewModel = new ViewModelProvider(this)
+                .get(LoginViewModel.class);
+    }
+
+    private void initGoogleSignIn() {
+        googleWebClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID == null
+                ? ""
+                : BuildConfig.GOOGLE_WEB_CLIENT_ID.trim();
+
+        credentialManager = CredentialManager.create(requireContext());
     }
 
 
@@ -103,8 +143,12 @@ public class RegisterFragment extends Fragment {
                 navController.navigateUp()
         );
 
+        binding.btnGoogle.setOnClickListener(v -> {
+            AuthAnimation.animateSocialButton(requireContext(), v);
+            handleGoogleAuth();
+        });
+
         CardView[] socialButtons = {
-                binding.btnGoogle,
                 binding.btnFacebook,
                 binding.btnZalo,
         };
@@ -112,14 +156,7 @@ public class RegisterFragment extends Fragment {
         for (CardView btn : socialButtons) {
             btn.setOnClickListener(v -> {
                 AuthAnimation.animateSocialButton(requireContext(),v);
-
-                String provider = String.valueOf(btn.getTag());
-
-                Toast.makeText(
-                        requireContext(),
-                        "Đăng kí bằng " + provider,
-                        Toast.LENGTH_SHORT
-                ).show();
+                Toast.makeText(requireContext(), "Tinh nang sap ra mat", Toast.LENGTH_SHORT).show();
             });
         }
     }
@@ -128,6 +165,7 @@ public class RegisterFragment extends Fragment {
         observeRegisterViewModel();
         observeSendOtpViewModel();
         observeVerifyOtpViewModel();
+        observeGoogleAuthResult();
     }
 
     private void observeRegisterViewModel() {
@@ -210,6 +248,37 @@ public class RegisterFragment extends Fragment {
         });
     }
 
+    private void observeGoogleAuthResult() {
+        loginViewModel.getGoogleAuthResult()
+                .observe(getViewLifecycleOwner(), event -> {
+                    if (event == null) return;
+
+                    Result<GoogleAuthResult> result = event.getContentIfNotHandled();
+                    if (result == null) return;
+
+                    switch (result.getStatus()) {
+                        case LOADING:
+                            showLoading(true);
+                            break;
+
+                        case SUCCESS:
+                            showLoading(false);
+                            handleGoogleAuthSuccess(result.getData());
+                            break;
+
+                        case ERROR:
+                            showLoading(false);
+                            if (isBannedError(result.getMessage())) {
+                                navigateToBannedScreen(result.getMessage());
+                                break;
+                            }
+
+                            UiHelper.showToast(requireContext(), result.getMessage());
+                            break;
+                    }
+                });
+    }
+
 
     private void showLoading(boolean isLoading) {
         binding.loadingOverlay.setVisibility(isLoading ? View.VISIBLE : View.GONE);
@@ -250,6 +319,167 @@ public class RegisterFragment extends Fragment {
                 Log.w("RegisterUI", "Unknown stage: " + stage);
                 break;
         }
+    }
+
+    private void handleGoogleAuth() {
+        if (googleWebClientId == null || googleWebClientId.isBlank()) {
+            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_NOT_CONFIGURED);
+            return;
+        }
+
+        if (credentialManager == null) {
+            credentialManager = CredentialManager.create(requireContext());
+        }
+
+        CredentialManager manager = credentialManager;
+        Executor mainExecutor = ContextCompat.getMainExecutor(requireContext());
+
+        manager.clearCredentialStateAsync(
+                new ClearCredentialStateRequest(),
+                null,
+                mainExecutor,
+                new CredentialManagerCallback<>() {
+                    @Override
+                    public void onResult(Void result) {
+                        requestGoogleCredential(manager, mainExecutor);
+                    }
+
+                    @Override
+                    public void onError(@NonNull ClearCredentialException e) {
+                        requestGoogleCredential(manager, mainExecutor);
+                    }
+                }
+        );
+    }
+
+    private void requestGoogleCredential(CredentialManager manager, Executor mainExecutor) {
+        GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder()
+                .setServerClientId(googleWebClientId)
+                .setFilterByAuthorizedAccounts(false)
+                .setAutoSelectEnabled(false)
+                .build();
+
+        GetCredentialRequest request = new GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build();
+
+        manager.getCredentialAsync(
+                requireContext(),
+                request,
+                null,
+                mainExecutor,
+                new CredentialManagerCallback<>() {
+                    @Override
+                    public void onResult(GetCredentialResponse response) {
+                        String token = extractGoogleIdToken(response);
+                        if (token == null || token.isBlank()) {
+                            if (isAdded()) {
+                                UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+                            }
+                            return;
+                        }
+
+                        loginViewModel.authWithGoogle(token);
+                    }
+
+                    @Override
+                    public void onError(@NonNull GetCredentialException e) {
+                        if (isAdded()) {
+                            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+                        }
+                    }
+                }
+        );
+    }
+
+    @Nullable
+    private String extractGoogleIdToken(GetCredentialResponse response) {
+        Credential credential = response.getCredential();
+        if (!(credential instanceof CustomCredential)) {
+            return null;
+        }
+
+        CustomCredential customCredential = (CustomCredential) credential;
+        if (!GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(customCredential.getType())) {
+            return null;
+        }
+
+        GoogleIdTokenCredential googleIdTokenCredential =
+                GoogleIdTokenCredential.createFrom(customCredential.getData());
+        return googleIdTokenCredential.getIdToken();
+    }
+
+    private void handleGoogleAuthSuccess(@Nullable GoogleAuthResult result) {
+        if (result == null) {
+            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+            return;
+        }
+
+        if (result.getStatus() == Status.BANNED) {
+            navigateToBannedScreen("Tai khoan da bi cam");
+            return;
+        }
+
+        if (result.getAccessToken() == null || result.getAccessToken().isBlank()) {
+            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+            return;
+        }
+
+        if (!result.isProfileCompleted()) {
+            Bundle args = new Bundle();
+            args.putString(CompleteProfileFragment.ARG_MODE, CompleteProfileFragment.MODE_GOOGLE);
+            args.putString(CompleteProfileFragment.ARG_FIRST_NAME, result.getFirstName());
+            args.putString(CompleteProfileFragment.ARG_LAST_NAME, result.getLastName());
+            args.putString(CompleteProfileFragment.ARG_EMAIL, result.getEmail());
+            args.putString(CompleteProfileFragment.ARG_PHONE_NUMBER, result.getPhoneNumber());
+            args.putString(CompleteProfileFragment.ARG_DISPLAY_NAME, result.getDisplayName());
+            args.putString(CompleteProfileFragment.ARG_AVATAR_URL, result.getAvatarUrl());
+            args.putString(CompleteProfileFragment.ARG_BIRTHDAY, result.getBirthDate());
+            args.putString(CompleteProfileFragment.ARG_GENDER, result.getGender());
+            NavHostFragment.findNavController(this).navigate(R.id.completeProfileFragment, args);
+            return;
+        }
+
+        navigateToChatApp();
+    }
+
+    private void navigateToChatApp() {
+        Intent intent = new Intent();
+        intent.setClassName(requireContext(), CHAT_APP_ACTIVITY_CLASS);
+        startActivity(intent);
+        requireActivity().finish();
+    }
+
+    private void navigateToBannedScreen(String message) {
+        Bundle args = new Bundle();
+        args.putString(BannedAccountFragment.ARG_MESSAGE, message);
+        NavHostFragment.findNavController(this).navigate(R.id.bannedAccountFragment, args);
+    }
+
+    private boolean isBannedError(String message) {
+        String normalized = normalizeForComparison(message);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        return normalized.contains("user_banned")
+                || normalized.contains("tai khoan da bi cam")
+                || normalized.contains("tai khoan bi cam")
+                || normalized.contains("bi cam")
+                || normalized.contains("banned");
+    }
+
+    private String normalizeForComparison(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D')
+                .trim()
+                .toLowerCase(Locale.ROOT);
     }
 
     private void handleSendOtp() {

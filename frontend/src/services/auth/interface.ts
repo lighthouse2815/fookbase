@@ -10,6 +10,12 @@ export interface RawAuthPayload {
   username?: string;
   displayName?: string;
   email?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  birthDate?: string;
+  gender?: string;
   avatarUrl?: string;
   profileCompleted?: boolean;
+  isNew?: boolean;
 }

@@ -35,6 +35,7 @@ public class AuthService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^0\\d{9}$");
     private record LocalLoginResolved(User user, UserProfile userProfile) {}
+    private record GoogleNameParts(String firstName, String lastName) {}
 
     private final OTPService otpService;
     private final UserService userService;
@@ -338,12 +339,12 @@ public class AuthService {
     public GoogleAuthResponse registerWithGoogle(GoogleTokenRequest request) {
         JWTClaimsSet claims = googleTokenVerifier.verify(request.getTokenId());
 
-        String email = (String) claims.getClaim("email");
+        String email = normalize((String) claims.getClaim("email"));
         if (email == null) {
             throw new BusinessException(ErrorCode.INVALID_GOOGLE_TOKEN);
         }
 
-        if (userProfileRepository.existsByEmail(email)) {
+        if (userProfileRepository.findByEmailIgnoreCase(email).isPresent()) {
             return loginWithGoogle(email);
         }
 
@@ -354,16 +355,15 @@ public class AuthService {
         );
         userService.setActiveUser(user);
 
-        String lastName  = (String) claims.getClaim("family_name");
-        String firstName = (String) claims.getClaim("given_name");
-        String avatarUrl = (String) claims.getClaim("picture");
+        GoogleNameParts googleNameParts = resolveGoogleName(claims, email);
+        String avatarUrl = normalize((String) claims.getClaim("picture"));
 
         UserProfile profile = userProfileService.createProfile(
                 user,
                 null,
                 email,
-                lastName,
-                firstName
+                googleNameParts.lastName(),
+                googleNameParts.firstName()
         );
         userProfileService.changeAvatar(avatarUrl, profile);
 
@@ -377,12 +377,24 @@ public class AuthService {
     *  2. Nếu đăng nhập bằng gg ần đầu thì thêm AuthProvider
     *  3. Sinh token
     * */
+    @Transactional
     public GoogleAuthResponse loginWithGoogle(String email) {
         UserProfile profile = userProfileRepository
-                .findByEmail(email)
+                .findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        userProfileGuard.requireNotDeleted(profile);
 
         User user = profile.getUser();
+        userGuard.requireNotDeleted(user);
+
+        if (user.getStatus() == Status.BANNED) {
+            throw new BusinessException(ErrorCode.USER_BANNED);
+        }
+
+        if (user.getStatus() == Status.INACTIVE) {
+            userService.setActiveUser(user);
+        }
+
         user.getAuthProviders().add(AuthProvider.GOOGLE);
         return buildGoogleAuthResponse(user, profile, false);
     }
@@ -421,6 +433,53 @@ public class AuthService {
         resetTokenUtil.revoke(resetToken);
 
         return authMapper.toResetPasswordResponse();
+    }
+
+    private GoogleNameParts resolveGoogleName(JWTClaimsSet claims, String email) {
+        String firstName = normalize((String) claims.getClaim("given_name"));
+        String lastName = normalize((String) claims.getClaim("family_name"));
+        String fullName = normalize((String) claims.getClaim("name"));
+
+        if (firstName == null && lastName == null && fullName != null) {
+            String[] parts = fullName.split("\\s+");
+            if (parts.length == 1) {
+                firstName = parts[0];
+                lastName = "";
+            } else {
+                lastName = parts[parts.length - 1];
+                firstName = fullName.substring(0, fullName.length() - lastName.length()).trim();
+            }
+        }
+
+        if (firstName == null) {
+            firstName = resolveNameFromEmail(email);
+        }
+
+        if (lastName == null) {
+            lastName = "";
+        }
+
+        return new GoogleNameParts(firstName, lastName);
+    }
+
+    private String resolveNameFromEmail(String email) {
+        String normalizedEmail = normalize(email);
+        if (normalizedEmail == null) {
+            return "Google User";
+        }
+
+        int atIndex = normalizedEmail.indexOf('@');
+        if (atIndex <= 0) {
+            return normalizedEmail;
+        }
+
+        String localPart = normalizedEmail.substring(0, atIndex)
+                .replace('.', ' ')
+                .replace('_', ' ')
+                .trim();
+
+        String normalizedLocalPart = normalize(localPart);
+        return normalizedLocalPart == null ? "Google User" : normalizedLocalPart;
     }
 
 

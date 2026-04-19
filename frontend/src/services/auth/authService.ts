@@ -17,6 +17,7 @@ import type {
 } from '@/interface/auth';
 import type { RawAuthPayload } from '@/services/auth/interface';
 import {
+  extractCompleteProfilePrefill,
   extractApiErrorMessage,
   isBannedLoginMessage,
   normalizeAuthPayload,
@@ -61,7 +62,11 @@ export const authService = {
     const authResponse = normalizeAuthPayload(authPayload);
 
     if (authResponse) {
-      return authResponse;
+      return {
+        ...authResponse,
+        completeProfileMode: 'local',
+        completeProfilePrefill: extractCompleteProfilePrefill(authPayload),
+      };
     }
 
     const accountStatus = normalizeStatus(authPayload.status);
@@ -85,6 +90,40 @@ export const authService = {
     }
 
     return authResponse;
+  },
+
+  async authWithGoogle(tokenId: string): Promise<AuthResponse> {
+    let authPayload: RawAuthPayload;
+    try {
+      const response = await apiClient.post<RawAuthPayload | ApiEnvelope<RawAuthPayload>>(AUTH.GOOGLE, { tokenId });
+      authPayload = extractEnvelopeData(response.data);
+    } catch (error) {
+      const errorMessage = extractApiErrorMessage(error);
+      if (isBannedLoginMessage(errorMessage)) {
+        throw new BannedAccountError(errorMessage ?? 'Account is banned.');
+      }
+
+      throw error;
+    }
+
+    const authResponse = normalizeAuthPayload(authPayload);
+    if (authResponse) {
+      return {
+        ...authResponse,
+        completeProfileMode: 'google',
+        completeProfilePrefill: extractCompleteProfilePrefill(authPayload),
+      };
+    }
+
+    const accountStatus = normalizeStatus(authPayload.status);
+    if (accountStatus === 'BANNED') {
+      throw new BannedAccountError('Account is banned.');
+    }
+    if (accountStatus === 'INACTIVE') {
+      throw new InactiveAccountError(authPayload.email);
+    }
+
+    throw new Error('Missing token in Google auth response');
   },
 
   async register(payload: RegisterRequest): Promise<RegisterResponse> {

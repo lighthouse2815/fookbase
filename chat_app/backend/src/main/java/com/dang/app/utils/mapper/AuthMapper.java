@@ -69,6 +69,15 @@ public class AuthMapper {
                 .tokenType(tokenResponse.getTokenType())
                 .userId(user.getId())
                 .displayName(profile.getDisplayName())
+                .firstName(profile.getFirstName())
+                .lastName(profile.getLastName())
+                .email(profile.getEmail())
+                .phoneNumber(profile.getPhoneNumber())
+                .avatarUrl(profile.getAvatarUrl())
+                .birthDate(profile.getBirthDate())
+                .gender(profile.getGender() == null ? null : profile.getGender().name())
+                .profileCompleted(profile.isCompleted())
+                .status(user.getStatus())
                 .isNew(isNew)
                 .build();
     }

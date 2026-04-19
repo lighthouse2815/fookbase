@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { authService, BannedAccountError, InactiveAccountError } from '@/services/authService';
+import { getGoogleWebClientId, requestGoogleIdToken } from '@/pages/auth/googleIdentity';
 import { getApiErrorMessage } from '@/utils/apiError';
 
 import type {
@@ -19,7 +20,7 @@ export const useLogin = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { login, authWithGoogle, isAuthenticated } = useAuth();
   const locationState = location.state as LoginLocationState | null;
 
   const [step, setStep] = useState<LoginStep>('login');
@@ -27,6 +28,7 @@ export const useLogin = () => {
   const [inactiveEmail, setInactiveEmail] = useState<string>('');
   const [bannedMessage, setBannedMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
   const [infoMessage, setInfoMessage] = useState<string | undefined>();
 
@@ -141,6 +143,34 @@ export const useLogin = () => {
     setApiError(undefined);
   };
 
+  const onSubmitGoogle = async () => {
+    const clientId = getGoogleWebClientId();
+    if (!clientId) {
+      setApiError(t('auth.googleNotConfigured'));
+      return;
+    }
+
+    try {
+      setApiError(undefined);
+      setInfoMessage(undefined);
+      setIsGoogleSubmitting(true);
+
+      const tokenId = await requestGoogleIdToken(clientId);
+      await authWithGoogle(tokenId, loginForm.getValues('rememberMe'));
+      navigate(destination, { replace: true });
+    } catch (error) {
+      if (error instanceof BannedAccountError) {
+        setBannedMessage(error.message);
+        setStep('banned');
+        return;
+      }
+
+      setApiError(getApiErrorMessage(error, t('auth.googleLoginError')));
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
+
   return {
     t,
     isAuthenticated,
@@ -153,6 +183,7 @@ export const useLogin = () => {
     otpForm,
     showPassword,
     setShowPassword,
+    isGoogleSubmitting,
     inactiveEmail,
     bannedMessage,
     identifierPattern: AUTH_IDENTIFIER_PATTERN,
@@ -162,5 +193,6 @@ export const useLogin = () => {
     handleResendOtp,
     goBackToLoginFromOtp,
     goBackToLoginFromBanned,
+    onSubmitGoogle,
   };
 };

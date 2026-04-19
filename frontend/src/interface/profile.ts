@@ -83,6 +83,9 @@ export interface UpdateProfileInfoVisibilityRequest {
 }
 
 export interface CompleteMyProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
   birthday: string;
   gender: string;
   avatarUrl?: string;

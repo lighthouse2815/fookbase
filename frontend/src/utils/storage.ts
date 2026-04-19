@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   language: 'interacthub_language',
   rememberMe: 'interacthub_remember_me',
   profileCompleted: 'interacthub_profile_completed',
+  completeProfileMode: 'interacthub_complete_profile_mode',
+  completeProfilePrefill: 'interacthub_complete_profile_prefill',
 } as const;
 
 export const storage = {
@@ -46,6 +48,31 @@ export const storage = {
   },
   clearProfileCompleted: (): void => {
     localStorage.removeItem(STORAGE_KEYS.profileCompleted);
+  },
+  getCompleteProfileMode: (): string | null => localStorage.getItem(STORAGE_KEYS.completeProfileMode),
+  setCompleteProfileMode: (mode: string): void => {
+    localStorage.setItem(STORAGE_KEYS.completeProfileMode, mode);
+  },
+  clearCompleteProfileMode: (): void => {
+    localStorage.removeItem(STORAGE_KEYS.completeProfileMode);
+  },
+  getCompleteProfilePrefill: <T = unknown>(): T | null => {
+    const raw = localStorage.getItem(STORAGE_KEYS.completeProfilePrefill);
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  },
+  setCompleteProfilePrefill: (prefill: unknown): void => {
+    localStorage.setItem(STORAGE_KEYS.completeProfilePrefill, JSON.stringify(prefill));
+  },
+  clearCompleteProfilePrefill: (): void => {
+    localStorage.removeItem(STORAGE_KEYS.completeProfilePrefill);
   },
 };
 

@@ -5,6 +5,19 @@ export interface AuthUser {
   avatarUrl?: string;
 }
 
+export type CompleteProfileMode = 'local' | 'google';
+
+export interface CompleteProfilePrefill {
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  avatarUrl?: string;
+  birthDate?: string;
+  gender?: string;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -24,6 +37,8 @@ export interface AuthResponse {
   user: AuthUser;
   /** When false, the user must complete onboarding profile fields before using the app. */
   profileCompleted: boolean;
+  completeProfileMode?: CompleteProfileMode;
+  completeProfilePrefill?: CompleteProfilePrefill;
 }
 
 export interface RegisterResponse {

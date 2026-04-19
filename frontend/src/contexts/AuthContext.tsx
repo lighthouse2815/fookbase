@@ -4,7 +4,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { authService } from '@/services/authService';
 import { userService } from '@/services/userService';
-import type { AuthResponse, LoginRequest, RegisterRequest, RegisterResponse } from '@/interface/auth';
+import type {
+  AuthResponse,
+  CompleteProfileMode,
+  CompleteProfilePrefill,
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+} from '@/interface/auth';
 import type { User } from '@/interface/user';
 import { STORAGE_KEYS, storage } from '@/utils/storage';
 
@@ -16,11 +23,14 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isInitializing: boolean;
   login: (payload: LoginRequest) => Promise<void>;
+  authWithGoogle: (tokenId: string, rememberMe?: boolean) => Promise<void>;
   loginAdmin: (payload: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => void;
   requiresProfileCompletion: boolean;
   markProfileCompleted: () => Promise<void>;
+  completeProfileMode: CompleteProfileMode;
+  completeProfilePrefill: CompleteProfilePrefill | null;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -121,6 +131,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profileCompleted, setProfileCompleted] = useState<boolean>(
     () => storage.getProfileCompleted() ?? true,
   );
+  const [completeProfileMode, setCompleteProfileMode] = useState<CompleteProfileMode>(
+    () => (storage.getCompleteProfileMode() === 'google' ? 'google' : 'local'),
+  );
+  const [completeProfilePrefill, setCompleteProfilePrefill] = useState<CompleteProfilePrefill | null>(
+    () => storage.getCompleteProfilePrefill<CompleteProfilePrefill>(),
+  );
   const [isInitializing, setIsInitializing] = useState(true);
   const roles = useMemo(() => extractRolesFromToken(token), [token]);
   const isAdmin = useMemo(
@@ -136,6 +152,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const markProfileCompleted = useCallback(async () => {
     setProfileCompleted(true);
     storage.setProfileCompleted(true);
+    storage.clearCompleteProfileMode();
+    storage.clearCompleteProfilePrefill();
+    setCompleteProfileMode('local');
+    setCompleteProfilePrefill(null);
   }, []);
 
   useEffect(() => {
@@ -145,8 +165,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!savedToken) {
         storage.clearUser();
         storage.clearProfileCompleted();
+        storage.clearCompleteProfileMode();
+        storage.clearCompleteProfilePrefill();
         setUser(null);
         setProfileCompleted(true);
+        setCompleteProfileMode('local');
+        setCompleteProfilePrefill(null);
         setIsInitializing(false);
         return;
       }
@@ -160,10 +184,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           storage.clearToken();
           storage.clearUser();
           storage.clearProfileCompleted();
+          storage.clearCompleteProfileMode();
+          storage.clearCompleteProfilePrefill();
           localStorage.removeItem(STORAGE_KEYS.rememberMe);
           setToken(null);
           setUser(null);
           setProfileCompleted(true);
+          setCompleteProfileMode('local');
+          setCompleteProfilePrefill(null);
           return;
         }
 
@@ -175,10 +203,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           storage.clearToken();
           storage.clearUser();
           storage.clearProfileCompleted();
+          storage.clearCompleteProfileMode();
+          storage.clearCompleteProfilePrefill();
           localStorage.removeItem(STORAGE_KEYS.rememberMe);
           setToken(null);
           setUser(null);
           setProfileCompleted(true);
+          setCompleteProfileMode('local');
+          setCompleteProfilePrefill(null);
         }
       } finally {
         setIsInitializing(false);
@@ -193,6 +225,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem(STORAGE_KEYS.rememberMe, String(Boolean(rememberMe)));
     storage.setProfileCompleted(response.profileCompleted);
     setProfileCompleted(response.profileCompleted);
+    if (response.profileCompleted) {
+      storage.clearCompleteProfileMode();
+      storage.clearCompleteProfilePrefill();
+      setCompleteProfileMode('local');
+      setCompleteProfilePrefill(null);
+    } else {
+      const mode = response.completeProfileMode ?? 'local';
+      const prefill = response.completeProfilePrefill ?? null;
+      storage.setCompleteProfileMode(mode);
+      if (prefill) {
+        storage.setCompleteProfilePrefill(prefill);
+      } else {
+        storage.clearCompleteProfilePrefill();
+      }
+      setCompleteProfileMode(mode);
+      setCompleteProfilePrefill(prefill);
+    }
 
     setToken(response.token);
 
@@ -212,6 +261,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await establishSession(response, payload.rememberMe);
   };
 
+  const authWithGoogle = async (tokenId: string, rememberMe = true) => {
+    const response = await authService.authWithGoogle(tokenId);
+    await establishSession(response, rememberMe);
+  };
+
   const loginAdmin = async (payload: LoginRequest) => {
     const response = await authService.loginAdmin(payload);
     await establishSession(response, payload.rememberMe);
@@ -226,11 +280,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     storage.clearToken();
     storage.clearUser();
     storage.clearProfileCompleted();
+    storage.clearCompleteProfileMode();
+    storage.clearCompleteProfilePrefill();
     localStorage.removeItem(STORAGE_KEYS.rememberMe);
 
     setToken(null);
     setUser(null);
     setProfileCompleted(true);
+    setCompleteProfileMode('local');
+    setCompleteProfilePrefill(null);
   };
 
   const contextValue = useMemo(
@@ -242,13 +300,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isAuthenticated: Boolean(token),
       isInitializing,
       login,
+      authWithGoogle,
       loginAdmin,
       register,
       logout,
       requiresProfileCompletion,
       markProfileCompleted,
+      completeProfileMode,
+      completeProfilePrefill,
     }),
-    [isAdmin, isInitializing, markProfileCompleted, requiresProfileCompletion, roles, token, user],
+    [
+      authWithGoogle,
+      completeProfileMode,
+      completeProfilePrefill,
+      isAdmin,
+      isInitializing,
+      markProfileCompleted,
+      requiresProfileCompletion,
+      roles,
+      token,
+      user,
+    ],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

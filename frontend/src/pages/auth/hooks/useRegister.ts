@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { authService } from '@/services/authService';
+import { getGoogleWebClientId, requestGoogleIdToken } from '@/pages/auth/googleIdentity';
+import { authService, BannedAccountError } from '@/services/authService';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { getPasswordStrength } from '@/utils/passwordStrength';
 
@@ -24,12 +25,13 @@ import {
 export const useRegister = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { register: registerUser, isAuthenticated } = useAuth();
+  const { register: registerUser, authWithGoogle, isAuthenticated } = useAuth();
 
   const [step, setStep] = useState<RegisterStep>('register');
   const [registeredEmail, setRegisteredEmail] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
   const [infoMessage, setInfoMessage] = useState<string | undefined>();
 
@@ -139,6 +141,33 @@ export const useRegister = () => {
     setInfoMessage(undefined);
   };
 
+  const onSubmitGoogle = async () => {
+    const clientId = getGoogleWebClientId();
+    if (!clientId) {
+      setApiError(t('auth.googleNotConfigured'));
+      return;
+    }
+
+    try {
+      setApiError(undefined);
+      setInfoMessage(undefined);
+      setIsGoogleSubmitting(true);
+
+      const tokenId = await requestGoogleIdToken(clientId);
+      await authWithGoogle(tokenId, true);
+      navigate('/', { replace: true });
+    } catch (error) {
+      if (error instanceof BannedAccountError) {
+        setApiError(error.message);
+        return;
+      }
+
+      setApiError(getApiErrorMessage(error, t('auth.googleRegisterError')));
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
+
   return {
     t,
     isAuthenticated,
@@ -148,6 +177,7 @@ export const useRegister = () => {
     setShowPassword,
     showConfirmPassword,
     setShowConfirmPassword,
+    isGoogleSubmitting,
     apiError,
     infoMessage,
     registerForm,
@@ -162,5 +192,6 @@ export const useRegister = () => {
     onSubmitOtp,
     handleResendOtp,
     backToRegister,
+    onSubmitGoogle,
   };
 };

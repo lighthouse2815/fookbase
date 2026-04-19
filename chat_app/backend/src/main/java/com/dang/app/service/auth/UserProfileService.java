@@ -84,6 +84,16 @@ public class UserProfileService {
     ) {
         String normalizedEmail = normalize(email);
         String normalizedPhoneNumber = normalize(phoneNumber);
+        String normalizedLastName = normalize(lastName);
+        String normalizedFirstName = normalize(firstName);
+
+        if (normalizedFirstName == null) {
+            normalizedFirstName = "";
+        }
+
+        if (normalizedLastName == null) {
+            normalizedLastName = "";
+        }
 
         if(userProfileRepository.existsByEmail(normalizedEmail)) {
             throw new BusinessException(ErrorCode.EMAIL_EXISTS);
@@ -96,14 +106,21 @@ public class UserProfileService {
 
         UserProfile createdProfile = UserProfile.builder()
                 .user(user)
-                .lastName(lastName)
-                .firstName(firstName)
+                .lastName(normalizedLastName)
+                .firstName(normalizedFirstName)
                 .email(normalizedEmail)
                 .completed(false)
                 .phoneNumber(normalizedPhoneNumber)
                 .build();
 
-        createdProfile.setDisplayName((firstName + " " + lastName).trim());
+        createdProfile.setDisplayName(
+                resolveInitialDisplayName(
+                        normalizedFirstName,
+                        normalizedLastName,
+                        normalizedPhoneNumber,
+                        normalizedEmail
+                )
+        );
 
         return userProfileRepository.save(createdProfile);
     }
@@ -432,13 +449,51 @@ public class UserProfileService {
         userProfileGuard.requireNotDeleted(userProfile);
         userProfileGuard.requireNotCompleted(userProfile);
 
-        String displayName = request.getDisplayName();
-        if (displayName == null || displayName.isBlank()) {
-            displayName = (userProfile.getFirstName() + " " + userProfile.getLastName()).trim();
+        String normalizedFirstName = normalize(request.getFirstName());
+        String normalizedLastName = normalize(request.getLastName());
+        String normalizedPhoneNumber = normalize(request.getPhoneNumber());
+
+        if (normalizedFirstName != null) {
+            userProfile.setFirstName(normalizedFirstName);
+        }
+
+        if (normalizedLastName != null) {
+            userProfile.setLastName(normalizedLastName);
+        }
+
+        if (normalizedPhoneNumber != null) {
+            if (!PHONE_PATTERN.matcher(normalizedPhoneNumber).matches()) {
+                throw new BusinessException(ErrorCode.INVALID_PHONE);
+            }
+
+            if (userProfileRepository.existsByPhoneNumberAndUser_IdNot(normalizedPhoneNumber, userId)) {
+                throw new BusinessException(ErrorCode.PHONENUMBER_EXISTS);
+            }
+
+            userProfile.setPhoneNumber(normalizedPhoneNumber);
+        }
+
+        if (normalize(userProfile.getFirstName()) == null || normalize(userProfile.getLastName()) == null) {
+            throw new BusinessException(ErrorCode.PROFILE_INCOMPLETE);
+        }
+
+        String currentPhoneNumber = normalize(userProfile.getPhoneNumber());
+        if (currentPhoneNumber == null) {
+            throw new BusinessException(ErrorCode.PROFILE_INCOMPLETE);
+        }
+        if (!PHONE_PATTERN.matcher(currentPhoneNumber).matches()) {
+            throw new BusinessException(ErrorCode.INVALID_PHONE);
+        }
+
+        String displayName = resolveDisplayNameForCompletion(request.getDisplayName(), userProfile);
+        if (displayName == null) {
+            throw new BusinessException(ErrorCode.PROFILE_INCOMPLETE);
         }
 
         userProfile.setDisplayName(displayName);
-        userProfile.setAvatarUrl(request.getAvatarUrl());
+        if (request.getAvatarUrl() != null) {
+            userProfile.setAvatarUrl(request.getAvatarUrl().trim());
+        }
         userProfile.setBirthDate(request.getBirthday());
         userProfile.setGender(request.getGender());
         userProfile.setCompleted(true);
@@ -510,6 +565,37 @@ public class UserProfileService {
         return normalized.substring(0, 2) + "***" + normalized.substring(normalized.length() - 2);
     }
 
+    private String resolveInitialDisplayName(
+            String firstName,
+            String lastName,
+            String phoneNumber,
+            String email
+    ) {
+        String combinedName = normalize((firstName + " " + lastName).trim());
+        if (combinedName != null) {
+            return combinedName;
+        }
+
+        String normalizedPhone = normalize(phoneNumber);
+        if (normalizedPhone != null) {
+            return normalizedPhone;
+        }
+
+        String normalizedEmail = normalize(email);
+        if (normalizedEmail != null) {
+            int atIndex = normalizedEmail.indexOf('@');
+            if (atIndex > 0) {
+                String localPart = normalize(normalizedEmail.substring(0, atIndex));
+                if (localPart != null) {
+                    return localPart;
+                }
+            }
+            return normalizedEmail;
+        }
+
+        return "user";
+    }
+
     private String normalize(String value) {
         if (value == null) {
             return null;
@@ -517,6 +603,34 @@ public class UserProfileService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String resolveDisplayNameForCompletion(String requestedDisplayName, UserProfile profile) {
+        String normalizedDisplayName = normalize(requestedDisplayName);
+        if (normalizedDisplayName != null) {
+            return normalizedDisplayName;
+        }
+
+        String normalizedCurrentDisplayName = normalize(profile.getDisplayName());
+        if (normalizedCurrentDisplayName != null) {
+            return normalizedCurrentDisplayName;
+        }
+
+        String firstName = normalize(profile.getFirstName());
+        String lastName = normalize(profile.getLastName());
+        if (firstName == null && lastName == null) {
+            return null;
+        }
+
+        if (firstName == null) {
+            return lastName;
+        }
+
+        if (lastName == null) {
+            return firstName;
+        }
+
+        return (firstName + " " + lastName).trim();
     }
 
     private FriendshipStatus getStatus(UUID myId, UUID userId) {

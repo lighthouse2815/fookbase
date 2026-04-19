@@ -7,6 +7,7 @@ import com.dangngulon.frontend.feature.auth.domain.model.AuthSession;
 import com.dangngulon.frontend.feature.auth.domain.model.GoogleAuthResult;
 import com.dangngulon.frontend.feature.auth.domain.model.OtpVerificationResult;
 import com.dangngulon.frontend.feature.auth.domain.model.RegisterAccountResult;
+import com.dangngulon.frontend.feature.auth.data.remote.dto.request.CompleteProfileRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.GoogleTokenRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.LoginRequest;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.request.OTPRequest;
@@ -171,7 +172,10 @@ public class AuthRepository implements IAuthRepository {
                                         refreshedAccessToken,
                                         resolvedRefreshToken,
                                         userId,
-                                        displayName
+                                        displayName,
+                                        true,
+                                        null,
+                                        null
                                 )
                         );
                     }
@@ -270,6 +274,45 @@ public class AuthRepository implements IAuthRepository {
                     }
 
                     return AppResult.error(new AppError("Unexpected google auth result"));
+                });
+    }
+
+    @Override
+    public CompletableFuture<AppResult<Void>> completeProfile(
+            String firstName,
+            String lastName,
+            String phoneNumber,
+            String birthday,
+            String gender,
+            String avatarUrl,
+            String displayName
+    ) {
+        Call<Void> call = api.completeProfile(new CompleteProfileRequest(
+                firstName,
+                lastName,
+                phoneNumber,
+                birthday,
+                gender,
+                avatarUrl,
+                displayName
+        ));
+
+        return RetrofitFutureAdapter.enqueue(call, errorMapper)
+                .thenApply(result -> {
+                    if (result instanceof AppResult.Success<Void>) {
+                        return AppResult.success(null);
+                    }
+
+                    if (result instanceof AppResult.Error<Void> error) {
+                        Integer code = error.getError().getCode();
+                        if (code != null && code >= 200 && code < 300) {
+                            return AppResult.success(null);
+                        }
+
+                        return AppResult.error(error.getError());
+                    }
+
+                    return AppResult.error(new AppError("Unexpected complete profile result"));
                 });
     }
 

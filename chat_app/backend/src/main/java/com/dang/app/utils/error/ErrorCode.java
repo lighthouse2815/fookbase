@@ -21,6 +21,7 @@ public enum ErrorCode {
     USERNAME_EXISTS(409, "Tên đăng nhập đã tồn tại"),
     EMAIL_EXISTS(409, "Email đã tồn tại"),
     PHONENUMBER_EXISTS(409, "Số điện thoại đã tồn tại"),
+    PROFILE_INCOMPLETE(400, "Profile chua day du"),
     PROFILE_ALREADY_COMPLETED(409, "Profile đã đầy đủ rồi"),
     PROFILE_DELETED(410, "Profile không tồn tại hoặc đã bị xoá"),
     PHONENUMBER_NOT_EXISTS(404, "Số điện thoại không tồn tại"),
@@ -105,3 +106,5 @@ public enum ErrorCode {
     private final int status;
     private final String message;
 }
+
+

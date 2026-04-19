@@ -1,16 +1,23 @@
 package com.dangngulon.frontend.feature.auth.presentation.ui.fragments;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import androidx.credentials.ClearCredentialStateRequest;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.ClearCredentialException;
+import androidx.credentials.exceptions.GetCredentialException;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
@@ -24,13 +31,15 @@ import com.dangngulon.frontend.feature.auth.presentation.error.AuthErrorMapper;
 import com.dangngulon.frontend.core.common.ui.animation.AuthAnimation;
 import com.dangngulon.frontend.core.common.ui.helpers.UiHelper;
 import com.dangngulon.frontend.core.common.viewmodel.state.Result;
+import com.dangngulon.frontend.core.utils.enums.Status;
 import com.dangngulon.frontend.feature.auth.presentation.sharedstate.AuthSharedViewModel;
 import com.dangngulon.frontend.feature.auth.presentation.viewmodel.LoginViewModel;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException;
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+
+import java.text.Normalizer;
+import java.util.Locale;
+import java.util.concurrent.Executor;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -44,37 +53,8 @@ public class LoginFragment extends Fragment {
     private LoginViewModel loginViewModel;
     private AuthSharedViewModel authSharedViewModel;
     private FragmentLoginBinding binding;
-    private GoogleSignInClient googleSignInClient;
-    private final ActivityResultLauncher<Intent> googleSignInLauncher =
-            registerForActivityResult(
-                    new ActivityResultContracts.StartActivityForResult(),
-                    result -> {
-                        if (result.getResultCode() != Activity.RESULT_OK) {
-                            return;
-                        }
-
-                        Intent data = result.getData();
-                        if (data == null) {
-                            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
-                            return;
-                        }
-
-                        try {
-                            GoogleSignInAccount account = GoogleSignIn
-                                    .getSignedInAccountFromIntent(data)
-                                    .getResult(ApiException.class);
-                            String token = account != null ? account.getIdToken() : null;
-                            if (token == null || token.trim().isEmpty()) {
-                                UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
-                                return;
-                            }
-
-                            loginViewModel.authWithGoogle(token);
-                        } catch (ApiException exception) {
-                            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
-                        }
-                    }
-            );
+    private CredentialManager credentialManager;
+    private String googleWebClientId;
 
 
 
@@ -125,20 +105,11 @@ public class LoginFragment extends Fragment {
     }
 
     private void initGoogleSignIn() {
-        String webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID == null
+        googleWebClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID == null
                 ? ""
                 : BuildConfig.GOOGLE_WEB_CLIENT_ID.trim();
 
-        if (webClientId.isEmpty()) {
-            googleSignInClient = null;
-            return;
-        }
-
-        GoogleSignInOptions options = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .requestIdToken(webClientId)
-                .build();
-        googleSignInClient = GoogleSignIn.getClient(requireContext(), options);
+        credentialManager = CredentialManager.create(requireContext());
     }
 
 
@@ -186,7 +157,7 @@ public class LoginFragment extends Fragment {
 
                         case SUCCESS:
                             showLoading(false);
-                            navigateToChatApp();
+                            handleLocalAuthSuccess(result.getData());
                             break;
 
                         case ERROR:
@@ -212,11 +183,16 @@ public class LoginFragment extends Fragment {
 
                         case SUCCESS:
                             showLoading(false);
-                            navigateToChatApp();
+                            handleGoogleAuthSuccess(result.getData());
                             break;
 
                         case ERROR:
                             showLoading(false);
+                            if (isBannedError(result.getMessage())) {
+                                navigateToBannedScreen(result.getMessage());
+                                break;
+                            }
+
                             UiHelper.showToast(requireContext(),result.getMessage());
                             break;
                     }
@@ -298,7 +274,108 @@ public class LoginFragment extends Fragment {
         loginViewModel.login(username, password);
     }
 
+    private void handleLocalAuthSuccess(@Nullable AuthSession session) {
+        if (session == null) {
+            UiHelper.showToast(requireContext(), "Dang nhap that bai");
+            return;
+        }
+
+        if (session.getStatus() == Status.BANNED) {
+            navigateToBannedScreen("Tai khoan da bi cam");
+            return;
+        }
+
+        if (session.getStatus() == Status.INACTIVE || session.getAccessToken() == null || session.getAccessToken().isBlank()) {
+            UiHelper.showToast(requireContext(), "Tai khoan chua duoc kich hoat");
+            return;
+        }
+
+        if (!session.isProfileCompleted()) {
+            Bundle args = new Bundle();
+            args.putString(CompleteProfileFragment.ARG_MODE, CompleteProfileFragment.MODE_LOCAL);
+            args.putString(CompleteProfileFragment.ARG_DISPLAY_NAME, session.getDisplayName());
+            args.putString(CompleteProfileFragment.ARG_AVATAR_URL, session.getAvatarUrl());
+            NavHostFragment.findNavController(this).navigate(R.id.completeProfileFragment, args);
+            return;
+        }
+
+        navigateToChatApp();
+    }
+
+    private void handleGoogleAuthSuccess(@Nullable GoogleAuthResult result) {
+        if (result == null) {
+            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+            return;
+        }
+
+        if (result.getStatus() == Status.BANNED) {
+            navigateToBannedScreen("Tai khoan da bi cam");
+            return;
+        }
+
+        if (result.getAccessToken() == null || result.getAccessToken().isBlank()) {
+            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+            return;
+        }
+
+        if (!result.isProfileCompleted()) {
+            Bundle args = new Bundle();
+            args.putString(CompleteProfileFragment.ARG_MODE, CompleteProfileFragment.MODE_GOOGLE);
+            args.putString(CompleteProfileFragment.ARG_FIRST_NAME, result.getFirstName());
+            args.putString(CompleteProfileFragment.ARG_LAST_NAME, result.getLastName());
+            args.putString(CompleteProfileFragment.ARG_EMAIL, result.getEmail());
+            args.putString(CompleteProfileFragment.ARG_PHONE_NUMBER, result.getPhoneNumber());
+            args.putString(CompleteProfileFragment.ARG_DISPLAY_NAME, result.getDisplayName());
+            args.putString(CompleteProfileFragment.ARG_AVATAR_URL, result.getAvatarUrl());
+            args.putString(CompleteProfileFragment.ARG_BIRTHDAY, result.getBirthDate());
+            args.putString(CompleteProfileFragment.ARG_GENDER, result.getGender());
+            NavHostFragment.findNavController(this).navigate(R.id.completeProfileFragment, args);
+            return;
+        }
+
+        navigateToChatApp();
+    }
+
+    private void navigateToBannedScreen(String message) {
+        Bundle args = new Bundle();
+        args.putString(BannedAccountFragment.ARG_MESSAGE, message);
+        NavHostFragment.findNavController(this).navigate(R.id.bannedAccountFragment, args);
+    }
+
+    private boolean isBannedError(String message) {
+        String normalized = normalizeForComparison(message);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        return normalized.contains("user_banned")
+                || normalized.contains("tai khoan da bi cam")
+                || normalized.contains("tai khoan bi cam")
+                || normalized.contains("bi cam")
+                || normalized.contains("banned");
+    }
+
+    private String normalizeForComparison(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D')
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        return normalized;
+    }
+
     private void handleLoginError(String message) {
+        if (isBannedError(message)) {
+            navigateToBannedScreen(message);
+            return;
+        }
+
         switch (AuthErrorMapper.mapLoginError(message)) {
             case USERNAME_EMPTY:
                 binding.tilUsername.setError("Vui lòng nhập tài khoản");
@@ -315,20 +392,91 @@ public class LoginFragment extends Fragment {
     }
 
     private void handelLoginGoogle(){
-        GoogleSignInClient signInClient = googleSignInClient;
-        if (signInClient == null) {
+        if (googleWebClientId == null || googleWebClientId.isBlank()) {
             UiHelper.showToast(requireContext(), GOOGLE_LOGIN_NOT_CONFIGURED);
             return;
         }
 
-        // Sign out cached account first so Google always shows account chooser.
-        signInClient.signOut()
-                .addOnCompleteListener(task -> {
-                    if (!isAdded()) {
-                        return;
+        if (credentialManager == null) {
+            credentialManager = CredentialManager.create(requireContext());
+        }
+
+        CredentialManager manager = credentialManager;
+        Executor mainExecutor = ContextCompat.getMainExecutor(requireContext());
+
+        manager.clearCredentialStateAsync(
+                new ClearCredentialStateRequest(),
+                null,
+                mainExecutor,
+                new CredentialManagerCallback<>() {
+                    @Override
+                    public void onResult(Void result) {
+                        requestGoogleCredential(manager, mainExecutor);
                     }
-                    googleSignInLauncher.launch(signInClient.getSignInIntent());
-                });
+
+                    @Override
+                    public void onError(@NonNull ClearCredentialException e) {
+                        requestGoogleCredential(manager, mainExecutor);
+                    }
+                }
+        );
+    }
+
+    private void requestGoogleCredential(CredentialManager manager, Executor mainExecutor) {
+        GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder()
+                .setServerClientId(googleWebClientId)
+                .setFilterByAuthorizedAccounts(false)
+                .setAutoSelectEnabled(false)
+                .build();
+
+        GetCredentialRequest request = new GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build();
+
+        manager.getCredentialAsync(
+                requireContext(),
+                request,
+                null,
+                mainExecutor,
+                new CredentialManagerCallback<>() {
+                    @Override
+                    public void onResult(GetCredentialResponse response) {
+                        String token = extractGoogleIdToken(response);
+                        if (token == null || token.isBlank()) {
+                            if (isAdded()) {
+                                UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+                            }
+                            return;
+                        }
+
+                        loginViewModel.authWithGoogle(token);
+                    }
+
+                    @Override
+                    public void onError(@NonNull GetCredentialException e) {
+                        if (isAdded()) {
+                            UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
+                        }
+                    }
+                }
+        );
+    }
+
+    @Nullable
+    private String extractGoogleIdToken(GetCredentialResponse response) {
+        Credential credential = response.getCredential();
+        if (!(credential instanceof CustomCredential)) {
+            return null;
+        }
+
+        CustomCredential customCredential = (CustomCredential) credential;
+        if (!GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(customCredential.getType())) {
+            return null;
+        }
+
+        GoogleIdTokenCredential googleIdTokenCredential =
+                GoogleIdTokenCredential.createFrom(customCredential.getData());
+        return googleIdTokenCredential.getIdToken();
     }
 }
 

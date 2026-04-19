@@ -17,6 +17,7 @@ export const LoginPage = () => {
     otpForm,
     showPassword,
     setShowPassword,
+    isGoogleSubmitting,
     inactiveEmail,
     bannedMessage,
     identifierPattern,
@@ -26,6 +27,7 @@ export const LoginPage = () => {
     handleResendOtp,
     goBackToLoginFromOtp,
     goBackToLoginFromBanned,
+    onSubmitGoogle,
   } = useLogin();
 
   if (isAuthenticated) {
@@ -187,6 +189,15 @@ export const LoginPage = () => {
             </button>
           }
         />
+
+        <button
+          type="button"
+          onClick={() => void onSubmitGoogle()}
+          disabled={isGoogleSubmitting || loginForm.formState.isSubmitting}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
+        >
+          {isGoogleSubmitting ? t('common.loading') : t('auth.googleButton')}
+        </button>
 
         <div className="flex items-center justify-between gap-4">
           <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">

@@ -40,7 +40,7 @@ public class LoginUseCase {
                     if (result instanceof AppResult.Success<AuthSession> success) {
                         AuthSession data = success.getData();
 
-                        if (data != null) {
+                        if (data != null && hasText(data.getAccessToken())) {
                             repository.saveAuth(
                                     data.getAccessToken(),
                                     data.getRefreshToken(),
@@ -91,7 +91,7 @@ public class LoginUseCase {
                 .thenApply(result -> {
                     if (result instanceof AppResult.Success<GoogleAuthResult> success) {
                         GoogleAuthResult data = success.getData();
-                        if (data != null) {
+                        if (data != null && hasText(data.getAccessToken())) {
                             repository.saveAuth(
                                     data.getAccessToken(),
                                     data.getRefreshToken(),

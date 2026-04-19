@@ -15,20 +15,38 @@ public final class AuthResponseMapper {
 
     public static AuthSession toAuthSession(LoginResponse response) {
         if (response == null) {
-            return new AuthSession(null, null, null, null);
+            return new AuthSession(null, null, null, null, true, null, null);
         }
 
         return new AuthSession(
                 response.getAccessToken(),
                 response.getRefreshToken(),
                 response.getUserId(),
-                response.getDisplayName()
+                response.getDisplayName(),
+                Boolean.TRUE.equals(response.getProfileCompleted()),
+                response.getStatus(),
+                response.getAvatarUrl()
         );
     }
 
     public static GoogleAuthResult toGoogleAuthResult(GoogleAuthResponse response) {
         if (response == null) {
-            return new GoogleAuthResult(null, null, null, null, false);
+            return new GoogleAuthResult(
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    true,
+                    null,
+                    false
+            );
         }
 
         return new GoogleAuthResult(
@@ -36,6 +54,15 @@ public final class AuthResponseMapper {
                 response.getRefreshToken(),
                 response.getUserId(),
                 response.getDisplayName(),
+                response.getFirstName(),
+                response.getLastName(),
+                response.getEmail(),
+                response.getPhoneNumber(),
+                response.getAvatarUrl(),
+                response.getBirthDate(),
+                response.getGender(),
+                Boolean.TRUE.equals(response.getProfileCompleted()),
+                response.getStatus(),
                 response.isNew()
         );
     }

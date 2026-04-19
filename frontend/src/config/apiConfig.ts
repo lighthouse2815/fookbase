@@ -12,6 +12,7 @@ export const API_CONFIG = {
       LOGIN: '/api/auth/login',
       ADMIN_LOGIN: '/api/auth/admin/login',
       REGISTER: '/api/auth/register',
+      GOOGLE: '/api/auth/google',
       OTP_SEND_VERIFY_EMAIL: '/api/auth/otp/send/verify-email',
       OTP_VERIFY_EMAIL: '/api/auth/otp/verify/email',
       ME_OTP_SEND_VERIFY_EMAIL: '/api/auth/me/otp/send/verify-email',
