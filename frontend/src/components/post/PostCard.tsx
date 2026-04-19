@@ -1,4 +1,5 @@
-import { AlertTriangle, BookmarkPlus, Ellipsis, Flag, MessageCircle, Share2, ThumbsUp, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookmarkPlus, ChevronLeft, ChevronRight, Ellipsis, Flag, MessageCircle, Share2, ThumbsUp, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -11,9 +12,18 @@ import type { PostCardProps } from './interface';
 import { PostReactionViewerModal } from './PostReactionViewerModal';
 import { getReactionButtonToneClass } from './util';
 
-export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: PostCardProps) => {
+export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActionToast, onPostDeleted }: PostCardProps) => {
   const { t } = useTranslation();
-  const mediaKind = detectMediaKind(post.imageUrl);
+  const mediaUrls = post.imageUrls && post.imageUrls.length > 0
+    ? post.imageUrls
+    : post.imageUrl
+      ? [post.imageUrl]
+      : [];
+  const mediaKind = detectMediaKind(mediaUrls[0]);
+  const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const activeMediaUrl = mediaUrls[activeMediaIndex] ?? mediaUrls[0];
+  const activeMediaKind = detectMediaKind(activeMediaUrl);
 
   const {
     authorProfilePath,
@@ -60,6 +70,45 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
     handleConfirmReportPost,
     handleDeletePost,
   } = usePostCard({ post, currentUser, onActionToast, onPostDeleted });
+
+  useEffect(() => {
+    if (!isMediaViewerOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMediaViewerOpen(false);
+        return;
+      }
+
+      if (mediaUrls.length <= 1) {
+        return;
+      }
+
+      if (event.key === 'ArrowRight') {
+        setActiveMediaIndex((previous) => (previous + 1) % mediaUrls.length);
+        return;
+      }
+
+      if (event.key === 'ArrowLeft') {
+        setActiveMediaIndex((previous) => (previous - 1 + mediaUrls.length) % mediaUrls.length);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMediaViewerOpen, mediaUrls.length]);
+
+  useEffect(() => {
+    setActiveMediaIndex(0);
+  }, [post.id]);
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
@@ -134,14 +183,97 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
         </p>
       ) : null}
 
-      {post.imageUrl && mediaKind === 'video' ? (
-        <video src={post.imageUrl} controls className="mt-3 max-h-[560px] w-full rounded-xl bg-black" />
-      ) : post.imageUrl ? (
-        <img
-          src={post.imageUrl}
-          alt={post.author.fullName}
-          className="mt-3 max-h-[560px] w-full rounded-xl bg-slate-100 object-contain dark:bg-slate-900"
-        />
+      {mediaUrls.length > 1 ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {mediaUrls.map((mediaUrl, index) => {
+            const itemKind = detectMediaKind(mediaUrl);
+
+            if (itemKind === 'video') {
+              return enableMediaViewer ? (
+                <button
+                  key={`${post.id}-media-${index}`}
+                  type="button"
+                  onClick={() => {
+                    setActiveMediaIndex(index);
+                    setIsMediaViewerOpen(true);
+                  }}
+                  className="block w-full cursor-zoom-in rounded-xl"
+                  aria-label="Xem video bai post o che do lon"
+                >
+                  <video src={mediaUrl} className="h-56 w-full rounded-xl bg-black object-cover" />
+                </button>
+              ) : (
+                <video key={`${post.id}-media-${index}`} src={mediaUrl} controls className="h-56 w-full rounded-xl bg-black object-cover" />
+              );
+            }
+
+            return enableMediaViewer ? (
+              <button
+                key={`${post.id}-media-${index}`}
+                type="button"
+                onClick={() => {
+                  setActiveMediaIndex(index);
+                  setIsMediaViewerOpen(true);
+                }}
+                className="block w-full cursor-zoom-in rounded-xl"
+                aria-label="Xem anh bai post o che do lon"
+              >
+                <img
+                  src={mediaUrl}
+                  alt={`${post.author.fullName}-${index + 1}`}
+                  className="h-56 w-full rounded-xl bg-slate-100 object-cover dark:bg-slate-900"
+                />
+              </button>
+            ) : (
+              <img
+                key={`${post.id}-media-${index}`}
+                src={mediaUrl}
+                alt={`${post.author.fullName}-${index + 1}`}
+                className="h-56 w-full rounded-xl bg-slate-100 object-cover dark:bg-slate-900"
+              />
+            );
+          })}
+        </div>
+      ) : mediaUrls.length === 1 && mediaKind === 'video' ? (
+        enableMediaViewer ? (
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMediaIndex(0);
+              setIsMediaViewerOpen(true);
+            }}
+            className="mt-3 block w-full cursor-zoom-in rounded-xl"
+            aria-label="Xem video bai post o che do lon"
+          >
+            <video src={mediaUrls[0]} className="max-h-[560px] w-full rounded-xl bg-black" />
+          </button>
+        ) : (
+          <video src={mediaUrls[0]} controls className="mt-3 max-h-[560px] w-full rounded-xl bg-black" />
+        )
+      ) : mediaUrls.length === 1 ? (
+        enableMediaViewer ? (
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMediaIndex(0);
+              setIsMediaViewerOpen(true);
+            }}
+            className="mt-3 block w-full cursor-zoom-in rounded-xl"
+            aria-label="Xem anh bai post o che do lon"
+          >
+            <img
+              src={mediaUrls[0]}
+              alt={post.author.fullName}
+              className="max-h-[560px] w-full rounded-xl bg-slate-100 object-contain dark:bg-slate-900"
+            />
+          </button>
+        ) : (
+          <img
+            src={mediaUrls[0]}
+            alt={post.author.fullName}
+            className="mt-3 max-h-[560px] w-full rounded-xl bg-slate-100 object-contain dark:bg-slate-900"
+          />
+        )
       ) : null}
 
       <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -389,6 +521,71 @@ export const PostCard = ({ post, currentUser, onActionToast, onPostDeleted }: Po
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isMediaViewerOpen && activeMediaUrl ? (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <button
+            type="button"
+            onClick={() => setIsMediaViewerOpen(false)}
+            className="absolute inset-0 bg-black/85"
+            aria-label="Dong xem media lon"
+          />
+
+          <div className="relative max-h-[90vh] w-full max-w-4xl">
+            {activeMediaKind === 'video' ? (
+              <video
+                src={activeMediaUrl}
+                controls
+                autoPlay
+                className="max-h-[90vh] w-full rounded-2xl border border-white/15 bg-black/60 object-contain shadow-2xl"
+              />
+            ) : (
+              <img
+                src={activeMediaUrl}
+                alt={post.author.fullName}
+                className="max-h-[90vh] w-full rounded-2xl border border-white/15 bg-black/40 object-contain shadow-2xl"
+              />
+            )}
+
+            {mediaUrls.length > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveMediaIndex((previous) => (previous - 1 + mediaUrls.length) % mediaUrls.length)
+                  }
+                  className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                  aria-label="Anh truoc"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveMediaIndex((previous) => (previous + 1) % mediaUrls.length)
+                  }
+                  className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                  aria-label="Anh tiep theo"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
+                  {activeMediaIndex + 1}/{mediaUrls.length}
+                </div>
+              </>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => setIsMediaViewerOpen(false)}
+              className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+              aria-label="Dong"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
       ) : null}

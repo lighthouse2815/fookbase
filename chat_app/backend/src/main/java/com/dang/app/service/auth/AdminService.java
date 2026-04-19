@@ -63,13 +63,40 @@ public class AdminService {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
-        targetUser.setStatus(status);
+        Status nextStatus = resolveNextStatus(targetUser, status);
+        targetUser.setStatus(nextStatus);
+
+        if (nextStatus != Status.BANNED) {
+            targetUser.setStatusBeforeBan(null);
+        }
+
         userService.save(targetUser);
 
         UserProfile profile = userProfileRepository.findByUser_Id(targetUserId)
                 .orElse(null);
 
         return adminMapper.toAdminUserSearchResponse(targetUser, profile);
+    }
+
+    private Status resolveNextStatus(User targetUser, Status requestedStatus) {
+        Status currentStatus = targetUser.getStatus();
+
+        if (requestedStatus == Status.BANNED) {
+            if (currentStatus != Status.BANNED) {
+                targetUser.setStatusBeforeBan(currentStatus);
+            }
+
+            return Status.BANNED;
+        }
+
+        if (currentStatus == Status.BANNED && requestedStatus == Status.ACTIVE) {
+            Status previousStatus = targetUser.getStatusBeforeBan();
+            if (previousStatus != null && previousStatus != Status.BANNED) {
+                return previousStatus;
+            }
+        }
+
+        return requestedStatus;
     }
 
     public AdminUserStatsResponse getUserStats() {

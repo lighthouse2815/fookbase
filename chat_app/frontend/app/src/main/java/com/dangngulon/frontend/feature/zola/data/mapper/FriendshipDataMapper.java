@@ -1,5 +1,6 @@
 package com.dangngulon.frontend.feature.zola.data.mapper;
 
+import com.dangngulon.frontend.core.utils.AvatarDefaults;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.request.FriendshipRequest;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.response.FriendshipResponse;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.response.PendingFriendRequesterResponse;
@@ -47,7 +48,7 @@ public final class FriendshipDataMapper {
         return new PendingFriendRequester(
                 response.getUserId(),
                 response.getDisplayName(),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.isRequester(),
                 response.getCreatedAt()
         );

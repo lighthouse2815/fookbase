@@ -122,6 +122,8 @@ public class UserProfileService {
                 )
         );
 
+        createdProfile.setAvatarUrl("https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg");
+
         return userProfileRepository.save(createdProfile);
     }
 

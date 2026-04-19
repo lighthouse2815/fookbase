@@ -3,6 +3,7 @@ using InteractHub.Api.Application.Interfaces.Services.Games;
 using InteractHub.Api.Application.Services.Games;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
+using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -212,7 +213,7 @@ public sealed class GamesController : ApiControllerBase
             UserId = userId,
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? ResolveDisplayName() : displayName.Trim(),
             AvatarUrl = string.IsNullOrWhiteSpace(avatarUrl)
-                ? $"https://i.pravatar.cc/150?u={userId:D}"
+                ? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
                 : avatarUrl.Trim()
         };
     }

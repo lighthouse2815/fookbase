@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.DTOs.Games;
 using InteractHub.Api.Application.Interfaces.Services.Games;
+using InteractHub.Api.Common.Utilities;
 
 namespace InteractHub.Api.Application.Services.Games;
 
@@ -456,7 +457,7 @@ public sealed class GameRoomService : IGameRoomService
             return avatarUrl.Trim();
         }
 
-        return $"https://i.pravatar.cc/150?u={userId:D}";
+        return AvatarUrlHelper.BuildDefaultAvatarUrl(userId);
     }
 
     private static GameRoomDto ToDto(RoomState room)

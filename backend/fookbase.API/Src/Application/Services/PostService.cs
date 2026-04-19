@@ -115,8 +115,8 @@ public class PostService : IPostService
             ?? throw new NotFoundException("User not found.");
 
         var normalizedContent = NormalizePostContent(request.Content);
-        var normalizedMedia = NormalizePostMedia(request.ImageUrl);
-        EnsurePostHasContentOrMedia(normalizedContent, normalizedMedia);
+        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrl, request.ImageUrls);
+        EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         var now = DateTime.UtcNow;
 
@@ -125,10 +125,14 @@ public class PostService : IPostService
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Content = normalizedContent,
-            ImageUrl = normalizedMedia,
+            ImageUrl = PostMediaSerializer.Serialize(normalizedMediaUrls),
             CreatedAt = now,
             UpdatedAt = now
         };
+        foreach (var media in BuildPostMediaItems(post.Id, normalizedMediaUrls, now))
+        {
+            post.MediaItems.Add(media);
+        }
 
         var hashtags = await GetOrCreateHashtagsAsync(post.Content, cancellationToken);
         foreach (var hashtag in hashtags)
@@ -174,12 +178,17 @@ public class PostService : IPostService
         EnsureOwnerOrAdmin(post.UserId, userId, isAdmin, "You are not allowed to update this post.");
 
         var normalizedContent = NormalizePostContent(request.Content);
-        var normalizedMedia = NormalizePostMedia(request.ImageUrl);
-        EnsurePostHasContentOrMedia(normalizedContent, normalizedMedia);
+        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrl, request.ImageUrls);
+        EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         post.Content = normalizedContent;
-        post.ImageUrl = normalizedMedia;
+        post.ImageUrl = PostMediaSerializer.Serialize(normalizedMediaUrls);
         post.UpdatedAt = DateTime.UtcNow;
+        post.MediaItems.Clear();
+        foreach (var media in BuildPostMediaItems(post.Id, normalizedMediaUrls, DateTime.UtcNow))
+        {
+            post.MediaItems.Add(media);
+        }
 
         var hashtags = await GetOrCreateHashtagsAsync(post.Content, cancellationToken);
         post.PostHashtags.Clear();
@@ -348,9 +357,9 @@ public class PostService : IPostService
         return type.ToString();
     }
 
-    private static void EnsurePostHasContentOrMedia(string content, string? media)
+    private static void EnsurePostHasContentOrMedia(string content, IReadOnlyList<string> mediaUrls)
     {
-        if (string.IsNullOrWhiteSpace(content) && string.IsNullOrWhiteSpace(media))
+        if (string.IsNullOrWhiteSpace(content) && mediaUrls.Count == 0)
         {
             throw new ArgumentException("Post must include text or media.");
         }
@@ -361,14 +370,53 @@ public class PostService : IPostService
         return content?.Trim() ?? string.Empty;
     }
 
-    private static string? NormalizePostMedia(string? media)
+    private static IReadOnlyList<string> NormalizePostMedia(string? media, IReadOnlyList<string>? mediaUrls)
     {
-        if (string.IsNullOrWhiteSpace(media))
+        if (mediaUrls is { Count: > 0 })
         {
-            return null;
+            return PostMediaSerializer.Normalize(mediaUrls);
         }
 
-        return media.Trim();
+        return PostMediaSerializer.Normalize([media]);
+    }
+
+    private static IReadOnlyList<PostMedia> BuildPostMediaItems(Guid postId, IReadOnlyList<string> mediaUrls, DateTime createdAtUtc)
+    {
+        if (mediaUrls.Count == 0)
+        {
+            return Array.Empty<PostMedia>();
+        }
+
+        return mediaUrls
+            .Select((mediaUrl, index) => new PostMedia
+            {
+                Id = Guid.NewGuid(),
+                PostId = postId,
+                MediaUrl = mediaUrl,
+                MediaType = ResolvePostMediaType(mediaUrl),
+                SortOrder = index,
+                CreatedAt = createdAtUtc
+            })
+            .ToList();
+    }
+
+    private static string ResolvePostMediaType(string mediaUrl)
+    {
+        var normalized = mediaUrl.Trim().ToLowerInvariant();
+        if (normalized.Contains("/video/upload/")
+            || normalized.StartsWith("data:video/")
+            || normalized.EndsWith(".mp4")
+            || normalized.EndsWith(".webm")
+            || normalized.EndsWith(".ogg")
+            || normalized.EndsWith(".mov")
+            || normalized.EndsWith(".m4v")
+            || normalized.EndsWith(".avi")
+            || normalized.EndsWith(".mkv"))
+        {
+            return "VIDEO";
+        }
+
+        return "IMAGE";
     }
 
     private async Task TryCreateFriendPostNotificationsAsync(

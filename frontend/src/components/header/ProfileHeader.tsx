@@ -1,5 +1,5 @@
 import { Ban, Ellipsis, Flag, Loader2, UserCheck, UserMinus, UserPlus, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 import type { ProfileHeaderProps } from './interface';
 import { useProfileHeader } from './useProfileHeader';
@@ -7,6 +7,7 @@ import { useProfileHeader } from './useProfileHeader';
 export type { ProfileHeaderProps } from './interface';
 
 export const ProfileHeader = (props: ProfileHeaderProps) => {
+  const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
   const {
     t,
     profile,
@@ -37,6 +38,27 @@ export const ProfileHeader = (props: ProfileHeaderProps) => {
     handleMenuAction,
   } = useProfileHeader(props);
 
+  useEffect(() => {
+    if (!isAvatarViewerOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsAvatarViewerOpen(false);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAvatarViewerOpen]);
+
   return (
     <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
       <div className="overflow-hidden rounded-t-2xl">
@@ -48,13 +70,18 @@ export const ProfileHeader = (props: ProfileHeaderProps) => {
       </div>
 
       <div className="relative px-6 pb-6">
-        <Link to={`/profile/${profile.id}`} className="inline-flex" aria-label={normalizedDisplayName}>
+        <button
+          type="button"
+          onClick={() => setIsAvatarViewerOpen(true)}
+          className="inline-flex rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
+          aria-label={`Xem avatar cua ${normalizedDisplayName}`}
+        >
           <img
             src={profile.avatarUrl}
             alt={normalizedDisplayName}
             className="-mt-12 h-24 w-24 rounded-2xl border-4 border-white object-cover shadow-sm dark:border-slate-800"
           />
-        </Link>
+        </button>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -64,7 +91,6 @@ export const ProfileHeader = (props: ProfileHeaderProps) => {
             ) : null}
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{profile.bio}</p>
           </div>
-//
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -155,6 +181,34 @@ export const ProfileHeader = (props: ProfileHeaderProps) => {
           </div>
         </div>
       </div>
+
+      {isAvatarViewerOpen ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <button
+            type="button"
+            onClick={() => setIsAvatarViewerOpen(false)}
+            className="absolute inset-0 bg-black/85"
+            aria-label="Dong xem avatar lon"
+          />
+
+          <div className="relative max-h-[90vh] w-full max-w-2xl">
+            <img
+              src={profile.avatarUrl}
+              alt={normalizedDisplayName}
+              className="max-h-[90vh] w-full rounded-2xl border border-white/15 bg-black/40 object-contain shadow-2xl"
+            />
+
+            <button
+              type="button"
+              onClick={() => setIsAvatarViewerOpen(false)}
+              className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+              aria-label="Dong"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 };

@@ -1,5 +1,6 @@
 package com.dangngulon.frontend.feature.auth.data.mapper;
 
+import com.dangngulon.frontend.core.utils.AvatarDefaults;
 import com.dangngulon.frontend.feature.auth.domain.model.AuthSession;
 import com.dangngulon.frontend.feature.auth.domain.model.GoogleAuthResult;
 import com.dangngulon.frontend.feature.auth.domain.model.OtpVerificationResult;
@@ -25,7 +26,7 @@ public final class AuthResponseMapper {
                 response.getDisplayName(),
                 Boolean.TRUE.equals(response.getProfileCompleted()),
                 response.getStatus(),
-                response.getAvatarUrl()
+                AvatarDefaults.resolve(response.getAvatarUrl())
         );
     }
 
@@ -58,7 +59,7 @@ public final class AuthResponseMapper {
                 response.getLastName(),
                 response.getEmail(),
                 response.getPhoneNumber(),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.getBirthDate(),
                 response.getGender(),
                 Boolean.TRUE.equals(response.getProfileCompleted()),

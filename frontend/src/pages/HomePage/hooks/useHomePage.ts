@@ -98,15 +98,21 @@ export const useHomePage = (): UseHomePageReturn => {
     setCreateError(null);
 
     try {
-      let uploadedMediaUrl: string | undefined;
+      let uploadedVideoUrl: string | undefined;
+      let uploadedImageUrls: string[] = [];
 
-      if (draft.mediaFile) {
-        uploadedMediaUrl = await cloudinaryService.uploadMedia(draft.mediaFile);
+      if (draft.videoFile) {
+        uploadedVideoUrl = await cloudinaryService.uploadMedia(draft.videoFile);
+      }
+
+      if (draft.imageFiles && draft.imageFiles.length > 0) {
+        uploadedImageUrls = await Promise.all(draft.imageFiles.map((file) => cloudinaryService.uploadMedia(file)));
       }
 
       const created = await postService.createPost({
         content: draft.content,
-        imageUrl: uploadedMediaUrl,
+        imageUrl: uploadedVideoUrl,
+        imageUrls: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
       });
       setFeed((previous) => [created, ...previous]);
       return true;

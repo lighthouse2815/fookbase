@@ -52,6 +52,7 @@ export interface Post {
   author: User;
   content: string;
   imageUrl?: string;
+  imageUrls?: string[];
   createdAt: string;
   likes: number;
   likedByCurrentUser?: boolean;
@@ -75,6 +76,7 @@ export interface PostPayload {
   author?: PostAuthorPayload;
   content: string;
   imageUrl?: string | null;
+  imageUrls?: string[] | null;
   createdAt: string;
   likeCount?: number;
   reactionCount?: number;
@@ -86,7 +88,8 @@ export interface PostPayload {
 
 export interface CreatePostDraft {
   content: string;
-  mediaFile?: File;
+  imageFiles?: File[];
+  videoFile?: File;
 }
 
 export interface CommentReactionStatePayload {
@@ -111,6 +114,7 @@ export interface LikeStatePayload {
 export interface CreatePostRequest {
   content: string;
   imageUrl?: string;
+  imageUrls?: string[];
 }
 
 export interface SavedPostStatePayload {

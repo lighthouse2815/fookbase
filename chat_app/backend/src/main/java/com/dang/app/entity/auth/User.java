@@ -49,6 +49,10 @@ public class User {
     @Builder.Default
     private Status status = Status.INACTIVE;
 
+    @Column(name = "status_before_ban")
+    @Enumerated(EnumType.STRING)
+    private Status statusBeforeBan;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "user_auth_providers",

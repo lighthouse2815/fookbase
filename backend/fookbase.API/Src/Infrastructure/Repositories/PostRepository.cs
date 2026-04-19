@@ -18,6 +18,7 @@ public class PostRepository : IPostRepository
     {
         var query = _context.Posts
             .AsNoTracking()
+            .Include(post => post.MediaItems)
             .Include(post => post.Likes)
             .Include(post => post.Comments)
             .Include(post => post.PostHashtags)
@@ -38,6 +39,7 @@ public class PostRepository : IPostRepository
     {
         return _context.Posts
             .AsNoTracking()
+            .Include(post => post.MediaItems)
             .Include(post => post.Likes)
             .Include(post => post.Comments)
             .Include(post => post.PostHashtags)
@@ -48,6 +50,7 @@ public class PostRepository : IPostRepository
     public Task<Post?> GetByIdForUpdateAsync(Guid postId, CancellationToken cancellationToken)
     {
         return _context.Posts
+            .Include(post => post.MediaItems)
             .Include(post => post.PostHashtags)
             .FirstOrDefaultAsync(post => post.Id == postId, cancellationToken);
     }

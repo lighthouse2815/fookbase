@@ -1,5 +1,6 @@
 package com.dangngulon.frontend.feature.zola.data.mapper;
 
+import com.dangngulon.frontend.core.utils.AvatarDefaults;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.response.AddFriendProfileResponse;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.response.AddFriendSearchResponse;
 import com.dangngulon.frontend.feature.zola.domain.model.AddFriendProfile;
@@ -18,7 +19,7 @@ public final class AddFriendProfileDataMapper {
         return new AddFriendProfile(
                 response.getUserId(),
                 response.getDisplayName(),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.getPhoneNumber()
         );
     }
@@ -32,7 +33,7 @@ public final class AddFriendProfileDataMapper {
                 response.getUserId(),
                 response.getDisplayName(),
                 response.getPhoneNumber(),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.getStatus()
         );
     }

@@ -17,6 +17,7 @@ export interface ReactionMeta {
 export interface PostCardProps {
   post: Post;
   currentUser: User;
+  enableMediaViewer?: boolean;
   onActionToast?: (message: string, type?: 'success' | 'error') => void;
   onPostDeleted?: (postId: string) => void;
 }

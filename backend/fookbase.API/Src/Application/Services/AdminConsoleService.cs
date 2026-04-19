@@ -92,6 +92,10 @@ public class AdminConsoleService : IAdminConsoleService
             throw BuildJavaError(result, "Update user status failed.");
         }
 
+        var actualStatus = string.IsNullOrWhiteSpace(result.Data.Status)
+            ? normalizedStatus
+            : result.Data.Status.Trim().ToUpperInvariant();
+
         try
         {
             await _adminAuditLogService.LogAsync(
@@ -100,7 +104,7 @@ public class AdminConsoleService : IAdminConsoleService
                 "USER",
                 targetUserId,
                 targetUserId,
-                $"Status updated to {normalizedStatus}.",
+                $"Status updated to {actualStatus}.",
                 cancellationToken);
         }
         catch (Exception exception)

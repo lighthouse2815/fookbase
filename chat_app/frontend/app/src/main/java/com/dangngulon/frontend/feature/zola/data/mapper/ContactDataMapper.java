@@ -1,5 +1,6 @@
 package com.dangngulon.frontend.feature.zola.data.mapper;
 
+import com.dangngulon.frontend.core.utils.AvatarDefaults;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.response.ContactResponse;
 import com.dangngulon.frontend.feature.zola.domain.model.Contact;
 
@@ -22,7 +23,7 @@ public final class ContactDataMapper {
         return new Contact(
                 uuidToString(response.getContactId()),
                 uuidToString(response.getUserId()),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.getNickName(),
                 response.getPhoneNumber()
         );

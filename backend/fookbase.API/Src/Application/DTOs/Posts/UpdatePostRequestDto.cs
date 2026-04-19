@@ -8,4 +8,6 @@ public class UpdatePostRequestDto
     public string Content { get; set; } = string.Empty;
 
     public string? ImageUrl { get; set; }
+
+    public IReadOnlyList<string>? ImageUrls { get; set; }
 }

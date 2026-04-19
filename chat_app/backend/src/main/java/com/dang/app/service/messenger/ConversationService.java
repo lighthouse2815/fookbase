@@ -11,6 +11,7 @@ import com.dang.app.dto.messenger.request.ConversationCreateRequest;
 import com.dang.app.dto.messenger.request.ConversationMemberRequest;
 import com.dang.app.dto.messenger.request.ConversationUpdateRequest;
 import com.dang.app.dto.messenger.response.ConversationResponse;
+import com.dang.app.entity.auth.UserProfile;
 import com.dang.app.entity.auth.User;
 import com.dang.app.entity.messenger.Conversation;
 import com.dang.app.entity.messenger.ConversationMember;
@@ -149,10 +150,25 @@ public class ConversationService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toCollection(HashSet::new));
 
-        // map tat ca display name
-        Map<UUID, String> displayNameMap = privateOtherUserIds.isEmpty()
+        Map<UUID, UserProfile> profileMap = privateOtherUserIds.isEmpty()
                 ? Map.of()
-                : userProfileService.getDisplayNameMap(privateOtherUserIds);
+                : userProfileService.getProfileMapByUserIds(new ArrayList<>(privateOtherUserIds));
+
+        // map tat ca display name
+        Map<UUID, String> displayNameMap = profileMap.values().stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getId(),
+                        UserProfile::getDisplayName,
+                        (left, ignored) -> left
+                ));
+
+        // map tat ca avatar cua private conversation
+        Map<UUID, String> avatarMap = profileMap.values().stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getId(),
+                        UserProfile::getAvatarUrl,
+                        (left, ignored) -> left
+                ));
 
         // map tat ca tin nhan chua doc cua user
         Map<UUID, Integer> unreadMap = messageStatusService.getUnreadCountMap(userId);
@@ -162,7 +178,8 @@ public class ConversationService {
                         conversation,
                         unreadMap,
                         otherUserMap,
-                        displayNameMap)
+                        displayNameMap,
+                        avatarMap)
                 )
                 .toList();
     }

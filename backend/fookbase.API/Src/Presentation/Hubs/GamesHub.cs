@@ -6,6 +6,7 @@ using InteractHub.Api.Application.DTOs.Games.Flappy;
 using InteractHub.Api.Application.DTOs.Games.Snake;
 using InteractHub.Api.Application.Interfaces.Services.Games;
 using InteractHub.Api.Application.Services.Games;
+using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -633,7 +634,7 @@ public class GamesHub : Hub
             UserId = userId,
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? ResolveCurrentDisplayName() : displayName.Trim(),
             AvatarUrl = string.IsNullOrWhiteSpace(avatarUrl)
-                ? $"https://i.pravatar.cc/150?u={userId:D}"
+                ? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
                 : avatarUrl.Trim()
         };
     }

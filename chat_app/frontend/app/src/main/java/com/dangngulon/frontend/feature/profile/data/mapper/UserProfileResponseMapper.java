@@ -1,5 +1,6 @@
 package com.dangngulon.frontend.feature.profile.data.mapper;
 
+import com.dangngulon.frontend.core.utils.AvatarDefaults;
 import com.dangngulon.frontend.feature.profile.domain.model.UserProfileDetail;
 import com.dangngulon.frontend.feature.profile.domain.model.UserProfileOverview;
 import com.dangngulon.frontend.feature.profile.domain.model.UserProfileSearchResult;
@@ -33,7 +34,7 @@ public final class UserProfileResponseMapper {
         return new UserProfileDetail(
                 response.getUserId(),
                 response.getDisplayName(),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.getPhoneNumber(),
                 response.getGender(),
                 response.getBirthDate(),
@@ -51,7 +52,7 @@ public final class UserProfileResponseMapper {
                 response.getUserId(),
                 response.getDisplayName(),
                 response.getPhoneNumber(),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.getStatus()
         );
     }

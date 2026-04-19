@@ -9,15 +9,17 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
     t,
     content,
     setContent,
-    selectedMediaPreviewUrl,
-    selectedMediaKind,
+    selectedImagePreviewUrls,
+    selectedVideoPreviewUrl,
     mediaError,
     isIconPickerOpen,
     setIsIconPickerOpen,
     imageInputRef,
     videoInputRef,
     textareaRef,
-    handleMediaFileChange,
+    handleImageFilesChange,
+    handleVideoFileChange,
+    removeSelectedImage,
     clearSelectedMedia,
     handleSubmit,
     handleCancelDraft,
@@ -41,11 +43,11 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
         />
       </div>
 
-      {selectedMediaPreviewUrl ? (
+      {selectedVideoPreviewUrl ? (
         <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
-              {selectedMediaKind === 'video' ? t('home.selectedVideo') : t('home.selectedImage')}
+              {t('home.selectedVideo')}
             </p>
             <button
               type="button"
@@ -57,15 +59,45 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
             </button>
           </div>
 
-          {selectedMediaKind === 'video' ? (
-            <video src={selectedMediaPreviewUrl} controls className="max-h-[360px] w-full rounded-xl bg-black" />
-          ) : (
-            <img
-              src={selectedMediaPreviewUrl}
-              alt={t('home.selectedImage')}
-              className="max-h-[360px] w-full rounded-xl object-contain"
-            />
-          )}
+          <video src={selectedVideoPreviewUrl} controls className="max-h-[360px] w-full rounded-xl bg-black" />
+        </div>
+      ) : null}
+
+      {selectedImagePreviewUrls.length > 0 ? (
+        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+              {`${t('home.selectedImage')} (${selectedImagePreviewUrls.length})`}
+            </p>
+            <button
+              type="button"
+              onClick={clearSelectedMedia}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+            >
+              <X size={13} />
+              {t('home.removeMedia')}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {selectedImagePreviewUrls.map((previewUrl, index) => (
+              <div key={`${previewUrl}-${index}`} className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                <img
+                  src={previewUrl}
+                  alt={`${t('home.selectedImage')} ${index + 1}`}
+                  className="h-36 w-full bg-slate-100 object-cover dark:bg-slate-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSelectedImage(index)}
+                  className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100"
+                  aria-label="Xoa anh da chon"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -124,11 +156,12 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
             ref={imageInputRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
             onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                handleMediaFileChange(file);
+              const files = event.target.files;
+              if (files && files.length > 0) {
+                handleImageFilesChange(files);
               }
             }}
           />
@@ -140,7 +173,7 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) {
-                handleMediaFileChange(file);
+                handleVideoFileChange(file);
               }
             }}
           />

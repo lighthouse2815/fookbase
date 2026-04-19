@@ -43,6 +43,7 @@ public static class EntityToDtoMapper
     {
         ArgumentNullException.ThrowIfNull(post);
 
+        var mediaUrls = ResolvePostMediaUrls(post);
         var reactionCount = post.Likes.Count;
         var topReactionTypes = post.Likes
             .GroupBy(like => NormalizePostReactionType(like.Type))
@@ -63,7 +64,8 @@ public static class EntityToDtoMapper
                 AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(post.UserId)
             },
             Content = post.Content,
-            ImageUrl = post.ImageUrl,
+            ImageUrl = mediaUrls.FirstOrDefault(),
+            ImageUrls = mediaUrls,
             CreatedAt = post.CreatedAt,
             UpdatedAt = post.UpdatedAt,
             LikeCount = reactionCount,
@@ -250,5 +252,24 @@ public static class EntityToDtoMapper
     private static string NormalizePostReactionType(ReactionType type)
     {
         return type.ToString();
+    }
+
+    private static IReadOnlyList<string> ResolvePostMediaUrls(Post post)
+    {
+        if (post.MediaItems.Count > 0)
+        {
+            var orderedMediaUrls = post.MediaItems
+                .OrderBy(media => media.SortOrder)
+                .Select(media => media.MediaUrl)
+                .ToList();
+
+            var normalizedMediaUrls = PostMediaSerializer.Normalize(orderedMediaUrls);
+            if (normalizedMediaUrls.Count > 0)
+            {
+                return normalizedMediaUrls;
+            }
+        }
+
+        return PostMediaSerializer.Deserialize(post.ImageUrl);
     }
 }

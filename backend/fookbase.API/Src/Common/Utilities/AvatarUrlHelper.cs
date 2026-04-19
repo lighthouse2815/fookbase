@@ -2,7 +2,8 @@ namespace InteractHub.Api.Common.Utilities;
 
 public static class AvatarUrlHelper
 {
-    private const string DefaultAvatarBaseUrl = "https://i.pravatar.cc/150";
+    public const string DefaultAvatarUrl =
+        "https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg";
 
     public static string BuildDefaultAvatarUrl(Guid userId)
     {
@@ -11,11 +12,6 @@ public static class AvatarUrlHelper
 
     public static string BuildDefaultAvatarUrl(string seed)
     {
-        if (string.IsNullOrWhiteSpace(seed))
-        {
-            return DefaultAvatarBaseUrl;
-        }
-
-        return $"{DefaultAvatarBaseUrl}?u={Uri.EscapeDataString(seed.Trim())}";
+        return DefaultAvatarUrl;
     }
 }

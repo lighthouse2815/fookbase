@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.DTOs.Friendships;
 using InteractHub.Api.Application.DTOs.JavaApi;
+using InteractHub.Api.Common.Utilities;
 
 namespace InteractHub.Api.Application.Mappers;
 
@@ -16,7 +17,7 @@ public static class FriendshipMapper
             ? "Nguoi dung"
             : suggestion.DisplayName.Trim();
         var avatarUrl = string.IsNullOrWhiteSpace(suggestion.AvatarUrl)
-            ? $"https://i.pravatar.cc/150?u={safeId}"
+            ? AvatarUrlHelper.BuildDefaultAvatarUrl(safeId)
             : suggestion.AvatarUrl.Trim();
         var mutualFriends = suggestion.MutualFriends < 0
             ? 0
@@ -42,7 +43,7 @@ public static class FriendshipMapper
             ? "Nguoi dung"
             : blockedUser.DisplayName.Trim();
         var avatarUrl = string.IsNullOrWhiteSpace(blockedUser.AvatarUrl)
-            ? $"https://i.pravatar.cc/150?u={safeId}"
+            ? AvatarUrlHelper.BuildDefaultAvatarUrl(safeId)
             : blockedUser.AvatarUrl.Trim();
 
         return new BlockedUserResponseDto

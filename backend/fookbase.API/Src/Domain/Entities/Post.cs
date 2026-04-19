@@ -25,4 +25,6 @@ public class Post
     public ICollection<PostReport> Reports { get; set; } = new List<PostReport>();
 
     public ICollection<SavedPost> SavedByUsers { get; set; } = new List<SavedPost>();
+
+    public ICollection<PostMedia> MediaItems { get; set; } = new List<PostMedia>();
 }

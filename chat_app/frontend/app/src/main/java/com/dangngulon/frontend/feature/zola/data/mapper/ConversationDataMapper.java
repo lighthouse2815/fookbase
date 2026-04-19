@@ -1,5 +1,6 @@
 package com.dangngulon.frontend.feature.zola.data.mapper;
 
+import com.dangngulon.frontend.core.utils.AvatarDefaults;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.request.ConversationCreateRequest;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.request.ConversationMemberRequest;
 import com.dangngulon.frontend.feature.zola.data.remote.dto.response.ConversationResponse;
@@ -40,7 +41,7 @@ public final class ConversationDataMapper {
         return new Conversation(
                 response.getConversationId(),
                 response.getName(),
-                response.getAvatarUrl(),
+                AvatarDefaults.resolve(response.getAvatarUrl()),
                 response.getType(),
                 response.getLastSenderId(),
                 response.getLastMessagePreview(),
@@ -71,7 +72,7 @@ public final class ConversationDataMapper {
         return new RecentUserChat(
                 response.getUserId(),
                 response.getUsername(),
-                response.getAvatar(),
+                AvatarDefaults.resolve(response.getAvatar()),
                 response.getLastChatTime()
         );
     }

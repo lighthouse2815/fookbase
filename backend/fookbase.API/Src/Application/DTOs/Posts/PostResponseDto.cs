@@ -14,6 +14,8 @@ public record PostResponseDto
 
     public string? ImageUrl { get; init; }
 
+    public IReadOnlyList<string> ImageUrls { get; init; } = Array.Empty<string>();
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }

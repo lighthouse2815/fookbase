@@ -112,6 +112,9 @@ public class ConversationAdapter extends ListAdapter<ConversationUiModel, Conver
 
             Glide.with(binding.avatar.getContext())
                     .load(conversation.getAvatarUrl())
+                    .placeholder(R.drawable.default_avatar)
+                    .error(R.drawable.default_avatar)
+                    .fallback(R.drawable.default_avatar)
                     .into(binding.avatar);
 
             String preview = conversation.getLastMessagePreview() == null ? "" : conversation.getLastMessagePreview();

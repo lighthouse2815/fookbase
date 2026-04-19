@@ -37,6 +37,7 @@ export const HomePage = () => {
             key={post.id}
             post={post}
             currentUser={currentUser}
+            enableMediaViewer
             onActionToast={showToast}
             onPostDeleted={handlePostDeleted}
           />

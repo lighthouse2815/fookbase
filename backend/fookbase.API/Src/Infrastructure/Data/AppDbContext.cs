@@ -30,6 +30,8 @@ public class AppDbContext : DbContext
 
     public DbSet<PostHashtag> PostHashtags => Set<PostHashtag>();
 
+    public DbSet<PostMedia> PostMedias => Set<PostMedia>();
+
     public DbSet<PostReport> PostReports => Set<PostReport>();
 
     public DbSet<UserReport> UserReports => Set<UserReport>();
@@ -61,6 +63,29 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(post => post.UserId);
             entity.HasIndex(post => post.CreatedAt);
+        });
+
+        modelBuilder.Entity<PostMedia>(entity =>
+        {
+            entity.ToTable("PostMedia");
+            entity.HasKey(media => media.Id);
+
+            entity.Property(media => media.MediaUrl)
+                .HasMaxLength(2000)
+                .IsRequired();
+            entity.Property(media => media.MediaType)
+                .HasMaxLength(20)
+                .IsRequired();
+            entity.Property(media => media.SortOrder).IsRequired();
+            entity.Property(media => media.CreatedAt).IsRequired();
+
+            entity.HasOne(media => media.Post)
+                .WithMany(post => post.MediaItems)
+                .HasForeignKey(media => media.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(media => media.PostId);
+            entity.HasIndex(media => new { media.PostId, media.SortOrder }).IsUnique();
         });
 
         modelBuilder.Entity<Comment>(entity =>

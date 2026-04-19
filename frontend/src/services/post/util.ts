@@ -18,6 +18,18 @@ export const mapPost = (payload: PostPayload): Post => {
       ? (['LIKE'] as PostReactionType[])
       : [];
 
+  const payloadImageUrls = Array.isArray(payload.imageUrls)
+    ? payload.imageUrls
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter((item) => item.length > 0)
+    : [];
+  const fallbackImageUrl = typeof payload.imageUrl === 'string' ? payload.imageUrl.trim() : '';
+  const imageUrls = payloadImageUrls.length > 0
+    ? payloadImageUrls
+    : fallbackImageUrl
+      ? [fallbackImageUrl]
+      : [];
+
   return {
     id: payload.id,
     author: {
@@ -27,7 +39,8 @@ export const mapPost = (payload: PostPayload): Post => {
       avatarUrl: payload.author?.avatarUrl || `https://i.pravatar.cc/150?u=${authorId}`,
     },
     content: payload.content,
-    imageUrl: payload.imageUrl ?? undefined,
+    imageUrl: imageUrls[0],
+    imageUrls,
     createdAt: payload.createdAt,
     likes: reactionCount,
     likedByCurrentUser: payload.likedByCurrentUser ?? Boolean(currentUserReactionType),
