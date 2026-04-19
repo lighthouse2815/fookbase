@@ -315,12 +315,20 @@ public class LoginFragment extends Fragment {
     }
 
     private void handelLoginGoogle(){
-        if (googleSignInClient == null) {
+        GoogleSignInClient signInClient = googleSignInClient;
+        if (signInClient == null) {
             UiHelper.showToast(requireContext(), GOOGLE_LOGIN_NOT_CONFIGURED);
             return;
         }
 
-        googleSignInLauncher.launch(googleSignInClient.getSignInIntent());
+        // Sign out cached account first so Google always shows account chooser.
+        signInClient.signOut()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    googleSignInLauncher.launch(signInClient.getSignInIntent());
+                });
     }
 }
 

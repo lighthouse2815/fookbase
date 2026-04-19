@@ -82,11 +82,15 @@ public class UserProfileService {
             String lastName,
             String firstName
     ) {
-        if(userProfileRepository.existsByEmail(email)) {
+        String normalizedEmail = normalize(email);
+        String normalizedPhoneNumber = normalize(phoneNumber);
+
+        if(userProfileRepository.existsByEmail(normalizedEmail)) {
             throw new BusinessException(ErrorCode.EMAIL_EXISTS);
         }
 
-        if(userProfileRepository.existsByPhoneNumber(phoneNumber)) {
+        // Phone number is optional for Google sign-up; only check uniqueness when provided.
+        if(normalizedPhoneNumber != null && userProfileRepository.existsByPhoneNumber(normalizedPhoneNumber)) {
             throw new BusinessException(ErrorCode.PHONENUMBER_EXISTS);
         }
 
@@ -94,9 +98,9 @@ public class UserProfileService {
                 .user(user)
                 .lastName(lastName)
                 .firstName(firstName)
-                .email(email)
+                .email(normalizedEmail)
                 .completed(false)
-                .phoneNumber(phoneNumber)
+                .phoneNumber(normalizedPhoneNumber)
                 .build();
 
         createdProfile.setDisplayName((firstName + " " + lastName).trim());
