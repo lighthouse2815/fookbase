@@ -19,11 +19,7 @@ const IMAGE_VIEWER_SCALE_STEP = 0.12;
 
 export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActionToast, onPostDeleted }: PostCardProps) => {
   const { t } = useTranslation();
-  const mediaUrls = post.imageUrls && post.imageUrls.length > 0
-    ? post.imageUrls
-    : post.imageUrl
-      ? [post.imageUrl]
-      : [];
+  const mediaUrls = post.imageUrls ?? [];
   const mediaKind = detectMediaKind(mediaUrls[0]);
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);

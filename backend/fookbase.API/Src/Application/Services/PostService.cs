@@ -115,7 +115,7 @@ public class PostService : IPostService
             ?? throw new NotFoundException("User not found.");
 
         var normalizedContent = NormalizePostContent(request.Content);
-        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrl, request.ImageUrls);
+        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrls);
         EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         var now = DateTime.UtcNow;
@@ -177,7 +177,7 @@ public class PostService : IPostService
         EnsureOwnerOrAdmin(post.UserId, userId, isAdmin, "You are not allowed to update this post.");
 
         var normalizedContent = NormalizePostContent(request.Content);
-        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrl, request.ImageUrls);
+        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrls);
         EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         post.Content = normalizedContent;
@@ -368,14 +368,9 @@ public class PostService : IPostService
         return content?.Trim() ?? string.Empty;
     }
 
-    private static IReadOnlyList<string> NormalizePostMedia(string? media, IReadOnlyList<string>? mediaUrls)
+    private static IReadOnlyList<string> NormalizePostMedia(IReadOnlyList<string>? mediaUrls)
     {
-        if (mediaUrls is { Count: > 0 })
-        {
-            return PostMediaSerializer.Normalize(mediaUrls);
-        }
-
-        return PostMediaSerializer.Normalize([media]);
+        return PostMediaSerializer.Normalize(mediaUrls);
     }
 
     private static IReadOnlyList<PostMedia> BuildPostMediaItems(Guid postId, IReadOnlyList<string> mediaUrls, DateTime createdAtUtc)

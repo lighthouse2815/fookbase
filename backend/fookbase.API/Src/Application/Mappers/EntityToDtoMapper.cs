@@ -64,7 +64,6 @@ public static class EntityToDtoMapper
                 AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(post.UserId)
             },
             Content = post.Content,
-            ImageUrl = mediaUrls.FirstOrDefault(),
             ImageUrls = mediaUrls,
             CreatedAt = post.CreatedAt,
             UpdatedAt = post.UpdatedAt,

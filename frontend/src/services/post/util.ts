@@ -23,12 +23,6 @@ export const mapPost = (payload: PostPayload): Post => {
         .map((item) => (typeof item === 'string' ? item.trim() : ''))
         .filter((item) => item.length > 0)
     : [];
-  const fallbackImageUrl = typeof payload.imageUrl === 'string' ? payload.imageUrl.trim() : '';
-  const imageUrls = payloadImageUrls.length > 0
-    ? payloadImageUrls
-    : fallbackImageUrl
-      ? [fallbackImageUrl]
-      : [];
 
   return {
     id: payload.id,
@@ -39,8 +33,7 @@ export const mapPost = (payload: PostPayload): Post => {
       avatarUrl: payload.author?.avatarUrl || `https://i.pravatar.cc/150?u=${authorId}`,
     },
     content: payload.content,
-    imageUrl: imageUrls[0],
-    imageUrls,
+    imageUrls: payloadImageUrls,
     createdAt: payload.createdAt,
     likes: reactionCount,
     likedByCurrentUser: payload.likedByCurrentUser ?? Boolean(currentUserReactionType),

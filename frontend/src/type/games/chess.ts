@@ -31,7 +31,3 @@ export interface ChessMoveInput {
   promotion?: string;
 }
 
-export interface ChessResignInput {
-  roomId: string;
-}
-

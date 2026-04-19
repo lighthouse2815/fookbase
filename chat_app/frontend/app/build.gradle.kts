@@ -78,7 +78,6 @@ dependencies {
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
-    implementation(libs.okhttp.logging.interceptor)
 
     implementation(libs.zxing.core)
     implementation(libs.zxing.android.embedded)
@@ -105,7 +104,6 @@ dependencies {
     implementation(libs.stomp.protocol.android)
     implementation(libs.rxjava)
     implementation(libs.rxandroid)
-    implementation(libs.play.services.auth)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)

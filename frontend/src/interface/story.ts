@@ -1,5 +1,3 @@
-import type { User } from "./user";
-
 export type StoryMediaType = 'IMAGE' | 'VIDEO';
 export type StoryReactionType = 'LIKE' | 'WOW' | 'SAD' | 'ANGRY' | 'HAHA' | 'LOVE';
 
@@ -37,12 +35,6 @@ export interface StoryUploadResult {
   mediaUrl: string;
   mediaType: StoryMediaType;
   sizeBytes: number;
-}
-
-export interface Story {
-  id: string;
-  author: User;
-  imageUrl: string;
 }
 
 export interface StoryAuthorPayload {

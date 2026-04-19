@@ -51,7 +51,6 @@ export interface Post {
   id: string;
   author: User;
   content: string;
-  imageUrl?: string;
   imageUrls?: string[];
   createdAt: string;
   likes: number;
@@ -75,7 +74,6 @@ export interface PostPayload {
   userId: string;
   author?: PostAuthorPayload;
   content: string;
-  imageUrl?: string | null;
   imageUrls?: string[] | null;
   createdAt: string;
   likeCount?: number;
@@ -113,7 +111,6 @@ export interface LikeStatePayload {
 
 export interface CreatePostRequest {
   content: string;
-  imageUrl?: string;
   imageUrls?: string[];
 }
 
@@ -127,19 +124,6 @@ export interface SavePostRequest {
   postId: string;
 }
 
-export interface PostReactionUser {
-  userId: string;
-  displayName: string;
-  avatarUrl: string;
-  reactionType: PostReactionType;
-  reactedAt: string;
-}
-
-export interface PostReactionUsersResponse {
-  postId: string;
-  totalCount: number;
-  users: PostReactionUser[];
-}
 export interface PostReactionUserPayload {
   userId: string;
   displayName: string;

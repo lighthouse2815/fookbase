@@ -42,12 +42,6 @@ export const intersects = (first: Rect, second: Rect) =>
   first.y < second.y + second.height &&
   first.y + first.height > second.y;
 
-export const centerX = (rect: Rect) => rect.x + rect.width / 2;
-export const centerY = (rect: Rect) => rect.y + rect.height / 2;
-
-export const horizontalDistance = (first: Rect, second: Rect) =>
-  Math.abs(centerX(first) - centerX(second));
-
 let entityCounter = 0;
 
 export const createId = (prefix: string) => {

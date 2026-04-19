@@ -55,14 +55,6 @@ export interface GameOverEvent<TState = unknown> {
   finalState?: TState;
 }
 
-export interface MoveAcceptedEvent<TMove = unknown> {
-  roomId: string;
-  gameType: GameType;
-  userId: string;
-  message?: string;
-  move?: TMove;
-}
-
 export interface MoveRejectedEvent {
   roomId: string;
   gameType: GameType;
@@ -94,8 +86,4 @@ export const GAME_HUB_EVENTS = {
 export interface RematchRequestedEvent {
   roomId: string;
   userId: string;
-}
-
-export interface RematchAcceptedEvent {
-  roomId: string;
 }

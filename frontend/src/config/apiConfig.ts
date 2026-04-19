@@ -129,8 +129,3 @@ export const API_CONFIG = {
   cloudinaryUploadUrl: (cloudName: string) =>
     `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
 } as const;
-
-export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'authToken',
-  USER_NAME: 'userName',
-} as const;

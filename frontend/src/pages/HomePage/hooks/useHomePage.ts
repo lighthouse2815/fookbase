@@ -109,10 +109,15 @@ export const useHomePage = (): UseHomePageReturn => {
         uploadedImageUrls = await Promise.all(draft.imageFiles.map((file) => cloudinaryService.uploadMedia(file)));
       }
 
+      const mediaUrls = uploadedVideoUrl
+        ? [uploadedVideoUrl]
+        : uploadedImageUrls.length > 0
+          ? uploadedImageUrls
+          : undefined;
+
       const created = await postService.createPost({
         content: draft.content,
-        imageUrl: uploadedVideoUrl,
-        imageUrls: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
+        imageUrls: mediaUrls,
       });
       setFeed((previous) => [created, ...previous]);
       return true;
