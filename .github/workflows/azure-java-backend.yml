@@ -106,6 +106,20 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Configure Java app settings
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            WEBAPP_ID=$(az webapp list --query "[?name=='${{ secrets.AZURE_JAVA_WEBAPP_NAME }}'].id | [0]" -o tsv)
+            if [ -z "$WEBAPP_ID" ]; then
+              echo "Cannot find Azure Web App: ${{ secrets.AZURE_JAVA_WEBAPP_NAME }}"
+              exit 1
+            fi
+
+            az webapp config appsettings set \
+              --ids "$WEBAPP_ID" \
+              --settings GOOGLE_OAUTH_CLIENT_ID="${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}"
+
       - name: Deploy Java backend package
         uses: azure/webapps-deploy@v3
         with:

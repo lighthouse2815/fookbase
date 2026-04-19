@@ -380,6 +380,14 @@ public class JavaApiService : IJavaApiService
         return PostAsync<LoginResponseDto>(path, request, cancellationToken);
     }
 
+    public Task<JavaApiCallResult<GoogleAuthResponseDto>> AuthWithGoogleAsync(
+        GoogleTokenRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.AuthGooglePathTemplate);
+        return PostAsync<GoogleAuthResponseDto>(path, request, cancellationToken);
+    }
+
     public Task<JavaApiCallResult<TokenResponseDto>> RefreshTokenAsync(
         string refreshToken,
         CancellationToken cancellationToken = default)

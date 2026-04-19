@@ -148,6 +148,10 @@ public interface IJavaApiService
         LoginRequestDto request,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<GoogleAuthResponseDto>> AuthWithGoogleAsync(
+        GoogleTokenRequestDto request,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<TokenResponseDto>> RefreshTokenAsync(
         string refreshToken,
         CancellationToken cancellationToken = default);

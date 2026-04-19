@@ -66,6 +66,8 @@ public class JavaApiOptions
 
     public string AuthLoginPathTemplate { get; set; } = "auth/login";
 
+    public string AuthGooglePathTemplate { get; set; } = "auth/google";
+
     public string AuthRefreshTokenPathTemplate { get; set; } = "auth/refresh-token";
 
     public string AuthLogoutPathTemplate { get; set; } = "auth/logout";

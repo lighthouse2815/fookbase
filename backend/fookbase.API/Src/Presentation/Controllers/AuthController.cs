@@ -74,6 +74,35 @@ public class AuthController : ApiControllerBase
         return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<LoginResponseDto>.Ok(result.Data));
     }
 
+    [HttpPost("google")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<GoogleAuthResponseDto>>> AuthWithGoogle(
+        [FromBody] GoogleTokenRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _javaApiService.AuthWithGoogleAsync(request, cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+        {
+            return BuildErrorResponse<GoogleAuthResponseDto>(result, "Google authentication failed.");
+        }
+
+        var normalizedToken = (result.Data.AccessToken ?? result.Data.Token).NormalizeAccessTokenOrNull();
+        result.Data.AccessToken = normalizedToken;
+        result.Data.Token = normalizedToken;
+
+        if (!string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.RefreshToken);
+        }
+
+        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<GoogleAuthResponseDto>.Ok(result.Data));
+    }
+
     [HttpPost("admin/login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
