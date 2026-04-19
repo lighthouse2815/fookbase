@@ -219,7 +219,7 @@ public class AuthService {
                 mailType
         );
 
-        return new OtpVerifyResponse("OTP đã được gửi");
+        return authMapper.toOtpSentResponse();
     }
 
 
@@ -248,7 +248,7 @@ public class AuthService {
                 mailType
         );
 
-        return new OtpVerifyResponse("OTP đã được gửi");
+        return authMapper.toOtpSentResponse();
     }
 
 
@@ -278,11 +278,11 @@ public class AuthService {
             userService.setActiveUser(user);
         }
 
-        return new OtpVerifyResponse(
-                otpType == OTPType.PASSWORD_RESET
-                        ? resetTokenUtil.generateToken(user.getId())
-                        : "Xác nhận otp thành công"
-        );
+        String generatedResetToken = otpType == OTPType.PASSWORD_RESET
+                ? resetTokenUtil.generateToken(user.getId())
+                : null;
+
+        return authMapper.toOtpVerifyResponse(otpType, generatedResetToken);
 
     }
 
@@ -305,11 +305,11 @@ public class AuthService {
             userService.setActiveUser(user);
         }
 
-        return new OtpVerifyResponse(
-                otpType == OTPType.PASSWORD_RESET
-                        ? resetTokenUtil.generateToken(user.getId())
-                        : "Xác nhận otp thành công"
-        );
+        String generatedResetToken = otpType == OTPType.PASSWORD_RESET
+                ? resetTokenUtil.generateToken(user.getId())
+                : null;
+
+        return authMapper.toOtpVerifyResponse(otpType, generatedResetToken);
     }
 
 
@@ -390,14 +390,7 @@ public class AuthService {
     private GoogleAuthResponse buildGoogleAuthResponse(User user, UserProfile profile, boolean isNew) {
         TokenResponse tokenResponse = tokenService.issueTokenPair(user);
 
-        return GoogleAuthResponse.builder()
-                .accessToken(tokenResponse.getAccessToken())
-                .refreshToken(tokenResponse.getRefreshToken())
-                .tokenType(tokenResponse.getTokenType())
-                .userId(user.getId())
-                .displayName(profile.getDisplayName())
-                .isNew(isNew)
-                .build();
+        return authMapper.toGoogleAuthResponse(tokenResponse, user, profile, isNew);
     }
 
 
@@ -427,7 +420,7 @@ public class AuthService {
 
         resetTokenUtil.revoke(resetToken);
 
-        return new MessageResponse("Đặt lại mật khẩu thành công!");
+        return authMapper.toResetPasswordResponse();
     }
 
 

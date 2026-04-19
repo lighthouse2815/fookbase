@@ -15,8 +15,11 @@ import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class GoogleTokenVerifier {
@@ -62,7 +65,10 @@ public class GoogleTokenVerifier {
 
             // 6. Verify audience (client id)
             List<String> audiences = claims.getAudience();
-            if (audiences == null || !audiences.contains(clientId)) {
+            Set<String> allowedClientIds = resolveAllowedClientIds();
+            boolean validAudience = audiences != null
+                    && audiences.stream().anyMatch(allowedClientIds::contains);
+            if (!validAudience) {
                 throw new BusinessException(ErrorCode.INVALID_GOOGLE_AUDIENCE);
             }
 
@@ -77,6 +83,17 @@ public class GoogleTokenVerifier {
         } catch (ParseException | JOSEException | java.io.IOException e) {
             throw new BusinessException(ErrorCode.INVALID_GOOGLE_TOKEN);
         }
+    }
+
+    private Set<String> resolveAllowedClientIds() {
+        if (clientId == null || clientId.isBlank()) {
+            return Set.of();
+        }
+
+        return Arrays.stream(clientId.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .collect(Collectors.toSet());
     }
 }
 
