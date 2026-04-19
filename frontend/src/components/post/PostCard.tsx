@@ -155,12 +155,12 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
 
     const itemKind = detectMediaKind(mediaUrl);
     const mediaElement = itemKind === 'video' ? (
-      <video src={mediaUrl} controls={!enableMediaViewer} className={`${className} bg-black object-cover`} />
+      <video src={mediaUrl} controls={!enableMediaViewer} className={`${className} min-h-0 bg-black object-cover`} />
     ) : (
       <img
         src={mediaUrl}
         alt={`${post.author.fullName}-${index + 1}`}
-        className={`${className} bg-slate-100 object-cover dark:bg-slate-900`}
+        className={`${className} min-h-0 bg-slate-100 object-cover dark:bg-slate-900`}
       />
     );
 
@@ -175,7 +175,7 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
         <button
           type="button"
           onClick={() => openMediaAt(index)}
-          className="relative block overflow-hidden rounded-xl cursor-zoom-in"
+          className="relative block h-full min-h-0 w-full overflow-hidden rounded-xl cursor-zoom-in"
           aria-label={itemKind === 'video' ? 'Xem video bai post o che do lon' : 'Xem anh bai post o che do lon'}
         >
           {mediaElement}
@@ -185,7 +185,7 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
     }
 
     return (
-      <div className="relative overflow-hidden rounded-xl">
+      <div className="relative h-full min-h-0 w-full overflow-hidden rounded-xl">
         {mediaElement}
         {overlayElement}
       </div>
@@ -305,17 +305,17 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
           {renderMediaTile(1, 'h-64 w-full')}
         </div>
       ) : allMediaAreImages && mediaUrls.length === 3 ? (
-        <div className="mt-3 grid h-[460px] grid-cols-[2fr_1fr] gap-2">
+        <div className="mt-3 grid h-[340px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2 sm:h-[420px] lg:h-[460px]">
           {renderMediaTile(0, 'h-full w-full')}
-          <div className="grid h-full grid-rows-2 gap-2">
+          <div className="grid h-full min-h-0 grid-rows-[repeat(2,minmax(0,1fr))] gap-2">
             {renderMediaTile(1, 'h-full w-full')}
             {renderMediaTile(2, 'h-full w-full')}
           </div>
         </div>
       ) : allMediaAreImages && mediaUrls.length >= 4 ? (
-        <div className="mt-3 grid h-[460px] grid-cols-[2fr_1fr] gap-2">
+        <div className="mt-3 grid h-[340px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2 sm:h-[420px] lg:h-[460px]">
           {renderMediaTile(0, 'h-full w-full')}
-          <div className="grid h-full grid-rows-3 gap-2">
+          <div className="grid h-full min-h-0 grid-rows-[repeat(3,minmax(0,1fr))] gap-2">
             {renderMediaTile(1, 'h-full w-full')}
             {renderMediaTile(2, 'h-full w-full')}
             {renderMediaTile(3, 'h-full w-full', hiddenMediaCount)}

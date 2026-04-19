@@ -125,7 +125,6 @@ public class PostService : IPostService
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Content = normalizedContent,
-            ImageUrl = PostMediaSerializer.Serialize(normalizedMediaUrls),
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -182,7 +181,6 @@ public class PostService : IPostService
         EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         post.Content = normalizedContent;
-        post.ImageUrl = PostMediaSerializer.Serialize(normalizedMediaUrls);
         post.UpdatedAt = DateTime.UtcNow;
         post.MediaItems.Clear();
         foreach (var media in BuildPostMediaItems(post.Id, normalizedMediaUrls, DateTime.UtcNow))

@@ -57,7 +57,6 @@ public class AppDbContext : DbContext
             entity.HasKey(post => post.Id);
 
             entity.Property(post => post.Content).HasMaxLength(2000).IsRequired();
-            entity.Property(post => post.ImageUrl).HasColumnType("nvarchar(max)");
 
             entity.HasQueryFilter(post => post.DeletedAt == null);
 

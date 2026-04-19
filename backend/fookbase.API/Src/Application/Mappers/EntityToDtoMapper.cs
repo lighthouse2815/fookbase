@@ -256,20 +256,11 @@ public static class EntityToDtoMapper
 
     private static IReadOnlyList<string> ResolvePostMediaUrls(Post post)
     {
-        if (post.MediaItems.Count > 0)
-        {
-            var orderedMediaUrls = post.MediaItems
-                .OrderBy(media => media.SortOrder)
-                .Select(media => media.MediaUrl)
-                .ToList();
+        var orderedMediaUrls = post.MediaItems
+            .OrderBy(media => media.SortOrder)
+            .Select(media => media.MediaUrl)
+            .ToList();
 
-            var normalizedMediaUrls = PostMediaSerializer.Normalize(orderedMediaUrls);
-            if (normalizedMediaUrls.Count > 0)
-            {
-                return normalizedMediaUrls;
-            }
-        }
-
-        return PostMediaSerializer.Deserialize(post.ImageUrl);
+        return PostMediaSerializer.Normalize(orderedMediaUrls);
     }
 }
