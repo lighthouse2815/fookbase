@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -67,6 +68,21 @@ public class GlobalExceptionHandler {
                 "VALIDATION_ERROR",
                 HttpStatus.BAD_REQUEST.value(),
                 message,
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableBody(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = new ApiError(
+                "VALIDATION_ERROR",
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid request body",
                 request.getRequestURI()
         );
 
