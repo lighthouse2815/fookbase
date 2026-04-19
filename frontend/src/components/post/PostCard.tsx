@@ -1,5 +1,5 @@
 import { AlertTriangle, BookmarkPlus, ChevronLeft, ChevronRight, Ellipsis, Flag, MessageCircle, Share2, ThumbsUp, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type WheelEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -12,6 +12,11 @@ import type { PostCardProps } from './interface';
 import { PostReactionViewerModal } from './PostReactionViewerModal';
 import { getReactionButtonToneClass } from './util';
 
+const DEFAULT_IMAGE_VIEWER_SCALE = 1.12;
+const MIN_IMAGE_VIEWER_SCALE = 0.7;
+const MAX_IMAGE_VIEWER_SCALE = 4;
+const IMAGE_VIEWER_SCALE_STEP = 0.12;
+
 export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActionToast, onPostDeleted }: PostCardProps) => {
   const { t } = useTranslation();
   const mediaUrls = post.imageUrls && post.imageUrls.length > 0
@@ -22,6 +27,7 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
   const mediaKind = detectMediaKind(mediaUrls[0]);
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [imageViewerScale, setImageViewerScale] = useState(DEFAULT_IMAGE_VIEWER_SCALE);
   const activeMediaUrl = mediaUrls[activeMediaIndex] ?? mediaUrls[0];
   const activeMediaKind = detectMediaKind(activeMediaUrl);
 
@@ -110,6 +116,82 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
     setActiveMediaIndex(0);
   }, [post.id]);
 
+  useEffect(() => {
+    if (!isMediaViewerOpen || activeMediaKind !== 'image') {
+      return;
+    }
+
+    setImageViewerScale(DEFAULT_IMAGE_VIEWER_SCALE);
+  }, [isMediaViewerOpen, activeMediaKind, activeMediaUrl]);
+
+  const handleImageViewerWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (!isMediaViewerOpen || activeMediaKind !== 'image') {
+      return;
+    }
+
+    event.preventDefault();
+
+    setImageViewerScale((previousScale) => {
+      const nextScale = event.deltaY < 0
+        ? previousScale + IMAGE_VIEWER_SCALE_STEP
+        : previousScale - IMAGE_VIEWER_SCALE_STEP;
+      return Math.min(MAX_IMAGE_VIEWER_SCALE, Math.max(MIN_IMAGE_VIEWER_SCALE, nextScale));
+    });
+  };
+
+  const allMediaAreImages = mediaUrls.length > 0 && mediaUrls.every((mediaUrl) => detectMediaKind(mediaUrl) === 'image');
+  const hiddenMediaCount = mediaUrls.length > 4 ? mediaUrls.length - 4 : 0;
+
+  const openMediaAt = (index: number) => {
+    setActiveMediaIndex(index);
+    setIsMediaViewerOpen(true);
+  };
+
+  const renderMediaTile = (index: number, className: string, overlayCount = 0) => {
+    const mediaUrl = mediaUrls[index];
+    if (!mediaUrl) {
+      return null;
+    }
+
+    const itemKind = detectMediaKind(mediaUrl);
+    const mediaElement = itemKind === 'video' ? (
+      <video src={mediaUrl} controls={!enableMediaViewer} className={`${className} bg-black object-cover`} />
+    ) : (
+      <img
+        src={mediaUrl}
+        alt={`${post.author.fullName}-${index + 1}`}
+        className={`${className} bg-slate-100 object-cover dark:bg-slate-900`}
+      />
+    );
+
+    const overlayElement = overlayCount > 0 ? (
+      <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-2xl font-bold text-white">
+        +{overlayCount}
+      </div>
+    ) : null;
+
+    if (enableMediaViewer) {
+      return (
+        <button
+          type="button"
+          onClick={() => openMediaAt(index)}
+          className="relative block overflow-hidden rounded-xl cursor-zoom-in"
+          aria-label={itemKind === 'video' ? 'Xem video bai post o che do lon' : 'Xem anh bai post o che do lon'}
+        >
+          {mediaElement}
+          {overlayElement}
+        </button>
+      );
+    }
+
+    return (
+      <div className="relative overflow-hidden rounded-xl">
+        {mediaElement}
+        {overlayElement}
+      </div>
+    );
+  };
+
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
       <header className="flex items-start gap-3">
@@ -183,65 +265,11 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
         </p>
       ) : null}
 
-      {mediaUrls.length > 1 ? (
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {mediaUrls.map((mediaUrl, index) => {
-            const itemKind = detectMediaKind(mediaUrl);
-
-            if (itemKind === 'video') {
-              return enableMediaViewer ? (
-                <button
-                  key={`${post.id}-media-${index}`}
-                  type="button"
-                  onClick={() => {
-                    setActiveMediaIndex(index);
-                    setIsMediaViewerOpen(true);
-                  }}
-                  className="block w-full cursor-zoom-in rounded-xl"
-                  aria-label="Xem video bai post o che do lon"
-                >
-                  <video src={mediaUrl} className="h-56 w-full rounded-xl bg-black object-cover" />
-                </button>
-              ) : (
-                <video key={`${post.id}-media-${index}`} src={mediaUrl} controls className="h-56 w-full rounded-xl bg-black object-cover" />
-              );
-            }
-
-            return enableMediaViewer ? (
-              <button
-                key={`${post.id}-media-${index}`}
-                type="button"
-                onClick={() => {
-                  setActiveMediaIndex(index);
-                  setIsMediaViewerOpen(true);
-                }}
-                className="block w-full cursor-zoom-in rounded-xl"
-                aria-label="Xem anh bai post o che do lon"
-              >
-                <img
-                  src={mediaUrl}
-                  alt={`${post.author.fullName}-${index + 1}`}
-                  className="h-56 w-full rounded-xl bg-slate-100 object-cover dark:bg-slate-900"
-                />
-              </button>
-            ) : (
-              <img
-                key={`${post.id}-media-${index}`}
-                src={mediaUrl}
-                alt={`${post.author.fullName}-${index + 1}`}
-                className="h-56 w-full rounded-xl bg-slate-100 object-cover dark:bg-slate-900"
-              />
-            );
-          })}
-        </div>
-      ) : mediaUrls.length === 1 && mediaKind === 'video' ? (
+      {mediaUrls.length === 1 && mediaKind === 'video' ? (
         enableMediaViewer ? (
           <button
             type="button"
-            onClick={() => {
-              setActiveMediaIndex(0);
-              setIsMediaViewerOpen(true);
-            }}
+            onClick={() => openMediaAt(0)}
             className="mt-3 block w-full cursor-zoom-in rounded-xl"
             aria-label="Xem video bai post o che do lon"
           >
@@ -250,14 +278,11 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
         ) : (
           <video src={mediaUrls[0]} controls className="mt-3 max-h-[560px] w-full rounded-xl bg-black" />
         )
-      ) : mediaUrls.length === 1 ? (
+      ) : mediaUrls.length === 1 && allMediaAreImages ? (
         enableMediaViewer ? (
           <button
             type="button"
-            onClick={() => {
-              setActiveMediaIndex(0);
-              setIsMediaViewerOpen(true);
-            }}
+            onClick={() => openMediaAt(0)}
             className="mt-3 block w-full cursor-zoom-in rounded-xl"
             aria-label="Xem anh bai post o che do lon"
           >
@@ -274,6 +299,36 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
             className="mt-3 max-h-[560px] w-full rounded-xl bg-slate-100 object-contain dark:bg-slate-900"
           />
         )
+      ) : allMediaAreImages && mediaUrls.length === 2 ? (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {renderMediaTile(0, 'h-64 w-full')}
+          {renderMediaTile(1, 'h-64 w-full')}
+        </div>
+      ) : allMediaAreImages && mediaUrls.length === 3 ? (
+        <div className="mt-3 grid h-[460px] grid-cols-[2fr_1fr] gap-2">
+          {renderMediaTile(0, 'h-full w-full')}
+          <div className="grid h-full grid-rows-2 gap-2">
+            {renderMediaTile(1, 'h-full w-full')}
+            {renderMediaTile(2, 'h-full w-full')}
+          </div>
+        </div>
+      ) : allMediaAreImages && mediaUrls.length >= 4 ? (
+        <div className="mt-3 grid h-[460px] grid-cols-[2fr_1fr] gap-2">
+          {renderMediaTile(0, 'h-full w-full')}
+          <div className="grid h-full grid-rows-3 gap-2">
+            {renderMediaTile(1, 'h-full w-full')}
+            {renderMediaTile(2, 'h-full w-full')}
+            {renderMediaTile(3, 'h-full w-full', hiddenMediaCount)}
+          </div>
+        </div>
+      ) : mediaUrls.length > 1 ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {mediaUrls.map((_, index) => (
+            <div key={`${post.id}-media-fallback-${index}`}>
+              {renderMediaTile(index, 'h-56 w-full')}
+            </div>
+          ))}
+        </div>
       ) : null}
 
       <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -534,7 +589,7 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
             aria-label="Dong xem media lon"
           />
 
-          <div className="relative max-h-[90vh] w-full max-w-4xl">
+          <div className="relative max-h-[90vh] w-full max-w-5xl" onWheel={handleImageViewerWheel}>
             {activeMediaKind === 'video' ? (
               <video
                 src={activeMediaUrl}
@@ -546,7 +601,8 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
               <img
                 src={activeMediaUrl}
                 alt={post.author.fullName}
-                className="max-h-[90vh] w-full rounded-2xl border border-white/15 bg-black/40 object-contain shadow-2xl"
+                className="max-h-[90vh] w-full rounded-2xl border border-white/15 bg-black/40 object-contain shadow-2xl transition-transform duration-100 ease-out"
+                style={{ transform: `scale(${imageViewerScale})` }}
               />
             )}
 
@@ -576,6 +632,12 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
                   {activeMediaIndex + 1}/{mediaUrls.length}
                 </div>
               </>
+            ) : null}
+
+            {activeMediaKind === 'image' ? (
+              <div className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
+                {Math.round(imageViewerScale * 100)}%
+              </div>
             ) : null}
 
             <button
