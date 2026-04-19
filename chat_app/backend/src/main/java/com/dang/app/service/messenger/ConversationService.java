@@ -161,21 +161,26 @@ public class ConversationService {
                 ? Map.of()
                 : userProfileService.getProfileMapByUserIds(new ArrayList<>(privateOtherUserIds));
 
-        // map tat ca display name
-        Map<UUID, String> displayNameMap = profileMap.values().stream()
-                .collect(Collectors.toMap(
-                        profile -> profile.getUser().getId(),
-                        UserProfile::getDisplayName,
-                        (left, ignored) -> left
-                ));
+        // map tat ca display name (bo qua profile co displayName null de tranh NPE trong Collectors.toMap)
+        Map<UUID, String> displayNameMap = new HashMap<>();
+        // map tat ca avatar cua private conversation (bo qua profile co avatar null de fallback ve avatar hien tai)
+        Map<UUID, String> avatarMap = new HashMap<>();
 
-        // map tat ca avatar cua private conversation
-        Map<UUID, String> avatarMap = profileMap.values().stream()
-                .collect(Collectors.toMap(
-                        profile -> profile.getUser().getId(),
-                        UserProfile::getAvatarUrl,
-                        (left, ignored) -> left
-                ));
+        for (UserProfile profile : profileMap.values()) {
+            if (profile == null || profile.getUser() == null || profile.getUser().getId() == null) {
+                continue;
+            }
+
+            UUID profileUserId = profile.getUser().getId();
+
+            if (profile.getDisplayName() != null) {
+                displayNameMap.putIfAbsent(profileUserId, profile.getDisplayName());
+            }
+
+            if (profile.getAvatarUrl() != null) {
+                avatarMap.putIfAbsent(profileUserId, profile.getAvatarUrl());
+            }
+        }
 
         // map tat ca tin nhan chua doc cua user
         Map<UUID, Integer> unreadMap = messageStatusService.getUnreadCountMap(userId);
