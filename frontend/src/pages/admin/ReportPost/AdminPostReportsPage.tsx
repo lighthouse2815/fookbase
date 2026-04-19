@@ -83,7 +83,7 @@ export const AdminPostReportsPage = () => {
                   {report.reporter ? (
                     <Link to={`/profile/${report.reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
-                        src={report.reporter.avatarUrl || `https://i.pravatar.cc/150?u=${report.reporter.id}`}
+                        src={report.reporter.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
                         alt={report.reporter.displayName}
                         className="h-9 w-9 rounded-full object-cover"
                       />
@@ -104,7 +104,7 @@ export const AdminPostReportsPage = () => {
                   {report.postOwner ? (
                     <Link to={`/profile/${report.postOwner.id}`} className="mt-2 flex items-center gap-2">
                       <img
-                        src={report.postOwner.avatarUrl || `https://i.pravatar.cc/150?u=${report.postOwner.id}`}
+                        src={report.postOwner.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
                         alt={report.postOwner.displayName}
                         className="h-9 w-9 rounded-full object-cover"
                       />

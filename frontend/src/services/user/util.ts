@@ -10,7 +10,7 @@ export const mapPresenceToUser = (payload: UserProfilePresencePayload): User => 
     id,
     username: displayName,
     fullName: displayName,
-    avatarUrl: payload.avatarUrl?.trim() || `https://i.pravatar.cc/150?u=${id}`,
+    avatarUrl: payload.avatarUrl?.trim() || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     isOnline: payload.isOnline,
     lastSeenAt: payload.lastSeenAt ?? undefined,
   };

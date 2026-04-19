@@ -20,7 +20,7 @@ export const mapComment = (payload: CommentPayload): Comment => {
       id: authorId,
       username: 'user',
       fullName: authorName,
-      avatarUrl: payload.author?.avatarUrl || `https://i.pravatar.cc/150?u=${authorId}`,
+      avatarUrl: payload.author?.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     },
     content: payload.content,
     createdAt: payload.createdAt,
@@ -73,7 +73,7 @@ export  const mapReactionUser = (payload: CommentReactionUserPayload): CommentRe
     return {
       userId: normalizedUserId,
       displayName: payload.displayName?.trim() || 'user',
-      avatarUrl: payload.avatarUrl?.trim() || `https://i.pravatar.cc/150?u=${normalizedUserId}`,
+      avatarUrl: payload.avatarUrl?.trim() || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
       reactionType: parsedReactionType,
       reactedAt: payload.reactedAt ?? new Date().toISOString(),
     };

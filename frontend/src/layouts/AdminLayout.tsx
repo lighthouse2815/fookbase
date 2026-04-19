@@ -198,7 +198,7 @@ export const AdminLayout = () => {
                 className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <img
-                  src={user?.avatarUrl || `https://i.pravatar.cc/150?u=${user?.id ?? 'admin'}`}
+                  src={user?.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
                   alt={user?.fullName || user?.username || 'admin'}
                   className="h-8 w-8 rounded-full object-cover"
                 />

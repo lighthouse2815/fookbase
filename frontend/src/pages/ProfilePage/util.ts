@@ -45,7 +45,7 @@ export const createFallbackProfile = (
     username: DEFAULT_PUBLIC_USERNAME,
     displayName: DEFAULT_PUBLIC_DISPLAY_NAME,
     fullName: '',
-    avatarUrl: `https://i.pravatar.cc/150?u=${targetUserId}`,
+    avatarUrl: 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
   };
 };
 

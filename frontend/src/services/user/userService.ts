@@ -23,7 +23,7 @@ export const userService = {
 
     return {
       ...currentUser,
-      avatarUrl: currentUser.avatarUrl || `https://i.pravatar.cc/150?u=${currentUser.id}`,
+      avatarUrl: currentUser.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     };
   },
 

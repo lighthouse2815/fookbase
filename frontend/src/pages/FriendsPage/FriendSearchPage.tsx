@@ -103,7 +103,7 @@ export const FriendSearchPage = () => {
                   <div className="flex items-start gap-3">
                     <Link to={`/profile/${profile.userId}`} className="inline-flex shrink-0" aria-label={profile.displayName}>
                       <img
-                        src={profile.avatarUrl ?? `https://i.pravatar.cc/150?u=${profile.userId}`}
+                        src={profile.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
                         alt={profile.displayName}
                         className="h-14 w-14 rounded-full object-cover"
                       />

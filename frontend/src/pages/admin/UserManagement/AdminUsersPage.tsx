@@ -116,7 +116,7 @@ export const AdminUsersPage = () => {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <img
-                    src={item.avatarUrl || `https://i.pravatar.cc/150?u=${item.userId}`}
+                    src={item.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
                     alt={item.displayName}
                     className="h-12 w-12 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                   />

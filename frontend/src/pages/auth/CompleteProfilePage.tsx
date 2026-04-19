@@ -35,7 +35,7 @@ const EMPTY_FORM: CompleteProfileFormState = {
 const PHONE_PATTERN = /^0\d{9}$/;
 
 const normalizeGender = (value?: string | null): string => value?.trim().toUpperCase() ?? '';
-const toFallbackAvatarUrl = (seed?: string) => `https://i.pravatar.cc/150?u=${seed ?? 'me'}`;
+const toFallbackAvatarUrl = (_seed?: string) => 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg';
 const isImageFile = (file: File) => file.type.trim().toLowerCase().startsWith('image/');
 const maxBirthDate = new Date().toISOString().slice(0, 10);
 

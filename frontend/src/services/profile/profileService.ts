@@ -25,7 +25,7 @@ export const profileService = {
 
     return {
       ...profile,
-      avatarUrl: profile.avatarUrl || `https://i.pravatar.cc/150?u=${profile.id}`,
+      avatarUrl: profile.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     };
   },
 
@@ -38,7 +38,7 @@ export const profileService = {
 
     return results.map((item) => ({
       ...item,
-      avatarUrl: item.avatarUrl || `https://i.pravatar.cc/150?u=${item.userId}`,
+      avatarUrl: item.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     }));
   },
 
@@ -60,7 +60,7 @@ export const profileService = {
       phoneNumber: profile.phoneNumber?.trim() || null,
       birthDate: profile.birthDate?.trim() || null,
       gender: profile.gender?.trim() || null,
-      avatarUrl: profile.avatarUrl || `https://i.pravatar.cc/150?u=${profile.userId}`,
+      avatarUrl: profile.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     };
   },
 

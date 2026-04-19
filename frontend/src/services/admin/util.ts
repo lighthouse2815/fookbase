@@ -7,7 +7,7 @@ export const normalizeAdminUser = (item: AdminUserItem): AdminUserItem => ({
   displayName: item.displayName?.trim() || item.username?.trim() || 'user',
   role: item.role?.trim().toUpperCase() || 'USER',
   status: item.status?.trim().toUpperCase() || 'INACTIVE',
-  avatarUrl: item.avatarUrl || `https://i.pravatar.cc/150?u=${item.userId}`,
+  avatarUrl: item.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
 });
 
 export const mapPagedAuditLogs = (paged: PagedResult<AdminAuditLogItem>): PaginatedAdminAuditLogs => {

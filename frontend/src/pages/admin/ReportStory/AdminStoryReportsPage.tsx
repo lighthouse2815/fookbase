@@ -132,7 +132,7 @@ export const AdminStoryReportsPage = () => {
                   {reporter ? (
                     <Link to={`/profile/${reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
-                        src={reporter.avatarUrl || `https://i.pravatar.cc/150?u=${reporter.id}`}
+                        src={reporter.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
                         alt={reporter.displayName}
                         className="h-9 w-9 rounded-full object-cover"
                       />
@@ -150,7 +150,7 @@ export const AdminStoryReportsPage = () => {
                   <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người đăng story', 'Story owner')}</p>
                   {owner ? (
                     <Link to={`/profile/${owner.id}`} className="mt-2 flex items-center gap-2">
-                      <img src={owner.avatarUrl || `https://i.pravatar.cc/150?u=${owner.id}`} alt={owner.displayName} className="h-9 w-9 rounded-full object-cover" />
+                      <img src={owner.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'} alt={owner.displayName} className="h-9 w-9 rounded-full object-cover" />
                       <div>
                         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{owner.displayName}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">{owner.id}</p>

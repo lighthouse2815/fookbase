@@ -56,12 +56,12 @@ const toDisplayName = (value: unknown, fallback: string): string => {
   return fallback;
 };
 
-const toAvatarUrl = (value: unknown, userId: string): string => {
+const toAvatarUrl = (value: unknown, _userId: string): string => {
   if (typeof value === 'string' && value.trim().length > 0) {
     return value;
   }
 
-  return `https://i.pravatar.cc/150?u=${userId}`;
+  return 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg';
 };
 
 const normalizeStatus = (value: unknown): FriendshipStatus => {

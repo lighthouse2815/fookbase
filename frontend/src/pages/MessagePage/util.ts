@@ -32,8 +32,8 @@ export const sortMessagesByOldest = (items: ChatMessage[]): ChatMessage[] => {
 
 export const normalizeText = (value: string): string => value.trim().toLowerCase();
 
-export const buildFallbackAvatar = (seed: string): string =>
-  `https://i.pravatar.cc/150?u=${encodeURIComponent(seed)}`;
+export const buildFallbackAvatar = (_seed: string): string =>
+  'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg';
 
 export const dedupeUsersById = (users: User[]): User[] => {
   const uniqueUsers = new Map<string, User>();

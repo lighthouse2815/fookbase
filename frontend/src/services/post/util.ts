@@ -30,7 +30,7 @@ export const mapPost = (payload: PostPayload): Post => {
       id: authorId,
       username,
       fullName: authorName,
-      avatarUrl: payload.author?.avatarUrl || `https://i.pravatar.cc/150?u=${authorId}`,
+      avatarUrl: payload.author?.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     },
     content: payload.content,
     imageUrls: payloadImageUrls,

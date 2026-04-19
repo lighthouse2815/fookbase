@@ -40,7 +40,7 @@ const mapAuthUserToUser = (payload: AuthResponse['user']): User => ({
   username: payload.username,
   fullName: payload.username,
   email: payload.email,
-  avatarUrl: payload.avatarUrl ?? `https://i.pravatar.cc/150?u=${payload.id}`,
+  avatarUrl: payload.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
 });
 
 const decodeJwtPayload = (token: string): Record<string, unknown> | null => {

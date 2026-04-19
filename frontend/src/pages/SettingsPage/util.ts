@@ -35,7 +35,7 @@ export const EMPTY_PERSONAL_INFO_FORM: PersonalInfoFormState = {
 
 export const normalizePersonalInfoGender = (value?: string | null): string => value?.trim().toUpperCase() ?? '';
 
-export const toFallbackAvatarUrl = (seed?: string) => `https://i.pravatar.cc/150?u=${seed ?? 'me'}`;
+export const toFallbackAvatarUrl = (_seed?: string) => 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg';
 
 export const isImageFile = (file: File) => file.type.trim().toLowerCase().startsWith('image/');
 

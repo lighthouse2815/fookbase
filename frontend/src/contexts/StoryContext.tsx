@@ -78,7 +78,7 @@ const buildFallbackAuthor = (story: StoryItem): StoryAuthor => ({
   id: story.userId,
   username: story.author?.username ?? 'user',
   displayName: story.author?.displayName ?? story.author?.username ?? 'user',
-  avatarUrl: story.author?.avatarUrl ?? `https://i.pravatar.cc/150?u=${story.userId}`,
+  avatarUrl: story.author?.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
 });
 
 const groupStories = (stories: StoryItem[], currentUserId?: string): StoryGroup[] => {
