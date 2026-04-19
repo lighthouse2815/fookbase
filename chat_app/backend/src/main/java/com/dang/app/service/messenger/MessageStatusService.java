@@ -41,7 +41,8 @@ public class MessageStatusService {
                 .stream()
                 .collect(Collectors.toMap(
                         row -> (UUID) row[0],
-                        row -> ((Long) row[1]).intValue()
+                        row -> ((Number) row[1]).intValue(),
+                        Integer::sum
                 ));
     }
 

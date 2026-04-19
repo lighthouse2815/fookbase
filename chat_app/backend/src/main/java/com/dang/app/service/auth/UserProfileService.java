@@ -507,11 +507,16 @@ public class UserProfileService {
     //............... ham bo tro..................................................
 
     public Map<UUID, UserProfile> getProfileMapByUserIds( List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+
         return userProfileRepository.findByUser_IdIn(userIds)
                 .stream()
                 .collect(Collectors.toMap(
                         p -> p.getUser().getId(),
-                        Function.identity()
+                        Function.identity(),
+                        (left, ignored) -> left
                 ));
     }
 

@@ -24,7 +24,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
         WHERE cmSelf.user.id = :userId
           AND cmSelf.leftAt IS NULL
           AND c.deletedAt IS NULL
-        ORDER BY COALESCE(c.lastMessageAt, c.createdAt) DESC, c.createdAt DESC
     """)
     List<Conversation> findVisibleByUserId(@Param("userId") UUID userId);
 
@@ -37,7 +36,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
           AND cmSelf.leftAt IS NULL
           AND c.type = :type
           AND c.deletedAt IS NULL
-        ORDER BY COALESCE(c.lastMessageAt, c.createdAt) DESC, c.createdAt DESC
     """)
     List<Conversation> findVisibleByUserIdAndType(
             @Param("userId") UUID userId,

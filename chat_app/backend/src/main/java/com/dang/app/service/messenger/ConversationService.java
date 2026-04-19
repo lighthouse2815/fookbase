@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Service
@@ -143,7 +144,13 @@ public class ConversationService {
             return List.of();
         }
 
-        Set<UUID> privateOtherUserIds = visibleConversations.stream()
+        List<Conversation> sortedVisibleConversations = visibleConversations.stream()
+                .sorted(Comparator
+                        .comparing(this::resolveConversationSortTime)
+                        .reversed())
+                .toList();
+
+        Set<UUID> privateOtherUserIds = sortedVisibleConversations.stream()
                 .filter(conversation -> conversation.getType() == ConversationType.PRIVATE)
                 .map(Conversation::getId)
                 .map(otherUserMap::get)
@@ -173,7 +180,7 @@ public class ConversationService {
         // map tat ca tin nhan chua doc cua user
         Map<UUID, Integer> unreadMap = messageStatusService.getUnreadCountMap(userId);
 
-        return visibleConversations.stream()
+        return sortedVisibleConversations.stream()
                 .map(conversation -> conversationMapper.toResponse(
                         conversation,
                         unreadMap,
@@ -197,8 +204,13 @@ public class ConversationService {
         }
 
         Map<UUID, Integer> unreadMap = messageStatusService.getUnreadCountMap(userId);
+        List<Conversation> sortedConversations = conversations.stream()
+                .sorted(Comparator
+                        .comparing(this::resolveConversationSortTime)
+                        .reversed())
+                .toList();
 
-        return conversations.stream()
+        return sortedConversations.stream()
                 .map(conversation -> conversationMapper.toResponse(
                         conversation,
                         unreadMap,
@@ -436,6 +448,18 @@ public class ConversationService {
         }
 
         return blockedUserIds.contains(otherUserId);
+    }
+
+    private LocalDateTime resolveConversationSortTime(Conversation conversation) {
+        if (conversation.getLastMessageAt() != null) {
+            return conversation.getLastMessageAt();
+        }
+
+        if (conversation.getCreatedAt() != null) {
+            return conversation.getCreatedAt();
+        }
+
+        return LocalDateTime.MIN;
     }
 
 
