@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-<!--    // kiem tra internet-->
+    <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -15,7 +15,7 @@
 
     <application
         android:name=".App"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -25,13 +25,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Chat_app">
 
-<!--        login-->
-<!--        android:name=".ui.auth.LoginActivity"-->
-
-
-
         <activity
-            android:name=".ui.auth.AuthActivity"
+            android:name=".feature.auth.presentation.ui.AuthActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -40,14 +35,15 @@
         </activity>
 
         <activity
-            android:name=".ui.zola.ChapAppActivity"
+            android:name=".feature.zola.presentation.ui.ChatAppActivity"
             android:exported="true"
             android:windowSoftInputMode="stateAlwaysHidden|adjustNothing">
         </activity>
 
         <activity
-            android:name=".utils.others.PortraitCaptureActivity"
+            android:name=".core.common.ui.activity.PortraitCaptureActivity"
             android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar"
             android:exported="false"/>
     </application>

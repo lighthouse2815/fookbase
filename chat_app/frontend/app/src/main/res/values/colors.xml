@@ -9,77 +9,27 @@
     <color name="white">#FFFFFFFF</color>
     <color name="white_80">#CCFFFFFF</color>
 
-    <!-- fragment_login -->
-
-
-
-    // màu login_activity
     <color name="primary">#6366F1</color>
-    <color name="primary_dark">#4F46E5</color>
     <color name="primary_light">#818CF8</color>
-    <color name="accent">#8B5CF6</color>
 
-    <color name="background_dark">#1a1a2e</color>
-    <color name="background_medium">#16213e</color>
-    <color name="background_light">#0f3460</color>
+    <color name="background_dark">#1A1A2E</color>
+    <color name="background_primary">#1A1A1A</color>
 
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#B0B0B0</color>
     <color name="text_hint">#9CA3AF</color>
 
-    <color name="google">#EA4335</color>
-    <color name="facebook">#1877F2</color>
-    <color name="zalo">#0068FF</color>
-    <color name="apple">#000000</color>
-
-    <color name="error">#EF4444</color>
     <color name="success">#10B981</color>
+    <color name="red">#FF4444</color>
+    <color name="primary_blue">#0068FF</color>
 
-    <color name="card_background">#252525</color>
-
-    <!-- Primary Colors - Zalo Style -->
-    <color name="ZALO_primary">#0068FF</color>
-    <color name="ZALO_primary_dark">#0052CC</color>
-    <color name="ZALO_primary_light">#4D94FF</color>
-
-    <!-- Background Colors -->
-    <color name="ZALO_background_dark">#1A1A1A</color>
     <color name="ZALO_background_card">#2D2D2D</color>
     <color name="ZALO_background_surface">#242424</color>
-
-    <!-- Text Colors -->
-    <color name="ZALO_text_primary">#FFFFFF</color>
-    <color name="ZALO_text_secondary">#9E9E9E</color>
-    <color name="ZALO_text_hint">#666666</color>
-
-    <!-- Accent Colors -->
-    <color name="ZALO_accent_green">#00C853</color>
     <color name="ZALO_accent_red">#FF5252</color>
-    <color name="ZALO_accent_orange">#FF9800</color>
-
-    <!-- Divider -->
     <color name="ZALO_divider">#3D3D3D</color>
-
-    <!-- Badge -->
     <color name="ZALO_badge_background">#FF5252</color>
     <color name="ZALO_badge_text">#FFFFFF</color>
-
-    <!-- Online Status -->
     <color name="ZALO_online_status">#4CAF50</color>
-
-    <!-- Tab Colors -->
     <color name="ZALO_tab_selected">#0068FF</color>
     <color name="ZALO_tab_unselected">#9E9E9E</color>
-
-    <!-- Additional Colors -->
-    <color name="primary_blue">#0068FF</color>
-    <color name="background_primary">#1A1A1A</color>
-    <color name="red">#FF4444</color>
-
-
-
-
-
-
-
 </resources>

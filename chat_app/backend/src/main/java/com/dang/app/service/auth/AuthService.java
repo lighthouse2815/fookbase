@@ -367,9 +367,7 @@ public class AuthService {
         );
         userProfileService.changeAvatar(avatarUrl, profile);
 
-        String jwt = jwtUtil.generateToken(user);
-
-        return new GoogleAuthResponse(jwt, true);
+        return buildGoogleAuthResponse(user, profile, true);
     }
 
 
@@ -386,10 +384,20 @@ public class AuthService {
 
         User user = profile.getUser();
         user.getAuthProviders().add(AuthProvider.GOOGLE);
+        return buildGoogleAuthResponse(user, profile, false);
+    }
 
-        String jwt = jwtUtil.generateToken(user);
+    private GoogleAuthResponse buildGoogleAuthResponse(User user, UserProfile profile, boolean isNew) {
+        TokenResponse tokenResponse = tokenService.issueTokenPair(user);
 
-        return new GoogleAuthResponse(jwt, false);
+        return GoogleAuthResponse.builder()
+                .accessToken(tokenResponse.getAccessToken())
+                .refreshToken(tokenResponse.getRefreshToken())
+                .tokenType(tokenResponse.getTokenType())
+                .userId(user.getId())
+                .displayName(profile.getDisplayName())
+                .isNew(isNew)
+                .build();
     }
 
 

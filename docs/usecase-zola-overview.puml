@@ -1,0 +1,105 @@
+@startuml
+title Use Case Tong Quat - Zola (chat_app)
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName "Times New Roman"
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #EEF4FB
+  BorderColor #355C7D
+  ArrowColor #355C7D
+}
+skinparam rectangle {
+  BackgroundColor #FFF9EE
+  BorderColor #8B6F47
+}
+
+actor Guest
+actor "Nguoi dung" as User
+actor "Google OAuth" as Google
+actor "Email OTP Service" as OTPMail
+actor Cloudinary
+
+User --|> Guest
+
+rectangle "ZOLA CHAT_APP SYSTEM" {
+
+  package "Auth & Profile" {
+    usecase "Dang ky tai khoan" as UC_Register
+    usecase "Dang nhap" as UC_Login
+    usecase "Dang nhap Google" as UC_GoogleLogin
+    usecase "Quen mat khau" as UC_Forgot
+    usecase "Gui OTP" as UC_SendOtp
+    usecase "Xac minh OTP" as UC_VerifyOtp
+    usecase "Dat lai mat khau" as UC_ResetPwd
+    usecase "Refresh token" as UC_Refresh
+    usecase "Dang xuat" as UC_Logout
+    usecase "Xem / cap nhat profile" as UC_Profile
+    usecase "Cap nhat bao mat va privacy" as UC_Security
+    usecase "Tim kiem user (phone/display name)" as UC_SearchUser
+    usecase "Xem presence ban be" as UC_Presence
+  }
+
+  package "Friendship & Contact" {
+    usecase "Gui loi moi ket ban" as UC_SendFriendReq
+    usecase "Chap nhan / tu choi loi moi" as UC_HandleFriendReq
+    usecase "Unfriend / Block / Unblock" as UC_Relation
+    usecase "Xem danh ba" as UC_Contacts
+    usecase "Them ban bang QR" as UC_QR
+    usecase "Xem goi y ban be" as UC_Suggest
+  }
+
+  package "Messenger" {
+    usecase "Tao hoi thoai 1-1 / Nhom" as UC_CreateConv
+    usecase "Quan ly thanh vien & admin nhom" as UC_GroupManage
+    usecase "Xem danh sach hoi thoai" as UC_ListConv
+    usecase "Xem lich su tin nhan" as UC_History
+    usecase "Gui tin nhan realtime" as UC_SendMsg
+    usecase "Nhan tin nhan realtime (STOMP)" as UC_ReceiveMsg
+    usecase "Upload media (avatar/attachment)" as UC_Upload
+  }
+}
+
+Guest --> UC_Register
+Guest --> UC_Login
+Guest --> UC_Forgot
+
+User --> UC_Refresh
+User --> UC_Logout
+User --> UC_Profile
+User --> UC_Security
+User --> UC_SearchUser
+User --> UC_Presence
+
+User --> UC_SendFriendReq
+User --> UC_HandleFriendReq
+User --> UC_Relation
+User --> UC_Contacts
+User --> UC_QR
+User --> UC_Suggest
+
+User --> UC_CreateConv
+User --> UC_GroupManage
+User --> UC_ListConv
+User --> UC_History
+User --> UC_SendMsg
+User --> UC_ReceiveMsg
+
+UC_Register .> UC_SendOtp : <<include>>
+UC_Register .> UC_VerifyOtp : <<include>>
+UC_Forgot .> UC_SendOtp : <<include>>
+UC_Forgot .> UC_VerifyOtp : <<include>>
+UC_Forgot .> UC_ResetPwd : <<include>>
+UC_Security .> UC_SendOtp : <<include>>
+UC_Security .> UC_VerifyOtp : <<include>>
+UC_Login .> UC_GoogleLogin : <<extend>>
+UC_SendMsg .> UC_Upload : <<extend>>
+UC_Profile .> UC_Upload : <<extend>>
+
+Google --> UC_GoogleLogin
+OTPMail --> UC_SendOtp
+Cloudinary --> UC_Upload
+
+@enduml

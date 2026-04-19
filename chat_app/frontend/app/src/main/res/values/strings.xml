@@ -29,7 +29,6 @@
     <string name="hint_phone">Số điện thoại</string>
     <string name="hint_password_register">Mật khẩu</string>
     <string name="hint_confirm_password">Xác nhận mật khẩu</string>
-    <string name="password_helper">Tối thiểu 8 ký tự</string>
     <string name="btn_register">Đăng ký</string>
     <string name="btn_login">Đăng nhập</string>
     <string name="terms_prefix">Tôi đồng ý với </string>
@@ -55,14 +54,12 @@
     <string name="otp_hint">Nhập mã OTP</string>
     <string name="otp_verify">Xác nhận</string>
     <string name="otp_resend">Không nhận được? Gửi lại</string>
-    <string name="otp_invalid">OTP không hợp lệ</string>
     <string name="remember_password">Nhớ mật khẩu? </string>
     <string name="action_login_forgot_password">Đăng nhập</string>
     <string name="reset_other_methods">Hoặc thử các cách khác</string>
     <string name="reset_via_phone">Qua SĐT</string>
     <string name="reset_support">Hỗ trợ</string>
     <string name="back_to_login">Đăng nhập</string>
-    <string name="btn_back_to_login">Quay lại đăng nhập</string>
     <string name="forgot_back_to_form">Quay lại form nhập email</string>
     <string name="forgot_lock_desc">Quay lại form nhập email</string>
     <string name="forgot_back">Quay lại form nhập email</string>
@@ -73,13 +70,10 @@
     <string name="cd_google">Google</string>
     <string name="cd_facebook">Facebook</string>
     <string name="cd_zalo">Zalo</string>
-    <string name="password_required">Vui lòng nhập mật khẩu</string>
-    <string name="password_not_match">Mật khẩu xác nhận không khớp</string>
-    <string name="password_too_short">Mật khẩu phải có ít nhất 6 ký tự</string>
 
     <!-- ========== CHAT APP ACTIVITY ========== -->
 
-    <!-- ChapAppActivity -->
+    <!-- ChatAppActivity -->
     <string name="search_hint">Tìm kiếm</string>
     <string name="search_content_desc">Tìm kiếm</string>
     <string name="qr_content_desc">Quét mã QR</string>
@@ -87,8 +81,8 @@
 
     <!-- MessagesFragment -->
     <string name="nav_messages">Tin nhắn</string>
-    <string name="tab_priority">Ưu tiên</string>
-    <string name="tab_other">Khác</string>
+    <string name="tab_priority">Uu tien</string>
+    <string name="tab_other">Khac</string>
     <string name="no_conversation">Chưa có cuộc trò chuyện nào</string>
     <string name="filter">Filter</string>
 
@@ -128,9 +122,6 @@
     <string name="update_avatar_title">Cập nhật hình đại diện</string>
     <string name="take_photo">Chụp ảnh mới</string>
     <string name="choose_photo">Chọn ảnh từ điện thoại</string>
-    <string name="please_enter_group_name">Vui lòng đặt tên nhóm</string>
-    <string name="select_min_members">Chọn ít nhất 2 thành viên</string>
-    <string name="group_created">Nhóm \\\"%s\\\" đã được tạo với %d thành viên</string>
     <string name="cd_camera">Camera</string>
     <string name="search_phone_hint">Tìm tên hoặc số điện thoại</string>
     <string name="phone_mode">123</string>
@@ -158,7 +149,6 @@
     <string name="phone_number_temp">0987654321</string>
     <string name="name_temp">Nguyen Hai Dang</string>
     <string name="button_add_friend">kết bạn</string>
-    <string name="button_send">Nhắn tin</string>
 
     <!-- UserProfileFragment -->
     <string name="message">Nhắn tin</string>
@@ -263,7 +253,6 @@
     <string name="qr_scanner_title">Quét mã QR</string>
     <string name="qr_scanner_instruction">Đưa mã QR vào khung hình để quét</string>
     <string name="qr_scanner_subtitle">Mã QR sẽ được nhận dạng tự động</string>
-    <string name="qr_scan_result">Đã quét: %s</string>
     <string name="camera_permission_required">Cần cấp quyền camera để quét mã QR</string>
 
     <!-- ========== CHAT DETAIL FRAGMENT ========== -->
@@ -282,18 +271,32 @@
     <!-- ========== FRIEND REQUESTS FRAGMENT ========== -->
     
     <!-- Friend Requests Fragment -->
-    <string name="tab_received">ĐÃ NHẬN</string>
-    <string name="tab_sent">ĐÃ GỬI</string>
+    <string name="tab_received">Da nhan</string>
+    <string name="tab_sent">Da gui</string>
     <string name="btn_reject">từ chối</string>
     <string name="btn_accept">chấp nhận</string>
     <string name="settings_coming_soon">Settings coming soon</string>
-    <string name="friend_requests_title">Lời mời kết bạn</string>
-    <string name="empty_received">Không có lời mời nào.</string>
-    <string name="empty_sent">Không có lời mời đã gửi nào.</string>
-    <string name="load_friend_requests_failed">Lấy lời mời kết bạn thất bại</string>
-    <string name="rejected_request">Đã từ chối %s</string>
-    <string name="accepted_request">Đã đồng ý %s</string>
-    <string name="revoked_request">Đã thu hồi lời mời đến %s</string>
+    <string name="friend_requests_title">Loi moi ket ban</string>
+    <string name="empty_received">Khong co loi moi nao.</string>
+    <string name="empty_sent">Khong co loi moi da gui nao.</string>
+    <string name="load_friend_requests_failed">Lay loi moi ket ban that bai</string>
+    <string name="rejected_request">Da tu choi %s</string>
+    <string name="accepted_request">Da dong y %s</string>
+    <string name="revoked_request">Da thu hoi loi moi den %s</string>
     <string name="btn_cancel">Hủy</string>
+    <string name="friend_request_action_cancel">Huy</string>
+    <string name="friend_request_action_resend">Gui lai</string>
+    <string name="friend_request_action_send">Gui</string>
+    <string name="nickname_display_format">( %1$s )</string>
+    <string name="country_code_picker_title">Chon ma quoc gia</string>
+    <string name="suggested_friends_coming_soon">Tinh nang goi y ban be sap co</string>
+    <string name="add_friend_status_add_friend">Ket ban</string>
+    <string name="add_friend_status_sent">Da gui</string>
+    <string name="add_friend_status_accept">Xac nhan</string>
+    <string name="add_friend_error_phone_required">Vui long nhap so dien thoai</string>
+    <string name="add_friend_error_phone_invalid">So dien thoai khong hop le</string>
+    <string name="add_friend_error_select_user">Vui long chon nguoi dung truoc khi ket ban</string>
+    <string name="add_friend_error_with_code">Loi: %1$s</string>
 
 </resources>
+

@@ -1,7 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.hilt.android)
 }
+
+val googleWebClientId = (providers.gradleProperty("GOOGLE_WEB_CLIENT_ID").orNull ?: "").trim()
 
 android {
     namespace = "com.dangngulon.frontend"
@@ -22,15 +24,21 @@ android {
     productFlavors {
         create("dev") {
             dimension = "env"
-            buildConfigField("String", "BASE_URL", "\"http://192.168.1.2:8080/\"")
+            buildConfigField("String", "BASE_URL", "\"https://interacthub-java-api-hqash7cvg0eubkee.japanwest-01.azurewebsites.net/\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
         create("staging") {
             dimension = "env"
-            buildConfigField("String", "BASE_URL", "\"https://staging.example.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://interacthub-java-api-hqash7cvg0eubkee.japanwest-01.azurewebsites.net/\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
         create("prod") {
             dimension = "env"
-            buildConfigField("String", "BASE_URL", "\"https://api.example.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://interacthub-java-api-hqash7cvg0eubkee.japanwest-01.azurewebsites.net/\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
     }
 
@@ -64,37 +72,38 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
+    testImplementation(libs.core.testing)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    //noinspection NewerVersionAvailable
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
 
-    implementation("com.google.zxing:core:3.5.2")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
 
-    implementation("de.hdodenhof:circleimageview:3.1.0")
-    implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
+    implementation(libs.circleimageview)
+    implementation(libs.coordinatorlayout)
 
-    implementation("androidx.navigation:navigation-fragment:2.7.7")
-    implementation("androidx.navigation:navigation-ui:2.7.7")
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
 
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation(libs.security.crypto)
 
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    annotationProcessor("com.google.dagger:hilt-compiler:2.51.1")
+    implementation(libs.hilt.android)
+    annotationProcessor(libs.hilt.compiler)
 
-    implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
-    annotationProcessor("androidx.hilt:hilt-compiler:1.2.0")
+    implementation(libs.androidx.hilt.navigation.fragment)
+    annotationProcessor(libs.androidx.hilt.compiler)
 
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+    implementation(libs.glide)
+    annotationProcessor(libs.glide.compiler)
 
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
-    implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
-    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
-    implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
+    implementation(libs.stomp.protocol.android)
+    implementation(libs.rxjava)
+    implementation(libs.rxandroid)
+    implementation(libs.play.services.auth)
 }

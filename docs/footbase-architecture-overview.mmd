@@ -1,0 +1,80 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Times New Roman",
+    "primaryColor": "#f7f4ec",
+    "primaryTextColor": "#1f2937",
+    "primaryBorderColor": "#355c7d",
+    "lineColor": "#355c7d",
+    "secondaryColor": "#eef4fb",
+    "tertiaryColor": "#fffaf0"
+  },
+  "flowchart": {
+    "curve": "linear",
+    "nodeSpacing": 40,
+    "rankSpacing": 55,
+    "htmlLabels": true
+  }
+}}%%
+flowchart TB
+
+    classDef user fill:#fff7e8,stroke:#8b6f47,color:#1f2937,stroke-width:1.2px;
+    classDef client fill:#eef4fb,stroke:#355c7d,color:#1f2937,stroke-width:1.2px;
+    classDef backend fill:#f6f8fb,stroke:#355c7d,color:#1f2937,stroke-width:1.2px;
+    classDef data fill:#f8f5ff,stroke:#5d4f85,color:#1f2937,stroke-width:1.2px;
+    classDef service fill:#f2fbf7,stroke:#2c7a5b,color:#1f2937,stroke-width:1.2px;
+
+    USER["Người dùng<br/>Web Browser / Android App"]
+
+    subgraph CLIENT["Tầng client"]
+        direction LR
+        WEB["Web Frontend<br/>React + TypeScript + Tailwind CSS"]
+        ANDROID["Android App<br/>Java / XML"]
+    end
+
+    subgraph PLATFORM["Tầng backend và dữ liệu"]
+        direction LR
+
+        subgraph SOCIAL["Khối social web"]
+            direction TB
+            DOTNET["ASP.NET Core Web API<br/>Post, story, report, admin, games"]
+            SIGNALR["SignalR Hub<br/>Notification + game realtime"]
+            SQL["SQL Server<br/>Social data"]
+            DOTNET --> SIGNALR
+            DOTNET --> SQL
+        end
+
+        subgraph CHAT["Khối auth và chat"]
+            direction TB
+            SPRING["Spring Boot API<br/>Auth, profile, friendship, chat"]
+            STOMP["STOMP / WebSocket<br/>Realtime chat"]
+            MYSQL["MySQL<br/>User, profile, conversation, message"]
+            REDIS["Redis<br/>Presence / cache / reset token"]
+            SPRING --> STOMP
+            SPRING --> MYSQL
+            SPRING --> REDIS
+        end
+
+        CLOUDINARY["Cloudinary<br/>Media storage"]
+
+        DOTNET --> CLOUDINARY
+        SPRING --> CLOUDINARY
+        DOTNET <--> SPRING
+    end
+
+    USER --> WEB
+    USER --> ANDROID
+
+    WEB --> DOTNET
+    WEB --> SPRING
+    ANDROID --> SPRING
+
+    WEB <--> SIGNALR
+    WEB <--> STOMP
+    ANDROID <--> STOMP
+
+    class USER user;
+    class WEB,ANDROID client;
+    class DOTNET,SIGNALR,SPRING,STOMP backend;
+    class SQL,MYSQL,REDIS data;
+    class CLOUDINARY service;

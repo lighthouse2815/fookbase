@@ -1,0 +1,81 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Times New Roman",
+    "primaryColor": "#f7f4ec",
+    "primaryTextColor": "#1f2937",
+    "primaryBorderColor": "#355c7d",
+    "lineColor": "#355c7d",
+    "secondaryColor": "#eef4fb",
+    "tertiaryColor": "#fffaf0"
+  },
+  "flowchart": {
+    "curve": "linear",
+    "nodeSpacing": 35,
+    "rankSpacing": 45
+  }
+}}%%
+flowchart LR
+
+    classDef actor fill:#fff7e8,stroke:#8b6f47,color:#1f2937,stroke-width:1.2px;
+    classDef usecase fill:#eef4fb,stroke:#355c7d,color:#1f2937,stroke-width:1.1px;
+
+    WEBUSER["Actor: User Web"]
+    MOBILEUSER["Actor: User Mobile"]
+    ADMIN["Actor: Admin"]
+
+    subgraph SYS["FOOTBASE SYSTEM - Use Case Tong Quat"]
+        direction TB
+
+        subgraph AUTH["Auth & Profile"]
+            direction TB
+            UC_LOGIN([Dang ky / Dang nhap / Refresh token])
+            UC_PROFILE([Cap nhat ho so / Bao mat tai khoan])
+        end
+
+        subgraph SOCIAL["Social Content"]
+            direction TB
+            UC_POST([Tao, sua, xoa, xem bai viet])
+            UC_INTERACT([Like, comment, story, save post])
+            UC_REPORT([Bao cao noi dung / nguoi dung])
+        end
+
+        subgraph CHAT["Friendship & Messenger"]
+            direction TB
+            UC_FRIEND([Tim kiem va quan ly ban be])
+            UC_MESSAGE([Nhan tin 1-1 / nhom realtime])
+        end
+
+        subgraph GAME["Realtime Games"]
+            direction TB
+            UC_GAME([Tao phong, tham gia, choi game realtime])
+        end
+
+        subgraph ADM["Admin Console"]
+            direction TB
+            UC_MOD([Duyet bao cao bai viet, story, user, comment])
+            UC_USERS([Quan ly user va trang thai tai khoan])
+            UC_AUDIT([Xem audit log va dashboard])
+        end
+    end
+
+    WEBUSER --> UC_LOGIN
+    WEBUSER --> UC_PROFILE
+    WEBUSER --> UC_POST
+    WEBUSER --> UC_INTERACT
+    WEBUSER --> UC_REPORT
+    WEBUSER --> UC_FRIEND
+    WEBUSER --> UC_MESSAGE
+    WEBUSER --> UC_GAME
+
+    MOBILEUSER --> UC_LOGIN
+    MOBILEUSER --> UC_PROFILE
+    MOBILEUSER --> UC_FRIEND
+    MOBILEUSER --> UC_MESSAGE
+
+    ADMIN --> UC_MOD
+    ADMIN --> UC_USERS
+    ADMIN --> UC_AUDIT
+
+    class WEBUSER,MOBILEUSER,ADMIN actor;
+    class UC_LOGIN,UC_PROFILE,UC_POST,UC_INTERACT,UC_REPORT,UC_FRIEND,UC_MESSAGE,UC_GAME,UC_MOD,UC_USERS,UC_AUDIT usecase;

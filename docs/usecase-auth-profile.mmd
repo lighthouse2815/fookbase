@@ -1,0 +1,60 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Times New Roman",
+    "primaryColor": "#f7f4ec",
+    "primaryTextColor": "#1f2937",
+    "primaryBorderColor": "#355c7d",
+    "lineColor": "#355c7d",
+    "secondaryColor": "#eef4fb",
+    "tertiaryColor": "#fffaf0"
+  },
+  "flowchart": {
+    "curve": "linear",
+    "nodeSpacing": 35,
+    "rankSpacing": 45
+  }
+}}%%
+flowchart LR
+
+    classDef actor fill:#fff7e8,stroke:#8b6f47,color:#1f2937,stroke-width:1.2px;
+    classDef usecase fill:#eef4fb,stroke:#355c7d,color:#1f2937,stroke-width:1.1px;
+    classDef include fill:#f9fafb,stroke:#64748b,color:#334155,stroke-dasharray: 4 2;
+
+    GUEST["Actor: Guest"]
+    USER["Actor: Authenticated User"]
+
+    subgraph SYS["Use Case Chinh - Auth va Profile"]
+        direction TB
+        UC_REGISTER([Dang ky tai khoan])
+        UC_LOGIN([Dang nhap])
+        UC_FORGOT([Quen mat khau / Dat lai mat khau])
+        UC_OTP([Gui va xac minh OTP])
+        UC_REFRESH([Lam moi access token])
+        UC_COMPLETE([Hoan tat profile ban dau])
+        UC_UPDATE([Cap nhat profile])
+        UC_SECURITY([Cap nhat thong tin bao mat])
+        UC_LOGOUT([Dang xuat])
+
+        INC1["<<include>>"]
+        INC2["<<include>>"]
+        INC3["<<include>>"]
+    end
+
+    GUEST --> UC_REGISTER
+    GUEST --> UC_LOGIN
+    GUEST --> UC_FORGOT
+
+    USER --> UC_REFRESH
+    USER --> UC_COMPLETE
+    USER --> UC_UPDATE
+    USER --> UC_SECURITY
+    USER --> UC_LOGOUT
+
+    UC_REGISTER --> INC1 --> UC_OTP
+    UC_FORGOT --> INC2 --> UC_OTP
+    UC_SECURITY --> INC3 --> UC_OTP
+
+    class GUEST,USER actor;
+    class UC_REGISTER,UC_LOGIN,UC_FORGOT,UC_OTP,UC_REFRESH,UC_COMPLETE,UC_UPDATE,UC_SECURITY,UC_LOGOUT usecase;
+    class INC1,INC2,INC3 include;

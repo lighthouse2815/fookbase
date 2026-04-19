@@ -1,0 +1,1 @@
+sửa controller dung : @AuthenticationPrincipal CurrentUser currentUser clean hơn thay vì để controller phụ thuộc jwt 

@@ -1,0 +1,78 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Times New Roman",
+    "primaryColor": "#f7f4ec",
+    "primaryTextColor": "#1f2937",
+    "primaryBorderColor": "#355c7d",
+    "lineColor": "#355c7d",
+    "secondaryColor": "#eef4fb",
+    "tertiaryColor": "#fffaf0"
+  },
+  "flowchart": {
+    "curve": "linear",
+    "nodeSpacing": 35,
+    "rankSpacing": 45
+  }
+}}%%
+flowchart LR
+
+    classDef actor fill:#fff7e8,stroke:#8b6f47,color:#1f2937,stroke-width:1.2px;
+    classDef usecase fill:#eef4fb,stroke:#355c7d,color:#1f2937,stroke-width:1.1px;
+    classDef external fill:#f2fbf7,stroke:#2c7a5b,color:#1f2937,stroke-width:1.1px;
+
+    USER["Actor: User Web"]
+    ADMIN["Actor: Admin"]
+
+    subgraph SYS["Use Case Chinh - Social Content"]
+        direction LR
+
+        subgraph USER_UC[" "]
+            direction TB
+            UC_VIEW([Xem feed])
+            UC_DETAIL([Xem chi tiet bai viet])
+            UC_POST([Tao bai viet])
+            UC_COMMENT([Comment])
+            UC_REPLY([Reply comment])
+            UC_REACTION([React bai viet])
+            UC_STORY([Tao story])
+            UC_SAVE([Luu bai viet])
+            UC_REPORT([Bao cao noi dung])
+            UC_NOTIFY([Nhan thong bao realtime])
+        end
+
+        subgraph ADMIN_UC[" "]
+            direction TB
+            UC_REVIEW([Xem bao cao])
+            UC_MOD([Xu ly bao cao noi dung])
+        end
+
+        subgraph MEDIA_UC[" "]
+            direction TB
+            UC_MEDIA([Upload media signed])
+        end
+    end
+    CLOUDINARY["External Actor: Cloudinary"]
+
+    USER --> UC_VIEW
+    USER --> UC_DETAIL
+    USER --> UC_POST
+    USER --> UC_COMMENT
+    USER --> UC_REPLY
+    USER --> UC_REACTION
+    USER --> UC_STORY
+    USER --> UC_SAVE
+    USER --> UC_NOTIFY
+    USER --> UC_REPORT
+
+    ADMIN --> UC_REVIEW
+    ADMIN --> UC_MOD
+
+    UC_MEDIA --> CLOUDINARY
+
+    UC_POST -. "include" .-> UC_MEDIA
+    UC_STORY -. "include" .-> UC_MEDIA
+
+    class USER,ADMIN actor;
+    class CLOUDINARY external;
+    class UC_VIEW,UC_DETAIL,UC_POST,UC_COMMENT,UC_REPLY,UC_REACTION,UC_STORY,UC_SAVE,UC_NOTIFY,UC_REPORT,UC_REVIEW,UC_MOD,UC_MEDIA usecase;

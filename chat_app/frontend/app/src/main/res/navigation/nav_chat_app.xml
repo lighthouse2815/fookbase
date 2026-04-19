@@ -57,7 +57,7 @@
     <!-- Bottom Navigation - Top Level Destinations -->
     <fragment
         android:id="@+id/nav_messages"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.MessagesFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.MessagesFragment"
         android:label="Messages">
         <action
             android:id="@+id/action_messagesFragment_to_chatDetailFragment"
@@ -70,21 +70,21 @@
 
     <fragment
         android:id="@+id/nav_contacts"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.ContactsFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.ContactsFragment"
         android:label="Contacts">
 
     </fragment>
 
     <fragment
         android:id="@+id/nav_groups"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.GroupsFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.GroupsFragment"
         android:label="Groups">
 
     </fragment>
 
     <fragment
         android:id="@+id/nav_profile"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.ProfileFragment"
+        android:name="com.dangngulon.frontend.feature.profile.presentation.ui.fragments.ProfileFragment"
         android:label="Profile">
 
     </fragment>
@@ -92,7 +92,7 @@
     <!-- Modal/Overlay Fragments -->
     <fragment
         android:id="@+id/userProfileFragment"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.UserProfileFragment"
+        android:name="com.dangngulon.frontend.feature.profile.presentation.ui.fragments.UserProfileFragment"
         android:label="User Profile">
         <argument
             android:name="profileType"
@@ -110,27 +110,27 @@
 
     <fragment
         android:id="@+id/createGroupFragment"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.CreateGroupFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.CreateGroupFragment"
         android:label="Create Group"/>
 
     <fragment
         android:id="@+id/addFriendFragment"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.AddFriendFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.AddFriendFragment"
         android:label="Add Friend"/>
 
     <fragment
         android:id="@+id/friendRequestsFragment"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.FriendRequestsFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.FriendRequestsFragment"
         android:label="Friend Requests"/>
 
     <fragment
         android:id="@+id/qrScannerFragment"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.QRScannerFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.QRScannerFragment"
         android:label="QR Scanner"/>
 
     <fragment
         android:id="@+id/chatDetailFragment"
-        android:name="com.dangngulon.frontend.ui.zola.fragments.ChatDetailFragment"
+        android:name="com.dangngulon.frontend.feature.zola.presentation.ui.fragments.ChatDetailFragment"
         android:label="Chat Detail">
         <argument
             android:name="conversationId"

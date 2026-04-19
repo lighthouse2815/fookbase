@@ -259,8 +259,19 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    public GoogleAuthResponse authWithGoogle(@Valid @RequestBody GoogleTokenRequest request) {
-        return authService.registerWithGoogle(request);
+    public ResponseEntity<GoogleAuthResponse> authWithGoogle(@Valid @RequestBody GoogleTokenRequest request) {
+        GoogleAuthResponse response = authService.registerWithGoogle(request);
+
+        if (response.getRefreshToken() == null || response.getRefreshToken().isBlank()) {
+            return ResponseEntity.ok(response);
+        }
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        buildRefreshCookie(response.getRefreshToken(), authService.getRefreshTokenExpirationSeconds()).toString()
+                )
+                .body(response);
     }
 
     @Operation(summary = "Reset password")
