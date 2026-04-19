@@ -65,7 +65,8 @@ public class ConversationMemberService {
                 .stream()
                 .collect(Collectors.toMap(
                         row -> (UUID) row[0], // conversationId
-                        row -> (UUID) row[1]  // otherUserId
+                        row -> (UUID) row[1], // otherUserId
+                        (existing, ignored) -> existing
                 ));
     }
 

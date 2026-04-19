@@ -119,7 +119,7 @@ public class ConversationService {
     * **/
     public List<ConversationResponse> getConversationsByUser(UUID userId) {
         List<Conversation> conversations =
-                conversationRepository.findByMembers_User_IdAndDeletedAtNull(userId);
+                conversationRepository.findVisibleByUserId(userId);
 
         if (conversations.isEmpty()) {
             return List.of();
@@ -190,7 +190,7 @@ public class ConversationService {
     * **/
     public List<ConversationResponse> getAllGroups(UUID userId){
         List<Conversation> conversations =
-                conversationRepository.findDistinctByMembers_User_IdAndMembers_LeftAtNullAndTypeAndDeletedAtNull(userId, ConversationType.GROUP);
+                conversationRepository.findVisibleByUserIdAndType(userId, ConversationType.GROUP);
 
         if (conversations.isEmpty()) {
             return List.of();
