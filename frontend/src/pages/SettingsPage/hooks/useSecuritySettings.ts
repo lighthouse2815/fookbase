@@ -168,15 +168,20 @@ export const useSecuritySettings = (): UseSecuritySettingsReturn => {
     setIsVerifyingEditOtp(true);
     setEditOtpErrorMessage(null);
     setEditOtpInfoMessage(null);
-
     try {
       const payload = { otp: normalizedOtp };
-      if (activeEditField === 'username') {
-        await authService.verifyChangeUsernameOtpWhenLogin(payload);
-      } else {
-        await authService.verifyChangePhoneNumberOtpWhenLogin(payload);
+      const response = activeEditField === 'username'
+        ? await authService.verifyChangeUsernameOtpWhenLogin(payload)
+        : await authService.verifyChangePhoneNumberOtpWhenLogin(payload);
+
+      const verificationToken = response.result?.trim();
+      if (!verificationToken) {
+        setEditOtpErrorMessage(t('securitySettings.verifyOtpError'));
+        return;
       }
 
+      // Keep token in the same state field; update endpoint expects it in `otp`.
+      setEditOtp(verificationToken);
       setActiveEditStep('edit');
       setEditValue(getCurrentFieldValue(activeEditField));
       setEditOtpInfoMessage(

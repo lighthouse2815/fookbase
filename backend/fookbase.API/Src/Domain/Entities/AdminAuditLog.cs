@@ -6,9 +6,9 @@ public class AdminAuditLog
 
     public Guid AdminUserId { get; set; }
 
-    public string ActionType { get; set; } = string.Empty;
+    public string ActionType { get; set; } = string.Empty;// đổi thành enum tốt hơn
 
-    public string EntityType { get; set; } = string.Empty;
+    public string EntityType { get; set; } = string.Empty;  // đổi thành enum tốt hơn
 
     public Guid? EntityId { get; set; }
 
