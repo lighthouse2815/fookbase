@@ -18,11 +18,20 @@ public class SavedPostRepository : ISavedPostRepository
         Guid userId,
         int page,
         int pageSize,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedPostOwnerUserIds = null)
     {
-        var query = _context.SavedPosts
+        var excludedIds = NormalizeExcludedUserIds(excludedPostOwnerUserIds);
+        IQueryable<SavedPost> query = _context.SavedPosts
             .AsNoTracking()
-            .Where(savedPost => savedPost.UserId == userId)
+            .Where(savedPost => savedPost.UserId == userId);
+
+        if (excludedIds.Count > 0)
+        {
+            query = query.Where(savedPost => !excludedIds.Contains(savedPost.Post.UserId));
+        }
+
+        query = query
             .Include(savedPost => savedPost.Post)
                 .ThenInclude(post => post.Likes)
             .Include(savedPost => savedPost.Post)
@@ -62,5 +71,14 @@ public class SavedPostRepository : ISavedPostRepository
     public void Remove(SavedPost savedPost)
     {
         _context.SavedPosts.Remove(savedPost);
+    }
+
+    private static IReadOnlyList<Guid> NormalizeExcludedUserIds(IReadOnlyCollection<Guid>? excludedUserIds)
+    {
+        return excludedUserIds?
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList()
+            ?? [];
     }
 }

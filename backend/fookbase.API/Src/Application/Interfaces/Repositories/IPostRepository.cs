@@ -4,7 +4,11 @@ namespace InteractHub.Api.Application.Interfaces.Repositories;
 
 public interface IPostRepository
 {
-    Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null);
 
     Task<Post?> GetByIdAsync(Guid postId, CancellationToken cancellationToken);
 

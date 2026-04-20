@@ -375,6 +375,21 @@ public class JavaApiService : IJavaApiService
         return result;
     }
 
+    public async Task<JavaApiCallResult<List<string>>> GetBlockedUserIdsAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var path = BuildPath(_options.MessengerBlockedUserIdsPathTemplate);
+        var result = await GetResultAsync<List<string>>(path, accessToken, cancellationToken);
+
+        if (result.IsSuccess && result.Data is null)
+        {
+            return JavaApiCallResult<List<string>>.Success(new List<string>(), result.StatusCode);
+        }
+
+        return result;
+    }
+
     public Task<JavaApiCallResult<RegisterResponseDto>> RegisterAsync(
         RegisterRequestDto request,
         CancellationToken cancellationToken = default)

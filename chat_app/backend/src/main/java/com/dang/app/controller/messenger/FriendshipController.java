@@ -59,6 +59,16 @@ public class FriendshipController {
         return friendshipService.getBlockedUserInfos(userId);
     }
 
+    @GetMapping("/blocked-user-ids")
+    public List<UUID> getBlockedUserIds(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return friendshipService.getBlockedUserIdSet(userId)
+                .stream()
+                .toList();
+    }
+
     @PostMapping("/reject")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void rejectFriendRequest(

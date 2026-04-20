@@ -14,12 +14,24 @@ public class CommentRepository : ICommentRepository
         _context = context;
     }
 
-    public async Task<(IReadOnlyList<Comment> Items, int TotalCount)> GetPagedByPostIdAsync(Guid postId, int page, int pageSize, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<Comment> Items, int TotalCount)> GetPagedByPostIdAsync(
+        Guid postId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null)
     {
+        var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
         var query = _context.Comments
             .AsNoTracking()
-            .Where(comment => comment.PostId == postId && comment.ParentCommentId == null)
-            .OrderBy(comment => comment.CreatedAt);
+            .Where(comment => comment.PostId == postId && comment.ParentCommentId == null);
+
+        if (excludedIds.Count > 0)
+        {
+            query = query.Where(comment => !excludedIds.Contains(comment.UserId));
+        }
+
+        query = query.OrderBy(comment => comment.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -31,11 +43,22 @@ public class CommentRepository : ICommentRepository
         return (items, totalCount);
     }
 
-    public async Task<IReadOnlyList<Comment>> GetByPostIdAsync(Guid postId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Comment>> GetByPostIdAsync(
+        Guid postId,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null)
     {
-        return await _context.Comments
+        var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
+        var query = _context.Comments
             .AsNoTracking()
-            .Where(comment => comment.PostId == postId)
+            .Where(comment => comment.PostId == postId);
+
+        if (excludedIds.Count > 0)
+        {
+            query = query.Where(comment => !excludedIds.Contains(comment.UserId));
+        }
+
+        return await query
             .OrderBy(comment => comment.CreatedAt)
             .ToListAsync(cancellationToken);
     }
@@ -82,5 +105,14 @@ public class CommentRepository : ICommentRepository
     public Task AddAsync(Comment comment, CancellationToken cancellationToken)
     {
         return _context.Comments.AddAsync(comment, cancellationToken).AsTask();
+    }
+
+    private static IReadOnlyList<Guid> NormalizeExcludedUserIds(IReadOnlyCollection<Guid>? excludedUserIds)
+    {
+        return excludedUserIds?
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList()
+            ?? [];
     }
 }

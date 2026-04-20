@@ -53,13 +53,11 @@ public class PostService : IPostService
 
         var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
 
-        var (items, totalCount) = await _postRepository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
-        if (blockedUserIds.Count > 0)
-        {
-            items = items
-                .Where(post => !blockedUserIds.Contains(post.UserId))
-                .ToList();
-        }
+        var (items, totalCount) = await _postRepository.GetPagedAsync(
+            query.Page,
+            query.PageSize,
+            cancellationToken,
+            blockedUserIds);
 
         var authors = await ResolveAuthorsAsync(items.Select(post => post.UserId), cancellationToken);
 
@@ -74,7 +72,8 @@ public class PostService : IPostService
                         ? author
                         : CreateFallbackAuthor(post.UserId),
                     CurrentUserReactionType = currentUserReactionType,
-                    LikedByCurrentUser = currentUserReactionType is not null
+                    LikedByCurrentUser = currentUserReactionType is not null,
+                    CommentCount = ResolveVisibleCommentCount(post, blockedUserIds)
                 };
 
                 return dto;
@@ -101,7 +100,8 @@ public class PostService : IPostService
         {
             Author = await ResolveAuthorAsync(post.UserId, cancellationToken),
             CurrentUserReactionType = currentUserReactionType,
-            LikedByCurrentUser = currentUserReactionType is not null
+            LikedByCurrentUser = currentUserReactionType is not null,
+            CommentCount = ResolveVisibleCommentCount(post, blockedUserIds)
         };
     }
 
@@ -350,6 +350,16 @@ public class PostService : IPostService
         return NormalizePostReactionType(reaction.Type);
     }
 
+    private static int ResolveVisibleCommentCount(Post post, IReadOnlySet<Guid> blockedUserIds)
+    {
+        if (blockedUserIds.Count == 0)
+        {
+            return post.Comments.Count;
+        }
+
+        return post.Comments.Count(comment => !blockedUserIds.Contains(comment.UserId));
+    }
+
     private static string NormalizePostReactionType(ReactionType type)
     {
         return type.ToString();
@@ -524,14 +534,13 @@ public class PostService : IPostService
 
         try
         {
-            var result = await _javaApiService.GetBlockedUsersAsync(string.Empty, cancellationToken);
+            var result = await _javaApiService.GetBlockedUserIdsAsync(string.Empty, cancellationToken);
             if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
             {
                 return new HashSet<Guid>();
             }
 
             return result.Data
-                .Select(item => item.UserId)
                 .Where(userId => !string.IsNullOrWhiteSpace(userId))
                 .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
                 .Where(parsedUserId => parsedUserId.HasValue)

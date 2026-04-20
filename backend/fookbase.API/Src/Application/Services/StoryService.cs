@@ -500,14 +500,13 @@ public class StoryService : IStoryService
     {
         try
         {
-            var result = await _javaApiService.GetBlockedUsersAsync(string.Empty, cancellationToken);
+            var result = await _javaApiService.GetBlockedUserIdsAsync(string.Empty, cancellationToken);
             if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
             {
                 return new HashSet<Guid>();
             }
 
             return result.Data
-                .Select(item => item.UserId)
                 .Where(userId => !string.IsNullOrWhiteSpace(userId))
                 .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
                 .Where(parsedUserId => parsedUserId.HasValue)

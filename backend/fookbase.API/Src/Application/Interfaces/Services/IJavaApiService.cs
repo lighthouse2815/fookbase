@@ -141,6 +141,10 @@ public interface IJavaApiService
         string accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<JavaApiCallResult<List<string>>> GetBlockedUserIdsAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
     Task<JavaApiCallResult<RegisterResponseDto>> RegisterAsync(
         RegisterRequestDto request,
         CancellationToken cancellationToken = default);

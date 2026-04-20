@@ -62,21 +62,17 @@ public class CommentService : ICommentService
             throw new NotFoundException("Post not found.");
         }
 
-        var (topLevelComments, _) = await _commentRepository.GetPagedByPostIdAsync(post.Id, query.Page, query.PageSize, cancellationToken);
-        if (blockedUserIds.Count > 0)
-        {
-            topLevelComments = topLevelComments
-                .Where(comment => !blockedUserIds.Contains(comment.UserId))
-                .ToList();
-        }
+        var (topLevelComments, _) = await _commentRepository.GetPagedByPostIdAsync(
+            post.Id,
+            query.Page,
+            query.PageSize,
+            cancellationToken,
+            blockedUserIds);
 
-        var allCommentsInPost = await _commentRepository.GetByPostIdAsync(post.Id, cancellationToken);
-        if (blockedUserIds.Count > 0)
-        {
-            allCommentsInPost = allCommentsInPost
-                .Where(comment => !blockedUserIds.Contains(comment.UserId))
-                .ToList();
-        }
+        var allCommentsInPost = await _commentRepository.GetByPostIdAsync(
+            post.Id,
+            cancellationToken,
+            blockedUserIds);
 
         var totalCount = allCommentsInPost.Count;
         var childrenByParentId = BuildChildrenLookup(allCommentsInPost);
@@ -118,13 +114,10 @@ public class CommentService : ICommentService
             throw new NotFoundException("Comment not found.");
         }
 
-        var allCommentsInPost = await _commentRepository.GetByPostIdAsync(comment.PostId, cancellationToken);
-        if (blockedUserIds.Count > 0)
-        {
-            allCommentsInPost = allCommentsInPost
-                .Where(item => !blockedUserIds.Contains(item.UserId))
-                .ToList();
-        }
+        var allCommentsInPost = await _commentRepository.GetByPostIdAsync(
+            comment.PostId,
+            cancellationToken,
+            blockedUserIds);
 
         var childrenByParentId = BuildChildrenLookup(allCommentsInPost);
         var scopedCommentIds = CollectSubtreeIds([comment.Id], childrenByParentId);
@@ -536,14 +529,13 @@ public class CommentService : ICommentService
 
         try
         {
-            var result = await _javaApiService.GetBlockedUsersAsync(string.Empty, cancellationToken);
+            var result = await _javaApiService.GetBlockedUserIdsAsync(string.Empty, cancellationToken);
             if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
             {
                 return new HashSet<Guid>();
             }
 
             return result.Data
-                .Select(item => item.UserId)
                 .Where(userId => !string.IsNullOrWhiteSpace(userId))
                 .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
                 .Where(parsedUserId => parsedUserId.HasValue)

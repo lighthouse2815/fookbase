@@ -4,9 +4,17 @@ namespace InteractHub.Api.Application.Interfaces.Repositories;
 
 public interface ICommentRepository
 {
-    Task<(IReadOnlyList<Comment> Items, int TotalCount)> GetPagedByPostIdAsync(Guid postId, int page, int pageSize, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<Comment> Items, int TotalCount)> GetPagedByPostIdAsync(
+        Guid postId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null);
 
-    Task<IReadOnlyList<Comment>> GetByPostIdAsync(Guid postId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Comment>> GetByPostIdAsync(
+        Guid postId,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null);
 
     Task<IReadOnlyList<Comment>> GetByPostIdForUpdateAsync(Guid postId, CancellationToken cancellationToken);
 

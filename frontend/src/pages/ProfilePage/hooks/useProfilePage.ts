@@ -149,6 +149,11 @@ export const useProfilePage = (): UseProfilePageReturn => {
   }, [targetUserId]);
 
   useEffect(() => {
+    if (!isOwnProfile && friendshipStatus === 'BLOCKED') {
+      setPersonalPosts([]);
+      return;
+    }
+
     const loadPersonalPosts = async () => {
       try {
         const response = await postService.getPosts(1, PROFILE_POSTS_PAGE_SIZE);
@@ -160,7 +165,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
     };
 
     void loadPersonalPosts();
-  }, [targetUserId]);
+  }, [friendshipStatus, isOwnProfile, targetUserId]);
 
   const handlePostDeleted = (postId: string) => {
     setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));
@@ -249,6 +254,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
     try {
       await friendshipService.blockUser(targetUserId);
       updateFriendshipStatus('BLOCKED');
+      setPersonalPosts([]);
       if (wasFriend) {
         adjustFriendsCount(-1);
       }

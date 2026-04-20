@@ -93,6 +93,7 @@ export const FriendSearchPage = () => {
             const statusMeta = getFriendSearchStatusMeta(status, isSelf);
             const isProcessingAction = actionUserId === profile.userId;
             const isActionEnabled = statusMeta.action !== 'none';
+            const canViewProfile = status !== 'BLOCKED';
 
             return (
               <article
@@ -101,13 +102,23 @@ export const FriendSearchPage = () => {
               >
                 <div className="p-4">
                   <div className="flex items-start gap-3">
-                    <Link to={`/profile/${profile.userId}`} className="inline-flex shrink-0" aria-label={profile.displayName}>
-                      <img
-                        src={profile.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
-                        alt={profile.displayName}
-                        className="h-14 w-14 rounded-full object-cover"
-                      />
-                    </Link>
+                    {canViewProfile ? (
+                      <Link to={`/profile/${profile.userId}`} className="inline-flex shrink-0" aria-label={profile.displayName}>
+                        <img
+                          src={profile.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
+                          alt={profile.displayName}
+                          className="h-14 w-14 rounded-full object-cover"
+                        />
+                      </Link>
+                    ) : (
+                      <div className="inline-flex shrink-0">
+                        <img
+                          src={profile.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
+                          alt={profile.displayName}
+                          className="h-14 w-14 rounded-full object-cover"
+                        />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {profile.displayName}
@@ -180,12 +191,14 @@ export const FriendSearchPage = () => {
                       </button>
                     )}
 
-                    <Link
-                      to={`/profile/${profile.userId}`}
-                      className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                      Xem trang ca nhan
-                    </Link>
+                    {canViewProfile ? (
+                      <Link
+                        to={`/profile/${profile.userId}`}
+                        className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                      >
+                        Xem trang ca nhan
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
               </article>

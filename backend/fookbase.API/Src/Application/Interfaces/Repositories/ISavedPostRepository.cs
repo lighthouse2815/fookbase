@@ -8,7 +8,8 @@ public interface ISavedPostRepository
         Guid userId,
         int page,
         int pageSize,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedPostOwnerUserIds = null);
 
     Task<SavedPost?> GetByUserAndPostAsync(Guid userId, Guid postId, CancellationToken cancellationToken);
 

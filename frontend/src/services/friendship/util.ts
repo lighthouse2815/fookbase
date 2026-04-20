@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { API_CONFIG } from '@/config/apiConfig';
-import { apiClient } from '@/services/apiClient';
+import { apiClient, javaApiClient } from '@/services/apiClient';
 import type { ApiEnvelope } from '@/interface/api';
 import type {
   FriendRequest,
@@ -82,7 +82,8 @@ export const requestFromCandidates = async <T>(candidates: RequestCandidate[]): 
 
   for (const candidate of candidates) {
     try {
-      const response = await apiClient.request<T | ApiEnvelope<T>>({
+      const client = candidate.client === 'java' ? javaApiClient : apiClient;
+      const response = await client.request<T | ApiEnvelope<T>>({
         method: candidate.method,
         url: candidate.path,
         data: candidate.data,

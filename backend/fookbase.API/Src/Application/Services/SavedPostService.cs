@@ -39,11 +39,13 @@ public class SavedPostService : ISavedPostService
     {
         query.Normalize();
 
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
         var (items, totalCount) = await _savedPostRepository.GetPagedByUserAsync(
             userId,
             query.Page,
             query.PageSize,
-            cancellationToken);
+            cancellationToken,
+            blockedUserIds);
 
         var posts = items
             .Select(savedPost => savedPost.Post)
@@ -62,7 +64,8 @@ public class SavedPostService : ISavedPostService
                         ? author
                         : CreateFallbackAuthor(post.UserId),
                     CurrentUserReactionType = currentUserReactionType,
-                    LikedByCurrentUser = currentUserReactionType is not null
+                    LikedByCurrentUser = currentUserReactionType is not null,
+                    CommentCount = ResolveVisibleCommentCount(post, blockedUserIds)
                 };
             })
             .ToList();
@@ -77,6 +80,12 @@ public class SavedPostService : ISavedPostService
     {
         var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
+
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
+        if (blockedUserIds.Contains(post.UserId))
+        {
+            throw new NotFoundException("Post not found.");
+        }
 
         var existing = await _savedPostRepository.GetByUserAndPostAsync(userId, post.Id, cancellationToken);
         if (existing is not null)
@@ -196,6 +205,48 @@ public class SavedPostService : ISavedPostService
         }
 
         return reaction.Type.ToString();
+    }
+
+    private static int ResolveVisibleCommentCount(Post post, IReadOnlySet<Guid> blockedUserIds)
+    {
+        if (blockedUserIds.Count == 0)
+        {
+            return post.Comments.Count;
+        }
+
+        return post.Comments.Count(comment => !blockedUserIds.Contains(comment.UserId));
+    }
+
+    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid currentUserId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _javaApiService.GetBlockedUserIdsAsync(string.Empty, cancellationToken);
+            if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
+            {
+                return new HashSet<Guid>();
+            }
+
+            return result.Data
+                .Where(userId => !string.IsNullOrWhiteSpace(userId))
+                .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
+                .Where(parsedUserId => parsedUserId.HasValue)
+                .Select(parsedUserId => parsedUserId!.Value)
+                .ToHashSet();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not resolve blocked users for saved posts request of user {UserId}.",
+                currentUserId);
+
+            return new HashSet<Guid>();
+        }
     }
 
 }

@@ -14,10 +14,21 @@ public class PostRepository : IPostRepository
         _context = context;
     }
 
-    public async Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null)
     {
-        var query = _context.Posts
-            .AsNoTracking()
+        var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
+        IQueryable<Post> query = _context.Posts.AsNoTracking();
+
+        if (excludedIds.Count > 0)
+        {
+            query = query.Where(post => !excludedIds.Contains(post.UserId));
+        }
+
+        query = query
             .Include(post => post.MediaItems)
             .Include(post => post.Likes)
             .Include(post => post.Comments)
@@ -33,6 +44,15 @@ public class PostRepository : IPostRepository
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
+    }
+
+    private static IReadOnlyList<Guid> NormalizeExcludedUserIds(IReadOnlyCollection<Guid>? excludedUserIds)
+    {
+        return excludedUserIds?
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList()
+            ?? [];
     }
 
     public Task<Post?> GetByIdAsync(Guid postId, CancellationToken cancellationToken)
