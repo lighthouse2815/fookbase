@@ -18,4 +18,10 @@ public class PendingFriendRequesterDto
 
     [JsonPropertyName("createdAt")]
     public string? CreatedAt { get; set; }
+
+    [JsonPropertyName("updateAt")]
+    public string? UpdateAt { get; set; }
+
+    [JsonPropertyName("updatedAt")]
+    public string? UpdatedAt { get; set; }
 }
