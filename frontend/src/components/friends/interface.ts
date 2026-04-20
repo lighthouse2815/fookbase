@@ -34,6 +34,7 @@ export interface FriendRequestCardProps {
 export interface ProfilePreviewProps {
   user: ProfilePreviewUser | null;
   relation: PreviewRelation;
+  onClose?: () => void;
   onAddFriend?: () => void;
   onMessage?: () => void;
   onConfirmRequest?: () => void;

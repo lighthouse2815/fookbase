@@ -34,6 +34,7 @@ export const useFriendsPage = () => {
   const [activeTab, setActiveTab] = useState<FriendsTab>(() => parseFriendsTab(searchParams.get('tab')));
   const [fetchState, setFetchState] = useState<FriendsPageFetchState>('loading');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -180,26 +181,31 @@ export const useFriendsPage = () => {
     setSearchParams(nextSearchParams);
   };
 
-  useEffect(() => {
-    if (selectedUserId) {
-      const exists =
-        receivedRequests.some((user) => user.id === selectedUserId) ||
-        sentRequests.some((user) => user.id === selectedUserId) ||
-        suggestions.some((user) => user.id === selectedUserId) ||
-        friends.some((user) => user.id === selectedUserId);
+  const handleSelectUser = useCallback((userId: string) => {
+    setSelectedUserId(userId);
+    setIsPreviewOpen(true);
+  }, []);
 
-      if (!exists) {
-        setSelectedUserId(null);
-      }
+  const closePreview = useCallback(() => {
+    setSelectedUserId(null);
+    setIsPreviewOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedUserId) {
       return;
     }
 
-    const defaultUser = receivedRequests[0] ?? sentRequests[0] ?? suggestions[0] ?? friends[0] ?? null;
+    const exists =
+      receivedRequests.some((user) => user.id === selectedUserId) ||
+      sentRequests.some((user) => user.id === selectedUserId) ||
+      suggestions.some((user) => user.id === selectedUserId) ||
+      friends.some((user) => user.id === selectedUserId);
 
-    if (defaultUser) {
-      setSelectedUserId(defaultUser.id);
+    if (!exists) {
+      closePreview();
     }
-  }, [friends, receivedRequests, selectedUserId, sentRequests, suggestions]);
+  }, [closePreview, friends, receivedRequests, selectedUserId, sentRequests, suggestions]);
 
   const selectedReceivedRequest = useMemo(
     () => (selectedUserId ? receivedRequests.find((request) => request.id === selectedUserId) ?? null : null),
@@ -416,8 +422,8 @@ export const useFriendsPage = () => {
     t,
     activeTab,
     fetchState,
+    isPreviewOpen,
     selectedUserId,
-    setSelectedUserId,
     isSidebarOpen,
     setIsSidebarOpen,
     errorMessage,
@@ -435,6 +441,8 @@ export const useFriendsPage = () => {
     friendFilters,
     loadFriendData,
     handleChangeTab,
+    handleSelectUser,
+    closePreview,
     selectedProfile,
     filteredFriends,
     handleConfirmRequest,

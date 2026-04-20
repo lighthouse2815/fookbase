@@ -1,5 +1,5 @@
 ﻿import clsx from 'clsx';
-import { MessageCircle, UserRoundCheck, UserRoundPlus, UserRoundX } from 'lucide-react';
+import { MessageCircle, UserRoundCheck, UserRoundPlus, UserRoundX, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -9,6 +9,7 @@ import { useProfilePreview } from './hooks/useProfilePreview';
 export const ProfilePreview = ({
   user,
   relation,
+  onClose,
   onAddFriend,
   onMessage,
   onConfirmRequest,
@@ -17,7 +18,7 @@ export const ProfilePreview = ({
   onUnfriend,
 }: ProfilePreviewProps) => {
   const { t } = useTranslation();
-  const { activeTab, setActiveTab, previewTabs } = useProfilePreview();
+  const { activeTab, setActiveTab, previewTabs } = useProfilePreview(user?.id);
 
   if (!user) {
     return (
@@ -34,8 +35,19 @@ export const ProfilePreview = ({
   }
 
   return (
-    <aside className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-      <div className="h-24 rounded-t-3xl bg-gradient-to-r from-sky-500 via-brand-500 to-indigo-500" />
+    <aside className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900/95">
+      <div className="relative h-24 rounded-t-3xl bg-gradient-to-r from-sky-500 via-brand-500 to-indigo-500">
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm transition hover:bg-white dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-900"
+            aria-label={t('friendsPage.preview.closeAria')}
+          >
+            <X size={18} />
+          </button>
+        ) : null}
+      </div>
       <div className="px-5 pb-5">
         <div className="-mt-12 flex items-end gap-3">
           <Link to={`/profile/${user.id}`} className="inline-flex" aria-label={user.fullName}>

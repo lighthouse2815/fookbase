@@ -22,8 +22,8 @@ export const FriendsPage = () => {
     t,
     activeTab,
     fetchState,
+    isPreviewOpen,
     selectedUserId,
-    setSelectedUserId,
     isSidebarOpen,
     setIsSidebarOpen,
     errorMessage,
@@ -41,6 +41,8 @@ export const FriendsPage = () => {
     friendFilters,
     loadFriendData,
     handleChangeTab,
+    handleSelectUser,
+    closePreview,
     selectedProfile,
     filteredFriends,
     handleConfirmRequest,
@@ -98,7 +100,7 @@ export const FriendsPage = () => {
         ) : null}
       </header>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_340px]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
         {isSidebarOpen ? (
           <button
             type="button"
@@ -176,7 +178,7 @@ export const FriendsPage = () => {
                         request={request}
                         mode="received"
                         selected={selectedUserId === request.id}
-                        onSelect={() => setSelectedUserId(request.id)}
+                        onSelect={() => handleSelectUser(request.id)}
                         onConfirm={() => void handleConfirmRequest(request.requestId)}
                         onDelete={() => void handleDeleteReceivedRequest(request.requestId)}
                       />
@@ -203,7 +205,7 @@ export const FriendsPage = () => {
                         request={request}
                         mode="sent"
                         selected={selectedUserId === request.id}
-                        onSelect={() => setSelectedUserId(request.id)}
+                        onSelect={() => handleSelectUser(request.id)}
                         onCancel={() => void handleCancelSentRequest(request.requestId)}
                       />
                     ))}
@@ -229,7 +231,7 @@ export const FriendsPage = () => {
                         user={suggestion}
                         variant="grid"
                         selected={selectedUserId === suggestion.id}
-                        onSelect={() => setSelectedUserId(suggestion.id)}
+                        onSelect={() => handleSelectUser(suggestion.id)}
                         primaryActionLabel={t('friendsPage.actions.addFriend')}
                         onPrimaryAction={() => void handleAddFriend(suggestion.id)}
                       />
@@ -270,7 +272,7 @@ export const FriendsPage = () => {
                           request={request}
                           mode="received"
                           selected={selectedUserId === request.id}
-                          onSelect={() => setSelectedUserId(request.id)}
+                          onSelect={() => handleSelectUser(request.id)}
                           onConfirm={() => void handleConfirmRequest(request.requestId)}
                           onDelete={() => void handleDeleteReceivedRequest(request.requestId)}
                         />
@@ -297,7 +299,7 @@ export const FriendsPage = () => {
                           request={request}
                           mode="sent"
                           selected={selectedUserId === request.id}
-                          onSelect={() => setSelectedUserId(request.id)}
+                          onSelect={() => handleSelectUser(request.id)}
                           onCancel={() => void handleCancelSentRequest(request.requestId)}
                         />
                       ))}
@@ -325,7 +327,7 @@ export const FriendsPage = () => {
                       user={suggestion}
                       variant="grid"
                       selected={selectedUserId === suggestion.id}
-                      onSelect={() => setSelectedUserId(suggestion.id)}
+                      onSelect={() => handleSelectUser(suggestion.id)}
                       primaryActionLabel={t('friendsPage.actions.addFriend')}
                       onPrimaryAction={() => void handleAddFriend(suggestion.id)}
                     />
@@ -372,7 +374,6 @@ export const FriendsPage = () => {
                   ))}
                 </div>
               </div>
-// unfriend button
               {filteredFriends.length === 0 ? (
                 <p className="text-sm text-slate-500 dark:text-slate-400">{t('friendsPage.empty.friendsFiltered')}</p>
               ) : (
@@ -383,7 +384,7 @@ export const FriendsPage = () => {
                       user={friend}
                       variant="list"
                       selected={selectedUserId === friend.id}
-                      onSelect={() => setSelectedUserId(friend.id)}
+                      onSelect={() => handleSelectUser(friend.id)}
                       statusText={friend.isOnline ? t('friendsPage.status.online') : t('friendsPage.status.offline')}
                       primaryActionLabel={t('friendsPage.actions.message')}
                       onPrimaryAction={() => handleMessageUser(friend.id)}
@@ -396,56 +397,70 @@ export const FriendsPage = () => {
             </section>
           ) : null}
         </main>
-// addFriend
-        <div className="xl:sticky xl:top-20 xl:h-fit">
-          <ProfilePreview
-            user={selectedProfile?.user ?? null}
-            relation={(selectedProfile?.relation ?? null) as ProfileRelation}
-            onAddFriend={
-              selectedSuggestion
-                ? () => {
-                    void handleAddFriend(selectedSuggestion.id);
-                  }
-                : undefined
-            }
-            onConfirmRequest={
-              selectedReceivedRequest
-                ? () => {
-                    void handleConfirmRequest(selectedReceivedRequest.requestId);
-                  }
-                : undefined
-            }
-            onDeleteRequest={
-              selectedReceivedRequest
-                ? () => {
-                    void handleDeleteReceivedRequest(selectedReceivedRequest.requestId);
-                  }
-                : undefined
-            }
-            onCancelRequest={
-              selectedSentRequest
-                ? () => {
-                    void handleCancelSentRequest(selectedSentRequest.requestId);
-                  }
-                : undefined
-            }
-            onUnfriend={
-              selectedFriend
-                ? () => {
-                    requestUnfriend(selectedFriend.id);
-                  }
-                : undefined
-            }
-            onMessage={
-              selectedFriend
-                ? () => {
-                    handleMessageUser(selectedFriend.id);
-                  }
-                : undefined
-            }
-          />
-        </div>
       </div>
+
+      {isPreviewOpen && selectedProfile?.user ? (
+        <div className="fixed inset-0 z-[80]">
+          <button
+            type="button"
+            onClick={closePreview}
+            className="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
+            aria-label={t('friendsPage.preview.closeAria')}
+          />
+
+          <div className="absolute inset-y-0 right-0 flex w-full justify-end p-3 pt-20 sm:max-w-md sm:p-4 sm:pt-20">
+            <div className="max-h-[calc(100vh-6rem)] w-full overflow-y-auto">
+              <ProfilePreview
+                user={selectedProfile.user}
+                relation={(selectedProfile.relation ?? null) as ProfileRelation}
+                onClose={closePreview}
+                onAddFriend={
+                  selectedSuggestion
+                    ? () => {
+                        void handleAddFriend(selectedSuggestion.id);
+                      }
+                    : undefined
+                }
+                onConfirmRequest={
+                  selectedReceivedRequest
+                    ? () => {
+                        void handleConfirmRequest(selectedReceivedRequest.requestId);
+                      }
+                    : undefined
+                }
+                onDeleteRequest={
+                  selectedReceivedRequest
+                    ? () => {
+                        void handleDeleteReceivedRequest(selectedReceivedRequest.requestId);
+                      }
+                    : undefined
+                }
+                onCancelRequest={
+                  selectedSentRequest
+                    ? () => {
+                        void handleCancelSentRequest(selectedSentRequest.requestId);
+                      }
+                    : undefined
+                }
+                onUnfriend={
+                  selectedFriend
+                    ? () => {
+                        requestUnfriend(selectedFriend.id);
+                      }
+                    : undefined
+                }
+                onMessage={
+                  selectedFriend
+                    ? () => {
+                        handleMessageUser(selectedFriend.id);
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {confirmUnfriendUser ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">

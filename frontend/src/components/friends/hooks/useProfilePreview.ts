@@ -1,13 +1,17 @@
 import { Image, Info, Newspaper } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { ProfilePreviewTabItem } from '../interface';
 import type { PreviewTab } from '../type';
 
-export function useProfilePreview() {
+export function useProfilePreview(userId?: string) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<PreviewTab>('posts');
+
+  useEffect(() => {
+    setActiveTab('posts');
+  }, [userId]);
 
   const previewTabs = useMemo<ProfilePreviewTabItem[]>(
     () => [
