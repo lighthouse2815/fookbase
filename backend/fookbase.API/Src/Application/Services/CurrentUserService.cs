@@ -135,6 +135,7 @@ public class CurrentUserService : ICurrentUserService
     }
 
     public Task<JavaApiCallResult<object?>> UpdateSecurityAccountInfoAsync(
+        string? resetToken,
         UpdateSecurityAccountRequestDto request,
         string? accessToken,
         CancellationToken cancellationToken)
@@ -146,15 +147,15 @@ public class CurrentUserService : ICurrentUserService
                 "Unauthorized."));
         }
 
-        var otp = request.Otp?.Trim();
         var username = request.Username.TrimToNull();
         var phoneNumber = request.PhoneNumber.TrimToNull();
+        var normalizedResetToken = resetToken?.Trim();
 
-        if (string.IsNullOrWhiteSpace(otp))
+        if (string.IsNullOrWhiteSpace(normalizedResetToken))
         {
             return Task.FromResult(JavaApiCallResult<object?>.Failure(
                 StatusCodes.Status400BadRequest,
-                "otp is required."));
+                "X-Reset-Token header is required."));
         }
 
         if (username is null && phoneNumber is null)
@@ -166,12 +167,12 @@ public class CurrentUserService : ICurrentUserService
 
         var normalizedRequest = new UpdateSecurityAccountRequestDto
         {
-            Otp = otp,
             Username = username,
             PhoneNumber = phoneNumber
         };
 
         return _javaApiService.UpdateMySecurityPrivateProfileAsync(
+            normalizedResetToken,
             normalizedRequest,
             accessToken.Trim(),
             cancellationToken);

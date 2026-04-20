@@ -19,6 +19,9 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class ResetTokenUtil {
+    public static final String PURPOSE_RESET_PASSWORD = "RESET_PASSWORD";
+    public static final String PURPOSE_CHANGE_USERNAME = "CHANGE_USERNAME";
+    public static final String PURPOSE_CHANGE_PHONENUMBER = "CHANGE_PHONENUMBER";
 
     @Value("${auth.reset-token.secret}")
     private String secret = "CHANGE_ME_USE_ENV_FOR_RESET_TOKEN_SECRET";
@@ -37,9 +40,13 @@ public class ResetTokenUtil {
     }
 
     public String generateToken(UUID userId) {
+        return generateToken(userId, PURPOSE_RESET_PASSWORD);
+    }
+
+    public String generateToken(UUID userId, String purpose) {
         return Jwts.builder()
                 .setSubject(userId.toString())
-                .claim("purpose", "RESET_PASSWORD")
+                .claim("purpose", purpose)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -47,6 +54,10 @@ public class ResetTokenUtil {
     }
 
     public UUID validateAndExtractUserId(String token) {
+        return validateAndExtractUserId(token, PURPOSE_RESET_PASSWORD);
+    }
+
+    public UUID validateAndExtractUserId(String token, String expectedPurpose) {
         if (redisTemplate.hasKey(revokedKey(token))) {
             throw new BusinessException(ErrorCode.INVALID_RESET_TOKEN);
         }
@@ -57,7 +68,7 @@ public class ResetTokenUtil {
                 .parseClaimsJws(token)
                 .getBody();
 
-        if (!"RESET_PASSWORD".equals(claims.get("purpose"))) {
+        if (!expectedPurpose.equals(claims.get("purpose"))) {
             throw new BusinessException(ErrorCode.INVALID_RESET_TOKEN);
         }
 

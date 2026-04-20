@@ -85,10 +85,11 @@ public class UserProfileController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateSecurityPrivateProfile(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader("X-Reset-Token") String resetToken,
             @Valid @RequestBody UpdateSecurityPrivateRequest request
     ) {
         UUID userId = UUID.fromString(jwt.getSubject());
-        userProfileService.updateSecurityPrivateProfile(userId, request);
+        userProfileService.updateSecurityPrivateProfile(userId, resetToken, request);
     }
 
     @GetMapping

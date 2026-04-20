@@ -180,7 +180,7 @@ export const useSecuritySettings = (): UseSecuritySettingsReturn => {
         return;
       }
 
-      // Keep token in the same state field; update endpoint expects it in `otp`.
+      // Keep token in the same state field; update endpoint sends it via `X-Reset-Token` header.
       setEditOtp(verificationToken);
       setActiveEditStep('edit');
       setEditValue(getCurrentFieldValue(activeEditField));
@@ -201,8 +201,8 @@ export const useSecuritySettings = (): UseSecuritySettingsReturn => {
       return;
     }
 
-    const normalizedOtp = editOtp.trim();
-    if (!normalizedOtp) {
+    const verificationToken = editOtp.trim();
+    if (!verificationToken) {
       setEditOtpErrorMessage(t('securitySettings.otpRequired'));
       return;
     }
@@ -224,14 +224,12 @@ export const useSecuritySettings = (): UseSecuritySettingsReturn => {
 
     try {
       if (activeEditField === 'username') {
-        await userService.updateSecurityAccountInfo({
-          otp: normalizedOtp,
+        await userService.updateSecurityAccountInfo(verificationToken, {
           username: normalizedValue,
         });
         setSecurityUsername(normalizedValue);
       } else {
-        await userService.updateSecurityAccountInfo({
-          otp: normalizedOtp,
+        await userService.updateSecurityAccountInfo(verificationToken, {
           phoneNumber: normalizedValue,
         });
         setSecurityPhoneNumber(normalizedValue);

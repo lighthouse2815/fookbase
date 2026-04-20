@@ -17,6 +17,7 @@ public interface ICurrentUserService
         CancellationToken cancellationToken);
 
     Task<JavaApiCallResult<object?>> UpdateSecurityAccountInfoAsync(
+        string? resetToken,
         UpdateSecurityAccountRequestDto request,
         string? accessToken,
         CancellationToken cancellationToken);

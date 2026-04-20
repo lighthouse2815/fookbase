@@ -279,11 +279,8 @@ public class AuthService {
             userService.setActiveUser(user);
         }
 
-        String generatedResetToken = otpType == OTPType.PASSWORD_RESET
-                ? resetTokenUtil.generateToken(user.getId())
-                : null;
-
-        return authMapper.toOtpVerifyResponse(otpType, generatedResetToken);
+        String generatedVerificationToken = resolveVerificationToken(user.getId(), otpType);
+        return authMapper.toOtpVerifyResponse(otpType, generatedVerificationToken);
 
     }
 
@@ -306,11 +303,8 @@ public class AuthService {
             userService.setActiveUser(user);
         }
 
-        String generatedResetToken = otpType == OTPType.PASSWORD_RESET
-                ? resetTokenUtil.generateToken(user.getId())
-                : null;
-
-        return authMapper.toOtpVerifyResponse(otpType, generatedResetToken);
+        String generatedVerificationToken = resolveVerificationToken(user.getId(), otpType);
+        return authMapper.toOtpVerifyResponse(otpType, generatedVerificationToken);
     }
 
 
@@ -321,6 +315,22 @@ public class AuthService {
     ) {
         userGuard.requireValidUserForOTP(user, otpType);
         otpService.verifyOTP(user.getId(), otp, otpType);
+    }
+
+    private String resolveVerificationToken(UUID userId, OTPType otpType) {
+        if (otpType == OTPType.PASSWORD_RESET) {
+            return resetTokenUtil.generateToken(userId, ResetTokenUtil.PURPOSE_RESET_PASSWORD);
+        }
+
+        if (otpType == OTPType.CHANGE_USERNAME_VERIFY) {
+            return resetTokenUtil.generateToken(userId, ResetTokenUtil.PURPOSE_CHANGE_USERNAME);
+        }
+
+        if (otpType == OTPType.CHANGE_PHONENUMBER_VERIFY) {
+            return resetTokenUtil.generateToken(userId, ResetTokenUtil.PURPOSE_CHANGE_PHONENUMBER);
+        }
+
+        return null;
     }
 
 

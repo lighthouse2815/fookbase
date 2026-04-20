@@ -42,8 +42,15 @@ export const userService = {
     };
   },
 
-  async updateSecurityAccountInfo(payload: UpdateSecurityAccountRequest): Promise<void> {
-    await apiClient.patch(USERS.SECURITY_ACCOUNT, payload);
+  async updateSecurityAccountInfo(
+    resetToken: string,
+    payload: UpdateSecurityAccountRequest,
+  ): Promise<void> {
+    await apiClient.patch(USERS.SECURITY_ACCOUNT, payload, {
+      headers: {
+        'X-Reset-Token': resetToken,
+      },
+    });
   },
 
   async getOnlineUsers(): Promise<User[]> {

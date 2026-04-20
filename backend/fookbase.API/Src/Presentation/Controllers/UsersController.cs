@@ -73,11 +73,13 @@ public class UsersController : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<object?>>> UpdateMySecurityAccountInfo(
+        [FromHeader(Name = "X-Reset-Token")] string? resetToken,
         [FromBody] UpdateSecurityAccountRequestDto request,
         CancellationToken cancellationToken)
     {
         var accessToken = ExtractAccessToken();
         var result = await _currentUserService.UpdateSecurityAccountInfoAsync(
+            resetToken,
             request,
             accessToken,
             cancellationToken);

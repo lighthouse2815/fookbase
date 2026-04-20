@@ -19,7 +19,6 @@ import com.dang.app.repository.messenger.ContactRepository;
 import com.dang.app.repository.messenger.FriendshipRepository;
 import com.dang.app.service.messenger.UserPresenceService;
 import com.dang.app.utils.enums.FriendshipStatus;
-import com.dang.app.utils.enums.OTPType;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
 import com.dang.app.dto.auth.response.UserProfileOverviewResponse;
@@ -31,6 +30,7 @@ import com.dang.app.repository.auth.UserProfileRepository;
 import com.dang.app.utils.guard.UserGuard;
 import com.dang.app.utils.guard.UserProfileGuard;
 import com.dang.app.utils.mapper.UserProfileMapper;
+import com.dang.app.utils.security.jwt.ResetTokenUtil;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +52,7 @@ public class UserProfileService {
     private static final int DISPLAY_NAME_SEARCH_LIMIT = 20;
 
     private final UserService userService;
-    private final OTPService otpService;
+    private final ResetTokenUtil resetTokenUtil;
 
     private final UserProfileRepository userProfileRepository;
     private final UserProfileInfoVisibilityRepository userProfileInfoVisibilityRepository;
@@ -245,7 +245,7 @@ public class UserProfileService {
     }
 
     @Transactional
-    public void updateSecurityPrivateProfile(UUID userId, UpdateSecurityPrivateRequest request) {
+    public void updateSecurityPrivateProfile(UUID userId, String verificationToken, UpdateSecurityPrivateRequest request) {
         User user = userService.findById(userId);
         userGuard.requireActiveAndNotDeleted(user);
 
@@ -278,11 +278,23 @@ public class UserProfileService {
             }
         }
 
-        OTPType otpType = shouldUpdateUsername
-                ? OTPType.CHANGE_USERNAME_VERIFY
-                : OTPType.CHANGE_PHONENUMBER_VERIFY;
+        String normalizedVerificationToken = normalize(verificationToken);
+        if (normalizedVerificationToken == null) {
+            throw new BusinessException(ErrorCode.INVALID_RESET_TOKEN);
+        }
 
-        otpService.verifyOTP(userId, request.getOtp().trim(), otpType);
+        String expectedPurpose = shouldUpdateUsername
+                ? ResetTokenUtil.PURPOSE_CHANGE_USERNAME
+                : ResetTokenUtil.PURPOSE_CHANGE_PHONENUMBER;
+
+        UUID tokenUserId = resetTokenUtil.validateAndExtractUserId(
+                normalizedVerificationToken,
+                expectedPurpose
+        );
+
+        if (!userId.equals(tokenUserId)) {
+            throw new BusinessException(ErrorCode.INVALID_RESET_TOKEN);
+        }
 
         if (shouldUpdateUsername) {
             userService.updateUsername(user, normalizedUsername);
@@ -292,6 +304,8 @@ public class UserProfileService {
             profile.setPhoneNumber(normalizedPhoneNumber);
             userProfileRepository.save(profile);
         }
+
+        resetTokenUtil.revoke(normalizedVerificationToken);
     }
 
 

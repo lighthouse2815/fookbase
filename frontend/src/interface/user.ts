@@ -21,7 +21,6 @@ export interface SecurityAccountInfo {
 }
 
 export interface UpdateSecurityAccountRequest {
-  otp: string;
   username?: string;
   phoneNumber?: string;
 }

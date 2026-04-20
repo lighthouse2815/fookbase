@@ -117,12 +117,23 @@ public class JavaApiService : IJavaApiService
     }
 
     public Task<JavaApiCallResult<object?>> UpdateMySecurityPrivateProfileAsync(
+        string resetToken,
         UpdateSecurityAccountRequestDto request,
         string accessToken,
         CancellationToken cancellationToken = default)
     {
         var path = BuildPath(_options.ProfileMeSecurityPrivateUpdatePathTemplate);
-        return PatchNoContentAsync(path, request, cancellationToken, accessToken: accessToken);
+        var additionalHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["X-Reset-Token"] = resetToken
+        };
+
+        return PatchNoContentAsync(
+            path,
+            request,
+            cancellationToken,
+            accessToken: accessToken,
+            additionalHeaders: additionalHeaders);
     }
 
     public Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(

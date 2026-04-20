@@ -49,6 +49,7 @@ public interface IJavaApiService
         CancellationToken cancellationToken = default);
 
     Task<JavaApiCallResult<object?>> UpdateMySecurityPrivateProfileAsync(
+        string resetToken,
         UpdateSecurityAccountRequestDto request,
         string accessToken,
         CancellationToken cancellationToken = default);

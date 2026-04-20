@@ -49,9 +49,11 @@ public class AuthMapper {
         return new OtpVerifyResponse(OTP_SENT_MESSAGE);
     }
 
-    public OtpVerifyResponse toOtpVerifyResponse(OTPType otpType, String resetToken) {
-        if (otpType == OTPType.PASSWORD_RESET) {
-            return new OtpVerifyResponse(resetToken);
+    public OtpVerifyResponse toOtpVerifyResponse(OTPType otpType, String verificationToken) {
+        if (otpType == OTPType.PASSWORD_RESET
+                || otpType == OTPType.CHANGE_USERNAME_VERIFY
+                || otpType == OTPType.CHANGE_PHONENUMBER_VERIFY) {
+            return new OtpVerifyResponse(verificationToken);
         }
 
         return new OtpVerifyResponse(OTP_VERIFIED_MESSAGE);
