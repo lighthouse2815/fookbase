@@ -36,6 +36,8 @@ export const useProfilePage = (): UseProfilePageReturn => {
   const emptyInfoValue = t('profile.emptyInfoValue');
   const locale = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
   const friendshipStatus = normalizeFriendshipStatus(profile.friendshipStatus);
+  const normalizedUserStatus = profile.userStatus?.trim().toUpperCase();
+  const isBannedProfile = !isOwnProfile && normalizedUserStatus === 'BANNED';
 
   const primaryActionMeta = useMemo(() => {
     if (isOwnProfile) {
@@ -149,7 +151,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
   }, [targetUserId]);
 
   useEffect(() => {
-    if (!isOwnProfile && friendshipStatus === 'BLOCKED') {
+    if (isBannedProfile || (!isOwnProfile && friendshipStatus === 'BLOCKED')) {
       setPersonalPosts([]);
       return;
     }
@@ -165,7 +167,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
     };
 
     void loadPersonalPosts();
-  }, [friendshipStatus, isOwnProfile, targetUserId]);
+  }, [friendshipStatus, isBannedProfile, isOwnProfile, targetUserId]);
 
   const handlePostDeleted = (postId: string) => {
     setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));

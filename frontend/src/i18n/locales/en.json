@@ -227,8 +227,8 @@
     "genderMale": "Male",
     "genderFemale": "Female",
     "genderOther": "Other",
-    "bannedUserTitle": "This user has been banned",
-    "bannedUserDescription": "Profile information is unavailable.",
+    "bannedUserTitle": "Profile unavailable",
+    "bannedUserDescription": "This user has been locked.",
     "blockedUserTitle": "You cannot view this profile",
     "blockedUserDescription": "You and this user are blocked from each other."
   },

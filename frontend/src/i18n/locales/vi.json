@@ -227,8 +227,8 @@
     "genderMale": "Nam",
     "genderFemale": "Nữ",
     "genderOther": "Khac",
-    "bannedUserTitle": "Nguoi dung nay da bi ban",
-    "bannedUserDescription": "Thong tin trang ca nhan hien khong kha dung.",
+    "bannedUserTitle": "Trang ca nhan khong kha dung",
+    "bannedUserDescription": "Nguoi dung nay da bi khoa.",
     "blockedUserTitle": "Ban khong the xem trang ca nhan nay",
     "blockedUserDescription": "Hai ben da chan nhau nen thong tin khong kha dung."
   },

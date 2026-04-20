@@ -28,6 +28,27 @@ export const ProfilePage = () => {
     handleReportUser,
     postColumnClass,
   } = useProfilePage();
+  const isBannedProfile = !isOwnProfile && profile.userStatus?.trim().toUpperCase() === 'BANNED';
+
+  if (isBannedProfile) {
+    return (
+      <div className="space-y-4">
+        <section className="rounded-3xl border border-red-200 bg-gradient-to-br from-red-50 via-white to-red-100 p-10 text-center shadow-sm dark:border-red-500/30 dark:from-red-950/40 dark:via-slate-900 dark:to-red-900/30">
+          <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300">
+            <Ban size={28} />
+          </div>
+          <h1 className="mt-5 text-3xl font-black tracking-tight text-red-600 dark:text-red-300 sm:text-4xl">
+            {t('profile.bannedUserTitle')}
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-base font-semibold text-red-500 dark:text-red-200 sm:text-lg">
+            {t('profile.bannedUserDescription')}
+          </p>
+        </section>
+
+        <CornerToast message={toast?.message ?? null} type={toast?.type} />
+      </div>
+    );
+  }
 
   if (!isOwnProfile && friendshipStatus === 'BLOCKED') {
     return (
