@@ -21,8 +21,8 @@ export const SettingsPage = () => {
   } = useSettingsPage();
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)] xl:gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="lg:sticky lg:top-20 lg:self-start">
+    <div className="grid w-full min-w-0 gap-3 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-4 2xl:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="xl:sticky xl:top-20 xl:self-start">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
           <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h1>
 
@@ -42,7 +42,7 @@ export const SettingsPage = () => {
             </p>
           ) : null}
 
-          <div className="mt-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden">
+          <div className="mt-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:hidden">
             {filteredTabs.map((item) => {
               const Icon = item.icon;
               const isActive = item.id === activeTab;
@@ -65,7 +65,7 @@ export const SettingsPage = () => {
             })}
           </div>
 
-          <div className="mt-4 hidden space-y-2 lg:block">
+          <div className="mt-4 hidden space-y-2 xl:block">
             {filteredTabs.map((item) => {
               const Icon = item.icon;
               const isActive = item.id === activeTab;
@@ -93,7 +93,7 @@ export const SettingsPage = () => {
         </section>
       </aside>
 
-      <section className="space-y-4">
+      <section className="min-w-0 space-y-4">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             {hasFilteredTabs ? activeTabConfig?.label ?? t('settings.tabFallback') : t('settings.tabNotFound')}
