@@ -59,6 +59,7 @@ export interface UseProfilePageReturn {
   infoItems: ProfileInfoItem[];
   handlePostDeleted: (postId: string) => void;
   handlePrimaryAction: () => Promise<void>;
+  handleCancelSentRequest: () => Promise<void>;
   handleUnfriend: () => Promise<void>;
   handleBlockUser: () => Promise<void>;
   handleReportUser: () => Promise<void>;

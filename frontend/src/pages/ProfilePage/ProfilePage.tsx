@@ -22,6 +22,7 @@ export const ProfilePage = () => {
     infoItems,
     handlePostDeleted,
     handlePrimaryAction,
+    handleCancelSentRequest,
     handleUnfriend,
     handleBlockUser,
     handleReportUser,
@@ -56,6 +57,7 @@ export const ProfilePage = () => {
         actionLabel={primaryActionMeta.label}
         actionButtonClassName={primaryActionMeta.buttonClassName}
         onPrimaryAction={handlePrimaryAction}
+        onCancelRequest={handleCancelSentRequest}
         isPrimaryActionLoading={isPrimaryActionLoading}
         primaryActionDisabled={primaryActionMeta.disabled}
         onUnfriend={handleUnfriend}

@@ -13,6 +13,7 @@ export function useProfileHeader({
   actionLabel,
   actionButtonClassName,
   onPrimaryAction,
+  onCancelRequest,
   isPrimaryActionLoading = false,
   primaryActionDisabled = false,
   onUnfriend,
@@ -29,7 +30,6 @@ export function useProfileHeader({
   const visibleFriendCount = getVisibleFriendsCount(profile);
   const normalizedStatus = normalizeFriendshipStatus(profile.friendshipStatus);
   const isFriend = normalizedStatus === 'ACCEPTED';
-  console.log(isFriend);
   const resolvedActionLabel =
     actionLabel ??
     (isOwnProfile ? t('profile.editProfile') : isFriend ? t('profile.friendsButton') : t('profile.addFriend'));
@@ -41,6 +41,9 @@ export function useProfileHeader({
   const isAnyMenuActionLoading = isUnfriendLoading || isBlockLoading || isReportLoading;
   const isPending = normalizedStatus === 'PENDING';
   const isInvited = normalizedStatus === 'INVITED';
+  const shouldShowRelationshipAction =
+    !isOwnProfile && normalizedStatus !== 'BLOCKED' && normalizedStatus !== 'UNKNOWN';
+  const relationshipAction = isFriend ? onUnfriend : isPending ? onCancelRequest : onPrimaryAction;
   const relationshipActionLabel = isFriend
     ? t('profile.unfriendAction')
     : isPending
@@ -49,9 +52,14 @@ export function useProfileHeader({
         ? t('profile.acceptRequest')
         : t('profile.addFriend');
   const isRelationshipActionLoading = isFriend ? isUnfriendLoading : isPrimaryActionLoading;
-  const isRelationshipActionDisabled = isFriend
-    ? isUnfriendDisabled || isAnyMenuActionLoading
-    : primaryActionDisabled || isPrimaryActionLoading || isAnyMenuActionLoading;
+  const isRelationshipActionDisabled =
+    !shouldShowRelationshipAction ||
+    !relationshipAction ||
+    (isFriend
+      ? isUnfriendDisabled || isAnyMenuActionLoading
+      : isPending
+        ? isPrimaryActionLoading || isAnyMenuActionLoading
+        : primaryActionDisabled || isPrimaryActionLoading || isAnyMenuActionLoading);
 
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
@@ -90,6 +98,7 @@ export function useProfileHeader({
     profile,
     isOwnProfile,
     onPrimaryAction,
+    onCancelRequest,
     isPrimaryActionLoading,
     primaryActionDisabled,
     onUnfriend,
@@ -106,6 +115,8 @@ export function useProfileHeader({
     isAnyMenuActionLoading,
     isPending,
     isInvited,
+    shouldShowRelationshipAction,
+    relationshipAction,
     relationshipActionLabel,
     isRelationshipActionLoading,
     isRelationshipActionDisabled,

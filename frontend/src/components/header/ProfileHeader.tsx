@@ -15,7 +15,6 @@ export const ProfileHeader = (props: ProfileHeaderProps) => {
     onPrimaryAction,
     isPrimaryActionLoading,
     primaryActionDisabled,
-    onUnfriend,
     onBlock,
     onReport,
     isBlockLoading,
@@ -29,6 +28,8 @@ export const ProfileHeader = (props: ProfileHeaderProps) => {
     isAnyMenuActionLoading,
     isPending,
     isInvited,
+    shouldShowRelationshipAction,
+    relationshipAction,
     relationshipActionLabel,
     isRelationshipActionLoading,
     isRelationshipActionDisabled,
@@ -122,25 +123,27 @@ export const ProfileHeader = (props: ProfileHeaderProps) => {
 
                 {isActionMenuOpen ? (
                   <div className="absolute right-0 top-12 z-50 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-                    <button
-                      type="button"
-                      onClick={() => handleMenuAction(isFriend ? onUnfriend : onPrimaryAction)}
-                      disabled={isRelationshipActionDisabled}
-                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      {isRelationshipActionLoading ? (
-                        <Loader2 size={15} className="animate-spin" />
-                      ) : isFriend ? (
-                        <UserMinus size={15} />
-                      ) : isPending ? (
-                        <X size={15} />
-                      ) : isInvited ? (
-                        <UserCheck size={15} />
-                      ) : (
-                        <UserPlus size={15} />
-                      )}
-                      <span>{relationshipActionLabel}</span>
-                    </button>
+                    {shouldShowRelationshipAction ? (
+                      <button
+                        type="button"
+                        onClick={() => handleMenuAction(relationshipAction)}
+                        disabled={isRelationshipActionDisabled}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        {isRelationshipActionLoading ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : isFriend ? (
+                          <UserMinus size={15} />
+                        ) : isPending ? (
+                          <X size={15} />
+                        ) : isInvited ? (
+                          <UserCheck size={15} />
+                        ) : (
+                          <UserPlus size={15} />
+                        )}
+                        <span>{relationshipActionLabel}</span>
+                      </button>
+                    ) : null}
 
                     <button
                       type="button"

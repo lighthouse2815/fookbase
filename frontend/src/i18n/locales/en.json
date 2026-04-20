@@ -193,6 +193,7 @@
     "intro": "Intro",
     "editProfile": "Edit profile",
     "addFriend": "Add friend",
+    "sentRequestButton": "Request sent",
     "friendsButton": "Friends",
     "cancelRequest": "Cancel request",
     "acceptRequest": "Confirm",

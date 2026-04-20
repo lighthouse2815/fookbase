@@ -49,11 +49,11 @@ export const useProfilePage = (): UseProfilePageReturn => {
 
     if (friendshipStatus === 'PENDING') {
       return {
-        type: 'CANCEL' as const,
-        label: t('profile.cancelRequest'),
+        type: 'SENT' as const,
+        label: t('profile.sentRequestButton'),
         buttonClassName:
           'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
-        disabled: false,
+        disabled: true,
       };
     }
 
@@ -202,16 +202,34 @@ export const useProfilePage = (): UseProfilePageReturn => {
         await friendshipService.sendFriendRequest(targetUserId);
         updateFriendshipStatus('PENDING');
         showToast(t('profile.friendRequestSentSuccess'), 'success');
-      } else if (primaryActionMeta.type === 'CANCEL') {
-        await friendshipService.cancelSentRequest(targetUserId);
-        updateFriendshipStatus('NONE');
-        showToast(t('profile.friendRequestCanceledSuccess'), 'success');
       } else if (primaryActionMeta.type === 'ACCEPT') {
         await friendshipService.acceptFriendRequest(targetUserId);
         updateFriendshipStatus('ACCEPTED');
         adjustFriendsCount(1);
         showToast(t('profile.friendRequestAcceptedSuccess'), 'success');
       }
+    } catch (error) {
+      showToast(getApiErrorMessage(error, t('profile.friendActionError')), 'error');
+    } finally {
+      setIsPrimaryActionLoading(false);
+    }
+  };
+
+  const handleCancelSentRequest = async () => {
+    if (isPrimaryActionLoading || menuActionLoading) {
+      return;
+    }
+
+    if (normalizeFriendshipStatus(profile.friendshipStatus) !== 'PENDING') {
+      return;
+    }
+
+    setIsPrimaryActionLoading(true);
+
+    try {
+      await friendshipService.cancelSentRequest(targetUserId);
+      updateFriendshipStatus('NONE');
+      showToast(t('profile.friendRequestCanceledSuccess'), 'success');
     } catch (error) {
       showToast(getApiErrorMessage(error, t('profile.friendActionError')), 'error');
     } finally {
@@ -337,6 +355,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
     infoItems,
     handlePostDeleted,
     handlePrimaryAction,
+    handleCancelSentRequest,
     handleUnfriend,
     handleBlockUser,
     handleReportUser,

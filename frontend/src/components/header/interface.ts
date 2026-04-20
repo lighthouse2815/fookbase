@@ -8,6 +8,7 @@ export interface ProfileHeaderProps {
   actionLabel?: string;
   actionButtonClassName?: string;
   onPrimaryAction?: ProfileHeaderAsyncCallback;
+  onCancelRequest?: ProfileHeaderAsyncCallback;
   isPrimaryActionLoading?: boolean;
   primaryActionDisabled?: boolean;
   onUnfriend?: ProfileHeaderAsyncCallback;

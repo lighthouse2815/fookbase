@@ -3,7 +3,7 @@ export type { FriendshipStatusCode } from '@/utils/friendshipStatusCode';
 export type ProfilePrimaryActionType =
   | 'EDIT'
   | 'ADD'
-  | 'CANCEL'
+  | 'SENT'
   | 'ACCEPT'
   | 'FRIENDS'
   | 'BLOCKED'
