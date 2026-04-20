@@ -21,8 +21,8 @@ export const SettingsPage = () => {
   } = useSettingsPage();
 
   return (
-    <div className="grid w-full min-w-0 gap-3 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-4 2xl:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="xl:sticky xl:top-20 xl:self-start">
+    <div className="grid w-full min-w-0 gap-3 xl:gap-4">
+      <aside className="min-w-0">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
           <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h1>
 

@@ -119,7 +119,7 @@ export const ReportedPostsPage = () => {
               key={report.id}
               className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   {t('reportedPosts.reportLabel', { id: report.id.slice(0, 8) })}
                 </p>
@@ -153,7 +153,7 @@ export const ReportedPostsPage = () => {
               key={report.id}
               className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   {t('reportedPosts.reportLabel', { id: report.id.slice(0, 8) })}
                 </p>
@@ -185,7 +185,7 @@ export const ReportedPostsPage = () => {
                 key={report.id}
                 className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {t('reportedPosts.reportLabel', { id: report.id.slice(0, 8) })}
                   </p>
