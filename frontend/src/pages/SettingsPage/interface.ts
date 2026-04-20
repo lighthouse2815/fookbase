@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 
 import type { MyProfileSettings } from '@/interface/profile';
-import type { PostReportItem } from '@/interface/report';
+import type { PostReportItem, StoryReportItem, UserReportItem } from '@/interface/report';
 
 import type {
   SecurityEditStep,
@@ -65,13 +65,17 @@ export interface UsePersonalInfoSettingsReturn {
 
 export interface UseReportedPostsPageReturn {
   t: TFunction;
-  reports: PostReportItem[];
+  activeTab: ReportedPostsTabId;
+  setActiveTab: (tab: ReportedPostsTabId) => void;
+  reports: Array<PostReportItem | StoryReportItem | UserReportItem>;
   page: number;
   hasMore: boolean;
   isLoading: boolean;
   loadError: string | null;
   loadReports: (targetPage: number, replace?: boolean) => Promise<void>;
 }
+
+export type ReportedPostsTabId = 'post' | 'story' | 'user';
 
 export interface UseSecuritySettingsReturn {
   t: TFunction;
