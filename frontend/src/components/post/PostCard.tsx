@@ -16,6 +16,7 @@ const DEFAULT_IMAGE_VIEWER_SCALE = 1.12;
 const MIN_IMAGE_VIEWER_SCALE = 0.7;
 const MAX_IMAGE_VIEWER_SCALE = 4;
 const IMAGE_VIEWER_SCALE_STEP = 0.12;
+const POST_CONTENT_PREVIEW_LIMIT = 180;
 
 export const PostCard = ({
   post,
@@ -32,8 +33,15 @@ export const PostCard = ({
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [imageViewerScale, setImageViewerScale] = useState(DEFAULT_IMAGE_VIEWER_SCALE);
+  const [isContentExpanded, setIsContentExpanded] = useState(false);
   const activeMediaUrl = mediaUrls[activeMediaIndex] ?? mediaUrls[0];
   const activeMediaKind = detectMediaKind(activeMediaUrl);
+  const normalizedPostContent = post.content?.trimEnd() ?? '';
+  const shouldTruncatePostContent = normalizedPostContent.length > POST_CONTENT_PREVIEW_LIMIT;
+  const displayedPostContent =
+    shouldTruncatePostContent && !isContentExpanded
+      ? `${normalizedPostContent.slice(0, POST_CONTENT_PREVIEW_LIMIT).trimEnd()}...`
+      : normalizedPostContent;
 
   const {
     authorProfilePath,
@@ -265,9 +273,18 @@ export const PostCard = ({
         ) : null}
       </header>
 
-      {post.content ? (
+      {normalizedPostContent ? (
         <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7 text-slate-700 dark:text-slate-300">
-          {post.content}
+          {displayedPostContent}
+          {shouldTruncatePostContent && !isContentExpanded ? (
+            <button
+              type="button"
+              onClick={() => setIsContentExpanded(true)}
+              className="text-brand-600 transition hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
+            >
+              {t('post.seeMore', { defaultValue: 'Xem thêm' })}
+            </button>
+          ) : null}
         </p>
       ) : null}
 
