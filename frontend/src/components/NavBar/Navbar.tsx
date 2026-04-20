@@ -39,7 +39,7 @@ export const Navbar = (props: NavbarProps) => {
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-900/85">
-      <div className="mx-auto max-w-[1400px] px-2.5 sm:px-4 lg:px-6">
+      <div className="mx-auto max-w-[1360px] px-2 sm:px-3 md:px-4 lg:px-6">
         <div className="flex h-14 items-center justify-between sm:h-16">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Link to="/" className="rounded-xl bg-brand-600 px-3 py-1.5 text-base font-bold text-white sm:text-lg">

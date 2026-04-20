@@ -57,7 +57,7 @@ export const MessagesPage = () => {
   return (
     <>
       <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:rounded-3xl">
-        <div className="grid min-h-[calc(100vh-10rem)] grid-cols-1 lg:min-h-[75vh] lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid min-h-[calc(100dvh-10rem)] grid-cols-1 lg:min-h-[75vh] lg:grid-cols-[320px_minmax(0,1fr)]">
           <aside
             className={clsx(
               'border-slate-200 dark:border-slate-700 lg:border-b-0 lg:border-r',
@@ -117,7 +117,7 @@ export const MessagesPage = () => {
                 </p>
               ) : null}
             </div>
-            <div className="max-h-[calc(100vh-20rem)] space-y-1 overflow-y-auto px-2 pb-3 lg:max-h-[calc(75vh-9.75rem)]">
+            <div className="max-h-[calc(100dvh-20rem)] space-y-1 overflow-y-auto px-2 pb-3 lg:max-h-[calc(75vh-9.75rem)]">
               {filteredConversations.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
                   {t('messagesPage.empty')}
@@ -172,8 +172,8 @@ export const MessagesPage = () => {
           </aside>
 
           <div
-            className={clsx(
-              'min-h-[calc(100vh-10rem)] flex-col lg:min-h-[75vh]',
+              className={clsx(
+              'min-h-[calc(100dvh-10rem)] flex-col lg:min-h-[75vh]',
               showConversationDetail ? 'flex' : 'hidden lg:flex',
             )}
           >

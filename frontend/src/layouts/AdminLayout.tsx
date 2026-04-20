@@ -118,9 +118,9 @@ export const AdminLayout = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen overflow-x-clip bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/85">
-        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1360px] items-center justify-between gap-3 px-3 py-3 sm:px-4 lg:px-6">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -235,13 +235,13 @@ export const AdminLayout = () => {
       {isSidebarOpen ? (
         <div className="fixed inset-0 z-40 md:hidden">
           <button type="button" className="absolute inset-0 bg-slate-950/65" onClick={closeSidebar} />
-          <aside className="relative h-full w-[280px] overflow-y-auto border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <aside className="relative h-full w-[min(18rem,calc(100vw-2rem))] overflow-y-auto border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             {sideNav}
           </aside>
         </div>
       ) : null}
 
-      <div className="mx-auto grid w-full max-w-[1400px] gap-4 px-4 pb-8 pt-4 sm:px-6 md:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="mx-auto grid w-full max-w-[1360px] gap-4 px-3 pb-8 pt-4 sm:px-4 lg:px-6 md:grid-cols-[250px_minmax(0,1fr)]">
         <aside className="hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 md:sticky md:top-4 md:block md:h-fit">
           {sideNav}
         </aside>

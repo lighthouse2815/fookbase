@@ -150,8 +150,8 @@ export const FriendsPage = () => {
         <aside
           className={clsx(
             'z-30 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-300 dark:border-slate-700 dark:bg-slate-900/85',
-            'xl:sticky xl:top-20 xl:h-[calc(100vh-6rem)] xl:translate-x-0',
-            'fixed left-2.5 top-20 h-[calc(100vh-6rem)] w-[min(18rem,calc(100vw-1.5rem))] xl:static xl:w-auto',
+            'xl:sticky xl:top-20 xl:h-[calc(100dvh-6rem)] xl:translate-x-0',
+            'fixed left-2.5 top-20 h-[calc(100dvh-6rem)] w-[min(18rem,calc(100vw-1.5rem))] xl:static xl:w-auto',
             isSidebarOpen ? 'translate-x-0' : '-translate-x-[110%] xl:translate-x-0',
           )}
         >
@@ -439,7 +439,7 @@ export const FriendsPage = () => {
       {isPreviewOpen && selectedProfile?.user ? (
         <div
           ref={previewRef}
-          className="fixed inset-x-2.5 bottom-[5.5rem] top-[5.5rem] z-[80] overflow-y-auto md:inset-x-auto md:bottom-auto md:right-8 md:top-24 md:max-h-[calc(100vh-7rem)] md:w-[360px] xl:right-10"
+          className="fixed inset-x-2.5 bottom-[5.5rem] top-[5.5rem] z-[80] overflow-y-auto md:inset-x-auto md:bottom-auto md:right-8 md:top-24 md:max-h-[calc(100dvh-7rem)] md:w-[min(22.5rem,calc(100vw-2rem))] xl:right-10"
         >
           <ProfilePreview
             user={selectedProfile.user}

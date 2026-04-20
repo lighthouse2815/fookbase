@@ -359,7 +359,7 @@ export const MainLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen overflow-x-clip bg-slate-100 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <Navbar
         currentUser={currentUser}
         notifications={notifications}
@@ -373,7 +373,7 @@ export const MainLayout = () => {
       />
 
       <div
-        className={`mx-auto grid max-w-[1600px] gap-3 px-2.5 pb-24 pt-[7.25rem] sm:gap-4 sm:px-4 md:pb-8 md:pt-20 lg:px-6 ${
+        className={`mx-auto grid w-full max-w-[1440px] gap-3 px-2 pb-24 pt-[7.25rem] sm:gap-4 sm:px-3 md:pb-8 md:pt-20 md:px-4 lg:px-6 ${
           hideLeftSidebar
             ? 'md:grid-cols-[minmax(0,1fr)]'
             : hideRightSidebar
@@ -382,7 +382,7 @@ export const MainLayout = () => {
         }`}
       >
         {hideLeftSidebar ? null : (
-          <div className="sticky top-20 hidden max-h-[calc(100vh-5.75rem)] overflow-y-auto md:block">
+          <div className="sticky top-20 hidden max-h-[calc(100dvh-5.75rem)] overflow-y-auto md:block">
             <SidebarLeft currentUser={currentUser} />
           </div>
         )}
@@ -400,7 +400,7 @@ export const MainLayout = () => {
         </main>
 
         {hideRightSidebar ? null : (
-          <div className="sticky top-20 hidden max-h-[calc(100vh-5.75rem)] overflow-y-auto xl:block">
+          <div className="sticky top-20 hidden max-h-[calc(100dvh-5.75rem)] overflow-y-auto xl:block">
             <SidebarRight
               suggestions={suggestions}
               onlineUsers={onlineUsers}
@@ -416,7 +416,7 @@ export const MainLayout = () => {
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
+              `inline-flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-medium sm:text-[11px] ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -430,7 +430,7 @@ export const MainLayout = () => {
           <NavLink
             to="/friends"
             className={({ isActive }) =>
-              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
+              `inline-flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-medium sm:text-[11px] ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -444,7 +444,7 @@ export const MainLayout = () => {
           <NavLink
             to="/messages"
             className={({ isActive }) =>
-              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
+              `inline-flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-medium sm:text-[11px] ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -458,7 +458,7 @@ export const MainLayout = () => {
           <NavLink
             to="/games"
             className={({ isActive }) =>
-              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
+              `inline-flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-medium sm:text-[11px] ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -472,7 +472,7 @@ export const MainLayout = () => {
           <NavLink
             to="/saved"
             className={({ isActive }) =>
-              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
+              `inline-flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-medium sm:text-[11px] ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -482,7 +482,6 @@ export const MainLayout = () => {
             <Bookmark size={18} />
             <span>{t('nav.saved')}</span>
           </NavLink>
-
         </div>
       </nav>
     </div>
