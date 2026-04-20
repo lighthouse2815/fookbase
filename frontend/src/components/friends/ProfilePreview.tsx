@@ -35,7 +35,7 @@ export const ProfilePreview = ({
   }
 
   return (
-    <aside className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900/95">
+    <aside className="rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900/95">
       <div className="relative h-24 rounded-t-3xl bg-gradient-to-r from-sky-500 via-brand-500 to-indigo-500">
         {onClose ? (
           <button
@@ -49,8 +49,8 @@ export const ProfilePreview = ({
         ) : null}
       </div>
       <div className="px-5 pb-5">
-        <div className="-mt-12 flex items-end gap-3">
-          <Link to={`/profile/${user.id}`} className="inline-flex" aria-label={user.fullName}>
+        <div className="relative z-10 -mt-12 flex items-end gap-3">
+          <Link to={`/profile/${user.id}`} className="relative inline-flex shrink-0" aria-label={user.fullName}>
             <img
               src={user.avatarUrl}
               alt={user.fullName}

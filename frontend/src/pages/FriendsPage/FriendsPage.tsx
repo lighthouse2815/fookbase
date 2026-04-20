@@ -7,6 +7,7 @@ import {
   Search,
   X,
 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 import { FriendRequestCard } from '@/components/friends/FriendRequestCard';
 import { FriendsPageSkeleton } from '@/components/friends/FriendsPageSkeleton';
@@ -59,6 +60,42 @@ export const FriendsPage = () => {
     selectedSentRequest,
     selectedFriend,
   } = useFriendsPage();
+  const previewRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isPreviewOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (previewRef.current?.contains(target)) {
+        return;
+      }
+
+      const trigger = target instanceof Element
+        ? target.closest('[data-profile-preview-trigger="true"]')
+        : null;
+
+      if (trigger) {
+        return;
+      }
+
+      closePreview();
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, [closePreview, isPreviewOpen]);
 
   if (fetchState === 'loading') {
     return <FriendsPageSkeleton />;
@@ -400,65 +437,57 @@ export const FriendsPage = () => {
       </div>
 
       {isPreviewOpen && selectedProfile?.user ? (
-        <div className="fixed inset-0 z-[80]">
-          <button
-            type="button"
-            onClick={closePreview}
-            className="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
-            aria-label={t('friendsPage.preview.closeAria')}
+        <div
+          ref={previewRef}
+          className="fixed right-3 top-20 z-[80] max-h-[calc(100vh-6rem)] w-[calc(100vw-1.5rem)] overflow-y-auto sm:right-4 sm:top-24 sm:w-[360px]"
+        >
+          <ProfilePreview
+            user={selectedProfile.user}
+            relation={(selectedProfile.relation ?? null) as ProfileRelation}
+            onClose={closePreview}
+            onAddFriend={
+              selectedSuggestion
+                ? () => {
+                    void handleAddFriend(selectedSuggestion.id);
+                  }
+                : undefined
+            }
+            onConfirmRequest={
+              selectedReceivedRequest
+                ? () => {
+                    void handleConfirmRequest(selectedReceivedRequest.requestId);
+                  }
+                : undefined
+            }
+            onDeleteRequest={
+              selectedReceivedRequest
+                ? () => {
+                    void handleDeleteReceivedRequest(selectedReceivedRequest.requestId);
+                  }
+                : undefined
+            }
+            onCancelRequest={
+              selectedSentRequest
+                ? () => {
+                    void handleCancelSentRequest(selectedSentRequest.requestId);
+                  }
+                : undefined
+            }
+            onUnfriend={
+              selectedFriend
+                ? () => {
+                    requestUnfriend(selectedFriend.id);
+                  }
+                : undefined
+            }
+            onMessage={
+              selectedFriend
+                ? () => {
+                    handleMessageUser(selectedFriend.id);
+                  }
+                : undefined
+            }
           />
-
-          <div className="absolute inset-y-0 right-0 flex w-full justify-end p-3 pt-20 sm:max-w-md sm:p-4 sm:pt-20">
-            <div className="max-h-[calc(100vh-6rem)] w-full overflow-y-auto">
-              <ProfilePreview
-                user={selectedProfile.user}
-                relation={(selectedProfile.relation ?? null) as ProfileRelation}
-                onClose={closePreview}
-                onAddFriend={
-                  selectedSuggestion
-                    ? () => {
-                        void handleAddFriend(selectedSuggestion.id);
-                      }
-                    : undefined
-                }
-                onConfirmRequest={
-                  selectedReceivedRequest
-                    ? () => {
-                        void handleConfirmRequest(selectedReceivedRequest.requestId);
-                      }
-                    : undefined
-                }
-                onDeleteRequest={
-                  selectedReceivedRequest
-                    ? () => {
-                        void handleDeleteReceivedRequest(selectedReceivedRequest.requestId);
-                      }
-                    : undefined
-                }
-                onCancelRequest={
-                  selectedSentRequest
-                    ? () => {
-                        void handleCancelSentRequest(selectedSentRequest.requestId);
-                      }
-                    : undefined
-                }
-                onUnfriend={
-                  selectedFriend
-                    ? () => {
-                        requestUnfriend(selectedFriend.id);
-                      }
-                    : undefined
-                }
-                onMessage={
-                  selectedFriend
-                    ? () => {
-                        handleMessageUser(selectedFriend.id);
-                      }
-                    : undefined
-                }
-              />
-            </div>
-          </div>
         </div>
       ) : null}
 
