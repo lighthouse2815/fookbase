@@ -36,7 +36,7 @@ export const LoginPage = () => {
 
   if (step === 'otp') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+      <div className="flex min-h-screen items-start justify-center bg-slate-100 px-4 py-6 dark:bg-slate-900 sm:items-center sm:py-8">
         <AuthForm
           title={t('auth.verifyEmailTitle')}
           subtitle={t('auth.verifyEmailSubtitle')}
@@ -103,7 +103,7 @@ export const LoginPage = () => {
 
   if (step === 'banned') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black px-4 py-6">
+      <div className="flex min-h-screen items-start justify-center bg-black px-4 py-4 sm:items-center sm:py-6">
         <div className="w-full max-w-5xl space-y-5 text-center">
           <h1 className="text-3xl font-black tracking-wide text-rose-500 sm:text-5xl">huhuhu bạn đã bị ban</h1>
           <p className="text-sm text-slate-300 sm:text-base">
@@ -134,7 +134,7 @@ export const LoginPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+    <div className="flex min-h-screen items-start justify-center bg-slate-100 px-4 py-6 dark:bg-slate-900 sm:items-center sm:py-8">
       <AuthForm
         title={t('auth.loginTitle')}
         subtitle={t('auth.loginSubtitle')}
@@ -199,7 +199,7 @@ export const LoginPage = () => {
           {isGoogleSubmitting ? t('common.loading') : t('auth.googleButton')}
         </button>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
             <input
               type="checkbox"

@@ -90,8 +90,8 @@ export const ProfilePage = () => {
         isUnfriendDisabled={friendshipStatus !== 'ACCEPTED'}
       />
 
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="xl:sticky xl:top-20 xl:self-start">
+      <div className="grid gap-3 lg:grid-cols-[300px_minmax(0,1fr)] xl:gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="lg:sticky lg:top-20 lg:self-start">
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('profile.personalInfo')}</h2>
 

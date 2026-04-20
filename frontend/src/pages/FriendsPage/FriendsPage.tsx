@@ -104,17 +104,17 @@ export const FriendsPage = () => {
   return (
     <div className="space-y-4">
       <header className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('friendsPage.managementTitle')}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">{tabTitle}</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               type="button"
               onClick={() => void loadFriendData()}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 sm:flex-none"
             >
               <RefreshCcw size={15} />
               {t('friendsPage.refresh')}
@@ -137,7 +137,7 @@ export const FriendsPage = () => {
         ) : null}
       </header>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[260px_minmax(0,1fr)] xl:gap-4">
         {isSidebarOpen ? (
           <button
             type="button"
@@ -151,7 +151,7 @@ export const FriendsPage = () => {
           className={clsx(
             'z-30 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-300 dark:border-slate-700 dark:bg-slate-900/85',
             'xl:sticky xl:top-20 xl:h-[calc(100vh-6rem)] xl:translate-x-0',
-            'fixed left-3 top-20 h-[calc(100vh-6rem)] w-[260px] xl:static xl:w-auto',
+            'fixed left-2.5 top-20 h-[calc(100vh-6rem)] w-[min(18rem,calc(100vw-1.5rem))] xl:static xl:w-auto',
             isSidebarOpen ? 'translate-x-0' : '-translate-x-[110%] xl:translate-x-0',
           )}
         >
@@ -194,7 +194,7 @@ export const FriendsPage = () => {
           </nav>
         </aside>
 
-        <main className="space-y-4">
+        <main className="min-w-0 space-y-4">
           {activeTab === 'home' ? (
             <>
               <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
@@ -439,7 +439,7 @@ export const FriendsPage = () => {
       {isPreviewOpen && selectedProfile?.user ? (
         <div
           ref={previewRef}
-          className="fixed right-3 top-20 z-[80] max-h-[calc(100vh-6rem)] w-[calc(100vw-1.5rem)] overflow-y-auto sm:right-4 sm:top-24 sm:w-[360px]"
+          className="fixed inset-x-2.5 bottom-[5.5rem] top-[5.5rem] z-[80] overflow-y-auto md:inset-x-auto md:bottom-auto md:right-8 md:top-24 md:max-h-[calc(100vh-7rem)] md:w-[360px] xl:right-10"
         >
           <ProfilePreview
             user={selectedProfile.user}

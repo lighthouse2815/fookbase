@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Plus, Search, Send, UsersRound } from 'lucide-react';
+import { ChevronLeft, Plus, Search, Send, UsersRound } from 'lucide-react';
 
 import { formatRelativeTime } from '@/utils/date';
 
@@ -17,6 +17,7 @@ export const MessagesPage = () => {
     errorMessage,
     chatTabs,
     filteredConversations,
+    isMobileViewport,
     selectedConversationId,
     setSelectedConversationId,
     selectedConversation,
@@ -42,6 +43,8 @@ export const MessagesPage = () => {
     handleCreateGroup,
     tabCount,
   } = useMessagesPage();
+  const showConversationList = !isMobileViewport || !selectedConversation;
+  const showConversationDetail = !isMobileViewport || Boolean(selectedConversation);
 
   if (fetchState === 'loading') {
     return (
@@ -53,16 +56,21 @@ export const MessagesPage = () => {
 
   return (
     <>
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <div className="grid min-h-[75vh] grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="border-b border-slate-200 dark:border-slate-700 lg:border-b-0 lg:border-r">
+      <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:rounded-3xl">
+        <div className="grid min-h-[calc(100vh-10rem)] grid-cols-1 lg:min-h-[75vh] lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside
+            className={clsx(
+              'border-slate-200 dark:border-slate-700 lg:border-b-0 lg:border-r',
+              showConversationList ? 'flex flex-col border-b' : 'hidden lg:flex lg:flex-col',
+            )}
+          >
             <div className="space-y-3 p-4">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('messagesPage.title')}</h1>
                 <button
                   type="button"
                   onClick={() => setIsCreateGroupOpen(true)}
-                  className="inline-flex items-center gap-1 rounded-xl bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700"
+                  className="inline-flex items-center justify-center gap-1 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
                 >
                   <Plus size={14} />
                   {t('messagesPage.createGroup')}
@@ -109,7 +117,7 @@ export const MessagesPage = () => {
                 </p>
               ) : null}
             </div>
-            <div className="max-h-[calc(75vh-9.75rem)] space-y-1 overflow-y-auto px-2 pb-3">
+            <div className="max-h-[calc(100vh-20rem)] space-y-1 overflow-y-auto px-2 pb-3 lg:max-h-[calc(75vh-9.75rem)]">
               {filteredConversations.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
                   {t('messagesPage.empty')}
@@ -121,7 +129,7 @@ export const MessagesPage = () => {
                     type="button"
                     onClick={() => setSelectedConversationId(conversation.conversationId)}
                     className={clsx(
-                      'flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition',
+                      'flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition',
                       selectedConversationId === conversation.conversationId
                         ? 'bg-brand-100/80 dark:bg-brand-500/20'
                         : 'hover:bg-slate-100 dark:hover:bg-slate-800/80',
@@ -163,10 +171,26 @@ export const MessagesPage = () => {
             </div>
           </aside>
 
-          <div className="flex min-h-[75vh] flex-col">
+          <div
+            className={clsx(
+              'min-h-[calc(100vh-10rem)] flex-col lg:min-h-[75vh]',
+              showConversationDetail ? 'flex' : 'hidden lg:flex',
+            )}
+          >
             {selectedConversation ? (
               <>
-                <header className="flex items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                  {isMobileViewport ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedConversationId(null)}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      aria-label={t('common.back', { defaultValue: 'Back' })}
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                  ) : null}
+
                   <div className="relative">
                     <img
                       src={selectedConversation.displayAvatar}
@@ -191,31 +215,33 @@ export const MessagesPage = () => {
                     </p>
                   </div>
 
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    {selectedConversation.type === 'GROUP' ? (
-                      <UsersRound size={12} />
-                    ) : (
-                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                    )}
-                    {selectedConversation.type === 'GROUP'
-                      ? t('messagesPage.tabs.groups')
-                      : t('messagesPage.tabs.friends')}
-                  </span>
-                  <span
-                    className={clsx(
-                      'inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold',
-                      isRealtimeConnected
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
-                        : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
-                    )}
-                  >
-                    {isRealtimeConnected ? t('messagesPage.realtime.connected') : t('messagesPage.realtime.fallback')}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      {selectedConversation.type === 'GROUP' ? (
+                        <UsersRound size={12} />
+                      ) : (
+                        <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                      )}
+                      {selectedConversation.type === 'GROUP'
+                        ? t('messagesPage.tabs.groups')
+                        : t('messagesPage.tabs.friends')}
+                    </span>
+                    <span
+                      className={clsx(
+                        'inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold',
+                        isRealtimeConnected
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+                      )}
+                    >
+                      {isRealtimeConnected ? t('messagesPage.realtime.connected') : t('messagesPage.realtime.fallback')}
+                    </span>
+                  </div>
                 </header>
 
                 <div
                   ref={messagesViewportRef}
-                  className="flex-1 space-y-3 overflow-y-auto bg-slate-50/70 p-4 dark:bg-slate-900/40"
+                  className="flex-1 space-y-3 overflow-y-auto bg-slate-50/70 p-3 sm:p-4 dark:bg-slate-900/40"
                 >
                   {loadingConversationId === selectedConversation.conversationId ? (
                     <p className="text-center text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
@@ -240,7 +266,7 @@ export const MessagesPage = () => {
                           key={message.messageId}
                           className={clsx('flex', isMine ? 'justify-end' : 'justify-start')}
                         >
-                          <div className={clsx('max-w-[80%]', isMine ? 'items-end' : 'items-start')}>
+                          <div className={clsx('max-w-[88%] sm:max-w-[80%]', isMine ? 'items-end' : 'items-start')}>
                             {!isMine && selectedConversation.type === 'GROUP' ? (
                               <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                                 {message.senderName}
@@ -280,17 +306,17 @@ export const MessagesPage = () => {
                   }}
                   className="border-t border-slate-200 p-3 dark:border-slate-700"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-end gap-2">
                     <input
                       value={composerValue}
                       onChange={(event) => setComposerValue(event.target.value)}
                       placeholder={t('messagesPage.composerPlaceholder')}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                     <button
                       type="submit"
                       disabled={composerValue.trim().length === 0 || isSending}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Send size={16} />
                     </button>
@@ -402,12 +428,12 @@ export const MessagesPage = () => {
                 </p>
               ) : null}
 
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={closeGroupDialog}
                   disabled={isCreatingGroup}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
                 >
                   {t('common.cancel')}
                 </button>
@@ -415,7 +441,7 @@ export const MessagesPage = () => {
                   type="button"
                   onClick={() => void handleCreateGroup()}
                   disabled={isCreatingGroup}
-                  className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {isCreatingGroup ? t('messagesPage.creatingGroup') : t('messagesPage.createGroup')}
                 </button>

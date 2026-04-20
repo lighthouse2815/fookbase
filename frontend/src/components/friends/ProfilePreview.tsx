@@ -35,37 +35,37 @@ export const ProfilePreview = ({
   }
 
   return (
-    <aside className="rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900/95">
-      <div className="relative h-24 rounded-t-3xl bg-gradient-to-r from-sky-500 via-brand-500 to-indigo-500">
+    <aside className="rounded-[1.75rem] border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900/95 sm:rounded-3xl">
+      <div className="relative h-20 rounded-t-[1.75rem] bg-gradient-to-r from-sky-500 via-brand-500 to-indigo-500 sm:h-24 sm:rounded-t-3xl">
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm transition hover:bg-white dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-900"
+            className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm transition hover:bg-white dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-900 sm:right-4 sm:top-4 sm:h-10 sm:w-10"
             aria-label={t('friendsPage.preview.closeAria')}
           >
             <X size={18} />
           </button>
         ) : null}
       </div>
-      <div className="px-5 pb-5">
-        <div className="relative z-10 -mt-12 flex items-end gap-3">
+      <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+        <div className="relative z-10 -mt-10 flex items-end gap-3 sm:-mt-12">
           <Link to={`/profile/${user.id}`} className="relative inline-flex shrink-0" aria-label={user.fullName}>
             <img
               src={user.avatarUrl}
               alt={user.fullName}
-              className="h-24 w-24 rounded-3xl border-4 border-white object-cover dark:border-slate-900"
+              className="h-20 w-20 rounded-3xl border-4 border-white object-cover dark:border-slate-900 sm:h-24 sm:w-24"
             />
           </Link>
-          <div className="pb-2">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{user.fullName}</h3>
+          <div className="min-w-0 pb-2">
+            <h3 className="truncate text-lg font-bold text-slate-900 dark:text-slate-100">{user.fullName}</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {t('friendsPage.mutualFriends', { count: user.mutualFriends })}
             </p>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {relation === 'friend' ? (
             <>
               <button
@@ -156,7 +156,7 @@ export const ProfilePreview = ({
               type="button"
               onClick={() => setActiveTab(id)}
               className={clsx(
-                'inline-flex items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-semibold transition',
+                'inline-flex min-w-0 items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition sm:text-xs',
                 activeTab === id
                   ? 'bg-white text-brand-700 shadow-sm dark:bg-slate-900 dark:text-brand-300'
                   : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',

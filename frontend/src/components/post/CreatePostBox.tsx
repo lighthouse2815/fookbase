@@ -28,10 +28,10 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
   } = useCreatePostBox({ onCreatePost });
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
+    <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800/80 sm:p-4">
       <div className="flex items-start gap-3">
         <Link to="/profile" className="inline-flex shrink-0" aria-label={currentUser.fullName}>
-          <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-11 w-11 rounded-full object-cover" />
+          <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11" />
         </Link>
         <textarea
           ref={textareaRef}
@@ -39,7 +39,7 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
           onChange={(event) => setContent(event.target.value)}
           placeholder={t('home.createPostPlaceholder')}
           rows={3}
-          className="max-h-80 w-full resize-none overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px] leading-7 outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="max-h-80 w-full resize-none overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:text-[15px] sm:leading-7"
         />
       </div>
 
@@ -90,7 +90,7 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
                 <button
                   type="button"
                   onClick={() => removeSelectedImage(index)}
-                  className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100"
+                  className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100"
                   aria-label="Xoa anh da chon"
                 >
                   <X size={12} />
@@ -103,8 +103,8 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
 
       {mediaError ? <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">{mediaError}</p> : null}
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2 text-slate-500 dark:text-slate-400">
           <button
             className="inline-flex items-center gap-1.5 rounded-lg p-2 transition hover:bg-slate-100 dark:hover:bg-slate-700"
             type="button"
@@ -134,7 +134,7 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
             </button>
 
             {isIconPickerOpen ? (
-              <div className="absolute left-0 top-11 z-20 flex gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <div className="absolute left-0 top-11 z-20 flex w-[min(14rem,calc(100vw-3rem))] flex-wrap gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
                 {iconOptions.map((icon) => (
                   <button
                     key={icon}
@@ -178,12 +178,12 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
             }}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <button
             type="button"
             onClick={handleCancelDraft}
             disabled={isSubmitting || !hasDraft}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:flex-none"
           >
             {t('common.cancel')}
           </button>
@@ -191,7 +191,7 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
             type="button"
             onClick={() => void handleSubmit()}
             disabled={isSubmitting || !hasDraft}
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70 sm:flex-none"
           >
             {isSubmitting ? t('common.loading') : t('home.postButton')}
           </button>

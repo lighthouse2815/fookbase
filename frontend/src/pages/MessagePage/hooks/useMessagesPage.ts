@@ -27,6 +27,9 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
   const [activeTab, setActiveTab] = useState<ChatFilterTab>('all');
   const [searchValue, setSearchValue] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)').matches : false,
+  );
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -212,6 +215,24 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
     void loadConversations();
   }, [loadConversations]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    setIsMobileViewport(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
+
   const decoratedConversations = useMemo<ConversationListItem[]>(() => {
     const dedupedConversations: ConversationListItem[] = [];
     const seenPrivateKeys = new Set<string>();
@@ -396,7 +417,9 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
     }
 
     if (!selectedConversationId) {
-      setSelectedConversationId(filteredConversations[0].conversationId);
+      if (!isMobileViewport) {
+        setSelectedConversationId(filteredConversations[0].conversationId);
+      }
       return;
     }
 
@@ -405,9 +428,9 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
     );
 
     if (!stillVisible) {
-      setSelectedConversationId(filteredConversations[0].conversationId);
+      setSelectedConversationId(isMobileViewport ? null : filteredConversations[0].conversationId);
     }
-  }, [filteredConversations, selectedConversationId]);
+  }, [filteredConversations, isMobileViewport, selectedConversationId]);
 
   const selectedConversation = useMemo(() => {
     if (!selectedConversationId) {
@@ -599,6 +622,7 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
     errorMessage,
     chatTabs,
     filteredConversations,
+    isMobileViewport,
     selectedConversationId,
     setSelectedConversationId,
     selectedConversation,

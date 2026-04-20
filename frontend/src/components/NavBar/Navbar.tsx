@@ -39,10 +39,10 @@ export const Navbar = (props: NavbarProps) => {
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-900/85">
-      <div className="mx-auto max-w-[1400px] px-3 sm:px-4 lg:px-6">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/" className="rounded-lg bg-brand-600 px-3 py-1.5 text-lg font-bold text-white">
+      <div className="mx-auto max-w-[1400px] px-2.5 sm:px-4 lg:px-6">
+        <div className="flex h-14 items-center justify-between sm:h-16">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Link to="/" className="rounded-xl bg-brand-600 px-3 py-1.5 text-base font-bold text-white sm:text-lg">
               IH
             </Link>
             <span className="hidden text-sm font-semibold text-slate-700 dark:text-slate-200 lg:block">
@@ -59,12 +59,12 @@ export const Navbar = (props: NavbarProps) => {
                   }
                 }}
                 placeholder={t('nav.searchPlaceholder')}
-                className="hidden w-52 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 lg:block"
+                className="hidden w-48 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 lg:block xl:w-52"
               />
             ) : null}
           </div>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1.5 md:flex">
             {NAV_ITEMS.map(({ key, icon: Icon, path }) => (
               <NavLink
                 key={key}
@@ -88,7 +88,7 @@ export const Navbar = (props: NavbarProps) => {
             <button
               type="button"
               onClick={() => togglePopover('notification')}
-              className="relative rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="relative rounded-xl p-2.5 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
               title={t('nav.notifications')}
             >
               <Bell size={20} />
@@ -97,12 +97,12 @@ export const Navbar = (props: NavbarProps) => {
               ) : null}
             </button>
 
-            <div className="flex items-center gap-1 rounded-xl px-1 py-1 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+            <div className="flex items-center gap-1 rounded-2xl px-1 py-1 transition hover:bg-slate-100 dark:hover:bg-slate-800">
               <Link to="/profile" className="inline-flex rounded-full" aria-label={currentUser.fullName}>
                 <img
                   src={currentUser.avatarUrl}
                   alt={currentUser.fullName}
-                  className="h-9 w-9 rounded-full object-cover"
+                  className="h-8 w-8 rounded-full object-cover sm:h-9 sm:w-9"
                 />
               </Link>
               <button
@@ -116,7 +116,7 @@ export const Navbar = (props: NavbarProps) => {
             </div>
 
             <button
-              className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 md:hidden dark:hover:bg-slate-800"
+              className="rounded-xl p-2.5 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 md:hidden dark:hover:bg-slate-800"
               type="button"
               onClick={() => togglePopover('menu')}
             >
@@ -137,7 +137,7 @@ export const Navbar = (props: NavbarProps) => {
             ) : null}
 
             {isMenuOpen ? (
-              <div className="absolute right-0 top-12 z-30 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-card dark:border-slate-700 dark:bg-slate-900">
+              <div className="absolute right-0 top-11 z-30 w-[min(18rem,calc(100vw-1rem))] rounded-2xl border border-slate-200 bg-white p-2 shadow-card dark:border-slate-700 dark:bg-slate-900">
                 <Link
                   to="/settings"
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -171,7 +171,7 @@ export const Navbar = (props: NavbarProps) => {
         </div>
 
         {!isSettingsPage ? (
-          <div className="pb-3 md:hidden">
+          <div className="pb-2.5 md:hidden">
             <label className="relative block">
               <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -184,12 +184,12 @@ export const Navbar = (props: NavbarProps) => {
                   }
                 }}
                 placeholder={t('nav.searchPlaceholder')}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-11 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-11 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               />
               <button
                 type="button"
                 onClick={handleSearchSubmit}
-                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg p-1.5 text-slate-600 transition hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-xl p-1.5 text-slate-600 transition hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-700"
                 aria-label={t('nav.searchPlaceholder')}
               >
                 <Search size={16} />

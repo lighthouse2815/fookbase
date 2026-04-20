@@ -36,7 +36,7 @@ export const ForgotPasswordPage = () => {
 
   if (step === 'email') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+      <div className="flex min-h-screen items-start justify-center bg-slate-100 px-4 py-6 dark:bg-slate-900 sm:items-center sm:py-8">
         <AuthForm
           title={t('auth.forgotPasswordTitle')}
           subtitle={t('auth.forgotPasswordSubtitle')}
@@ -72,7 +72,7 @@ export const ForgotPasswordPage = () => {
 
   if (step === 'otp') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+      <div className="flex min-h-screen items-start justify-center bg-slate-100 px-4 py-6 dark:bg-slate-900 sm:items-center sm:py-8">
         <AuthForm
           title={t('auth.verifyResetOtpTitle')}
           subtitle={t('auth.verifyResetOtpSubtitle')}
@@ -129,7 +129,7 @@ export const ForgotPasswordPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+    <div className="flex min-h-screen items-start justify-center bg-slate-100 px-4 py-6 dark:bg-slate-900 sm:items-center sm:py-8">
       <AuthForm
         title={t('auth.resetPasswordTitle')}
         subtitle={t('auth.resetPasswordSubtitle')}

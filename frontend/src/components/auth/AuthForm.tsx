@@ -22,7 +22,7 @@ export const AuthForm = ({
   footer,
 }: AuthFormProps) => {
   return (
-    <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-card backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:p-8">
+    <div className="w-full max-w-lg rounded-[1.75rem] border border-slate-200 bg-white/95 p-5 shadow-card backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:rounded-3xl sm:p-8">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{title}</h1>
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
 

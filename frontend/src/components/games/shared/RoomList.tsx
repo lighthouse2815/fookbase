@@ -23,7 +23,7 @@ export const RoomList = ({ rooms, currentRoomId, onJoinRoom }: RoomListProps) =>
         return (
           <div
             key={room.roomId}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900/70"
+            className="flex flex-col items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-slate-700 dark:bg-slate-900/70 sm:flex-row sm:items-center sm:justify-between sm:py-2"
           >
             <div>
               <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -38,7 +38,7 @@ export const RoomList = ({ rooms, currentRoomId, onJoinRoom }: RoomListProps) =>
               type="button"
               disabled={isCurrent || room.status === 'playing' || room.players.length >= room.maxPlayers}
               onClick={() => onJoinRoom(room.roomId)}
-              className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 dark:disabled:bg-slate-700 dark:disabled:text-slate-300"
+              className="w-full rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 dark:disabled:bg-slate-700 dark:disabled:text-slate-300 sm:w-auto sm:py-1.5"
             >
               {isCurrent ? 'Joined' : 'Join'}
             </button>

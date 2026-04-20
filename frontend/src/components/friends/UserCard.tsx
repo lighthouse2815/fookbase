@@ -34,7 +34,7 @@ export const UserCard = ({
         data-profile-preview-trigger="true"
         className={clsx(
           'flex w-full text-left',
-          variant === 'grid' ? 'flex-col' : 'items-center gap-3 p-3 sm:gap-4 sm:p-4',
+          variant === 'grid' ? 'flex-col' : 'items-start gap-3 p-3 sm:items-center sm:gap-4 sm:p-4',
         )}
       >
         <img
@@ -43,7 +43,7 @@ export const UserCard = ({
           onClick={navigateToProfile(user.id)}
           className={clsx(
             'cursor-pointer object-cover',
-            variant === 'grid' ? 'h-40 w-full' : 'h-14 w-14 rounded-full sm:h-16 sm:w-16',
+            variant === 'grid' ? 'h-36 w-full sm:h-40' : 'h-14 w-14 rounded-full sm:h-16 sm:w-16',
           )}
         />
 
@@ -77,7 +77,7 @@ export const UserCard = ({
         ) : null}
         <Link
           to={`/profile/${user.id}`}
-          className="inline-flex text-xs font-semibold text-brand-600 transition hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-brand-600 transition hover:border-brand-200 hover:bg-brand-50 dark:border-slate-700 dark:text-brand-300 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/10 sm:w-auto sm:border-none sm:px-0 sm:py-0 sm:text-xs"
         >
           {t('friendsPage.actions.viewProfile')}
         </Link>

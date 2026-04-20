@@ -197,10 +197,10 @@ export const PostCard = ({
   };
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
-      <header className="flex items-start gap-3">
+    <article className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800/80 sm:p-4">
+      <header className="flex items-start gap-2.5 sm:gap-3">
         <Link to={authorProfilePath} aria-label={post.author.fullName} className="inline-flex">
-          <img src={post.author.avatarUrl} alt={post.author.fullName} className="h-11 w-11 rounded-full" />
+          <img src={post.author.avatarUrl} alt={post.author.fullName} className="h-10 w-10 rounded-full sm:h-11 sm:w-11" />
         </Link>
         <div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{post.author.fullName}</h3>
@@ -212,14 +212,14 @@ export const PostCard = ({
             <button
               type="button"
               onClick={() => setIsPostMenuOpen((current) => !current)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100 sm:h-9 sm:w-9"
               aria-label="Mo tuy chon bai viet"
             >
               <Ellipsis size={20} />
             </button>
 
             {isPostMenuOpen ? (
-              <div className="absolute right-0 top-10 z-20 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+              <div className="absolute right-0 top-10 z-20 w-52 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
                 <button
                   type="button"
                   onClick={() => void handleSavePost()}
@@ -307,11 +307,11 @@ export const PostCard = ({
         )
       ) : allMediaAreImages && mediaUrls.length === 2 ? (
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {renderMediaTile(0, 'h-64 w-full')}
-          {renderMediaTile(1, 'h-64 w-full')}
+          {renderMediaTile(0, 'h-44 w-full sm:h-64')}
+          {renderMediaTile(1, 'h-44 w-full sm:h-64')}
         </div>
       ) : allMediaAreImages && mediaUrls.length === 3 ? (
-        <div className="mt-3 grid h-[340px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2 sm:h-[420px] lg:h-[460px]">
+        <div className="mt-3 grid h-[260px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2 sm:h-[420px] lg:h-[460px]">
           {renderMediaTile(0, 'h-full w-full')}
           <div className="grid h-full min-h-0 grid-rows-[repeat(2,minmax(0,1fr))] gap-2">
             {renderMediaTile(1, 'h-full w-full')}
@@ -319,7 +319,7 @@ export const PostCard = ({
           </div>
         </div>
       ) : allMediaAreImages && mediaUrls.length >= 4 ? (
-        <div className="mt-3 grid h-[340px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2 sm:h-[420px] lg:h-[460px]">
+        <div className="mt-3 grid h-[260px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2 sm:h-[420px] lg:h-[460px]">
           {renderMediaTile(0, 'h-full w-full')}
           <div className="grid h-full min-h-0 grid-rows-[repeat(3,minmax(0,1fr))] gap-2">
             {renderMediaTile(1, 'h-full w-full')}
@@ -339,7 +339,7 @@ export const PostCard = ({
 
       {showEngagementActions ? (
         <>
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
             {reactionCount > 0 ? (
               <div className="inline-flex items-center gap-1.5">
                 <div className="inline-flex items-center">
@@ -378,13 +378,13 @@ export const PostCard = ({
             </button>
           </div>
 
-          <div className="my-3 grid grid-cols-3 gap-2 border-y border-slate-100 py-2 dark:border-slate-700">
+          <div className="my-3 grid grid-cols-3 gap-1.5 border-y border-slate-100 py-2 dark:border-slate-700 sm:gap-2">
             <div className="relative" onMouseEnter={openReactionPicker} onMouseLeave={closeReactionPickerWithDelay}>
               <button
                 type="button"
                 onClick={() => void handleQuickLikePost()}
                 disabled={isReactionUpdating}
-                className={`inline-flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70 ${getReactionButtonToneClass(currentUserReactionType)}`}
+                className={`inline-flex w-full items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm ${getReactionButtonToneClass(currentUserReactionType)}`}
               >
                 {currentUserReactionType ? <span>{getReactionMeta(currentUserReactionType).icon}</span> : <ThumbsUp size={16} />}
                 <span>{currentUserReactionType ? getReactionMeta(currentUserReactionType).label : t('post.like')}</span>
@@ -419,7 +419,7 @@ export const PostCard = ({
             <button
               type="button"
               onClick={() => setIsCommentsOpen((previous) => !previous)}
-              className={`inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition ${
+              className={`inline-flex items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-xs font-medium transition sm:text-sm ${
                 isCommentsOpen
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
@@ -428,7 +428,7 @@ export const PostCard = ({
               <MessageCircle size={16} />
               {t('post.comment')}
             </button>
-            <button className="inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700">
+            <button className="inline-flex items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:text-sm">
               <Share2 size={16} />
               {t('post.share')}
             </button>
@@ -514,7 +514,7 @@ export const PostCard = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-1">
+              <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => {
@@ -523,7 +523,7 @@ export const PostCard = ({
                     setReportReasonError(null);
                   }}
                   disabled={isReportingPost}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700 sm:w-auto"
                 >
                   Huy
                 </button>
@@ -531,7 +531,7 @@ export const PostCard = ({
                   type="button"
                   onClick={() => void handleConfirmReportPost()}
                   disabled={isReportingPost}
-                  className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {isReportingPost ? 'Dang gui...' : 'Xac nhan bao cao'}
                 </button>
@@ -571,12 +571,12 @@ export const PostCard = ({
                 </p>
               </div>
 
-              <div className="flex items-center justify-center gap-2 pt-1">
+              <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-center">
                 <button
                   type="button"
                   onClick={() => setIsDeleteDialogOpen(false)}
                   disabled={isDeletingPost}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-700 sm:w-auto"
                 >
                   Huy
                 </button>
@@ -584,7 +584,7 @@ export const PostCard = ({
                   type="button"
                   onClick={() => void handleDeletePost()}
                   disabled={isDeletingPost}
-                  className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {isDeletingPost ? 'Dang xoa...' : 'Xac nhan xoa'}
                 </button>

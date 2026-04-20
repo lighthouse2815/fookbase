@@ -64,8 +64,8 @@ export const GamesPage = () => {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Real-time Games</h1>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-6">
+        <h1 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 sm:text-2xl">Real-time Games</h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           Play online with your friends directly inside the social app.
         </p>
@@ -91,7 +91,7 @@ export const GamesPage = () => {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Open rooms</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Join a room or open game page to create a new one.</p>
 
@@ -104,7 +104,7 @@ export const GamesPage = () => {
             rooms.map((room) => (
               <div
                 key={room.roomId}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700"
+                className="flex flex-col items-start gap-3 rounded-xl border border-slate-200 px-3 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between sm:py-2"
               >
                 <div>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -116,7 +116,7 @@ export const GamesPage = () => {
                 </div>
                 <Link
                   to={`${gameTypeToRoute[room.gameType] ?? '/games'}?code=${encodeURIComponent(room.roomCode)}`}
-                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-500"
+                  className="w-full rounded-lg bg-brand-600 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-brand-500 sm:w-auto sm:py-1.5"
                 >
                   Join
                 </Link>
@@ -127,7 +127,7 @@ export const GamesPage = () => {
       </section>
 
       {Object.entries(roomsByGameType).length > 0 ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Rooms by game</h2>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {Object.entries(roomsByGameType).map(([gameType, roomList]) => (

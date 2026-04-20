@@ -43,13 +43,13 @@ export const GameLobby = ({
   );
 
   return (
-    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Lobby</h2>
         <button
           type="button"
           onClick={() => setIsCreateOpen(true)}
-          className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-500"
+          className="w-full rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-500 sm:w-auto"
         >
           Create room
         </button>
@@ -69,13 +69,13 @@ export const GameLobby = ({
 
           <PlayerSlotList room={activeRoom} />
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={() => {
                 void onLeaveRoom();
               }}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
             >
               Leave room
             </button>

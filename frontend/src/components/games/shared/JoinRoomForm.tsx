@@ -20,7 +20,7 @@ export const JoinRoomForm = ({ onJoin }: JoinRoomFormProps) => {
   };
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} className="flex items-center gap-2">
+    <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <input
         value={roomCode}
         onChange={(event) => setRoomCode(event.target.value)}
@@ -29,7 +29,7 @@ export const JoinRoomForm = ({ onJoin }: JoinRoomFormProps) => {
       />
       <button
         type="submit"
-        className="rounded-lg border border-brand-500 px-3 py-2 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/15"
+        className="w-full rounded-lg border border-brand-500 px-3 py-2 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/15 sm:w-auto"
       >
         Join
       </button>

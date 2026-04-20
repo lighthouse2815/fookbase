@@ -373,7 +373,7 @@ export const MainLayout = () => {
       />
 
       <div
-        className={`mx-auto grid max-w-[1600px] gap-4 px-3 pb-24 pt-28 sm:px-4 md:pb-8 md:pt-20 lg:px-6 ${
+        className={`mx-auto grid max-w-[1600px] gap-3 px-2.5 pb-24 pt-[7.25rem] sm:gap-4 sm:px-4 md:pb-8 md:pt-20 lg:px-6 ${
           hideLeftSidebar
             ? 'md:grid-cols-[minmax(0,1fr)]'
             : hideRightSidebar
@@ -387,7 +387,7 @@ export const MainLayout = () => {
           </div>
         )}
 
-        <main className={`space-y-4 ${isProfilePage ? 'mx-auto w-full max-w-[1280px]' : ''}`}>
+        <main className={`min-w-0 space-y-4 ${isProfilePage ? 'mx-auto w-full max-w-[1280px]' : ''}`}>
           <Outlet
             context={{
               currentUser,
@@ -411,12 +411,12 @@ export const MainLayout = () => {
         )}
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-6 gap-1">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
+        <div className="mx-auto grid max-w-xl grid-cols-6 gap-1.5">
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -430,7 +430,7 @@ export const MainLayout = () => {
           <NavLink
             to="/friends"
             className={({ isActive }) =>
-              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -444,7 +444,7 @@ export const MainLayout = () => {
           <NavLink
             to="/messages"
             className={({ isActive }) =>
-              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -458,7 +458,7 @@ export const MainLayout = () => {
           <NavLink
             to="/games"
             className={({ isActive }) =>
-              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -472,7 +472,7 @@ export const MainLayout = () => {
           <NavLink
             to="/saved"
             className={({ isActive }) =>
-              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'
@@ -486,7 +486,7 @@ export const MainLayout = () => {
           <NavLink
             to="/profile"
             className={({ isActive }) =>
-              `inline-flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium ${
+              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
                 isActive
                   ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
                   : 'text-slate-600 dark:text-slate-300'

@@ -34,7 +34,7 @@ const StoryComposerModal = ({
         aria-label={t('story.composer.closeOverlayAria')}
       />
 
-      <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:p-5">
         <button
           type="button"
           onClick={onClose}
@@ -58,9 +58,9 @@ const StoryComposerModal = ({
         {previewUrl ? (
           <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
             {selectedFile?.type.startsWith('video/') ? (
-              <video src={previewUrl} controls className="h-72 w-full object-cover" />
+              <video src={previewUrl} controls className="h-60 w-full object-cover sm:h-72" />
             ) : (
-              <img src={previewUrl} alt={t('story.composer.previewAlt')} className="h-72 w-full object-cover" />
+              <img src={previewUrl} alt={t('story.composer.previewAlt')} className="h-60 w-full object-cover sm:h-72" />
             )}
           </div>
         ) : null}
@@ -78,12 +78,12 @@ const StoryComposerModal = ({
 
         {errorMessage ? <p className="mt-3 text-sm text-rose-600 dark:text-rose-300">{errorMessage}</p> : null}
 
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
           >
             {t('common.cancel')}
           </button>
@@ -91,7 +91,7 @@ const StoryComposerModal = ({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting || !selectedFile}
-            className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
             {isSubmitting ? t('story.composer.submitting') : t('story.composer.submit')}
           </button>
@@ -138,12 +138,12 @@ export const StoryList = (props: StoryListProps) => {
 
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('home.stories')}</h2>
         <button
           type="button"
           onClick={openComposer}
-          className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           <Plus size={14} />
           {t('story.list.createButton')}
@@ -158,7 +158,7 @@ export const StoryList = (props: StoryListProps) => {
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2"
+        className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2"
         onScroll={(event) => {
           const element = event.currentTarget;
           const remaining = element.scrollWidth - element.scrollLeft - element.clientWidth;
@@ -177,7 +177,7 @@ export const StoryList = (props: StoryListProps) => {
               key={group.userId}
               type="button"
               onClick={() => void openStoryViewer(group)}
-              className={`relative h-44 w-40 shrink-0 overflow-hidden rounded-2xl border text-left transition hover:scale-[1.02] ${
+              className={`relative h-40 w-32 shrink-0 overflow-hidden rounded-2xl border text-left transition hover:scale-[1.02] sm:h-44 sm:w-40 ${
                 hasNew
                   ? 'border-brand-500 ring-2 ring-brand-300 dark:border-brand-300 dark:ring-brand-400/40'
                   : 'border-slate-200 dark:border-slate-700'

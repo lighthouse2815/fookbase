@@ -22,6 +22,7 @@ export interface UseMessagesPageReturn {
   errorMessage: string | null;
   chatTabs: Array<{ id: ChatFilterTab; label: string }>;
   filteredConversations: ConversationListItem[];
+  isMobileViewport: boolean;
   selectedConversationId: string | null;
   setSelectedConversationId: Dispatch<SetStateAction<string | null>>;
   selectedConversation: ConversationListItem | null;

@@ -21,9 +21,9 @@ export const SettingsPage = () => {
   } = useSettingsPage();
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="xl:sticky xl:top-20 xl:self-start">
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+    <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)] xl:gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="lg:sticky lg:top-20 lg:self-start">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
           <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h1>
 
           <label className="relative mt-3 block">
@@ -36,13 +36,36 @@ export const SettingsPage = () => {
             />
           </label>
 
-          <div className="mt-4 space-y-2">
-            {filteredTabs.length === 0 ? (
-              <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                {t('settings.notFound')}
-              </p>
-            ) : null}
+          {filteredTabs.length === 0 ? (
+            <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              {t('settings.notFound')}
+            </p>
+          ) : null}
 
+          <div className="mt-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden">
+            {filteredTabs.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.id === activeTab;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleSelectTab(item.id)}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                    isActive
+                      ? 'border-brand-300 bg-brand-50 text-brand-800 dark:border-brand-500/70 dark:bg-brand-500/15 dark:text-brand-200'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 hidden space-y-2 lg:block">
             {filteredTabs.map((item) => {
               const Icon = item.icon;
               const isActive = item.id === activeTab;
@@ -71,7 +94,7 @@ export const SettingsPage = () => {
       </aside>
 
       <section className="space-y-4">
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-5">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             {hasFilteredTabs ? activeTabConfig?.label ?? t('settings.tabFallback') : t('settings.tabNotFound')}
           </h2>

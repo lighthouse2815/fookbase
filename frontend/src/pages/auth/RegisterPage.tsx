@@ -39,7 +39,7 @@ export const RegisterPage = () => {
 
   if (step === 'otp') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+      <div className="flex min-h-screen items-start justify-center bg-slate-100 px-4 py-6 dark:bg-slate-900 sm:items-center sm:py-8">
         <AuthForm
           title={t('auth.verifyEmailTitle')}
           subtitle={t('auth.verifyEmailSubtitle')}
@@ -96,7 +96,7 @@ export const RegisterPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+    <div className="flex min-h-screen items-start justify-center bg-slate-100 px-4 py-6 dark:bg-slate-900 sm:items-center sm:py-8">
       <AuthForm
         title={t('auth.registerTitle')}
         subtitle={t('auth.registerSubtitle')}

@@ -26,7 +26,7 @@ export const FriendSearchPage = () => {
   return (
     <div className="space-y-4">
       <header className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Tim ban be theo so dien thoai</h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -40,21 +40,21 @@ export const FriendSearchPage = () => {
         </div>
 
         <form onSubmit={handleSearchSubmit} className="mt-4">
-          <label className="relative block">
+          <div className="relative">
             <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Nhap so dien thoai can tim..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-24 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:pr-24"
             />
             <button
               type="submit"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-xl bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+              className="mt-2 w-full rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 sm:absolute sm:right-1.5 sm:top-1/2 sm:mt-0 sm:w-auto sm:-translate-y-1/2 sm:py-1.5"
             >
               Tim
             </button>
-          </label>
+          </div>
         </form>
 
         {errorMessage ? (
@@ -86,7 +86,7 @@ export const FriendSearchPage = () => {
       ) : null}
 
       {results.length > 0 ? (
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {results.map((profile) => {
             const status = normalizeFriendSearchStatus(profile.status);
             const isSelf = profile.userId === currentUser.id;
