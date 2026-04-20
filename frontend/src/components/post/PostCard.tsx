@@ -17,7 +17,15 @@ const MIN_IMAGE_VIEWER_SCALE = 0.7;
 const MAX_IMAGE_VIEWER_SCALE = 4;
 const IMAGE_VIEWER_SCALE_STEP = 0.12;
 
-export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActionToast, onPostDeleted }: PostCardProps) => {
+export const PostCard = ({
+  post,
+  currentUser,
+  enableMediaViewer = false,
+  showEngagementActions = true,
+  showPostMenu = true,
+  onActionToast,
+  onPostDeleted,
+}: PostCardProps) => {
   const { t } = useTranslation();
   const mediaUrls = post.imageUrls ?? [];
   const mediaKind = detectMediaKind(mediaUrls[0]);
@@ -199,60 +207,62 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
           <p className="text-xs text-slate-500 dark:text-slate-400">{formatRelativeTime(post.createdAt)}</p>
         </div>
 
-        <div ref={postMenuRef} className="relative ml-auto">
-          <button
-            type="button"
-            onClick={() => setIsPostMenuOpen((current) => !current)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
-            aria-label="Mo tuy chon bai viet"
-          >
-            <Ellipsis size={20} />
-          </button>
+        {showPostMenu ? (
+          <div ref={postMenuRef} className="relative ml-auto">
+            <button
+              type="button"
+              onClick={() => setIsPostMenuOpen((current) => !current)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+              aria-label="Mo tuy chon bai viet"
+            >
+              <Ellipsis size={20} />
+            </button>
 
-          {isPostMenuOpen ? (
-            <div className="absolute right-0 top-10 z-20 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-              <button
-                type="button"
-                onClick={() => void handleSavePost()}
-                disabled={isSavingPost}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                <BookmarkPlus size={16} />
-                {isSavingPost ? 'Dang luu bai viet...' : 'Luu bai viet'}
-              </button>
-              {!isPostOwner ? (
+            {isPostMenuOpen ? (
+              <div className="absolute right-0 top-10 z-20 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsPostMenuOpen(false);
-                    setReportReason('');
-                    setReportReasonError(null);
-                    setIsReportDialogOpen(true);
-                  }}
-                  disabled={isReportingPost}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                  onClick={() => void handleSavePost()}
+                  disabled={isSavingPost}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  <Flag size={16} />
-                  Bao cao
+                  <BookmarkPlus size={16} />
+                  {isSavingPost ? 'Dang luu bai viet...' : 'Luu bai viet'}
                 </button>
-              ) : null}
-              {isPostOwner ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsPostMenuOpen(false);
-                    setIsDeleteDialogOpen(true);
-                  }}
-                  disabled={isDeletingPost}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
-                >
-                  <Trash2 size={16} />
-                  {isDeletingPost ? 'Dang xoa bai viet...' : 'Xoa bai viet'}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+                {!isPostOwner ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPostMenuOpen(false);
+                      setReportReason('');
+                      setReportReasonError(null);
+                      setIsReportDialogOpen(true);
+                    }}
+                    disabled={isReportingPost}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                  >
+                    <Flag size={16} />
+                    Bao cao
+                  </button>
+                ) : null}
+                {isPostOwner ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPostMenuOpen(false);
+                      setIsDeleteDialogOpen(true);
+                    }}
+                    disabled={isDeletingPost}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                  >
+                    <Trash2 size={16} />
+                    {isDeletingPost ? 'Dang xoa bai viet...' : 'Xoa bai viet'}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {post.content ? (
@@ -327,105 +337,111 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-        {reactionCount > 0 ? (
-          <div className="inline-flex items-center gap-1.5">
-            <div className="inline-flex items-center">
-              {topReactionTypes.slice(0, 3).map((reactionType, index) => (
+      {showEngagementActions ? (
+        <>
+          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            {reactionCount > 0 ? (
+              <div className="inline-flex items-center gap-1.5">
+                <div className="inline-flex items-center">
+                  {topReactionTypes.slice(0, 3).map((reactionType, index) => (
+                    <button
+                      key={`${post.id}-top-reaction-${reactionType}-${index}`}
+                      type="button"
+                      onClick={() => handleOpenReactionViewer(reactionType)}
+                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full border border-white bg-slate-50 text-xs shadow-sm dark:border-slate-800 dark:bg-slate-700 ${
+                        index > 0 ? '-ml-1.5' : ''
+                      }`}
+                      title={getReactionMeta(reactionType).label}
+                    >
+                      {getReactionMeta(reactionType).icon}
+                    </button>
+                  ))}
+                </div>
                 <button
-                  key={`${post.id}-top-reaction-${reactionType}-${index}`}
                   type="button"
-                  onClick={() => handleOpenReactionViewer(reactionType)}
-                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full border border-white bg-slate-50 text-xs shadow-sm dark:border-slate-800 dark:bg-slate-700 ${
-                    index > 0 ? '-ml-1.5' : ''
-                  }`}
-                  title={getReactionMeta(reactionType).label}
+                  onClick={() => handleOpenReactionViewer('ALL')}
+                  className="font-semibold transition hover:text-slate-700 dark:hover:text-slate-200"
                 >
-                  {getReactionMeta(reactionType).icon}
+                  {reactionCount}
                 </button>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <span>0</span>
+            )}
+
             <button
               type="button"
-              onClick={() => handleOpenReactionViewer('ALL')}
+              onClick={handleOpenComments}
               className="font-semibold transition hover:text-slate-700 dark:hover:text-slate-200"
             >
-              {reactionCount}
+              {t('post.commentCountLabel', { count: commentCount })}
             </button>
           </div>
-        ) : (
-          <span>0</span>
-        )}
 
-        <button
-          type="button"
-          onClick={handleOpenComments}
-          className="font-semibold transition hover:text-slate-700 dark:hover:text-slate-200"
-        >
-          {t('post.commentCountLabel', { count: commentCount })}
-        </button>
-      </div>
+          <div className="my-3 grid grid-cols-3 gap-2 border-y border-slate-100 py-2 dark:border-slate-700">
+            <div className="relative" onMouseEnter={openReactionPicker} onMouseLeave={closeReactionPickerWithDelay}>
+              <button
+                type="button"
+                onClick={() => void handleQuickLikePost()}
+                disabled={isReactionUpdating}
+                className={`inline-flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70 ${getReactionButtonToneClass(currentUserReactionType)}`}
+              >
+                {currentUserReactionType ? <span>{getReactionMeta(currentUserReactionType).icon}</span> : <ThumbsUp size={16} />}
+                <span>{currentUserReactionType ? getReactionMeta(currentUserReactionType).label : t('post.like')}</span>
+              </button>
 
-      <div className="my-3 grid grid-cols-3 gap-2 border-y border-slate-100 py-2 dark:border-slate-700">
-        <div className="relative" onMouseEnter={openReactionPicker} onMouseLeave={closeReactionPickerWithDelay}>
-          <button
-            type="button"
-            onClick={() => void handleQuickLikePost()}
-            disabled={isReactionUpdating}
-            className={`inline-flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70 ${getReactionButtonToneClass(currentUserReactionType)}`}
-          >
-            {currentUserReactionType ? <span>{getReactionMeta(currentUserReactionType).icon}</span> : <ThumbsUp size={16} />}
-            <span>{currentUserReactionType ? getReactionMeta(currentUserReactionType).label : t('post.like')}</span>
-          </button>
-
-          {isReactionPickerOpen ? (
-            <div
-              className="absolute bottom-full left-0 z-20 mb-1 flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
-              onMouseEnter={openReactionPicker}
-              onMouseLeave={closeReactionPickerWithDelay}
-            >
-              {reactionOptions.map((reactionOption) => (
-                <button
-                  key={`${post.id}-reaction-option-${reactionOption.type}`}
-                  type="button"
-                  onClick={() => {
-                    setIsReactionPickerOpen(false);
-                    void handleSetReaction(reactionOption.type);
-                  }}
-                  disabled={isReactionUpdating}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-base transition hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
-                  title={reactionOption.label}
-                  aria-label={reactionOption.label}
+              {isReactionPickerOpen ? (
+                <div
+                  className="absolute bottom-full left-0 z-20 mb-1 flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                  onMouseEnter={openReactionPicker}
+                  onMouseLeave={closeReactionPickerWithDelay}
                 >
-                  {reactionOption.icon}
-                </button>
-              ))}
+                  {reactionOptions.map((reactionOption) => (
+                    <button
+                      key={`${post.id}-reaction-option-${reactionOption.type}`}
+                      type="button"
+                      onClick={() => {
+                        setIsReactionPickerOpen(false);
+                        void handleSetReaction(reactionOption.type);
+                      }}
+                      disabled={isReactionUpdating}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-base transition hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
+                      title={reactionOption.label}
+                      aria-label={reactionOption.label}
+                    >
+                      {reactionOption.icon}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
 
-        <button
-          type="button"
-          onClick={() => setIsCommentsOpen((previous) => !previous)}
-          className={`inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition ${
-            isCommentsOpen
-              ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
-          }`}
-        >
-          <MessageCircle size={16} />
-          {t('post.comment')}
-        </button>
-        <button className="inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700">
-          <Share2 size={16} />
-          {t('post.share')}
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={() => setIsCommentsOpen((previous) => !previous)}
+              className={`inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium transition ${
+                isCommentsOpen
+                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+              }`}
+            >
+              <MessageCircle size={16} />
+              {t('post.comment')}
+            </button>
+            <button className="inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700">
+              <Share2 size={16} />
+              {t('post.share')}
+            </button>
+          </div>
+        </>
+      ) : null}
 
-      {likeError ? <p className="mb-2 text-xs text-rose-600 dark:text-rose-400">{likeError}</p> : null}
-      {postActionError ? <p className="mb-2 text-xs text-rose-600 dark:text-rose-400">{postActionError}</p> : null}
+      {showEngagementActions && likeError ? <p className="mb-2 text-xs text-rose-600 dark:text-rose-400">{likeError}</p> : null}
+      {(showEngagementActions || showPostMenu) && postActionError ? (
+        <p className="mb-2 text-xs text-rose-600 dark:text-rose-400">{postActionError}</p>
+      ) : null}
 
-      {isCommentsOpen ? (
+      {showEngagementActions && isCommentsOpen ? (
         <div ref={commentSectionRef}>
           <CommentSection
             postId={post.id}
@@ -439,16 +455,18 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
         </div>
       ) : null}
 
-      <PostReactionViewerModal
-        postId={post.id}
-        isOpen={isReactionViewerOpen}
-        initialFilter={reactionViewerFilter}
-        currentUserId={currentUser.id}
-        onClose={() => setIsReactionViewerOpen(false)}
-        onActionToast={onActionToast}
-      />
+      {showEngagementActions ? (
+        <PostReactionViewerModal
+          postId={post.id}
+          isOpen={isReactionViewerOpen}
+          initialFilter={reactionViewerFilter}
+          currentUserId={currentUser.id}
+          onClose={() => setIsReactionViewerOpen(false)}
+          onActionToast={onActionToast}
+        />
+      ) : null}
 
-      {isReportDialogOpen ? (
+      {showPostMenu && isReportDialogOpen ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
           <button
             type="button"
@@ -523,7 +541,7 @@ export const PostCard = ({ post, currentUser, enableMediaViewer = false, onActio
         </div>
       ) : null}
 
-      {isDeleteDialogOpen ? (
+      {showPostMenu && isDeleteDialogOpen ? (
         <div className="fixed inset-0 z-[95] flex items-center justify-center p-4">
           <button
             type="button"

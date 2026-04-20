@@ -568,6 +568,7 @@
     "reportLabel": "Report #{{id}}",
     "reporter": "Reporter",
     "reportedUser": "Reported user",
+    "reasonLabel": "Reason:",
     "unknownUser": "Unknown user",
     "viewPost": "View post",
     "viewProfile": "View profile",

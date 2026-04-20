@@ -2,12 +2,15 @@ export interface PostReportItem {
   id: string;
   postId: string;
   reportedByUserId: string;
+  postOwnerUserId?: string | null;
   reason: string;
   status: PostReportStatus;
   resolvedByUserId?: string | null;
   resolvedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  reporter?: ReportUserSummary | null;
+  postOwner?: ReportUserSummary | null;
 }
 
 export type PostReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED';

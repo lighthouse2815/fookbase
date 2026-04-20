@@ -18,6 +18,8 @@ export interface PostCardProps {
   post: Post;
   currentUser: User;
   enableMediaViewer?: boolean;
+  showEngagementActions?: boolean;
+  showPostMenu?: boolean;
   onActionToast?: (message: string, type?: 'success' | 'error') => void;
   onPostDeleted?: (postId: string) => void;
 }

@@ -1,4 +1,7 @@
+import { BookmarkX } from 'lucide-react';
+
 import { CornerToast } from '@/components/CornerToast';
+import { EmptyStateCard } from '@/components/EmptyStateCard';
 import { PostCard } from '@/components/PostCard';
 
 import { useSavedPostsPage } from './hooks/useSavedPostsPage';
@@ -35,9 +38,11 @@ export const SavedPostsPage = () => {
 
       <section className="space-y-4">
         {savedPosts.length === 0 && !isLoading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-            {t('savedPosts.empty')}
-          </div>
+          <EmptyStateCard
+            title={t('savedPosts.title')}
+            description={t('savedPosts.empty')}
+            icon={BookmarkX}
+          />
         ) : null}
 
         {savedPosts.map((post) => (

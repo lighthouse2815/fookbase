@@ -526,6 +526,7 @@
     "reportLabel": "Báo cáo #{{id}}",
     "reporter": "Người báo cáo",
     "reportedUser": "Người bị báo cáo",
+    "reasonLabel": "Lý do:",
     "unknownUser": "Người dùng không xác định",
     "viewPost": "Xem bài viết",
     "viewProfile": "Xem trang cá nhân",
