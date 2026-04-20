@@ -276,13 +276,13 @@ export const PostCard = ({
       {normalizedPostContent ? (
         <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7 text-slate-700 dark:text-slate-300">
           {displayedPostContent}
-          {shouldTruncatePostContent && !isContentExpanded ? (
+          {shouldTruncatePostContent ? (
             <button
               type="button"
-              onClick={() => setIsContentExpanded(true)}
+              onClick={() => setIsContentExpanded((previous) => !previous)}
               className="text-brand-600 transition hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
             >
-              {t('post.seeMore', { defaultValue: 'Xem thêm' })}
+              {isContentExpanded ? t('post.seeLess') : t('post.seeMore')}
             </button>
           ) : null}
         </p>

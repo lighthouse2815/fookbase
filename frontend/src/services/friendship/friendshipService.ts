@@ -15,6 +15,7 @@ import {
   mapContactToFriend,
   mapJavaFriendship,
   mapPendingRequesterToRequest,
+  normalizeFriendRequestTimestamps,
   requestFromCandidates,
   isFriendshipPayloadRecord,
   mapBlockedUser,
@@ -37,11 +38,12 @@ export const friendshipService = {
         .filter((item) => item.requester !== true)
         .map((item, index) => mapPendingRequesterToRequest(item, index, 'received'));
     } catch {
-      return requestFromCandidates<FriendRequest[]>([
+      const requests = await requestFromCandidates<FriendRequest[]>([
         { method: 'get', path: FW.REQUESTS_RECEIVED },
         { method: 'get', path: FW.RECEIVED },
         { method: 'get', path: FW.FRIENDS_REQUESTS_RECEIVED },
       ]);
+      return requests.map(normalizeFriendRequestTimestamps);
     }
   },
 
@@ -52,11 +54,12 @@ export const friendshipService = {
         .filter((item) => item.requester === true)
         .map((item, index) => mapPendingRequesterToRequest(item, index, 'sent'));
     } catch {
-      return requestFromCandidates<FriendRequest[]>([
+      const requests = await requestFromCandidates<FriendRequest[]>([
         { method: 'get', path: FW.REQUESTS_SENT },
         { method: 'get', path: FW.SENT },
         { method: 'get', path: FW.FRIENDS_REQUESTS_SENT },
       ]);
+      return requests.map(normalizeFriendRequestTimestamps);
     }
   },
 

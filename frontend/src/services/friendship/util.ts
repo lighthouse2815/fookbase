@@ -56,7 +56,7 @@ const toDisplayName = (value: unknown, fallback: string): string => {
   return fallback;
 };
 
-const toAvatarUrl = (value: unknown, _userId: string): string => {
+const toAvatarUrl = (value: unknown): string => {
   if (typeof value === 'string' && value.trim().length > 0) {
     return value;
   }
@@ -75,6 +75,34 @@ const normalizeStatus = (value: unknown): FriendshipStatus => {
   }
 
   return 'pending';
+};
+
+const firstNonEmptyString = (...values: unknown[]): string | undefined => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+export const resolveFriendRequestTimestamp = (
+  payload: Partial<FriendRequest> | PendingRequesterPayload,
+): string | undefined =>
+  firstNonEmptyString(payload.updatedAt, payload.updateAt, payload.createdAt, payload.createAt, payload.requestedAt);
+
+export const normalizeFriendRequestTimestamps = (request: FriendRequest): FriendRequest => {
+  const requestedAt = resolveFriendRequestTimestamp(request);
+  const updatedAt = firstNonEmptyString(request.updatedAt, request.updateAt);
+  const createdAt = firstNonEmptyString(request.createdAt, request.createAt);
+
+  return {
+    ...request,
+    requestedAt,
+    updatedAt,
+    createdAt,
+  };
 };
 
 export const requestFromCandidates = async <T>(candidates: RequestCandidate[]): Promise<T> => {
@@ -131,6 +159,10 @@ export const mapPendingRequesterToRequest = (
     `User ${index + 1}`,
   );
 
+  const requestedAt = resolveFriendRequestTimestamp(payload);
+  const updatedAt = firstNonEmptyString(payload.updatedAt, payload.updateAt);
+  const createdAt = firstNonEmptyString(payload.createdAt, payload.createAt);
+
   return {
     id: userId,
     requestId: userId,
@@ -138,14 +170,11 @@ export const mapPendingRequesterToRequest = (
     addresseeId: mode === 'sent' ? userId : 'me',
     username: toDisplayName(payload.username, `user_${userId}`),
     fullName,
-    avatarUrl: toAvatarUrl(payload.avatarUrl, userId),
+    avatarUrl: toAvatarUrl(payload.avatarUrl),
     mutualFriends: 0,
-    requestedAt:
-      typeof payload.createdAt === 'string'
-        ? payload.createdAt
-        : typeof payload.requestedAt === 'string'
-          ? payload.requestedAt
-          : undefined,
+    requestedAt,
+    updatedAt,
+    createdAt,
   };
 };
 
@@ -161,7 +190,7 @@ export const mapContactToFriend = (payload: ContactPayload, index: number): Frie
     friendshipId: typeof payload.contactId === 'string' ? payload.contactId : undefined,
     username: toDisplayName(payload.username ?? payload.nickName ?? payload.phoneNumber, `friend_${userId}`),
     fullName: displayName,
-    avatarUrl: toAvatarUrl(payload.avatarUrl, userId),
+    avatarUrl: toAvatarUrl(payload.avatarUrl),
     mutualFriends: typeof payload.mutualFriends === 'number' ? payload.mutualFriends : 0,
     friendsCount: typeof payload.friendsCount === 'number' ? payload.friendsCount : undefined,
   };
@@ -189,7 +218,7 @@ export const mapBlockedUser = (payload: BlockedUserPayload, index: number): Bloc
     id: userId,
     username,
     fullName,
-    avatarUrl: toAvatarUrl(payload.avatarUrl, userId),
+    avatarUrl: toAvatarUrl(payload.avatarUrl),
     blockedAt: typeof payload.blockedAt === 'string' ? payload.blockedAt : undefined,
   };
 };

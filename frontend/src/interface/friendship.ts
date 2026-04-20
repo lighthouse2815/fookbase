@@ -19,6 +19,10 @@ export interface FriendRequest extends User {
   addresseeId: string;
   mutualFriends: number;
   requestedAt?: string;
+  updatedAt?: string;
+  createdAt?: string;
+  updateAt?: string;
+  createAt?: string;
 }
 
 export interface FriendUser extends User {
@@ -47,6 +51,9 @@ export interface PendingRequesterPayload {
   requester?: boolean;
   createdAt?: string;
   requestedAt?: string;
+  updatedAt?: string;
+  updateAt?: string;
+  createAt?: string;
 }
 
 export interface ContactPayload {

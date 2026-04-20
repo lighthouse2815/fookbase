@@ -125,7 +125,9 @@
     "share": "Chia sẻ",
     "writeComment": "Viết bình luận...",
     "addComment": "Gửi",
-    "commentCountLabel": "{{count}} bình luận"
+    "commentCountLabel": "{{count}} bình luận",
+    "seeMore": "Xem thêm",
+    "seeLess": "Thu gọn"
   },
   "commentSection": {
     "reactionFilterAll": "Tất cả",

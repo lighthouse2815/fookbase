@@ -11,6 +11,24 @@ export const parseFriendsTab = (value: string | null): FriendsTab => {
   return 'home';
 };
 
+const resolveRequestTimestamp = (request: Partial<FriendRequest>): string | undefined => {
+  const candidates = [
+    request.updatedAt,
+    request.updateAt,
+    request.createdAt,
+    request.createAt,
+    request.requestedAt,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+};
+
 export const toSuggestion = (user: FriendUser | FriendRequest): FriendSuggestion => ({
   id: user.id,
   username: user.username,
@@ -32,19 +50,25 @@ export const toFriendUser = (request: FriendRequest): FriendUser => ({
   since: new Date().toISOString(),
 });
 
-export const toSentRequest = (user: FriendSuggestion, requesterId: string): FriendRequest => ({
-  id: user.id,
-  requestId: `local-sent-${user.id}-${Date.now()}`,
-  requesterId,
-  addresseeId: user.id,
-  username: user.username,
-  fullName: user.fullName,
-  avatarUrl: user.avatarUrl,
-  mutualFriends: user.mutualFriends,
-  requestedAt: new Date().toISOString(),
-  faculty: user.faculty,
-  isOnline: user.isOnline,
-});
+export const toSentRequest = (user: FriendSuggestion, requesterId: string): FriendRequest => {
+  const now = new Date().toISOString();
+
+  return {
+    id: user.id,
+    requestId: `local-sent-${user.id}-${Date.now()}`,
+    requesterId,
+    addresseeId: user.id,
+    username: user.username,
+    fullName: user.fullName,
+    avatarUrl: user.avatarUrl,
+    mutualFriends: user.mutualFriends,
+    requestedAt: now,
+    updatedAt: now,
+    createdAt: now,
+    faculty: user.faculty,
+    isOnline: user.isOnline,
+  };
+};
 
 export const sanitizeSuggestions = (value: unknown, fallback: FriendSuggestion[]) => {
   if (!Array.isArray(value)) {
@@ -82,6 +106,19 @@ export const sanitizeRequests = (
     const safeId = typed.id ?? `request-user-${index}`;
     const requesterId = mode === 'received' ? typed.requesterId ?? safeId : typed.requesterId ?? currentUserId;
     const addresseeId = mode === 'received' ? typed.addresseeId ?? currentUserId : typed.addresseeId ?? safeId;
+    const requestedAt = resolveRequestTimestamp(typed);
+    const updatedAt =
+      typeof typed.updatedAt === 'string' && typed.updatedAt.trim().length > 0
+        ? typed.updatedAt
+        : typeof typed.updateAt === 'string' && typed.updateAt.trim().length > 0
+          ? typed.updateAt
+          : undefined;
+    const createdAt =
+      typeof typed.createdAt === 'string' && typed.createdAt.trim().length > 0
+        ? typed.createdAt
+        : typeof typed.createAt === 'string' && typed.createAt.trim().length > 0
+          ? typed.createAt
+          : undefined;
 
     return {
       id: safeId,
@@ -92,7 +129,9 @@ export const sanitizeRequests = (
       fullName: typed.fullName ?? 'User',
       avatarUrl: typed.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
       mutualFriends: typeof typed.mutualFriends === 'number' ? typed.mutualFriends : 0,
-      requestedAt: typed.requestedAt,
+      requestedAt,
+      updatedAt,
+      createdAt,
       faculty: typed.faculty,
       isOnline: typed.isOnline,
     } satisfies FriendRequest;
