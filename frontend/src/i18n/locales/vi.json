@@ -530,6 +530,7 @@
     "unknownUser": "Người dùng không xác định",
     "viewPost": "Xem bài viết",
     "viewProfile": "Xem trang cá nhân",
+    "reportedAtLabel": "Tố cáo lúc:",
     "commentIdLabel": "Mã bình luận: {{id}}",
     "storyIdLabel": "Mã story: {{id}}",
     "loadingButton": "Đang tải...",

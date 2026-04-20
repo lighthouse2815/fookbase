@@ -572,6 +572,7 @@
     "unknownUser": "Unknown user",
     "viewPost": "View post",
     "viewProfile": "View profile",
+    "reportedAtLabel": "Reported at:",
     "commentIdLabel": "Comment ID: {{id}}",
     "storyIdLabel": "Story ID: {{id}}",
     "loadingButton": "Loading...",

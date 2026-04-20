@@ -1,7 +1,30 @@
 import type { PostPayload } from "@/interface/post";
 import type { Post } from "@/interface/post";
+import { API_CONFIG } from '@/config/apiConfig';
 import { parseReactionType, parseReactionTypes } from "../comment/util";
 import type { PostReactionType } from '@/type/post.type';
+
+const resolvePostMediaUrl = (mediaUrl: string): string => {
+  const normalized = mediaUrl.trim();
+  if (!normalized) {
+    return normalized;
+  }
+
+  if (/^(https?:)?\/\//i.test(normalized) || normalized.startsWith('data:') || normalized.startsWith('blob:')) {
+    return normalized;
+  }
+
+  const baseUrl = API_CONFIG.BASE_URL;
+  if (!baseUrl) {
+    return normalized;
+  }
+
+  try {
+    return new URL(normalized, baseUrl).toString();
+  } catch {
+    return normalized;
+  }
+};
 
 export const mapPost = (payload: PostPayload): Post => {
   const authorName = payload.author?.displayName?.trim() || payload.author?.username?.trim() || 'user';
@@ -22,6 +45,7 @@ export const mapPost = (payload: PostPayload): Post => {
     ? payload.imageUrls
         .map((item) => (typeof item === 'string' ? item.trim() : ''))
         .filter((item) => item.length > 0)
+        .map(resolvePostMediaUrl)
     : [];
 
   return {

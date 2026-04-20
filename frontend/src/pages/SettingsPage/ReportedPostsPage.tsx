@@ -76,7 +76,9 @@ export const ReportedPostsPage = () => {
               <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
                 <span className="font-semibold">{t('reportedPosts.reasonLabel')}</span> {report.reason}
               </p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{formatRelativeTime(report.createdAt)}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-semibold">{t('reportedPosts.reportedAtLabel')}</span> {formatRelativeTime(report.createdAt)}
+              </p>
 
               <Link
                 to={`/posts/${report.postId}`}
