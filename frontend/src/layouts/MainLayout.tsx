@@ -1,4 +1,4 @@
-import { Bookmark, Gamepad2, House, MessageSquareText, UserRound, UsersRound } from 'lucide-react';
+import { Bookmark, Gamepad2, House, MessageSquareText, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -412,7 +412,7 @@ export const MainLayout = () => {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-6 gap-1.5">
+        <div className="mx-auto grid max-w-xl grid-cols-5 gap-1.5">
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -483,19 +483,6 @@ export const MainLayout = () => {
             <span>{t('nav.saved')}</span>
           </NavLink>
 
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              `inline-flex min-h-[4rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium ${
-                isActive
-                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
-                  : 'text-slate-600 dark:text-slate-300'
-              }`
-            }
-          >
-            <UserRound size={18} />
-            <span>{t('nav.profile')}</span>
-          </NavLink>
         </div>
       </nav>
     </div>

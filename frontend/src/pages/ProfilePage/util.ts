@@ -4,7 +4,7 @@ import type { Profile } from './interface';
 
 export { normalizeFriendshipStatus } from '@/utils/friendshipStatusCode';
 
-export const PROFILE_POST_COLUMN_CLASS = 'mx-auto w-full max-w-[980px]';
+export const PROFILE_POST_COLUMN_CLASS = 'mx-auto w-full max-w-[760px] xl:max-w-[820px]';
 
 export const PROFILE_POSTS_PAGE_SIZE = 100;
 
