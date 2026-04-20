@@ -60,6 +60,25 @@ public class CommentRepository : ICommentRepository
         return _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, Guid>> GetOwnerUserIdsByCommentIdsAsync(
+        IReadOnlyCollection<Guid> commentIds,
+        CancellationToken cancellationToken)
+    {
+        if (commentIds.Count == 0)
+        {
+            return new Dictionary<Guid, Guid>();
+        }
+
+        var pairs = await _context.Comments
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(comment => commentIds.Contains(comment.Id))
+            .Select(comment => new { comment.Id, comment.UserId })
+            .ToListAsync(cancellationToken);
+
+        return pairs.ToDictionary(pair => pair.Id, pair => pair.UserId);
+    }
+
     public Task AddAsync(Comment comment, CancellationToken cancellationToken)
     {
         return _context.Comments.AddAsync(comment, cancellationToken).AsTask();

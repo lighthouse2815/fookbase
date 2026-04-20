@@ -4,7 +4,7 @@ import { AlertTriangle, MessageSquareWarning } from 'lucide-react';
 import { CornerToast } from '@/components/CornerToast';
 import { EmptyStateCard } from '@/components/EmptyStateCard';
 import { formatRelativeTime } from '@/utils/date';
-import { extractCommentIdFromReason, getStatusBadgeClass } from '../reportUtils';
+import { getStatusBadgeClass } from '../reportUtils';
 
 import { useReportComment } from './useReportComment';
 
@@ -27,9 +27,9 @@ export const AdminCommentReportsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyệt báo cáo bình luận', 'Moderate comment reports')}</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyet bao cao binh luan', 'Moderate comment reports')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {tx('Quản lý report bình luận (tag [COMMENT:id]).', 'Review comment reports (tag [COMMENT:id]).')}
+          {tx('Quan ly cac report lien quan den binh luan.', 'Review reports related to comments.')}
         </p>
       </section>
 
@@ -42,12 +42,12 @@ export const AdminCommentReportsPage = () => {
       {reports.length === 0 && !isLoading ? (
         <EmptyStateCard
           icon={MessageSquareWarning}
-          title={tx('Chưa có báo cáo bình luận', 'No comment reports')}
+          title={tx('Chua co bao cao binh luan', 'No comment reports')}
           description={tx(
-            'Danh sách đang trống. Báo cáo mới sẽ hiển thị ở đây.',
+            'Danh sach dang trong. Bao cao moi se hien thi o day.',
             'The list is empty. New reports will appear here.',
           )}
-          actionLabel={tx('Làm mới', 'Refresh')}
+          actionLabel={tx('Lam moi', 'Refresh')}
           onAction={() => {
             void loadReports(1, true);
           }}
@@ -59,7 +59,6 @@ export const AdminCommentReportsPage = () => {
           const normalizedStatus = report.status.trim().toUpperCase();
           const isPending = normalizedStatus === 'PENDING';
           const isActing = pendingActionReportId === report.id;
-          const commentId = extractCommentIdFromReason(report.reason);
 
           return (
             <article
@@ -79,7 +78,7 @@ export const AdminCommentReportsPage = () => {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người báo cáo', 'Reporter')}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Nguoi bao cao', 'Reporter')}</p>
                   {report.reporter ? (
                     <Link to={`/profile/${report.reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -98,27 +97,27 @@ export const AdminCommentReportsPage = () => {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người bị báo cáo', 'Reported user')}</p>
-                  {report.postOwner ? (
-                    <Link to={`/profile/${report.postOwner.id}`} className="mt-2 flex items-center gap-2">
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Nguoi bi bao cao', 'Reported user')}</p>
+                  {report.commentOwner ? (
+                    <Link to={`/profile/${report.commentOwner.id}`} className="mt-2 flex items-center gap-2">
                       <img
-                        src={report.postOwner.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
-                        alt={report.postOwner.displayName}
+                        src={report.commentOwner.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg'}
+                        alt={report.commentOwner.displayName}
                         className="h-9 w-9 rounded-full object-cover"
                       />
                       <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{report.postOwner.displayName}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{report.postOwnerUserId ?? 'N/A'}</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{report.commentOwner.displayName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{report.commentOwnerUserId ?? 'N/A'}</p>
                       </div>
                     </Link>
                   ) : (
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{report.postOwnerUserId ?? 'N/A'}</p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{report.commentOwnerUserId ?? 'N/A'}</p>
                   )}
                 </div>
               </div>
 
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                {tx('Bình luận', 'Comment')}: {commentId ?? 'N/A'} - {formatRelativeTime(report.createdAt)}
+                {tx('Binh luan', 'Comment')}: {report.commentId} - {formatRelativeTime(report.createdAt)}
               </p>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -126,7 +125,7 @@ export const AdminCommentReportsPage = () => {
                   to={`/posts/${report.postId}`}
                   className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  {tx('Xem post gốc', 'View parent post')}
+                  {tx('Xem post goc', 'View parent post')}
                 </Link>
 
                 {isPending ? (
@@ -137,7 +136,7 @@ export const AdminCommentReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {isActing ? tx('Đang xử lý...', 'Processing...') : tx('Chấp nhận', 'Approve')}
+                      {isActing ? tx('Dang xu ly...', 'Processing...') : tx('Chap nhan', 'Approve')}
                     </button>
                     <button
                       type="button"
@@ -145,7 +144,7 @@ export const AdminCommentReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {tx('Từ chối', 'Reject')}
+                      {tx('Tu choi', 'Reject')}
                     </button>
                   </>
                 ) : null}
@@ -163,10 +162,10 @@ export const AdminCommentReportsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
+            {isLoading ? tx('Dang tai...', 'Loading...') : tx('Xem them', 'Load more')}
           </button>
         ) : reports.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Đã hiển thị hết báo cáo.', 'All reports are shown.')}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Da hien thi het bao cao.', 'All reports are shown.')}</p>
         ) : null}
       </div>
 
@@ -181,10 +180,10 @@ export const AdminCommentReportsPage = () => {
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xác nhận duyệt báo cáo', 'Confirm approval')}</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xac nhan duyet bao cao', 'Confirm approval')}</h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   {tx(
-                    'Chấp nhận report nghĩa là bình luận bị báo cáo sẽ bị xóa. Bạn chắc chắn tiếp tục?',
+                    'Chap nhan report nghia la binh luan bi bao cao se bi xoa. Ban chac chan tiep tuc?',
                     'Approving this report means the reported comment will be deleted. Continue?',
                   )}
                 </p>
@@ -196,7 +195,7 @@ export const AdminCommentReportsPage = () => {
                 onClick={() => setApproveConfirmReportId(null)}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                {tx('Hủy', 'Cancel')}
+                {tx('Huy', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -206,7 +205,7 @@ export const AdminCommentReportsPage = () => {
                 }}
                 className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
-                {tx('Xác nhận duyệt', 'Confirm')}
+                {tx('Xac nhan duyet', 'Confirm')}
               </button>
             </div>
           </div>

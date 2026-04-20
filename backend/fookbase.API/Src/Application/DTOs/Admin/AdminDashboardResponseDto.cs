@@ -14,6 +14,8 @@ public class AdminDashboardResponseDto
 
     public int PendingPostReports { get; init; }
 
+    public int PendingCommentReports { get; init; }
+
     public int PendingUserReports { get; init; }
 
     public int PendingStoryReports { get; init; }
@@ -29,4 +31,3 @@ public class AdminMonthlyMetricDto
 
     public long Posts { get; init; }
 }
-

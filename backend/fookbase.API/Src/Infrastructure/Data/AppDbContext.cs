@@ -34,6 +34,8 @@ public class AppDbContext : DbContext
 
     public DbSet<PostReport> PostReports => Set<PostReport>();
 
+    public DbSet<CommentReport> CommentReports => Set<CommentReport>();
+
     public DbSet<UserReport> UserReports => Set<UserReport>();
 
     public DbSet<StoryReport> StoryReports => Set<StoryReport>();
@@ -279,6 +281,29 @@ public class AppDbContext : DbContext
                 .HasForeignKey(report => report.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            entity.HasIndex(report => report.PostId);
+            entity.HasIndex(report => report.ReportedByUserId);
+            entity.HasIndex(report => report.Status);
+        });
+
+        modelBuilder.Entity<CommentReport>(entity =>
+        {
+            entity.ToTable("CommentReport");
+            entity.HasKey(report => report.Id);
+
+            entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(report => report.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+            entity.Property(report => report.UpdatedAt).IsRequired();
+
+            entity.HasOne(report => report.Comment)
+                .WithMany(comment => comment.Reports)
+                .HasForeignKey(report => report.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(report => report.CommentId);
             entity.HasIndex(report => report.PostId);
             entity.HasIndex(report => report.ReportedByUserId);
             entity.HasIndex(report => report.Status);

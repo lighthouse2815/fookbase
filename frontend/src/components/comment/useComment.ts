@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { commentService } from '@/services/commentService';
+import { commentReportService } from '@/services/commentReportService';
 import { friendshipService } from '@/services/friendshipService';
-import { postReportService } from '@/services/postReportService';
 
 import type { Comment, CommentReactionType, CommentReactionUser } from '@/interface/post';
 
@@ -695,8 +695,7 @@ export function useComment({
     setReportReasonError(null);
 
     try {
-      const reason = `[COMMENT:${reportingComment.id}] ${normalizedReason}`;
-      await postReportService.create(postId, reason);
+      await commentReportService.create(reportingComment.id, normalizedReason);
 
       setReportingComment(null);
       setReportReason('');

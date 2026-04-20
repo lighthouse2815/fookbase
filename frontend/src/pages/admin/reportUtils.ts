@@ -12,12 +12,3 @@ export const getStatusBadgeClass = (status: string) => {
 
   return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200';
 };
-
-export const isCommentReportReason = (reason: string) => {
-  return reason.trim().toUpperCase().startsWith('[COMMENT:');
-};
-
-export const extractCommentIdFromReason = (reason: string): string | null => {
-  const match = reason.match(/\[COMMENT:([^\]]+)\]/i);
-  return match?.[1]?.trim() || null;
-};

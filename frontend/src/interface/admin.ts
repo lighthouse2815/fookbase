@@ -24,6 +24,7 @@ export interface AdminDashboard {
   inactiveUsers: number;
   totalPosts: number;
   pendingPostReports: number;
+  pendingCommentReports: number;
   pendingUserReports: number;
   pendingStoryReports: number;
   monthlyMetrics: AdminMonthlyMetric[];

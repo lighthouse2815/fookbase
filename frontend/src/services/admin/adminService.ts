@@ -38,6 +38,7 @@ export const adminService = {
       inactiveUsers: Number(dashboard.inactiveUsers ?? 0),
       totalPosts: Number(dashboard.totalPosts ?? 0),
       pendingPostReports: Number(dashboard.pendingPostReports ?? 0),
+      pendingCommentReports: Number(dashboard.pendingCommentReports ?? 0),
       pendingUserReports: Number(dashboard.pendingUserReports ?? 0),
       pendingStoryReports: Number(dashboard.pendingStoryReports ?? 0),
       monthlyMetrics: (dashboard.monthlyMetrics ?? []).map((item) => ({

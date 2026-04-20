@@ -14,5 +14,9 @@ public interface ICommentRepository
 
     Task<Comment?> GetByIdAsync(Guid commentId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyDictionary<Guid, Guid>> GetOwnerUserIdsByCommentIdsAsync(
+        IReadOnlyCollection<Guid> commentIds,
+        CancellationToken cancellationToken);
+
     Task AddAsync(Comment comment, CancellationToken cancellationToken);
 }

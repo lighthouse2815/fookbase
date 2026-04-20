@@ -61,6 +61,13 @@ export const API_CONFIG = {
       RESOLVE: (id: string) => `${reportId(id)}/resolve`,
       PENDING_COUNT: '/api/post-reports/pending-count',
     },
+    COMMENT_REPORTS: {
+      CREATE: '/api/comment-reports',
+      MY: '/api/comment-reports/my',
+      LIST: '/api/comment-reports',
+      RESOLVE: (id: string) => `/api/comment-reports/${id}/resolve`,
+      PENDING_COUNT: '/api/comment-reports/pending-count',
+    },
     STORY_REPORTS: {
       CREATE: '/api/story-reports',
       MY: '/api/story-reports/my',

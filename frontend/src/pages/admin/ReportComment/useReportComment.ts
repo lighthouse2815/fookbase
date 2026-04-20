@@ -2,16 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useCornerToast } from '@/hooks/useCornerToast';
 import { useLocaleText } from '@/hooks/useLocaleText';
-import type { PostReportItem, ReportUserSummary } from '@/interface/report';
-import { postReportService } from '@/services/post/postReportService';
+import type { CommentReportItem } from '@/interface/report';
+import { commentReportService } from '@/services/comment/commentReportService';
 import { getApiErrorMessage } from '@/utils/apiError';
-import { isCommentReportReason, PAGE_SIZE } from '../reportUtils';
-
-export type CommentReportItem = PostReportItem & {
-  postOwnerUserId?: string | null;
-  reporter?: ReportUserSummary | null;
-  postOwner?: ReportUserSummary | null;
-};
+import { PAGE_SIZE } from '../reportUtils';
 
 export const useReportComment = () => {
   const tx = useLocaleText();
@@ -35,10 +29,8 @@ export const useReportComment = () => {
       setIsLoading(true);
 
       try {
-        const response = await postReportService.getAll(targetPage, PAGE_SIZE);
-        const commentReportsOnly = response.items.filter((item) => isCommentReportReason(item.reason)) as CommentReportItem[];
-
-        setReports((previous) => (replace ? commentReportsOnly : [...previous, ...commentReportsOnly]));
+        const response = await commentReportService.getAll(targetPage, PAGE_SIZE);
+        setReports((previous) => (replace ? response.items : [...previous, ...response.items]));
         setHasMore(response.hasMore);
         setPage(targetPage);
         setLoadError(null);
@@ -64,7 +56,7 @@ export const useReportComment = () => {
     setPendingActionReportId(reportId);
 
     try {
-      const updated = await postReportService.resolve(reportId, status);
+      const updated = await commentReportService.resolve(reportId, status);
       setReports((previous) => previous.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
       showToast(
         status === 'RESOLVED'

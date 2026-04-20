@@ -25,4 +25,6 @@ public class Comment
     public ICollection<Comment> Replies { get; set; } = new List<Comment>();
 
     public ICollection<CommentReaction> Reactions { get; set; } = new List<CommentReaction>();
+
+    public ICollection<CommentReport> Reports { get; set; } = new List<CommentReport>();
 }

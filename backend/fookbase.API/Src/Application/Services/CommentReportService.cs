@@ -1,4 +1,4 @@
-using InteractHub.Api.Application.DTOs.PostReports;
+using InteractHub.Api.Application.DTOs.CommentReports;
 using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.Interfaces.Repositories;
@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
 
-public class PostReportService : IPostReportService
+public class CommentReportService : ICommentReportService
 {
     private static readonly HashSet<ReportStatus> AllowedResolveStatuses =
     [
@@ -21,29 +21,29 @@ public class PostReportService : IPostReportService
         ReportStatus.REJECTED
     ];
 
-    private readonly IPostReportRepository _postReportRepository;
-    private readonly IPostRepository _postRepository;
+    private const string CommentReportApprovedNotificationType = "COMMENT_REPORT_APPROVED";
+    private const string CommentReportRejectedNotificationType = "COMMENT_REPORT_REJECTED";
+    private const string CommentReportTargetNotificationType = "COMMENT_REPORT_TARGET_ACTION";
+
+    private readonly ICommentReportRepository _commentReportRepository;
+    private readonly ICommentRepository _commentRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationService _notificationService;
     private readonly IAdminAuditLogService _adminAuditLogService;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<PostReportService> _logger;
+    private readonly ILogger<CommentReportService> _logger;
 
-    private const string PostReportApprovedNotificationType = "POST_REPORT_APPROVED";
-    private const string PostReportRejectedNotificationType = "POST_REPORT_REJECTED";
-    private const string PostReportTargetNotificationType = "POST_REPORT_TARGET_ACTION";
-
-    public PostReportService(
-        IPostReportRepository postReportRepository,
-        IPostRepository postRepository,
+    public CommentReportService(
+        ICommentReportRepository commentReportRepository,
+        ICommentRepository commentRepository,
         IJavaApiService javaApiService,
         INotificationService notificationService,
         IAdminAuditLogService adminAuditLogService,
         IUnitOfWork unitOfWork,
-        ILogger<PostReportService> logger)
+        ILogger<CommentReportService> logger)
     {
-        _postReportRepository = postReportRepository;
-        _postRepository = postRepository;
+        _commentReportRepository = commentReportRepository;
+        _commentRepository = commentRepository;
         _javaApiService = javaApiService;
         _notificationService = notificationService;
         _adminAuditLogService = adminAuditLogService;
@@ -51,71 +51,79 @@ public class PostReportService : IPostReportService
         _logger = logger;
     }
 
-    public async Task<PagedResult<PostReportResponseDto>> GetAllAsync(PaginationQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<CommentReportResponseDto>> GetAllAsync(PaginationQuery query, CancellationToken cancellationToken)
     {
         query.Normalize();
 
-        var (items, totalCount) = await _postReportRepository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
-
+        var (items, totalCount) = await _commentReportRepository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
         var mappedItems = await MapReportsAsync(items, cancellationToken);
 
-        return PagedResult<PostReportResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
+        return PagedResult<CommentReportResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
-    public async Task<PagedResult<PostReportResponseDto>> GetMineAsync(Guid userId, PaginationQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<CommentReportResponseDto>> GetMineAsync(
+        Guid userId,
+        PaginationQuery query,
+        CancellationToken cancellationToken)
     {
         query.Normalize();
 
-        var (items, totalCount) = await _postReportRepository.GetPagedByReporterAsync(userId, query.Page, query.PageSize, cancellationToken);
+        var (items, totalCount) = await _commentReportRepository.GetPagedByReporterAsync(
+            userId,
+            query.Page,
+            query.PageSize,
+            cancellationToken);
 
         var mappedItems = await MapReportsAsync(items, cancellationToken);
-
-        return PagedResult<PostReportResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
+        return PagedResult<CommentReportResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
     public Task<int> GetPendingCountAsync(CancellationToken cancellationToken)
     {
-        return _postReportRepository.CountByStatusAsync(ReportStatus.PENDING, cancellationToken);
+        return _commentReportRepository.CountByStatusAsync(ReportStatus.PENDING, cancellationToken);
     }
 
-    public async Task<PostReportResponseDto> GetByIdAsync(
+    public async Task<CommentReportResponseDto> GetByIdAsync(
         Guid reportId,
         Guid userId,
         bool isAdmin,
         CancellationToken cancellationToken)
     {
-        var report = await _postReportRepository.GetByIdAsync(reportId, cancellationToken)
-            ?? throw new NotFoundException("Post report not found.");
+        var report = await _commentReportRepository.GetByIdAsync(reportId, cancellationToken)
+            ?? throw new NotFoundException("Comment report not found.");
 
         if (!isAdmin && report.ReportedByUserId != userId)
         {
-            throw new ForbiddenException("You are not allowed to access this post report.");
+            throw new ForbiddenException("You are not allowed to access this comment report.");
         }
 
         var mappedItems = await MapReportsAsync([report], cancellationToken);
         return mappedItems[0];
     }
 
-    public async Task<PostReportResponseDto> CreateAsync(Guid userId, CreatePostReportRequestDto request, CancellationToken cancellationToken)
+    public async Task<CommentReportResponseDto> CreateAsync(
+        Guid userId,
+        CreateCommentReportRequestDto request,
+        CancellationToken cancellationToken)
     {
         var user = await _javaApiService.GetUserById(userId, cancellationToken)
             ?? throw new NotFoundException("User not found.");
 
-        var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken)
-            ?? throw new NotFoundException("Post not found.");
+        var comment = await _commentRepository.GetByIdAsync(request.CommentId, cancellationToken)
+            ?? throw new NotFoundException("Comment not found.");
 
-        var hasPendingReport = await _postReportRepository.ExistsByPostAndReporterAsync(post.Id, user.Id, cancellationToken);
+        var hasPendingReport = await _commentReportRepository.ExistsByCommentAndReporterAsync(comment.Id, user.Id, cancellationToken);
         if (hasPendingReport)
         {
-            throw new ArgumentException("You already have a pending report for this post.");
+            throw new ArgumentException("You already have a pending report for this comment.");
         }
 
         var now = DateTime.UtcNow;
-
-        var report = new PostReport
+        var report = new CommentReport
         {
             Id = Guid.NewGuid(),
-            PostId = post.Id,
+            CommentId = comment.Id,
+            PostId = comment.PostId,
             ReportedByUserId = user.Id,
             Reason = request.Reason.Trim(),
             Status = ReportStatus.PENDING,
@@ -123,47 +131,45 @@ public class PostReportService : IPostReportService
             UpdatedAt = now
         };
 
-        await _postReportRepository.AddAsync(report, cancellationToken);
+        await _commentReportRepository.AddAsync(report, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var mappedItems = await MapReportsAsync([report], cancellationToken);
         return mappedItems[0];
     }
 
-    public async Task<PostReportResponseDto> ResolveAsync(
+    public async Task<CommentReportResponseDto> ResolveAsync(
         Guid reportId,
         Guid adminUserId,
-        ResolvePostReportRequestDto request,
+        ResolveCommentReportRequestDto request,
         CancellationToken cancellationToken)
     {
         var adminUser = await _javaApiService.GetUserById(adminUserId, cancellationToken)
             ?? throw new NotFoundException("Admin user not found.");
 
-        var report = await _postReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
-            ?? throw new NotFoundException("Post report not found.");
+        var report = await _commentReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
+            ?? throw new NotFoundException("Comment report not found.");
 
-        var previousStatus = report.Status;
         if (!EnumParser.TryParseReportStatus(request.Status, out var normalizedStatus)
             || !AllowedResolveStatuses.Contains(normalizedStatus))
         {
             throw new ArgumentException("Status must be RESOLVED or REJECTED.");
         }
 
-        var ownerMap = await _postRepository.GetOwnerUserIdsByPostIdsAsync([report.PostId], cancellationToken);
-        var postOwnerUserId = ownerMap.TryGetValue(report.PostId, out var ownerId)
+        var ownerMap = await _commentRepository.GetOwnerUserIdsByCommentIdsAsync([report.CommentId], cancellationToken);
+        var commentOwnerUserId = ownerMap.TryGetValue(report.CommentId, out var ownerId)
             ? ownerId
             : (Guid?)null;
-        var targetUserId = postOwnerUserId;
+        var previousStatus = report.Status;
 
         if (normalizedStatus == ReportStatus.RESOLVED)
         {
-            var post = await _postRepository.GetByIdForUpdateAsync(report.PostId, cancellationToken);
-            if (post is not null && post.DeletedAt is null)
+            var comment = await _commentRepository.GetByIdAsync(report.CommentId, cancellationToken);
+            if (comment is not null && comment.DeletedAt is null)
             {
-                post.DeletedAt = DateTime.UtcNow;
-                post.UpdatedAt = DateTime.UtcNow;
-                postOwnerUserId = post.UserId;
-                targetUserId = post.UserId;
+                comment.DeletedAt = DateTime.UtcNow;
+                comment.UpdatedAt = DateTime.UtcNow;
+                commentOwnerUserId = comment.UserId;
             }
         }
 
@@ -178,35 +184,35 @@ public class PostReportService : IPostReportService
             report,
             adminUserId,
             normalizedStatus,
-            targetUserId,
+            commentOwnerUserId,
             cancellationToken);
 
         try
         {
             await _adminAuditLogService.LogAsync(
                 adminUserId,
-                normalizedStatus == ReportStatus.RESOLVED ? "POST_REPORT_APPROVED" : "POST_REPORT_REJECTED",
-                "POST_REPORT",
+                normalizedStatus == ReportStatus.RESOLVED ? "COMMENT_REPORT_APPROVED" : "COMMENT_REPORT_REJECTED",
+                "COMMENT_REPORT",
                 report.Id,
-                targetUserId,
-                $"PostReportId={report.Id};PostId={report.PostId};Previous={previousStatus};Current={normalizedStatus}.",
+                commentOwnerUserId,
+                $"CommentReportId={report.Id};CommentId={report.CommentId};PostId={report.PostId};Previous={previousStatus};Current={normalizedStatus}.",
                 cancellationToken);
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(exception, "Could not persist audit log for post report resolution. ReportId={ReportId}", report.Id);
+            _logger.LogWarning(exception, "Could not persist audit log for comment report resolution. ReportId={ReportId}", report.Id);
         }
 
         _logger.LogInformation(
-            "Admin moderation action. AdminUserId={AdminUserId}, ReportId={ReportId}, PostId={PostId}, ReporterUserId={ReporterUserId}, PostOwnerUserId={PostOwnerUserId}, PreviousStatus={PreviousStatus}, NewStatus={NewStatus}, ResolvedAt={ResolvedAt}.",
+            "Admin moderation action on comment report. AdminUserId={AdminUserId}, ReportId={ReportId}, CommentId={CommentId}, PostId={PostId}, ReporterUserId={ReporterUserId}, CommentOwnerUserId={CommentOwnerUserId}, PreviousStatus={PreviousStatus}, NewStatus={NewStatus}.",
             adminUser.Id,
             report.Id,
+            report.CommentId,
             report.PostId,
             report.ReportedByUserId,
-            postOwnerUserId,
+            commentOwnerUserId,
             previousStatus,
-            report.Status,
-            report.ResolvedAt);
+            report.Status);
 
         var mappedItems = await MapReportsAsync([report], cancellationToken);
         return mappedItems[0];
@@ -214,20 +220,20 @@ public class PostReportService : IPostReportService
 
     public async Task DeleteAsync(Guid reportId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
     {
-        var report = await _postReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
-            ?? throw new NotFoundException("Post report not found.");
+        var report = await _commentReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
+            ?? throw new NotFoundException("Comment report not found.");
 
         if (!isAdmin && report.ReportedByUserId != userId)
         {
-            throw new ForbiddenException("You are not allowed to delete this post report.");
+            throw new ForbiddenException("You are not allowed to delete this comment report.");
         }
 
-        _postReportRepository.Remove(report);
+        _commentReportRepository.Remove(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<List<PostReportResponseDto>> MapReportsAsync(
-        IReadOnlyList<PostReport> reports,
+    private async Task<List<CommentReportResponseDto>> MapReportsAsync(
+        IReadOnlyList<CommentReport> reports,
         CancellationToken cancellationToken)
     {
         if (reports.Count == 0)
@@ -235,8 +241,8 @@ public class PostReportService : IPostReportService
             return [];
         }
 
-        var ownerMap = await _postRepository.GetOwnerUserIdsByPostIdsAsync(
-            reports.Select(report => report.PostId).Distinct().ToList(),
+        var ownerMap = await _commentRepository.GetOwnerUserIdsByCommentIdsAsync(
+            reports.Select(report => report.CommentId).Distinct().ToList(),
             cancellationToken);
 
         var userIds = reports
@@ -250,11 +256,13 @@ public class PostReportService : IPostReportService
         return reports
             .Select(report =>
             {
-                var ownerUserId = ownerMap.TryGetValue(report.PostId, out var ownerId) ? ownerId : (Guid?)null;
+                var commentOwnerUserId = ownerMap.TryGetValue(report.CommentId, out var ownerId) ? ownerId : (Guid?)null;
                 return report.ToResponseDto(
-                    postOwnerUserId: ownerUserId,
+                    commentOwnerUserId: commentOwnerUserId,
                     reporter: ResolveSummaryOrFallback(report.ReportedByUserId, summaries),
-                    postOwner: ownerUserId.HasValue ? ResolveSummaryOrFallback(ownerUserId.Value, summaries) : null);
+                    commentOwner: commentOwnerUserId.HasValue
+                        ? ResolveSummaryOrFallback(commentOwnerUserId.Value, summaries)
+                        : null);
             })
             .ToList();
     }
@@ -279,7 +287,9 @@ public class PostReportService : IPostReportService
                     : new AuthorSummaryDto
                     {
                         Id = userId,
-                        DisplayName = string.IsNullOrWhiteSpace(profile.DisplayName) ? "user" : profile.DisplayName.Trim(),
+                        DisplayName = string.IsNullOrWhiteSpace(profile.DisplayName)
+                            ? "user"
+                            : profile.DisplayName.Trim(),
                         AvatarUrl = string.IsNullOrWhiteSpace(profile.AvatarUrl)
                             ? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
                             : profile.AvatarUrl.Trim()
@@ -289,20 +299,20 @@ public class PostReportService : IPostReportService
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                _logger.LogWarning(exception, "Could not load profile summary for report user {UserId}.", userId);
+                _logger.LogWarning(exception, "Could not load user summary for comment report user {UserId}.", userId);
                 return new KeyValuePair<Guid, AuthorSummaryDto>(userId, BuildFallbackSummary(userId));
             }
         });
 
-        var results = await Task.WhenAll(tasks);
-        return results.ToDictionary(pair => pair.Key, pair => pair.Value);
+        var pairs = await Task.WhenAll(tasks);
+        return pairs.ToDictionary(pair => pair.Key, pair => pair.Value);
     }
 
     private async Task TryCreateResolveNotificationsAsync(
-        PostReport report,
+        CommentReport report,
         Guid adminUserId,
         ReportStatus status,
-        Guid? targetUserId,
+        Guid? commentOwnerUserId,
         CancellationToken cancellationToken)
     {
         try
@@ -315,21 +325,23 @@ public class PostReportService : IPostReportService
                         UserId = report.ReportedByUserId,
                         ActorUserId = adminUserId,
                         PostId = report.PostId,
-                        Type = PostReportApprovedNotificationType,
-                        Message = "Bao cao bai viet da duoc duyet. Bai viet vi pham da bi xoa. / Your post report was approved and the reported post was removed."
+                        CommentId = report.CommentId,
+                        Type = CommentReportApprovedNotificationType,
+                        Message = "Bao cao binh luan da duoc duyet. Binh luan vi pham da bi xoa. / Your comment report was approved and the reported comment was removed."
                     },
                     cancellationToken);
 
-                if (targetUserId.HasValue && targetUserId.Value != report.ReportedByUserId)
+                if (commentOwnerUserId.HasValue && commentOwnerUserId.Value != report.ReportedByUserId)
                 {
                     await _notificationService.CreateAsync(
                         new CreateNotificationRequestDto
                         {
-                            UserId = targetUserId.Value,
+                            UserId = commentOwnerUserId.Value,
                             ActorUserId = adminUserId,
                             PostId = report.PostId,
-                            Type = PostReportTargetNotificationType,
-                            Message = "Bai viet cua ban da bi xoa do vi pham sau khi admin duyet bao cao. / Your post was removed by admin after report approval."
+                            CommentId = report.CommentId,
+                            Type = CommentReportTargetNotificationType,
+                            Message = "Binh luan cua ban da bi xoa do vi pham sau khi admin duyet bao cao. / Your comment was removed by admin after report approval."
                         },
                         cancellationToken);
                 }
@@ -343,8 +355,9 @@ public class PostReportService : IPostReportService
                     UserId = report.ReportedByUserId,
                     ActorUserId = adminUserId,
                     PostId = report.PostId,
-                    Type = PostReportRejectedNotificationType,
-                    Message = "Bao cao bai viet da bi tu choi sau khi xem xet. / Your post report was rejected after review."
+                    CommentId = report.CommentId,
+                    Type = CommentReportRejectedNotificationType,
+                    Message = "Bao cao binh luan da bi tu choi sau khi xem xet. / Your comment report was rejected after review."
                 },
                 cancellationToken);
         }
@@ -352,7 +365,7 @@ public class PostReportService : IPostReportService
         {
             _logger.LogWarning(
                 exception,
-                "Could not create post report resolve notifications. ReportId={ReportId}, Status={Status}.",
+                "Could not create comment report resolve notifications. ReportId={ReportId}, Status={Status}.",
                 report.Id,
                 status);
         }
@@ -377,5 +390,4 @@ public class PostReportService : IPostReportService
             AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
         };
     }
-
 }

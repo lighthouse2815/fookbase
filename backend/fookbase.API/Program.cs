@@ -56,6 +56,7 @@ builder.Services.AddHttpClient<IJavaApiService, JavaApiService>(client =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ICommentReportRepository, CommentReportRepository>();
 builder.Services.AddScoped<ICommentReactionRepository, CommentReactionRepository>();
 builder.Services.AddScoped<ILikeRepository, LikeRepository>();
 builder.Services.AddScoped<IStoryRepository, StoryRepository>();
@@ -70,6 +71,7 @@ builder.Services.AddScoped<ISavedPostRepository, SavedPostRepository>();
 
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<ICommentReportService, CommentReportService>();
 builder.Services.AddScoped<ICommentReactionService, CommentReactionService>();
 builder.Services.AddScoped<ILikeService, LikeService>();
 builder.Services.AddScoped<IStoryService, StoryService>();

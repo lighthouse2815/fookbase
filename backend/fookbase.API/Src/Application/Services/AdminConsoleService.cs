@@ -21,6 +21,7 @@ public class AdminConsoleService : IAdminConsoleService
     private readonly IJavaApiService _javaApiService;
     private readonly IPostRepository _postRepository;
     private readonly IPostReportRepository _postReportRepository;
+    private readonly ICommentReportRepository _commentReportRepository;
     private readonly IUserReportRepository _userReportRepository;
     private readonly IStoryReportRepository _storyReportRepository;
     private readonly IAdminAuditLogService _adminAuditLogService;
@@ -30,6 +31,7 @@ public class AdminConsoleService : IAdminConsoleService
         IJavaApiService javaApiService,
         IPostRepository postRepository,
         IPostReportRepository postReportRepository,
+        ICommentReportRepository commentReportRepository,
         IUserReportRepository userReportRepository,
         IStoryReportRepository storyReportRepository,
         IAdminAuditLogService adminAuditLogService,
@@ -38,6 +40,7 @@ public class AdminConsoleService : IAdminConsoleService
         _javaApiService = javaApiService;
         _postRepository = postRepository;
         _postReportRepository = postReportRepository;
+        _commentReportRepository = commentReportRepository;
         _userReportRepository = userReportRepository;
         _storyReportRepository = storyReportRepository;
         _adminAuditLogService = adminAuditLogService;
@@ -134,6 +137,7 @@ public class AdminConsoleService : IAdminConsoleService
         var totalPosts = await _postRepository.CountAsync(cancellationToken);
 
         var pendingPostReports = await _postReportRepository.CountByStatusAsync(ReportStatus.PENDING, cancellationToken);
+        var pendingCommentReports = await _commentReportRepository.CountByStatusAsync(ReportStatus.PENDING, cancellationToken);
         var pendingUserReports = await _userReportRepository.CountByStatusAsync(ReportStatus.PENDING, cancellationToken);
         var pendingStoryReports = await _storyReportRepository.CountByStatusAsync(ReportStatus.PENDING, cancellationToken);
 
@@ -183,6 +187,7 @@ public class AdminConsoleService : IAdminConsoleService
             InactiveUsers = userStats.InactiveUsers,
             TotalPosts = totalPosts,
             PendingPostReports = pendingPostReports,
+            PendingCommentReports = pendingCommentReports,
             PendingUserReports = pendingUserReports,
             PendingStoryReports = pendingStoryReports,
             MonthlyMetrics = monthlyMetrics

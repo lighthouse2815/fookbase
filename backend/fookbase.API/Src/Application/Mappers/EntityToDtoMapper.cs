@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Admin;
+using InteractHub.Api.Application.DTOs.CommentReports;
 using InteractHub.Api.Application.DTOs.Comments;
 using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Hashtags;
@@ -145,6 +146,32 @@ public static class EntityToDtoMapper
             UpdatedAt = report.UpdatedAt,
             Reporter = reporter,
             PostOwner = postOwner
+        };
+    }
+
+    public static CommentReportResponseDto ToResponseDto(
+        this CommentReport report,
+        Guid? commentOwnerUserId = null,
+        AuthorSummaryDto? reporter = null,
+        AuthorSummaryDto? commentOwner = null)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        return new CommentReportResponseDto
+        {
+            Id = report.Id,
+            CommentId = report.CommentId,
+            PostId = report.PostId,
+            ReportedByUserId = report.ReportedByUserId,
+            CommentOwnerUserId = commentOwnerUserId,
+            Reason = report.Reason,
+            Status = report.Status.ToString(),
+            ResolvedByUserId = report.ResolvedByUserId,
+            ResolvedAt = report.ResolvedAt,
+            CreatedAt = report.CreatedAt,
+            UpdatedAt = report.UpdatedAt,
+            Reporter = reporter,
+            CommentOwner = commentOwner
         };
     }
 

@@ -14,6 +14,7 @@ const defaultDashboard: AdminDashboard = {
   inactiveUsers: 0,
   totalPosts: 0,
   pendingPostReports: 0,
+  pendingCommentReports: 0,
   pendingUserReports: 0,
   pendingStoryReports: 0,
   monthlyMetrics: [],
@@ -93,10 +94,10 @@ export const AdminDashboardPage = () => {
             {tx('Báo cáo chờ xử lý', 'Pending reports')}
           </p>
           <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {dashboard.pendingPostReports + dashboard.pendingUserReports + dashboard.pendingStoryReports}
+            {dashboard.pendingPostReports + dashboard.pendingCommentReports + dashboard.pendingUserReports + dashboard.pendingStoryReports}
           </p>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            Post: {dashboard.pendingPostReports} - User: {dashboard.pendingUserReports} - Story:{' '}
+            Post: {dashboard.pendingPostReports} - Comment: {dashboard.pendingCommentReports} - User: {dashboard.pendingUserReports} - Story:{' '}
             {dashboard.pendingStoryReports}
           </p>
         </article>

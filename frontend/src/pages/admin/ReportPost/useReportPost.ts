@@ -5,7 +5,7 @@ import { useLocaleText } from '@/hooks/useLocaleText';
 import type { PostReportItem, ReportUserSummary } from '@/interface/report';
 import { postReportService } from '@/services/post/postReportService';
 import { getApiErrorMessage } from '@/utils/apiError';
-import { isCommentReportReason, PAGE_SIZE } from '../reportUtils';
+import { PAGE_SIZE } from '../reportUtils';
 
 export type PostReportListItem = PostReportItem & {
   postOwnerUserId?: string | null;
@@ -36,9 +36,8 @@ export const useReportPost = () => {
 
       try {
         const response = await postReportService.getAll(targetPage, PAGE_SIZE);
-        const postReportsOnly = response.items.filter((item) => !isCommentReportReason(item.reason)) as PostReportListItem[];
-
-        setReports((previous) => (replace ? postReportsOnly : [...previous, ...postReportsOnly]));
+        const items = response.items as PostReportListItem[];
+        setReports((previous) => (replace ? items : [...previous, ...items]));
         setHasMore(response.hasMore);
         setPage(targetPage);
         setLoadError(null);

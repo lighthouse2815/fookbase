@@ -21,6 +21,31 @@ export interface ResolvePostReportRequest {
   status: PostReportStatus;
 }
 
+export interface CommentReportItem {
+  id: string;
+  commentId: string;
+  postId: string;
+  reportedByUserId: string;
+  commentOwnerUserId?: string | null;
+  reason: string;
+  status: PostReportStatus;
+  resolvedByUserId?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reporter?: ReportUserSummary | null;
+  commentOwner?: ReportUserSummary | null;
+}
+
+export interface CreateCommentReportRequest {
+  commentId: string;
+  reason: string;
+}
+
+export interface ResolveCommentReportRequest {
+  status: PostReportStatus;
+}
+
 export interface PendingCountPayload {
   pendingCount: number;
 }
