@@ -3,7 +3,8 @@ export type SettingsTabId =
   | 'personal-info'
   | 'profile-page-info'
   | 'reports'
-  | 'blocked';
+  | 'blocked'
+  | 'system';
 
 export type SecurityPasswordStep = 'sendOtp' | 'verifyOtp' | 'resetPassword';
 

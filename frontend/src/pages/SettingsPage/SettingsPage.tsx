@@ -6,6 +6,7 @@ import { PersonalInfoSettingsPage } from './PersonalInfoSettingsPage';
 import { ProfilePageInfoSettingsPage } from './ProfilePageInfoSettingsPage';
 import { ReportedPostsPage } from './ReportedPostsPage';
 import { SecuritySettingsPage } from './SecuritySettingsPage';
+import { SystemSettingsPage } from './SystemSettingsPage';
 
 export const SettingsPage = () => {
   const {
@@ -88,6 +89,7 @@ export const SettingsPage = () => {
             {activeTab === 'profile-page-info' ? <ProfilePageInfoSettingsPage /> : null}
             {activeTab === 'reports' ? <ReportedPostsPage /> : null}
             {activeTab === 'blocked' ? <BlockedUsersSettingsPage /> : null}
+            {activeTab === 'system' ? <SystemSettingsPage /> : null}
           </>
         ) : null}
       </section>

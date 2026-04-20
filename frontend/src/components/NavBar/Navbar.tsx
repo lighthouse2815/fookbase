@@ -1,13 +1,10 @@
 import {
   Bell,
   ChevronDown,
-  Languages,
   LogOut,
   Menu,
   Search,
   Settings,
-  Sun,
-  Moon,
   UserRound,
 } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
@@ -22,19 +19,13 @@ export const Navbar = (props: NavbarProps) => {
   const { currentUser } = props;
   const {
     t,
-    i18n,
-    theme,
-    toggleTheme,
     searchKeyword,
     setSearchKeyword,
     popoverRootRef,
     setOpenPopover,
     isMenuOpen,
     isNotificationOpen,
-    isLanguageOpen,
     isSettingsPage,
-    isVietnameseActive,
-    isEnglishActive,
     unreadCount,
     handleSearchSubmit,
     togglePopover,
@@ -105,57 +96,6 @@ export const Navbar = (props: NavbarProps) => {
                 <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500" />
               ) : null}
             </button>
-
-            <button
-              type="button"
-              onClick={toggleTheme}
-              title={t('theme.switch')}
-              className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
-            </button>
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => togglePopover('language')}
-                className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                <Languages size={19} />
-              </button>
-              {isLanguageOpen ? (
-                <div className="absolute right-0 top-11 min-w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-                  <button
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                      isVietnameseActive
-                        ? 'bg-brand-100 font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200'
-                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                    onClick={() => {
-                      void i18n.changeLanguage('vi');
-                      setOpenPopover(null);
-                    }}
-                    type="button"
-                  >
-                    {t('language.vietnamese')}
-                  </button>
-                  <button
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                      isEnglishActive
-                        ? 'bg-brand-100 font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200'
-                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                    onClick={() => {
-                      void i18n.changeLanguage('en');
-                      setOpenPopover(null);
-                    }}
-                    type="button"
-                  >
-                    {t('language.english')}
-                  </button>
-                </div>
-              ) : null}
-            </div>
 
             <div className="flex items-center gap-1 rounded-xl px-1 py-1 transition hover:bg-slate-100 dark:hover:bg-slate-800">
               <Link to="/profile" className="inline-flex rounded-full" aria-label={currentUser.fullName}>

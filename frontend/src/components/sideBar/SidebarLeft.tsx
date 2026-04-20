@@ -1,8 +1,8 @@
-import { Bookmark, Gamepad2, House, MessageSquareText, UsersRound } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import type { User } from '@/interface/user';
+import { NAV_ITEMS } from '@/components/NavBar/util';
 
 interface SidebarLeftProps {
   currentUser: User;
@@ -10,14 +10,6 @@ interface SidebarLeftProps {
 
 export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
   const { t } = useTranslation();
-
-  const menuItems = [
-    { label: t('nav.home'), path: '/', icon: House },
-    { label: t('nav.friends'), path: '/friends', icon: UsersRound },
-    { label: t('nav.messages'), path: '/messages', icon: MessageSquareText },
-    { label: t('nav.games', { defaultValue: 'Games' }), path: '/games', icon: Gamepad2 },
-    { label: t('nav.saved'), path: '/saved', icon: Bookmark },
-  ];
 
   return (
     <aside className="hidden space-y-4 md:block">
@@ -38,9 +30,9 @@ export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
-        {menuItems.map(({ label, path, icon: Icon }) => (
+        {NAV_ITEMS.map(({ key, path, icon: Icon }) => (
           <NavLink
-            key={label}
+            key={key}
             to={path}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${
@@ -51,7 +43,7 @@ export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
             }
           >
             <Icon size={17} />
-            {label}
+            {t(`nav.${key}`)}
           </NavLink>
         ))}
       </section>

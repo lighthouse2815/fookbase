@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { useTheme } from '@/contexts/ThemeContext';
-
 import type { NavbarProps } from './interface';
 import type { NavbarPopover, NavbarPopoverOpen } from './type';
 import {
@@ -20,8 +18,7 @@ export function useNavBar({
   onMarkAllNotificationsAsRead,
   onLogout,
 }: NavbarProps) {
-  const { t, i18n } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [openPopover, setOpenPopover] = useState<NavbarPopover>(null);
@@ -29,11 +26,7 @@ export function useNavBar({
   const popoverRootRef = useRef<HTMLDivElement | null>(null);
   const isMenuOpen = openPopover === 'menu';
   const isNotificationOpen = openPopover === 'notification';
-  const isLanguageOpen = openPopover === 'language';
   const isSettingsPage = location.pathname.startsWith('/settings');
-  const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
-  const isVietnameseActive = currentLanguage.startsWith('vi');
-  const isEnglishActive = currentLanguage.startsWith('en');
 
   const unreadCount = countUnreadNotifications(notifications);
 
@@ -93,9 +86,6 @@ export function useNavBar({
 
   return {
     t,
-    i18n,
-    theme,
-    toggleTheme,
     searchKeyword,
     setSearchKeyword,
     popoverRootRef,
@@ -103,10 +93,7 @@ export function useNavBar({
     setOpenPopover,
     isMenuOpen,
     isNotificationOpen,
-    isLanguageOpen,
     isSettingsPage,
-    isVietnameseActive,
-    isEnglishActive,
     unreadCount,
     handleSearchSubmit,
     togglePopover,

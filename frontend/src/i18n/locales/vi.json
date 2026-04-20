@@ -23,6 +23,7 @@
     "home": "Trang chủ",
     "friends": "Bạn bè",
     "messages": "Tin nhắn",
+    "games": "Trò chơi",
     "notifications": "Thông báo",
     "groups": "Nhóm",
     "saved": "Đã lưu",
@@ -366,7 +367,29 @@
       "blocked": {
         "label": "Danh sách chặn",
         "description": "Quản lý những tài khoản đã chặn"
+      },
+      "system": {
+        "label": "Hệ thống",
+        "description": "Ngôn ngữ và giao diện hiển thị"
       }
+    }
+  },
+  "systemSettings": {
+    "title": "Tùy chọn hệ thống",
+    "subtitle": "Điều chỉnh ngôn ngữ và giao diện theo nhu cầu của bạn.",
+    "themeTitle": "Giao diện",
+    "themeDescription": "Chọn cách hiển thị của ứng dụng.",
+    "themeSystem": "Theo hệ thống",
+    "themeOptions": {
+      "light": "Giao diện sáng, phù hợp khi dùng ban ngày.",
+      "dark": "Giao diện tối, dễ nhìn khi thiếu sáng.",
+      "system": "Tự động theo cài đặt thiết bị của bạn."
+    },
+    "languageTitle": "Ngôn ngữ",
+    "languageDescription": "Chọn ngôn ngữ hiển thị cho tài khoản này.",
+    "languageOptions": {
+      "vietnamese": "Hiển thị toàn bộ giao diện bằng tiếng Việt.",
+      "english": "Hiển thị toàn bộ giao diện bằng tiếng Anh."
     }
   },
   "securitySettings": {

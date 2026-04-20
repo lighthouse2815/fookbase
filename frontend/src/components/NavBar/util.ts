@@ -1,4 +1,4 @@
-import { Bookmark, House, MessageSquareText, UsersRound } from 'lucide-react';
+import { Bookmark, Gamepad2, House, MessageSquareText, UsersRound } from 'lucide-react';
 
 import type { NotificationItem } from '@/interface/notification';
 
@@ -6,6 +6,7 @@ export const NAV_ITEMS = [
   { key: 'home', icon: House, path: '/' },
   { key: 'friends', icon: UsersRound, path: '/friends' },
   { key: 'messages', icon: MessageSquareText, path: '/messages' },
+  { key: 'games', icon: Gamepad2, path: '/games' },
   { key: 'saved', icon: Bookmark, path: '/saved' },
 ] as const;
 

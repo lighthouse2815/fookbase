@@ -23,6 +23,7 @@
     "home": "Home",
     "friends": "Friends",
     "messages": "Messages",
+    "games": "Games",
     "notifications": "Notifications",
     "groups": "Groups",
     "saved": "Saved",
@@ -408,7 +409,29 @@
       "blocked": {
         "label": "Blocked list",
         "description": "Manage blocked accounts"
+      },
+      "system": {
+        "label": "System",
+        "description": "Language and interface preferences"
       }
+    }
+  },
+  "systemSettings": {
+    "title": "System preferences",
+    "subtitle": "Customize language and interface for your experience.",
+    "themeTitle": "Interface theme",
+    "themeDescription": "Choose how the app appears for your account.",
+    "themeSystem": "System default",
+    "themeOptions": {
+      "light": "Bright interface for daytime use.",
+      "dark": "Darker interface for low-light environments.",
+      "system": "Automatically follow your device setting."
+    },
+    "languageTitle": "Language",
+    "languageDescription": "Choose the display language for this account.",
+    "languageOptions": {
+      "vietnamese": "Use Vietnamese for the whole interface.",
+      "english": "Use English for the whole interface."
     }
   },
   "securitySettings": {

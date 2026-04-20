@@ -8,6 +8,7 @@ export const parseTabId = (value: string | null): SettingsTabId | null => {
     || value === 'profile-page-info'
     || value === 'reports'
     || value === 'blocked'
+    || value === 'system'
   ) {
     return value;
   }

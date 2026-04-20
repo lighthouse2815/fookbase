@@ -1,4 +1,4 @@
-import { Ban, Flag, ShieldCheck, UserRound, UserSquare2 } from 'lucide-react';
+import { Ban, Flag, Settings, ShieldCheck, UserRound, UserSquare2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
@@ -49,6 +49,13 @@ export const useSettingsPage = (): UseSettingsPageReturn => {
         description: t('settings.tabs.blocked.description'),
         keywords: ['chan', 'block', 'blocked', 'danh sach chan'],
         icon: Ban,
+      },
+      {
+        id: 'system',
+        label: t('settings.tabs.system.label'),
+        description: t('settings.tabs.system.description'),
+        keywords: ['he thong', 'system', 'theme', 'giao dien', 'language', 'ngon ngu'],
+        icon: Settings,
       },
     ],
     [t],
