@@ -10,7 +10,7 @@ import type { StoryListProps } from './interface';
 export function useStoryList({ currentUser, onActionToast }: StoryListProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { storyGroups, isLoading, isLoadingMore, hasMore, errorMessage, loadMoreStories, createStoryFromFile, markStoryViewed, getStoriesByUser, removeStory } =
+  const { storyGroups, isLoading, isLoadingMore, hasMore, errorMessage, loadMoreStories, createStoryFromFile, markStoryViewed, getStoriesByUser, removeStory, setStoryReactionState } =
     useStories();
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -138,6 +138,20 @@ export function useStoryList({ currentUser, onActionToast }: StoryListProps) {
     setViewerStoryIndex(0);
   };
 
+  const handleStoryReactionChanged = (storyId: string, reactionType: StoryItem['currentUserReactionType']) => {
+    setStoryReactionState(storyId, reactionType ?? null);
+    setViewerStories((existing) =>
+      existing.map((story) =>
+        story.id === storyId
+          ? {
+              ...story,
+              currentUserReactionType: reactionType ?? null,
+            }
+          : story,
+      ),
+    );
+  };
+
   return {
     t,
     navigate,
@@ -168,5 +182,6 @@ export function useStoryList({ currentUser, onActionToast }: StoryListProps) {
     isViewerLoading,
     openStoryViewer,
     closeViewer,
+    handleStoryReactionChanged,
   };
 }

@@ -11,6 +11,7 @@ export interface StoryViewerProps {
   onClose: () => void;
   onMarkViewed: (storyId: string) => Promise<void>;
   onDeleteStory?: (storyId: string) => Promise<void>;
+  onReactionChange?: (storyId: string, reactionType: StoryReactionType | null) => void;
   onActionToast?: (message: string, type?: ActionToastType) => void;
 }
 

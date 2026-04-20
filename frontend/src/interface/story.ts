@@ -54,6 +54,7 @@ export interface StoryPayload {
   createdAt: string;
   expiredAt: string;
   isViewedByCurrentUser: boolean;
+  currentUserReactionType?: string | null;
   viewCount: number;
 }
 

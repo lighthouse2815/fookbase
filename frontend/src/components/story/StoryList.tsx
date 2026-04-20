@@ -131,6 +131,7 @@ export const StoryList = (props: StoryListProps) => {
     isViewerLoading,
     openStoryViewer,
     closeViewer,
+    handleStoryReactionChanged,
   } = useStoryList(props);
 
   const { currentUser, onActionToast } = props;
@@ -254,6 +255,7 @@ export const StoryList = (props: StoryListProps) => {
           onClose={closeViewer}
           onMarkViewed={markStoryViewed}
           onDeleteStory={removeStory}
+          onReactionChange={handleStoryReactionChanged}
           onActionToast={onActionToast}
         />
       ) : null}

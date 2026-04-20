@@ -41,6 +41,7 @@ export const mapStory = (payload: StoryPayload): StoryItem => ({
     createdAt: payload.createdAt,
     expiredAt: payload.expiredAt,
     isViewedByCurrentUser: payload.isViewedByCurrentUser,
+    currentUserReactionType: normalizeReactionType(payload.currentUserReactionType),
     viewCount: payload.viewCount,
   });
 

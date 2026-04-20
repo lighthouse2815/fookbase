@@ -16,6 +16,7 @@ export function useStoryViewer({
   onClose,
   onMarkViewed,
   onDeleteStory,
+  onReactionChange,
   onActionToast,
 }: StoryViewerProps) {
   const { t } = useTranslation();
@@ -212,6 +213,7 @@ export function useStoryViewer({
       ...previous,
       [storyId]: nextReactionType,
     }));
+    onReactionChange?.(storyId, nextReactionType);
     setIsReactionSubmitting(true);
 
     try {
@@ -221,13 +223,17 @@ export function useStoryViewer({
       }
 
       const persistedReactionType = await storyService.setReaction(storyId, reactionType);
+      const normalizedReactionType = persistedReactionType ?? reactionType;
       setReactionByStoryId((previous) => ({
         ...previous,
-        [storyId]: persistedReactionType ?? reactionType,
+        [storyId]: normalizedReactionType,
       }));
+      if (normalizedReactionType !== nextReactionType) {
+        onReactionChange?.(storyId, normalizedReactionType);
+      }
 
       if (!isOwnerStory) {
-        const icon = getReactionMeta(persistedReactionType ?? reactionType).icon;
+        const icon = getReactionMeta(normalizedReactionType).icon;
         onActionToast?.(`${icon} ${t('story.viewer.reactionSentToast', { name: author.displayName })}`, 'success');
       }
     } catch {
@@ -235,6 +241,7 @@ export function useStoryViewer({
         ...previous,
         [storyId]: previousReactionType,
       }));
+      onReactionChange?.(storyId, previousReactionType);
       onActionToast?.(t('story.viewer.reactionError'), 'error');
     } finally {
       setIsReactionSubmitting(false);

@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useAuth } from '@/contexts/AuthContext';
 import { cloudinaryService } from '@/services/cloudinaryService';
 import { storyService } from '@/services/storyService';
-import type { StoryAuthor, StoryGroup, StoryItem, StoryMediaType } from '@/interface/story';
+import type { StoryAuthor, StoryGroup, StoryItem, StoryMediaType, StoryReactionType } from '@/interface/story';
 
 interface StoryContextValue {
   stories: StoryItem[];
@@ -19,6 +19,7 @@ interface StoryContextValue {
   markStoryViewed: (storyId: string) => Promise<void>;
   getStoriesByUser: (userId: string) => Promise<StoryItem[]>;
   removeStory: (storyId: string) => Promise<void>;
+  setStoryReactionState: (storyId: string, reactionType: StoryReactionType | null) => void;
 }
 
 const StoryContext = createContext<StoryContextValue | undefined>(undefined);
@@ -252,6 +253,19 @@ export const StoryProvider = ({ children }: { children: React.ReactNode }) => {
     setStories((existing) => existing.filter((story) => story.id !== storyId));
   }, []);
 
+  const setStoryReactionState = useCallback((storyId: string, reactionType: StoryReactionType | null) => {
+    setStories((existing) =>
+      existing.map((story) =>
+        story.id === storyId
+          ? {
+              ...story,
+              currentUserReactionType: reactionType,
+            }
+          : story,
+      ),
+    );
+  }, []);
+
   const storyGroups = useMemo(() => groupStories(stories, user?.id), [stories, user?.id]);
 
   const value = useMemo(
@@ -268,6 +282,7 @@ export const StoryProvider = ({ children }: { children: React.ReactNode }) => {
       markStoryViewed,
       getStoriesByUser,
       removeStory,
+      setStoryReactionState,
     }),
     [
       stories,
@@ -282,6 +297,7 @@ export const StoryProvider = ({ children }: { children: React.ReactNode }) => {
       markStoryViewed,
       getStoriesByUser,
       removeStory,
+      setStoryReactionState,
     ],
   );
 
