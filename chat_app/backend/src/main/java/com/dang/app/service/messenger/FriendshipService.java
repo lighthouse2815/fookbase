@@ -66,6 +66,7 @@ public class FriendshipService {
                     friendship.setRequester(requester);
                     friendship.setAddressee(addressee);
                     friendship.setStatus(FriendshipStatus.PENDING);
+                    friendship.setUpdatedAt(LocalDateTime.now());
                 }
             }
         } else {
@@ -79,8 +80,10 @@ public class FriendshipService {
                     .addressee(addressee)
                     .status(FriendshipStatus.PENDING)
                     .build();
-            friendshipRepository.save(friendship);
+            friendship.setUpdatedAt(LocalDateTime.now());
         }
+
+        friendship = friendshipRepository.saveAndFlush(friendship);
 
         String displayName = userProfileService
                 .getDisplayNameMap(Set.of(request.getUserId()))
@@ -256,13 +259,17 @@ public class FriendshipService {
                     boolean isRequester = friendship.getRequester().getId().equals(userId);
                     User otherUser = isRequester ? friendship.getAddressee() : friendship.getRequester();
                     UserProfile otherProfile = profileMap.get(otherUser.getId());
+                    LocalDateTime updateAt = friendship.getUpdatedAt() != null
+                            ? friendship.getUpdatedAt()
+                            : friendship.getCreatedAt();
 
                     return friendshipMapper.toPendingFriendRequesterResponse(
                             otherUser.getId(),
                             resolveDisplayName(otherUser, otherProfile),
                             otherProfile == null ? null : otherProfile.getAvatarUrl(),
                             isRequester,
-                            friendship.getCreatedAt()
+                            friendship.getCreatedAt(),
+                            updateAt
                     );
                 })
                 .toList();

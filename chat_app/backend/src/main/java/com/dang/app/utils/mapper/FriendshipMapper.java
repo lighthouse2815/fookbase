@@ -20,6 +20,10 @@ public class FriendshipMapper {
             UUID currentUserId,
             String displayName
     ) {
+        LocalDateTime updateAt = friendship.getUpdatedAt() != null
+                ? friendship.getUpdatedAt()
+                : friendship.getCreatedAt();
+
         UUID otherUserId =
                 friendship.getRequester().getId().equals(currentUserId)
                         ? friendship.getAddressee().getId()
@@ -31,7 +35,7 @@ public class FriendshipMapper {
                 .username(displayName)
                 .status(friendship.getStatus())
                 .createdAt(friendship.getCreatedAt())
-                .updateAt(friendship.getUpdatedAt())
+                .updateAt(updateAt)
                 .build();
     }
 
@@ -40,7 +44,8 @@ public class FriendshipMapper {
             String displayName,
             String avatarUrl,
             boolean isRequester,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            LocalDateTime updateAt
     ) {
         return PendingFriendRequesterResponse.builder()
                 .userId(userId)
@@ -48,6 +53,7 @@ public class FriendshipMapper {
                 .avatarUrl(avatarUrl)
                 .isRequester(isRequester)
                 .createdAt(createdAt)
+                .updateAt(updateAt)
                 .build();
     }
 

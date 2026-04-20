@@ -14,4 +14,5 @@ public class PendingFriendRequesterResponse {
     private String avatarUrl;
     private boolean isRequester;
     private LocalDateTime createdAt;
+    private LocalDateTime updateAt;
 }
