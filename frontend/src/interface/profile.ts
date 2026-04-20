@@ -2,6 +2,7 @@
 
 export interface Profile {
   id: string;
+  userId?: string;
   username?: string;
   displayName: string;
   fullName?: string;
@@ -21,6 +22,7 @@ export interface Profile {
   genderVisible?: boolean;
   friendCountVisible?: boolean;
   nickname?: string;
+  status?: string;
   friendshipStatus?: string;
   userStatus?: string;
 }

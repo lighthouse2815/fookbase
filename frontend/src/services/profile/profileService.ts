@@ -25,6 +25,8 @@ export const profileService = {
 
     return {
       ...profile,
+      id: profile.id || profile.userId || profileId,
+      friendshipStatus: profile.friendshipStatus ?? profile.status,
       avatarUrl: profile.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     };
   },
