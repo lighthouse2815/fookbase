@@ -1,6 +1,6 @@
 const HAS_TIMEZONE_SUFFIX = /(Z|[+-]\d{2}:\d{2})$/i;
 
-const parseApiDate = (value: string): Date => {
+export const parseApiDate = (value: string): Date => {
   const normalized = value.trim();
   if (!normalized) {
     return new Date(NaN);

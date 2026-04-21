@@ -1,17 +1,22 @@
 import type { TFunction } from 'i18next';
+import { parseApiDate } from '@/utils/date';
 
 export function formatFriendRequestTime(requestedAt: string | undefined, t: TFunction): string {
   if (!requestedAt) {
     return t('friendsPage.time.justNow');
   }
 
-  const requestedDate = new Date(requestedAt);
+  const requestedDate = parseApiDate(requestedAt);
 
   if (Number.isNaN(requestedDate.getTime())) {
     return t('friendsPage.time.justNow');
   }
 
   const difference = Date.now() - requestedDate.getTime();
+  if (difference <= 0) {
+    return t('friendsPage.time.justNow');
+  }
+
   const minutes = Math.max(1, Math.floor(difference / (1000 * 60)));
 
   if (minutes < 60) {
