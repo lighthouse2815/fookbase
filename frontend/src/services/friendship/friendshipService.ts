@@ -16,6 +16,7 @@ import {
   mapJavaFriendship,
   mapPendingRequesterToRequest,
   normalizeFriendRequestTimestamps,
+  sortFriendRequestsByLatestUpdate,
   requestFromCandidates,
   isFriendshipPayloadRecord,
   mapBlockedUser,
@@ -34,32 +35,36 @@ export const friendshipService = {
   async getReceivedRequests(): Promise<FriendRequest[]> {
     try {
       const pending = await getPendingRequestersFromJava();
-      return pending
+      return sortFriendRequestsByLatestUpdate(
+        pending
         .filter((item) => item.requester !== true)
-        .map((item, index) => mapPendingRequesterToRequest(item, index, 'received'));
+          .map((item, index) => mapPendingRequesterToRequest(item, index, 'received')),
+      );
     } catch {
       const requests = await requestFromCandidates<FriendRequest[]>([
         { method: 'get', path: FW.REQUESTS_RECEIVED },
         { method: 'get', path: FW.RECEIVED },
         { method: 'get', path: FW.FRIENDS_REQUESTS_RECEIVED },
       ]);
-      return requests.map(normalizeFriendRequestTimestamps);
+      return sortFriendRequestsByLatestUpdate(requests.map(normalizeFriendRequestTimestamps));
     }
   },
 
   async getSentRequests(): Promise<FriendRequest[]> {
     try {
       const pending = await getPendingRequestersFromJava();
-      return pending
+      return sortFriendRequestsByLatestUpdate(
+        pending
         .filter((item) => item.requester === true)
-        .map((item, index) => mapPendingRequesterToRequest(item, index, 'sent'));
+          .map((item, index) => mapPendingRequesterToRequest(item, index, 'sent')),
+      );
     } catch {
       const requests = await requestFromCandidates<FriendRequest[]>([
         { method: 'get', path: FW.REQUESTS_SENT },
         { method: 'get', path: FW.SENT },
         { method: 'get', path: FW.FRIENDS_REQUESTS_SENT },
       ]);
-      return requests.map(normalizeFriendRequestTimestamps);
+      return sortFriendRequestsByLatestUpdate(requests.map(normalizeFriendRequestTimestamps));
     }
   },
 

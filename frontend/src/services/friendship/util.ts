@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { API_CONFIG } from '@/config/apiConfig';
+import { parseApiDate } from '@/utils/date';
 import { apiClient, javaApiClient } from '@/services/apiClient';
 import type { ApiEnvelope } from '@/interface/api';
 import type {
@@ -104,6 +105,23 @@ export const normalizeFriendRequestTimestamps = (request: FriendRequest): Friend
     createdAt,
   };
 };
+
+const resolveFriendRequestComparableTimestamp = (
+  request: Partial<FriendRequest> | PendingRequesterPayload,
+): number => {
+  const timestamp = resolveFriendRequestTimestamp(request);
+  if (!timestamp) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const parsedTimestamp = parseApiDate(timestamp).getTime();
+  return Number.isFinite(parsedTimestamp) ? parsedTimestamp : Number.NEGATIVE_INFINITY;
+};
+
+export const sortFriendRequestsByLatestUpdate = (requests: FriendRequest[]): FriendRequest[] =>
+  [...requests].sort((first, second) =>
+    resolveFriendRequestComparableTimestamp(second) - resolveFriendRequestComparableTimestamp(first),
+  );
 
 export const requestFromCandidates = async <T>(candidates: RequestCandidate[]): Promise<T> => {
   let lastError: unknown;

@@ -25,7 +25,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship,UUID> {
             JOIN FETCH f.addressee a
             WHERE (r.id = :userId OR a.id = :userId)
               AND f.status = com.dang.app.utils.enums.FriendshipStatus.PENDING
-            ORDER BY f.createdAt DESC
+            ORDER BY COALESCE(f.updatedAt, f.createdAt) DESC, f.createdAt DESC
             """)
     List<Friendship> findPendingFriendshipsByUserId(@Param("userId") UUID userId);
 

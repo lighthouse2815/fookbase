@@ -112,6 +112,7 @@ export const ProfilePage = () => {
               key={post.id}
               post={post}
               currentUser={currentUser}
+              enableMediaViewer
               onActionToast={showToast}
               onPostDeleted={handlePostDeleted}
             />
