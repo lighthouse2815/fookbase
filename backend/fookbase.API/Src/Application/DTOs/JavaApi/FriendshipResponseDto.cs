@@ -18,7 +18,4 @@ public class FriendshipResponseDto
 
     [JsonPropertyName("updateAt")]
     public string? UpdateAt { get; set; }
-
-    [JsonPropertyName("updatedAt")]
-    public string? UpdatedAt { get; set; }
 }
