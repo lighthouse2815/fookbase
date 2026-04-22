@@ -1,0 +1,99 @@
+import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
+
+import { AuthForm } from '@/features/auth/components/AuthForm';
+import { InputField } from '@/features/auth/components/InputField';
+import { useAdminLogin } from '@/features/auth/hooks/useAdminLogin';
+
+export const AdminLoginPage = () => {
+  const {
+    t,
+    tx,
+    isAuthenticated,
+    isAdmin,
+    showPassword,
+    setShowPassword,
+    apiError,
+    locationState,
+    register,
+    handleSubmit,
+    formErrors,
+    isSubmitting,
+    onSubmit,
+  } = useAdminLogin();
+
+  if (isAuthenticated && isAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  if (isAuthenticated && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 dark:bg-slate-900">
+      <AuthForm
+        title={tx('Đăng nhập admin', 'Admin Sign In')}
+        subtitle={tx('Trang này chỉ dành cho tài khoản quản trị.', 'This page is only for administrator accounts.')}
+        submitLabel={tx('Đăng nhập admin', 'Sign in as admin')}
+        loadingLabel={t('common.loading')}
+        onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+        isSubmitting={isSubmitting}
+        errorMessage={apiError}
+        footer={
+          <span className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-300">
+            <ShieldCheck size={16} />
+            {tx('Không hỗ trợ đăng ký tại đây.', 'Registration is not available here.')}
+          </span>
+        }
+      >
+        {locationState?.message ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
+            {locationState.message}
+          </div>
+        ) : null}
+
+        <InputField
+          label={tx('Tên đăng nhập', 'Username')}
+          placeholder={tx('Nhập username admin', 'Enter admin username')}
+          autoComplete="username"
+          registration={register('username', {
+            required: tx('Vui lòng nhập username.', 'Username is required.'),
+          })}
+          error={formErrors.username?.message}
+        />
+
+        <InputField
+          label={tx('Mật khẩu', 'Password')}
+          placeholder={tx('Nhập mật khẩu', 'Enter password')}
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="current-password"
+          registration={register('password', {
+            required: tx('Vui lòng nhập mật khẩu.', 'Password is required.'),
+          })}
+          error={formErrors.password?.message}
+          rightElement={
+            <button
+              type="button"
+              className="rounded p-1 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? tx('Ẩn mật khẩu', 'Hide password') : tx('Hiện mật khẩu', 'Show password')}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          }
+        />
+
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            {...register('rememberMe')}
+          />
+          {tx('Ghi nhớ đăng nhập', 'Remember me')}
+        </label>
+      </AuthForm>
+    </div>
+  );
+};
+

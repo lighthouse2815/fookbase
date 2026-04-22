@@ -1,25 +1,18 @@
-import { StrictMode } from 'react';
+﻿import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 
-import App from './App';
-import { AuthProvider } from './contexts/AuthContext';
-import { StoryProvider } from './contexts/StoryContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import './i18n';
+import App from './app/App';
+import '@/shared/i18n';
+import { AppProviders } from '@/app/providers/AppProviders';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <StoryProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </StoryProvider>
-      </AuthProvider> 
-    </ThemeProvider>
+    <AppProviders>
+      <App />
+    </AppProviders>
   </StrictMode>,
 );
+
+
 

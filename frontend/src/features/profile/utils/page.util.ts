@@ -1,0 +1,93 @@
+﻿import type { MainLayoutOutletContext } from '@/shared/types/layout';
+
+import type { Profile } from '@/features/profile/types/hooks';
+
+export { normalizeFriendshipStatus } from '@/features/friendship/utils/statusCode';
+
+export const PROFILE_POST_COLUMN_CLASS = 'mx-auto w-full max-w-[760px] xl:max-w-[820px]';
+
+export const PROFILE_POSTS_PAGE_SIZE = 100;
+
+const DEFAULT_PUBLIC_USERNAME = 'user';
+const DEFAULT_PUBLIC_DISPLAY_NAME = 'User';
+
+export const createDefaultProfile = (
+  user: MainLayoutOutletContext['currentUser'],
+): Profile => ({
+  id: user.id,
+  username: user.username,
+  displayName: user.fullName,
+  fullName: user.fullName,
+  avatarUrl: user.avatarUrl,
+  bio: '',
+  coverUrl: undefined,
+  friendsCount: 0,
+  postsCount: 0,
+  fullNameVisible: true,
+  phoneVisible: true,
+  emailVisible: true,
+  dateOfBirthVisible: true,
+  genderVisible: true,
+  friendCountVisible: true,
+});
+
+export const createFallbackProfile = (
+  targetUserId: string,
+  currentUser: MainLayoutOutletContext['currentUser'],
+): Profile => {
+  if (targetUserId === currentUser.id) {
+    return createDefaultProfile(currentUser);
+  }
+
+  return {
+    ...createDefaultProfile(currentUser),
+    id: targetUserId,
+    username: DEFAULT_PUBLIC_USERNAME,
+    displayName: DEFAULT_PUBLIC_DISPLAY_NAME,
+    fullName: '',
+    avatarUrl: 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
+  };
+};
+
+export const formatGender = (
+  value: string | undefined,
+  emptyValue: string,
+  maleLabel: string,
+  femaleLabel: string,
+  otherLabel: string,
+): string => {
+  const normalized = value?.trim().toUpperCase();
+  if (!normalized) {
+    return emptyValue;
+  }
+
+  if (normalized === 'MALE') {
+    return maleLabel;
+  }
+
+  if (normalized === 'FEMALE') {
+    return femaleLabel;
+  }
+
+  if (normalized === 'OTHER') {
+    return otherLabel;
+  }
+
+  return value?.trim() || emptyValue;
+};
+
+export const formatBirthDate = (value: string | undefined, emptyValue: string, locale: string): string => {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return emptyValue;
+  }
+
+  const timestamp = Date.parse(normalized);
+  if (Number.isNaN(timestamp)) {
+    return normalized;
+  }
+
+  return new Intl.DateTimeFormat(locale).format(new Date(timestamp));
+};
+
+

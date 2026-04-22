@@ -1,0 +1,32 @@
+import i18n from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import { initReactI18next } from 'react-i18next';
+
+import en from './locales/en.json';
+import vi from './locales/vi.json';
+import { STORAGE_KEYS } from '@/shared/storage/storage';
+
+const resources = {
+  en: { translation: en },
+  vi: { translation: vi },
+};
+
+void i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: 'vi',
+    supportedLngs: ['en', 'vi'],
+    interpolation: {
+      escapeValue: false,
+    },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      lookupLocalStorage: STORAGE_KEYS.language,
+      caches: ['localStorage'],
+    },
+  });
+
+export default i18n;
+
