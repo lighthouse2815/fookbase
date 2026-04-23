@@ -28,6 +28,7 @@ import { CompleteProfilePage } from '@/features/auth/pages/CompleteProfilePage';
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+import { AuthRouteFrame } from '@/features/auth/components/AuthRouteFrame';
 import { GamesPage } from '@/features/games/pages/GamesPage';
 import { ChessPage } from '@/features/games/pages/ChessPage';
 import { CaroPage } from '@/features/games/pages/CaroPage';
@@ -41,10 +42,12 @@ const BloodFortressPage = lazy(() => import('@/features/bloodFortress/pages/Bloo
 export const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route element={<AuthRouteFrame />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      </Route>
       <Route
         path="/games/hiep-si-dang-phao-dai-mau"
         element={

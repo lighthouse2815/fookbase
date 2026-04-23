@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/contexts/AuthContext';
+import { useAuthSuccessTransition } from '@/features/auth/contexts/AuthSuccessTransitionContext';
 import { getGoogleWebClientId, requestGoogleIdToken } from '@/shared/lib/googleIdentity';
 import { authService } from '@/features/auth/api/service/authService';
 import { BannedAccountError } from '@/features/auth/errors/BannedAccountError';
@@ -27,6 +28,7 @@ export const useRegister = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { register: registerUser, authWithGoogle, isAuthenticated } = useAuth();
+  const { playSuccessTransition } = useAuthSuccessTransition();
 
   const [step, setStep] = useState<RegisterStep>('register');
   const [registeredEmail, setRegisteredEmail] = useState<string>('');
@@ -156,7 +158,12 @@ export const useRegister = () => {
 
       const tokenId = await requestGoogleIdToken(clientId);
       await authWithGoogle(tokenId, true);
-      navigate('/', { replace: true });
+      playSuccessTransition({
+        tone: 'user',
+        onNavigate: () => {
+          navigate('/', { replace: true });
+        },
+      });
     } catch (error) {
       if (error instanceof BannedAccountError) {
         setApiError(error.message);

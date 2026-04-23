@@ -1,3 +1,7 @@
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+
+import { useAuthSuccessTransition } from '@/features/auth/contexts/AuthSuccessTransitionContext';
 import { CreatePostBox } from '@/features/post/components/CreatePostBox';
 import { CornerToast } from '@/shared/ui/feedback/CornerToast';
 import { PostCard } from '@/features/post/components/PostCard';
@@ -5,6 +9,7 @@ import { StoryList } from '@/features/story/components/StoryList';
 import { useHomePage } from '@/features/home/hooks/useHomePage';
 
 export const HomePage = () => {
+  const { landingTone, clearLandingTone } = useAuthSuccessTransition();
   const {
     t,
     currentUser,
@@ -22,8 +27,45 @@ export const HomePage = () => {
     postColumnClass,
   } = useHomePage();
 
+  useEffect(() => {
+    if (!landingTone) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      clearLandingTone();
+    }, 760);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [clearLandingTone, landingTone]);
+
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial={
+        landingTone
+          ? { opacity: 0, y: 16, scale: 0.992, filter: 'blur(8px)' }
+          : false
+      }
+      animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+      transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {landingTone ? (
+        <motion.div
+          className={`h-1 w-full rounded-full ${
+            landingTone === 'admin'
+              ? 'bg-gradient-to-r from-rose-500/70 via-amber-400/55 to-transparent'
+              : 'bg-gradient-to-r from-brand-500/70 via-sky-400/55 to-transparent'
+          }`}
+          initial={{ opacity: 0, scaleX: 0.4, transformOrigin: 'left center' }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.62, ease: [0.16, 1, 0.3, 1] }}
+          aria-hidden
+        />
+      ) : null}
+
       <section className={`${postColumnClass} space-y-4`}>
         <CreatePostBox currentUser={currentUser} isSubmitting={isSubmitting} onCreatePost={handleCreatePost} />
         {createError ? <p className="text-sm text-rose-600 dark:text-rose-400">{createError}</p> : null}
@@ -55,7 +97,7 @@ export const HomePage = () => {
       </div>
 
       <CornerToast message={toast?.message ?? null} type={toast?.type} />
-    </div>
+    </motion.div>
   );
 };
 

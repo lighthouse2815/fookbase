@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/contexts/AuthContext';
+import { useAuthSuccessTransition } from '@/features/auth/contexts/AuthSuccessTransitionContext';
 import { useLocaleText } from '@/shared/i18n/useLocaleText';
 import { getApiErrorMessage } from '@/shared/api/error';
 
@@ -16,6 +17,7 @@ export const useAdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { loginAdmin, isAuthenticated, isAdmin } = useAuth();
+  const { playSuccessTransition } = useAuthSuccessTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
 
@@ -40,7 +42,12 @@ export const useAdminLogin = () => {
       await loginAdmin(data);
 
       const destination = resolveAdminLoginDestination(locationState);
-      navigate(destination, { replace: true });
+      playSuccessTransition({
+        tone: 'admin',
+        onNavigate: () => {
+          navigate(destination, { replace: true });
+        },
+      });
     } catch (error) {
       setApiError(getApiErrorMessage(error, tx('ÄÄƒng nháº­p admin tháº¥t báº¡i.', 'Admin login failed.')));
     }

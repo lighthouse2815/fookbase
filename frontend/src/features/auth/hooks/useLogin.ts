@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/contexts/AuthContext';
+import { useAuthSuccessTransition } from '@/features/auth/contexts/AuthSuccessTransitionContext';
 import { authService } from '@/features/auth/api/service/authService';
 import { BannedAccountError } from '@/features/auth/errors/BannedAccountError';
 import { InactiveAccountError } from '@/features/auth/errors/InactiveAccountError';
@@ -23,6 +24,7 @@ export const useLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, authWithGoogle, isAuthenticated } = useAuth();
+  const { playSuccessTransition } = useAuthSuccessTransition();
   const locationState = location.state as LoginLocationState | null;
 
   const [step, setStep] = useState<LoginStep>('login');
@@ -52,6 +54,15 @@ export const useLogin = () => {
 
   const destination = locationState?.from?.pathname ?? '/';
 
+  const navigateWithSuccessTransition = (target: string) => {
+    playSuccessTransition({
+      tone: 'user',
+      onNavigate: () => {
+        navigate(target, { replace: true });
+      },
+    });
+  };
+
   const sendVerifyOtp = async (email: string) => {
     const response = await authService.sendVerifyEmailOtpWhenNotLogin({
       email,
@@ -66,7 +77,7 @@ export const useLogin = () => {
       setApiError(undefined);
       setInfoMessage(undefined);
       await login(data);
-      navigate(destination, { replace: true });
+      navigateWithSuccessTransition(destination);
     } catch (error) {
       if (error instanceof InactiveAccountError) {
         if (!error.email) {
@@ -113,7 +124,7 @@ export const useLogin = () => {
       });
 
       await login(pendingLogin);
-      navigate(destination, { replace: true });
+      navigateWithSuccessTransition(destination);
     } catch (error) {
       setApiError(getApiErrorMessage(error, t('auth.verifyOtpError')));
     }
@@ -159,7 +170,7 @@ export const useLogin = () => {
 
       const tokenId = await requestGoogleIdToken(clientId);
       await authWithGoogle(tokenId, loginForm.getValues('rememberMe'));
-      navigate(destination, { replace: true });
+      navigateWithSuccessTransition(destination);
     } catch (error) {
       if (error instanceof BannedAccountError) {
         setBannedMessage(error.message);
