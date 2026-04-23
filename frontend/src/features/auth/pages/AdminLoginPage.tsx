@@ -15,7 +15,6 @@ import { useAdminLogin } from '@/features/auth/hooks/useAdminLogin';
 export const AdminLoginPage = () => {
   const {
     t,
-    tx,
     isAuthenticated,
     isAdmin,
     showPassword,
@@ -40,26 +39,26 @@ export const AdminLoginPage = () => {
   return (
     <AuthLayout
       tone="admin"
-      eyebrow="Admin Console"
-      title={tx('Dang nhap quan tri', 'Administrator Sign In')}
-      description={tx(
-        'Khu vuc nay danh cho tai khoan quan tri va duoc giam sat bao mat.',
-        'This area is restricted to administrator accounts and is actively monitored.',
-      )}
+      eyebrow={t('auth.adminEyebrow')}
+      title={t('auth.adminTitle')}
+      description={t('auth.adminDescription')}
       highlights={[
-        tx('Tat ca thao tac duoc ghi log', 'All administrative actions are audited'),
-        tx('Phien dang nhap duoc ma hoa', 'Sign-in sessions are strongly encrypted'),
-        tx('Chi tai khoan co quyen moi duoc truy cap', 'Only privileged accounts can access this area'),
+        t('auth.adminHighlightAudit'),
+        t('auth.adminHighlightEncrypted'),
+        t('auth.adminHighlightRestricted'),
       ]}
     >
       <AuthCard
         tone="admin"
-        title={tx('Dang nhap admin', 'Admin Sign In')}
-        subtitle={tx(
-          'Vui long su dung tai khoan quan tri da duoc cap phep.',
-          'Please use an approved administrator account.',
-        )}
-        footer={<AuthSwitcher prompt={tx('Khong phai admin?', 'Not an admin?')} actionLabel="Go to user login" to="/login" />}
+        title={t('auth.adminCardTitle')}
+        subtitle={t('auth.adminCardSubtitle')}
+        footer={
+          <AuthSwitcher
+            prompt={t('auth.adminNonAdminPrompt')}
+            actionLabel={t('auth.adminGoUserLogin')}
+            to="/login"
+          />
+        }
       >
         <form className="space-y-4" onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate>
           <motion.div variants={AUTH_FIELD_STAGGER_VARIANTS} initial="hidden" animate="visible" className="space-y-4">
@@ -72,11 +71,11 @@ export const AdminLoginPage = () => {
             <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
               <AuthInput
                 tone="admin"
-                label={tx('Ten dang nhap', 'Username')}
-                placeholder={tx('Nhap username admin', 'Enter admin username')}
+                label={t('auth.username')}
+                placeholder={t('auth.adminUsernamePlaceholder')}
                 autoComplete="username"
                 registration={register('username', {
-                  required: tx('Vui long nhap username.', 'Username is required.'),
+                  required: t('auth.adminUsernameRequired'),
                 })}
                 error={formErrors.username?.message}
               />
@@ -85,17 +84,17 @@ export const AdminLoginPage = () => {
             <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
               <PasswordField
                 tone="admin"
-                label={tx('Mat khau', 'Password')}
-                placeholder={tx('Nhap mat khau', 'Enter password')}
+                label={t('auth.password')}
+                placeholder={t('auth.adminPasswordPlaceholder')}
                 autoComplete="current-password"
                 registration={register('password', {
-                  required: tx('Vui long nhap mat khau.', 'Password is required.'),
+                  required: t('auth.adminPasswordRequired'),
                 })}
                 error={formErrors.password?.message}
                 showPassword={showPassword}
                 onToggleVisibility={() => setShowPassword((value) => !value)}
-                showLabel={tx('Hien mat khau', 'Show password')}
-                hideLabel={tx('An mat khau', 'Hide password')}
+                showLabel={t('auth.showPassword')}
+                hideLabel={t('auth.hidePassword')}
               />
             </motion.div>
 
@@ -106,7 +105,7 @@ export const AdminLoginPage = () => {
                   className="h-4 w-4 rounded border-white/30 bg-white/10 text-rose-500 focus:ring-2 focus:ring-rose-400"
                   {...register('rememberMe')}
                 />
-                {tx('Ghi nho dang nhap', 'Remember me')}
+                {t('auth.rememberMe')}
               </label>
             </motion.div>
 
@@ -119,7 +118,7 @@ export const AdminLoginPage = () => {
             <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
               <AuthSubmitButton
                 tone="admin"
-                label={tx('Dang nhap admin', 'Sign in as admin')}
+                label={t('auth.adminSignInButton')}
                 loadingLabel={t('common.loading')}
                 isLoading={isSubmitting}
               />
@@ -129,7 +128,7 @@ export const AdminLoginPage = () => {
 
         <div className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-300/65">
           <LockKeyhole size={14} />
-          Elevated access zone
+          {t('auth.adminElevatedAccess')}
         </div>
       </AuthCard>
     </AuthLayout>

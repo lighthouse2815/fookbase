@@ -57,13 +57,13 @@ export const ForgotPasswordPage = () => {
   return (
     <AuthLayout
       tone="recovery"
-      eyebrow="Recovery Flow"
+      eyebrow={t('auth.recoveryEyebrow')}
       title={titleByStep}
       description={subtitleByStep}
       highlights={[
-        'One clean recovery flow across devices',
-        'Secure OTP verification before password reset',
-        'Session remains protected until reset is complete',
+        t('auth.recoveryHighlightUnified'),
+        t('auth.recoveryHighlightOtp'),
+        t('auth.recoveryHighlightSession'),
       ]}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -73,7 +73,13 @@ export const ForgotPasswordPage = () => {
               tone="recovery"
               title={t('auth.forgotPasswordTitle')}
               subtitle={t('auth.forgotPasswordSubtitle')}
-              footer={<AuthSwitcher prompt="Remembered it?" actionLabel="Back to login" to="/login" />}
+              footer={
+                <AuthSwitcher
+                  prompt={t('auth.rememberedPasswordPrompt')}
+                  actionLabel={t('auth.backToLoginShort')}
+                  to="/login"
+                />
+              }
             >
               <form
                 className="space-y-4"

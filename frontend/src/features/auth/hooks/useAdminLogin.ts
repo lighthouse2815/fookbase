@@ -5,7 +5,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/contexts/AuthContext';
 import { useAuthSuccessTransition } from '@/features/auth/contexts/AuthSuccessTransitionContext';
-import { useLocaleText } from '@/shared/i18n/useLocaleText';
 import { getApiErrorMessage } from '@/shared/api/error';
 
 import type { AdminLoginFormValues, AdminLoginLocationState } from '@/features/auth/types/hooks';
@@ -13,7 +12,6 @@ import { resolveAdminLoginDestination } from '@/features/auth/utils/form.util';
 
 export const useAdminLogin = () => {
   const { t } = useTranslation();
-  const tx = useLocaleText();
   const navigate = useNavigate();
   const location = useLocation();
   const { loginAdmin, isAuthenticated, isAdmin } = useAuth();
@@ -49,13 +47,12 @@ export const useAdminLogin = () => {
         },
       });
     } catch (error) {
-      setApiError(getApiErrorMessage(error, tx('ÄÄƒng nháº­p admin tháº¥t báº¡i.', 'Admin login failed.')));
+      setApiError(getApiErrorMessage(error, t('auth.adminLoginError')));
     }
   };
 
   return {
     t,
-    tx,
     isAuthenticated,
     isAdmin,
     showPassword,
@@ -69,6 +66,3 @@ export const useAdminLogin = () => {
     onSubmit,
   };
 };
-
-
-

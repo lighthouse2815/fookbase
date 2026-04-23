@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 import type { AuthTransitionTone } from '@/features/auth/contexts/AuthSuccessTransitionContext';
 
@@ -12,12 +13,12 @@ const toneMap: Record<AuthTransitionTone, { base: string; flare: string; text: s
   user: {
     base: 'from-slate-950 via-[#07112a] to-slate-950',
     flare: 'from-brand-400/70 via-cyan-300/35 to-transparent',
-    text: 'Welcome back',
+    text: 'auth.successOverlayUser',
   },
   admin: {
     base: 'from-[#0b090d] via-[#1a0e14] to-black',
     flare: 'from-rose-400/45 via-amber-300/20 to-transparent',
-    text: 'Access granted',
+    text: 'auth.successOverlayAdmin',
   },
 };
 
@@ -25,6 +26,7 @@ export const SuccessTransitionOverlay = ({
   isActive,
   tone,
 }: SuccessTransitionOverlayProps) => {
+  const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
   const style = toneMap[tone];
 
@@ -60,7 +62,7 @@ export const SuccessTransitionOverlay = ({
               <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
                 Footbase
               </p>
-              <p className="mt-1 text-center text-sm font-medium text-white">{style.text}</p>
+              <p className="mt-1 text-center text-sm font-medium text-white">{t(style.text)}</p>
             </div>
           </motion.div>
         </motion.div>

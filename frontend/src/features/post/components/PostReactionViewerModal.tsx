@@ -1,8 +1,10 @@
 import { Loader2, UserCheck, UserPlus, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 
 import { usePostReactionViewerModal } from '@/features/post/hooks/usePostReactionViewerModal';
 import type { PostReactionViewerModalProps } from '@/features/post/types/components';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => {
   const {
@@ -20,12 +22,13 @@ export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => 
   } = usePostReactionViewerModal(props);
 
   const { postId, isOpen, onClose } = props;
+  useBodyScrollLock(isOpen);
 
-  if (!isOpen) {
+  if (!isOpen || typeof document === 'undefined') {
     return null;
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[96] flex items-center justify-center p-4">
       <button
         type="button"
@@ -130,6 +133,7 @@ export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => 
             : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

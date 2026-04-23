@@ -1,7 +1,9 @@
 import { Loader2, UserCheck, UserPlus, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 
 import type { UseCommentReturn } from '@/features/comment/hooks/useComment';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 type CommentReactionViewerModalProps = Pick<
   UseCommentReturn,
@@ -37,11 +39,17 @@ export const CommentReactionViewerModal = ({
   getReactionFriendActionMeta,
   handleReactionFriendAction,
 }: CommentReactionViewerModalProps) => {
+  useBodyScrollLock(Boolean(reactionViewerComment));
+
   if (!reactionViewerComment) {
     return null;
   }
 
-  return (
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
     <div className="fixed inset-0 z-[96] flex items-center justify-center p-4">
       <button
         type="button"
@@ -140,6 +148,7 @@ export const CommentReactionViewerModal = ({
             : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

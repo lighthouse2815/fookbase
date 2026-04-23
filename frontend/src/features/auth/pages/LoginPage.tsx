@@ -45,23 +45,23 @@ export const LoginPage = () => {
     return (
       <AuthLayout
         tone="admin"
-        eyebrow="Restricted Account"
-        title="Your access has been disabled"
-        description="This account is locked. Contact support if you think this is a mistake."
+        eyebrow={t('auth.bannedEyebrow')}
+        title={t('auth.bannedTitle')}
+        description={t('auth.bannedDescription')}
         highlights={[
-          'Security actions are logged',
-          'Only verified appeals are reviewed',
-          'Sensitive operations remain blocked',
+          t('auth.bannedHighlightAudit'),
+          t('auth.bannedHighlightAppeal'),
+          t('auth.bannedHighlightSensitive'),
         ]}
       >
         <AuthCard
           tone="admin"
-          title="Account suspended"
-          subtitle={bannedMessage || 'Your account is currently unavailable for sign in.'}
+          title={t('auth.bannedCardTitle')}
+          subtitle={bannedMessage || t('auth.bannedCardSubtitleFallback')}
           footer={
             <AuthSwitcher
               prompt=""
-              actionLabel="Back to login"
+              actionLabel={t('auth.backToLoginShort')}
               onClick={goBackToLoginFromBanned}
             />
           }
@@ -86,13 +86,13 @@ export const LoginPage = () => {
   return (
     <AuthLayout
       tone={isOtpStep ? 'recovery' : 'user'}
-      eyebrow={isOtpStep ? 'Email Verification' : 'Welcome Back'}
+      eyebrow={isOtpStep ? t('auth.loginEyebrowVerifyEmail') : t('auth.loginEyebrowWelcome')}
       title={isOtpStep ? t('auth.verifyEmailTitle') : t('auth.loginTitle')}
       description={isOtpStep ? t('auth.verifyEmailSubtitle') : t('auth.loginSubtitle')}
       highlights={
         isOtpStep
-          ? ['OTP expires quickly for security', 'Email verification protects your profile', 'Resend code if needed']
-          : ['Fast and secure sign in', 'Modern privacy-first session handling', 'Built for mobile and desktop']
+          ? [t('auth.otpHighlightExpiry'), t('auth.otpHighlightProtect'), t('auth.otpHighlightResend')]
+          : [t('auth.loginHighlightFast'), t('auth.loginHighlightPrivacy'), t('auth.loginHighlightBuilt')]
       }
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -105,7 +105,7 @@ export const LoginPage = () => {
               footer={
                 <AuthSwitcher
                   prompt=""
-                  actionLabel="Back to login"
+                  actionLabel={t('auth.backToLoginShort')}
                   onClick={goBackToLoginFromOtp}
                 />
               }
@@ -194,8 +194,8 @@ export const LoginPage = () => {
               subtitle={t('auth.loginSubtitle')}
               footer={(
                 <AuthSwitcher
-                  prompt="New here?"
-                  actionLabel="Create account"
+                  prompt={t('auth.newHerePrompt')}
+                  actionLabel={t('auth.createAccountAction')}
                   to="/register"
                 />
               )}
@@ -295,7 +295,7 @@ export const LoginPage = () => {
 
               <div className="mt-4 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-300/65">
                 <Sparkles size={14} />
-                Secure session handoff
+                {t('auth.secureSessionHandoff')}
               </div>
             </AuthCard>
           </motion.div>

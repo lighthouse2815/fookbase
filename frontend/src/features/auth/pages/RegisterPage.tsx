@@ -49,13 +49,21 @@ export const RegisterPage = () => {
   return (
     <AuthLayout
       tone="register"
-      eyebrow={isOtpStep ? 'Verify Account' : 'Create Account'}
+      eyebrow={isOtpStep ? t('auth.registerEyebrowVerify') : t('auth.registerEyebrowCreate')}
       title={isOtpStep ? t('auth.verifyEmailTitle') : t('auth.registerTitle')}
       description={isOtpStep ? t('auth.verifyEmailSubtitle') : t('auth.registerSubtitle')}
       highlights={
         isOtpStep
-          ? ['Activation happens instantly after verification', 'Codes are valid for a limited time', 'You can resend if the email is delayed']
-          : ['Clean onboarding built for mobile first', 'Security checks from day one', 'A premium social experience starts here']
+          ? [
+              t('auth.registerHighlightActivation'),
+              t('auth.registerHighlightCodeWindow'),
+              t('auth.registerHighlightResend'),
+            ]
+          : [
+              t('auth.registerHighlightOnboarding'),
+              t('auth.registerHighlightSecurity'),
+              t('auth.registerHighlightPremium'),
+            ]
       }
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -144,7 +152,13 @@ export const RegisterPage = () => {
               tone="register"
               title={t('auth.registerTitle')}
               subtitle={t('auth.registerSubtitle')}
-              footer={<AuthSwitcher prompt="Already have an account?" actionLabel="Sign in" to="/login" />}
+              footer={
+                <AuthSwitcher
+                  prompt={t('auth.alreadyHaveAccountPrompt')}
+                  actionLabel={t('auth.signInAction')}
+                  to="/login"
+                />
+              }
             >
               <form
                 className="space-y-4"
@@ -317,7 +331,7 @@ export const RegisterPage = () => {
 
               <div className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-300/65">
                 <ShieldCheck size={14} />
-                Trust and safety ready
+                {t('auth.trustAndSafetyReady')}
               </div>
             </AuthCard>
           </motion.div>
