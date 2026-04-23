@@ -83,7 +83,7 @@ export const SuccessTransitionOverlay = ({
               ) : null}
               <div className="relative z-10">
                 <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
-                  Footbase
+                  Fookbase
                 </p>
                 <p className="mt-1 text-center text-sm font-medium text-white">{t(style.text)}</p>
               </div>

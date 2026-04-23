@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Footbase",
+    "name": "Fookbase",
     "tagline": "Mạng xã hội"
   },
   "common": {
@@ -19,7 +19,7 @@
     "switch": "Đổi giao diện"
   },
   "nav": {
-    "searchPlaceholder": "Tìm kiếm Footbase",
+    "searchPlaceholder": "Tìm kiếm Fookbase",
     "home": "Trang chủ",
     "friends": "Bạn bè",
     "messages": "Tin nhắn",
@@ -563,7 +563,7 @@
   },
   "auth": {
     "loginTitle": "Chào mừng quay lại",
-    "loginSubtitle": "Đăng nhập để tiếp tục cùng Footbase",
+    "loginSubtitle": "Đăng nhập để tiếp tục cùng Fookbase",
     "loginEyebrowWelcome": "Chào mừng trở lại",
     "loginEyebrowVerifyEmail": "Xác minh email",
     "loginHighlightFast": "Đăng nhập nhanh và an toàn",

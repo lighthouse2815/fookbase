@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Footbase",
+    "name": "Fookbase",
     "tagline": "Social network"
   },
   "common": {
@@ -19,7 +19,7 @@
     "switch": "Switch theme"
   },
   "nav": {
-    "searchPlaceholder": "Search Footbase",
+    "searchPlaceholder": "Search Fookbase",
     "home": "Home",
     "friends": "Friends",
     "messages": "Messages",
@@ -605,7 +605,7 @@
   },
   "auth": {
     "loginTitle": "Welcome back",
-    "loginSubtitle": "Log in to continue your Footbase journey",
+    "loginSubtitle": "Log in to continue your Fookbase journey",
     "loginEyebrowWelcome": "Welcome Back",
     "loginEyebrowVerifyEmail": "Email Verification",
     "loginHighlightFast": "Fast and secure sign in",

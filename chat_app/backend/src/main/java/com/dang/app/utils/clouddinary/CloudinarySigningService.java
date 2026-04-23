@@ -34,8 +34,7 @@ public class CloudinarySigningService {
     public boolean isConfigured() {
         return isNotBlank(cloudName)
                 && isNotBlank(apiKey)
-                && isNotBlank(apiSecret)
-                && isNotBlank(uploadPreset);
+                && isNotBlank(apiSecret);
     }
 
     public Map<String, Object> buildUploadSignature(UUID userId) {
@@ -49,7 +48,9 @@ public class CloudinarySigningService {
         parametersToSign.put("overwrite", String.valueOf(overwrite));
         parametersToSign.put("public_id", publicId);
         parametersToSign.put("timestamp", String.valueOf(timestamp));
-        parametersToSign.put("upload_preset", uploadPreset);
+        if (isNotBlank(uploadPreset)) {
+            parametersToSign.put("upload_preset", uploadPreset);
+        }
 
         String signature = generateSignature(parametersToSign);
 
