@@ -147,8 +147,7 @@ svg {
 }
 
 @media (max-width: 767px) {
-  .auth-galaxy-stars,
-  .auth-cherry-petal {
+  .auth-galaxy-stars {
     display: none;
   }
 }
