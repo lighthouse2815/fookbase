@@ -52,6 +52,53 @@ export const AUTH_CARD_VARIANTS: Variants = {
   },
 };
 
+export const AUTH_HERO_STAGGER_VARIANTS: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.11,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+export const AUTH_HERO_LINE_VARIANTS: Variants = {
+  hidden: {
+    opacity: 0,
+    x: -48,
+    filter: 'blur(6px)',
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.8,
+      ease: AUTH_EASE,
+    },
+  },
+};
+
+export const AUTH_FORM_SHELL_VARIANTS: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 42,
+    scale: 0.985,
+    filter: 'blur(8px)',
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.9,
+      ease: AUTH_EASE,
+      delay: 0.08,
+    },
+  },
+};
+
 export const AUTH_FIELD_STAGGER_VARIANTS: Variants = {
   hidden: {},
   visible: {
