@@ -12,8 +12,10 @@ import { AuthSubmitButton } from '@/features/auth/components/AuthSubmitButton';
 import { AuthSwitcher } from '@/features/auth/components/AuthSwitcher';
 import { PasswordField } from '@/features/auth/components/PasswordField';
 import { useLogin } from '@/features/auth/hooks/useLogin';
+import { useLocaleText } from '@/shared/i18n/useLocaleText';
 
 export const LoginPage = () => {
+  const tx = useLocaleText();
   const {
     t,
     isAuthenticated,
@@ -115,11 +117,18 @@ export const LoginPage = () => {
               onClick={goBackToLoginFromOtp}
             />
           ) : (
-            <AuthSwitcher
-              prompt={t('auth.newHerePrompt')}
-              actionLabel={t('auth.createAccountAction')}
-              to="/register"
-            />
+            <>
+              <AuthSwitcher
+                prompt={t('auth.newHerePrompt')}
+                actionLabel={t('auth.createAccountAction')}
+                to="/register"
+              />
+              <p className="mt-2 text-center text-xs text-slate-300/70">
+                <Link className="font-medium text-brand-200 transition hover:text-brand-100" to="/reviews">
+                  {tx('Xem danh gia cong khai', 'Browse public app reviews')}
+                </Link>
+              </p>
+            </>
           )
         }
       >

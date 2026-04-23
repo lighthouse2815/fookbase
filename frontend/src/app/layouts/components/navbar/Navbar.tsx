@@ -5,11 +5,13 @@
   Menu,
   Search,
   Settings,
+  Star,
   UserRound,
 } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 
 import { NotificationDropdown } from '@/app/layouts/components/navbar/NotificationDropdown';
+import { useLocaleText } from '@/shared/i18n/useLocaleText';
 
 import type { NavbarProps } from './interface';
 import { NAV_ITEMS } from './util';
@@ -17,6 +19,7 @@ import { useNavBar } from './useNavBar';
 
 export const Navbar = (props: NavbarProps) => {
   const { currentUser } = props;
+  const tx = useLocaleText();
   const {
     t,
     searchKeyword,
@@ -138,6 +141,14 @@ export const Navbar = (props: NavbarProps) => {
 
             {isMenuOpen ? (
               <div className="absolute right-0 top-11 z-30 w-[min(18rem,calc(100vw-1rem))] rounded-2xl border border-slate-200 bg-white p-2 shadow-card dark:border-slate-700 dark:bg-slate-900">
+                <Link
+                  to="/reviews"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  onClick={() => setOpenPopover(null)}
+                >
+                  <Star size={16} />
+                  {tx('Danh gia ung dung', 'App reviews')}
+                </Link>
                 <Link
                   to="/settings"
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"

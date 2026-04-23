@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Admin;
+using InteractHub.Api.Application.DTOs.AppReviews;
 using InteractHub.Api.Application.DTOs.CommentReports;
 using InteractHub.Api.Application.DTOs.Comments;
 using InteractHub.Api.Application.DTOs.Common;
@@ -237,6 +238,38 @@ public static class EntityToDtoMapper
             TargetUserId = log.TargetUserId,
             Details = log.Details,
             CreatedAt = log.CreatedAt
+        };
+    }
+
+    public static AppReviewResponseDto ToResponseDto(this AppReview review)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        return new AppReviewResponseDto
+        {
+            Id = review.Id,
+            UserId = review.UserId,
+            DisplayName = review.DisplayName,
+            Rating = review.Rating,
+            Comment = review.Comment,
+            IsHidden = review.IsHidden,
+            CreatedAt = review.CreatedAt,
+            UpdatedAt = review.UpdatedAt
+        };
+    }
+
+    public static PublicAppReviewResponseDto ToPublicResponseDto(this AppReview review)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        return new PublicAppReviewResponseDto
+        {
+            Id = review.Id,
+            DisplayName = review.DisplayName,
+            Rating = review.Rating,
+            Comment = review.Comment,
+            CreatedAt = review.CreatedAt,
+            UpdatedAt = review.UpdatedAt
         };
     }
 

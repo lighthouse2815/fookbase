@@ -4,6 +4,7 @@ import {
   FileWarning,
   Flag,
   MessageSquareWarning,
+  Star,
   Shield,
   UserCircle2,
   UserCog,
@@ -53,6 +54,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: BellRing,
     viLabel: 'Bao cao story',
     enLabel: 'Story reports',
+  },
+  {
+    path: '/admin/reviews',
+    icon: Star,
+    viLabel: 'Danh gia ung dung',
+    enLabel: 'App reviews',
   },
   {
     path: '/admin/audit-logs',

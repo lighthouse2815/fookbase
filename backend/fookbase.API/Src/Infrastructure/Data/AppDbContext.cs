@@ -44,6 +44,8 @@ public class AppDbContext : DbContext
 
     public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
 
+    public DbSet<AppReview> AppReviews => Set<AppReview>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureSocialTables(modelBuilder);
@@ -385,6 +387,31 @@ public class AppDbContext : DbContext
             entity.HasIndex(savedPost => savedPost.UserId);
             entity.HasIndex(savedPost => savedPost.PostId);
             entity.HasIndex(savedPost => savedPost.CreatedAt);
+        });
+
+        modelBuilder.Entity<AppReview>(entity =>
+        {
+            entity.ToTable("AppReview", table =>
+            {
+                table.HasCheckConstraint("CK_AppReview_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+            });
+            entity.HasKey(review => review.Id);
+
+            entity.Property(review => review.DisplayName)
+                .HasMaxLength(80)
+                .IsRequired();
+            entity.Property(review => review.Rating).IsRequired();
+            entity.Property(review => review.Comment)
+                .HasMaxLength(1000)
+                .IsRequired();
+            entity.Property(review => review.IsHidden).IsRequired();
+            entity.Property(review => review.CreatedAt).IsRequired();
+            entity.Property(review => review.UpdatedAt).IsRequired();
+
+            entity.HasIndex(review => review.UserId).IsUnique();
+            entity.HasIndex(review => review.IsHidden);
+            entity.HasIndex(review => review.Rating);
+            entity.HasIndex(review => review.CreatedAt);
         });
     }
 }

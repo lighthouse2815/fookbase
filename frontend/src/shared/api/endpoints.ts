@@ -80,6 +80,18 @@ export const API_ENDPOINTS = {
     RESOLVE: (id: string) => `/api/user-reports/${id}/resolve`,
     PENDING_COUNT: '/api/user-reports/pending-count',
   },
+  APP_REVIEWS: {
+    PUBLIC: '/api/app-reviews/public',
+    SUMMARY: '/api/app-reviews/summary',
+    ME: '/api/app-reviews/me',
+    CREATE: '/api/app-reviews',
+    UPDATE_ME: '/api/app-reviews/me',
+    DELETE_ME: '/api/app-reviews/me',
+    ADMIN_LIST: '/api/admin/app-reviews',
+    ADMIN_HIDE: (id: string) => `/api/admin/app-reviews/${id}/hide`,
+    ADMIN_UNHIDE: (id: string) => `/api/admin/app-reviews/${id}/unhide`,
+    ADMIN_DELETE: (id: string) => `/api/admin/app-reviews/${id}`,
+  },
   ADMIN: {
     USERS_SEARCH: '/api/admin/users/search',
     USER_STATUS: (id: string) => `/api/admin/users/${id}/status`,

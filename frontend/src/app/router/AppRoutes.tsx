@@ -11,6 +11,8 @@ import { AdminProfilePage } from '@/features/admin/pages/AdminProfilePage';
 import { AdminStoryReportsPage } from '@/features/admin/pages/AdminStoryReportsPage';
 import { AdminUserReportsPage } from '@/features/admin/pages/AdminUserReportsPage';
 import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage';
+import { AdminAppReviewsPage } from '@/features/appReview/pages/AdminAppReviewsPage';
+import { PublicAppReviewsPage } from '@/features/appReview/pages/PublicAppReviewsPage';
 import { FriendSearchPage } from '@/features/friendship/pages/FriendSearchPage';
 import { FriendsPage } from '@/features/friendship/pages/FriendsPage';
 import { HomePage } from '@/features/home/pages/HomePage';
@@ -60,6 +62,7 @@ export const AppRoutes = () => {
         path="/games/hiep-si-dang-phao-dai-mau/canvas"
         element={<Navigate to="/games/hiep-si-dang-phao-dai-mau" replace />}
       />
+      <Route path="/reviews" element={<PublicAppReviewsPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/complete-profile" element={<CompleteProfilePage />} />
@@ -96,6 +99,7 @@ export const AppRoutes = () => {
           <Route path="reports/users" element={<AdminUserReportsPage />} />
           <Route path="reports/comments" element={<AdminCommentReportsPage />} />
           <Route path="reports/stories" element={<AdminStoryReportsPage />} />
+          <Route path="reviews" element={<AdminAppReviewsPage />} />
           <Route path="audit-logs" element={<AdminAuditLogsPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
         </Route>
