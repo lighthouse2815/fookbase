@@ -86,7 +86,7 @@ public class GroupsFragment extends Fragment {
 
             @Override
             public void onConversationLongClick(ConversationUiModel conversation) {
-                // TODO
+                UiHelper.showToast(requireContext(), R.string.settings_coming_soon);
             }
         });
     }

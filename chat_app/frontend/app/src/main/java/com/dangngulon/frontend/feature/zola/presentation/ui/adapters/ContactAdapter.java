@@ -11,8 +11,8 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.R;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.databinding.ItemContactBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.ContactUiModel;
 
@@ -95,9 +95,7 @@ public class ContactAdapter extends ListAdapter<ContactUiModel, ContactAdapter.V
             binding.onlineIndicator.setVisibility(View.VISIBLE);
             binding.contactStatus.setVisibility(View.VISIBLE);
 
-            Glide.with(binding.avatar.getContext())
-                    .load(contact.getAvatarUrl())
-                    .into(binding.avatar);
+            AvatarImageLoader.load(binding.avatar, contact.getAvatarUrl());
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {

@@ -1,21 +1,19 @@
-package com.dangngulon.frontend.core.di;
+package com.dangngulon.frontend.feature.zola.data.di;
 
-import com.dangngulon.frontend.feature.auth.data.repository.AuthRepository;
-import com.dangngulon.frontend.feature.profile.data.repository.UserProfileRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.AddFriendProfileRepository;
-import com.dangngulon.frontend.feature.zola.domain.repository.IFriendshipRepository;
-import com.dangngulon.frontend.feature.zola.domain.repository.IAddFriendProfileRepository;
-import com.dangngulon.frontend.feature.zola.domain.repository.IMediaRepository;
-import com.dangngulon.frontend.feature.zola.domain.repository.IMessageRepository;
+import com.dangngulon.frontend.feature.zola.data.repository.ChatRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.ContactRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.ConversationRepository;
-import com.dangngulon.frontend.feature.auth.domain.repository.IAuthRepository;
-import com.dangngulon.frontend.feature.profile.domain.repository.IUserProfileRepository;
-import com.dangngulon.frontend.feature.zola.domain.repository.IContactRepository;
-import com.dangngulon.frontend.feature.zola.domain.repository.IConversationRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.FriendshipRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.MediaRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.MessageRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IAddFriendProfileRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IChatRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IContactRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IConversationRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IFriendshipRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IMediaRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IMessageRepository;
 
 import javax.inject.Singleton;
 
@@ -26,15 +24,7 @@ import dagger.hilt.components.SingletonComponent;
 
 @Module
 @InstallIn(SingletonComponent.class)
-public abstract class RepositoryModule {
-
-    @Binds
-    @Singleton
-    public abstract IAuthRepository bindAuthRepository(AuthRepository impl);
-
-    @Binds
-    @Singleton
-    public abstract IUserProfileRepository bindUserProfileRepository(UserProfileRepository impl);
+public abstract class ZolaRepositoryModule {
 
     @Binds
     @Singleton
@@ -54,9 +44,13 @@ public abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    public abstract IFriendshipRepository bindFriendShipRepository(FriendshipRepository impl);
+    public abstract IFriendshipRepository bindFriendshipRepository(FriendshipRepository impl);
 
     @Binds
     @Singleton
     public abstract IMessageRepository bindMessageRepository(MessageRepository impl);
+
+    @Binds
+    @Singleton
+    public abstract IChatRepository bindChatRepository(ChatRepository impl);
 }

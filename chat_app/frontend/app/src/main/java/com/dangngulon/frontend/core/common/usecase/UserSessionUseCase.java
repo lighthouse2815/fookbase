@@ -1,22 +1,29 @@
 package com.dangngulon.frontend.core.common.usecase;
 
-import com.dangngulon.frontend.core.utils.data.AuthManager;
+import com.dangngulon.frontend.core.common.result.AppResult;
+import com.dangngulon.frontend.core.session.domain.repository.ISessionRepository;
+
+import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
 public class UserSessionUseCase {
-    private final AuthManager authManager;
+    private final ISessionRepository sessionRepository;
 
     @Inject
-    public UserSessionUseCase(AuthManager authManager) {
-        this.authManager = authManager;
+    public UserSessionUseCase(ISessionRepository sessionRepository) {
+        this.sessionRepository = sessionRepository;
     }
 
     public String getCurrentUserId() {
-        return authManager.getUserId();
+        return sessionRepository.getCurrentUserId();
     }
 
     public String getCurrentDisplayName() {
-        return authManager.getDisplayName();
+        return sessionRepository.getCurrentDisplayName();
+    }
+
+    public CompletableFuture<AppResult<Void>> logout() {
+        return sessionRepository.logout();
     }
 }

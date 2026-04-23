@@ -107,15 +107,32 @@ public static class EntityToDtoMapper
         };
     }
 
-    public static NotificationResponseDto ToResponseDto(this Notification notification)
+    public static NotificationResponseDto ToResponseDto(
+        this Notification notification,
+        string? actorDisplayName = null,
+        string? actorAvatarUrl = null)
     {
         ArgumentNullException.ThrowIfNull(notification);
+
+        var normalizedActorDisplayName = actorDisplayName?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedActorDisplayName))
+        {
+            normalizedActorDisplayName = "Someone";
+        }
+
+        var normalizedActorAvatarUrl = actorAvatarUrl?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedActorAvatarUrl))
+        {
+            normalizedActorAvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(notification.ActorUserId);
+        }
 
         return new NotificationResponseDto
         {
             Id = notification.Id,
             UserId = notification.UserId,
             ActorUserId = notification.ActorUserId,
+            ActorDisplayName = normalizedActorDisplayName,
+            ActorAvatarUrl = normalizedActorAvatarUrl,
             PostId = notification.PostId,
             CommentId = notification.CommentId,
             Type = notification.Type,

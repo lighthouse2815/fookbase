@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.R;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.core.utils.enums.ConversationType;
 import com.dangngulon.frontend.databinding.ItemConversationBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.ConversationUiModel;
@@ -110,12 +110,7 @@ public class ConversationAdapter extends ListAdapter<ConversationUiModel, Conver
             binding.conversationName.setText(conversation.getName());
             binding.timestamp.setText(conversation.getLastMessageAt());
 
-            Glide.with(binding.avatar.getContext())
-                    .load(conversation.getAvatarUrl())
-                    .placeholder(R.drawable.default_avatar)
-                    .error(R.drawable.default_avatar)
-                    .fallback(R.drawable.default_avatar)
-                    .into(binding.avatar);
+            AvatarImageLoader.load(binding.avatar, conversation.getAvatarUrl());
 
             String preview = conversation.getLastMessagePreview() == null ? "" : conversation.getLastMessagePreview();
             if (conversation.getType() == ConversationType.PRIVATE) {

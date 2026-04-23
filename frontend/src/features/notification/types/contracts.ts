@@ -5,6 +5,7 @@ export interface NotificationItem {
   isRead: boolean;
   type?: string;
   actorUserId?: string;
+  actorName?: string;
   postId?: string;
   commentId?: string;
   avatarUrl?: string;

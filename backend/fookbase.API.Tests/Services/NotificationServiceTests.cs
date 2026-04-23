@@ -5,6 +5,7 @@ using InteractHub.Api.Application.Services;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Domain.Entities;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace InteractHub.Api.Tests.Services;
@@ -15,6 +16,7 @@ public class NotificationServiceTests
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
     private readonly Mock<INotificationRealtimeService> _notificationRealtimeServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<ILogger<NotificationService>> _loggerMock = new();
 
     private NotificationService CreateService()
     {
@@ -22,7 +24,8 @@ public class NotificationServiceTests
             _notificationRepositoryMock.Object,
             _javaApiServiceMock.Object,
             _notificationRealtimeServiceMock.Object,
-            _unitOfWorkMock.Object);
+            _unitOfWorkMock.Object,
+            _loggerMock.Object);
     }
 
     [Fact]

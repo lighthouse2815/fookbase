@@ -771,6 +771,28 @@
     "reject": "Reject",
     "processing": "Processing...",
     "someone": "Someone",
-    "friendRequestMessage": "{{name}} sent you a friend request."
+    "generic": "You have a new notification.",
+    "friendRequestMessage": "{{name}} sent you a friend request.",
+    "templates": {
+      "friendRequest": "sent you a friend request.",
+      "friendPost": "shared a new post.",
+      "postReaction": "reacted to your post.",
+      "postComment": "commented on your post.",
+      "commentReply": "replied to your comment.",
+      "commentReaction": "reacted to your comment.",
+      "storyReaction": "reacted to your story.",
+      "postReportApproved": "Your post report was approved and the reported post was removed.",
+      "postReportRejected": "Your post report was rejected after review.",
+      "postReportTargetAction": "Your post was removed by admin after report approval.",
+      "commentReportApproved": "Your comment report was approved and the reported comment was removed.",
+      "commentReportRejected": "Your comment report was rejected after review.",
+      "commentReportTargetAction": "Your comment was removed by admin after report approval.",
+      "storyReportApproved": "Your story report was approved and the reported story was removed.",
+      "storyReportRejected": "Your story report was rejected after review.",
+      "storyReportTargetAction": "Your story was removed by admin after report approval.",
+      "userReportApproved": "Your user report was approved and the reported account was banned.",
+      "userReportRejected": "Your user report was rejected after review.",
+      "userReportTargetAction": "Your account was banned due to policy violations."
+    }
   }
 }

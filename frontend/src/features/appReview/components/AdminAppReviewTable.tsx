@@ -23,7 +23,7 @@ export const AdminAppReviewTable = ({
   if (reviews.length === 0) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-        {tx('Chua co app review nao.', 'No app reviews found.')}
+        {tx('Chưa có đánh giá ứng dụng nào.', 'No app reviews found.')}
       </section>
     );
   }
@@ -68,7 +68,7 @@ export const AdminAppReviewTable = ({
                           : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200'
                       }`}
                     >
-                      {review.isHidden ? tx('Da an', 'Hidden') : tx('Cong khai', 'Public')}
+                      {review.isHidden ? tx('Đã ẩn', 'Hidden') : tx('Công khai', 'Public')}
                     </span>
                   </td>
                   <td className="px-4 py-3 align-top text-xs text-slate-500 dark:text-slate-400">
@@ -85,12 +85,12 @@ export const AdminAppReviewTable = ({
                         {review.isHidden ? (
                           <span className="inline-flex items-center gap-1">
                             <ShieldCheck size={14} />
-                            {tx('Bo an', 'Unhide')}
+                            {tx('Bỏ ẩn', 'Unhide')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1">
                             <EyeOff size={14} />
-                            {tx('An', 'Hide')}
+                            {tx('Ẩn', 'Hide')}
                           </span>
                         )}
                       </button>
@@ -102,7 +102,7 @@ export const AdminAppReviewTable = ({
                       >
                         <span className="inline-flex items-center gap-1">
                           <Trash2 size={14} />
-                          {tx('Xoa', 'Delete')}
+                          {tx('Xóa', 'Delete')}
                         </span>
                       </button>
                     </div>

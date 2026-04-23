@@ -27,14 +27,14 @@ export const ReviewPromptModal = ({ isOpen, onClose, onSubmitted }: ReviewPrompt
         type="button"
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
         onClick={onClose}
-        aria-label={tx('Dong popup danh gia', 'Close review prompt')}
+        aria-label={tx('Đóng popup đánh giá', 'Close review prompt')}
       />
       <section className="relative z-[1] w-full max-w-lg rounded-3xl border border-white/20 bg-white/90 p-5 shadow-2xl backdrop-blur dark:border-slate-700/70 dark:bg-slate-900/90">
         <button
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 rounded-lg p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-          aria-label={tx('Dong popup', 'Close popup')}
+          aria-label={tx('Đóng popup', 'Close popup')}
         >
           <X size={18} />
         </button>
@@ -45,11 +45,11 @@ export const ReviewPromptModal = ({ isOpen, onClose, onSubmitted }: ReviewPrompt
           </span>
           <div>
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              {tx('Danh gia nhanh ung dung', 'Quick app review')}
+              {tx('Đánh giá nhanh ứng dụng', 'Quick app review')}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {tx(
-                'Danh gia cua ban giup chung toi cai thien trai nghiem tot hon.',
+                'Đánh giá của bạn giúp chúng tôi cải thiện trải nghiệm tốt hơn.',
                 'Your feedback helps us improve the product experience.',
               )}
             </p>
@@ -64,8 +64,8 @@ export const ReviewPromptModal = ({ isOpen, onClose, onSubmitted }: ReviewPrompt
 
         <AppReviewForm
           isSubmitting={isSubmitting}
-          submitLabel={tx('Gui danh gia', 'Submit review')}
-          helperText={tx('Danh gia se hien thi cong khai o che do an danh.', 'Review will be shown publicly in anonymous mode.')}
+          submitLabel={tx('Gửi đánh giá', 'Submit review')}
+          helperText={tx('Đánh giá sẽ hiển thị công khai ở chế độ ẩn danh.', 'Review will be shown publicly in anonymous mode.')}
           onSubmit={async (payload) => {
             await createOrUpdate(payload);
             onSubmitted();

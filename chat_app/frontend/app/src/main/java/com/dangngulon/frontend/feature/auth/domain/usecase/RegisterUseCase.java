@@ -32,7 +32,7 @@ public class RegisterUseCase {
         String normalizedLastName = lastName == null ? null : lastName.trim();
         String normalizedFirstName = firstName == null ? null : firstName.trim();
         String normalizedEmail = email == null ? null : email.trim();
-        String normalizedUsername = username == null ? null : username.trim();
+        String normalizedUsername = normalizeRegisterPhone(username);
 
         if (normalizedLastName == null || normalizedLastName.isEmpty()) {
             return CompletableFuture.completedFuture(
@@ -89,6 +89,40 @@ public class RegisterUseCase {
                 normalizedLastName,
                 normalizedFirstName
         );
+    }
+
+    private String normalizeRegisterPhone(String phone) {
+        if (phone == null) {
+            return null;
+        }
+
+        String trimmed = phone.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        String compact = trimmed
+                .replace(" ", "")
+                .replace("-", "")
+                .replace(".", "")
+                .replace("(", "")
+                .replace(")", "");
+
+        if (compact.startsWith("+84")) {
+            compact = compact.substring(3);
+        } else if (compact.startsWith("84")) {
+            compact = compact.substring(2);
+        }
+
+        while (compact.startsWith("0") && compact.length() > 9) {
+            compact = compact.substring(1);
+        }
+
+        if (compact.length() == 9) {
+            return "0" + compact;
+        }
+
+        return compact;
     }
 
     public CompletableFuture<AppResult<OtpVerificationResult>> sendVerifyEmailOtpWhenNotLogin(String email) {

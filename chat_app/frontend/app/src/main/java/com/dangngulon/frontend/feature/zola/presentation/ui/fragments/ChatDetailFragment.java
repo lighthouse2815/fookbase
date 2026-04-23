@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
@@ -21,8 +20,8 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.R;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.core.common.ui.helpers.UiHelper;
 import com.dangngulon.frontend.databinding.FragmentChatDetailBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.MessageCursorPageUiModel;
@@ -112,18 +111,7 @@ public class ChatDetailFragment extends Fragment {
     }
 
     private void loadAvatar(String avatarUrl) {
-        ImageView imgAvatar = binding.imgAvatar;
-
-        if (TextUtils.isEmpty(avatarUrl)) {
-            imgAvatar.setImageResource(R.drawable.default_avatar);
-            return;
-        }
-
-        Glide.with(imgAvatar.getContext())
-                .load(avatarUrl)
-                .placeholder(R.drawable.default_avatar)
-                .error(R.drawable.default_avatar)
-                .into(imgAvatar);
+        AvatarImageLoader.load(binding.imgAvatar, avatarUrl);
     }
 
     private void setupRecyclerView() {

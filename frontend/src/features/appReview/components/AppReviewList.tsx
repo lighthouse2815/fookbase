@@ -26,7 +26,7 @@ export const AppReviewList = ({
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-        {tx('Dang tai danh sach danh gia...', 'Loading app reviews...')}
+        {tx('Đang tải danh sách đánh giá...', 'Loading app reviews...')}
       </section>
     );
   }
@@ -44,7 +44,7 @@ export const AppReviewList = ({
       <section className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
         <MessageCircleOff size={20} className="mx-auto text-slate-400 dark:text-slate-500" />
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          {tx('Chua co danh gia nao phu hop bo loc.', 'No reviews match this filter yet.')}
+          {tx('Chưa có đánh giá nào phù hợp bộ lọc.', 'No reviews match this filter yet.')}
         </p>
       </section>
     );
@@ -64,7 +64,7 @@ export const AppReviewList = ({
             disabled={isLoadingMore}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
-            {isLoadingMore ? tx('Dang tai...', 'Loading...') : tx('Xem them', 'Load more')}
+            {isLoadingMore ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
           </button>
         </div>
       ) : null}

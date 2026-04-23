@@ -14,7 +14,7 @@ export const AppReviewSummaryCard = ({ summary, isLoading, error }: AppReviewSum
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-        {tx('Dang tai thong ke danh gia...', 'Loading review summary...')}
+        {tx('Đang tải thống kê đánh giá...', 'Loading review summary...')}
       </section>
     );
   }
@@ -42,7 +42,7 @@ export const AppReviewSummaryCard = ({ summary, isLoading, error }: AppReviewSum
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
       <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-        {tx('Tong quan danh gia', 'Review summary')}
+        {tx('Tổng quan đánh giá', 'Review summary')}
       </h2>
 
       <div className="mt-3 flex items-end gap-3">
@@ -54,7 +54,7 @@ export const AppReviewSummaryCard = ({ summary, isLoading, error }: AppReviewSum
       </div>
 
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        {tx(`${summary.totalReviews} luot danh gia`, `${summary.totalReviews} ratings`)}
+        {tx(`${summary.totalReviews} lượt đánh giá`, `${summary.totalReviews} ratings`)}
       </p>
 
       <div className="mt-4 space-y-2">

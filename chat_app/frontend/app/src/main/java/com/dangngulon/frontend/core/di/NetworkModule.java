@@ -1,13 +1,6 @@
 package com.dangngulon.frontend.core.di;
 
 import com.dangngulon.frontend.BuildConfig;
-import com.dangngulon.frontend.feature.auth.data.remote.api.AuthApi;
-import com.dangngulon.frontend.feature.profile.data.remote.api.UserProfileApi;
-import com.dangngulon.frontend.feature.zola.data.remote.api.AddFriendProfileApi;
-import com.dangngulon.frontend.feature.zola.data.remote.api.ContactApi;
-import com.dangngulon.frontend.feature.zola.data.remote.api.ConversationApi;
-import com.dangngulon.frontend.feature.zola.data.remote.api.FriendshipApi;
-import com.dangngulon.frontend.feature.zola.data.remote.api.MessageApi;
 import com.dangngulon.frontend.core.network.mapper.ApiErrorMapper;
 import com.dangngulon.frontend.core.network.interceptor.AuthInterceptor;
 import com.google.gson.Gson;
@@ -30,9 +23,7 @@ public class NetworkModule {
     @Provides
     @Singleton
     Gson provideGson() {
-        return new GsonBuilder()
-                // Nếu sau này cần date format / naming policy thì cấu hình ở đây
-                .create();
+        return new GsonBuilder().create();
     }
 
     @Provides
@@ -60,47 +51,5 @@ public class NetworkModule {
     }
 
 
-    @Provides
-    @Singleton
-    AuthApi provideAuthApi(Retrofit retrofit) {
-        return retrofit.create(AuthApi.class);
-    }
-
-    @Provides
-    @Singleton
-    UserProfileApi provideUserProfileApi(Retrofit retrofit) {
-        return retrofit.create(UserProfileApi.class);
-    }
-
-    @Provides
-    @Singleton
-    AddFriendProfileApi provideAddFriendProfileApi(Retrofit retrofit) {
-        return retrofit.create(AddFriendProfileApi.class);
-    }
-
-    @Provides
-    @Singleton
-    ContactApi provideContactApi(Retrofit retrofit) {
-        return retrofit.create(ContactApi.class);
-    }
-
-    @Provides
-    @Singleton
-    ConversationApi provideConversationApi(Retrofit retrofit) {
-        return retrofit.create(ConversationApi.class);
-    }
-
-    @Provides
-    @Singleton
-    MessageApi provideMessageApi(Retrofit retrofit) {
-        return retrofit.create(MessageApi.class);
-    }
-
-    @Provides
-    @Singleton
-    FriendshipApi provideFriendshipApi(Retrofit retrofit) {
-        return retrofit.create(FriendshipApi.class);
-    }
-
-
 }
+

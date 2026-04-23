@@ -56,11 +56,11 @@ export const AppReviewSection = () => {
           </span>
           <div>
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {tx('Danh gia ung dung', 'App review')}
+              {tx('Đánh giá ứng dụng', 'App review')}
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {tx(
-                'Xem tong quan va gui danh gia de nang cap trai nghiem.',
+                'Xem tổng quan và gửi đánh giá để nâng cấp trải nghiệm.',
                 'View public feedback and send your own review.',
               )}
             </p>
@@ -70,7 +70,7 @@ export const AppReviewSection = () => {
         <RatingFilter
           value={ratingFilter}
           onChange={setRatingFilter}
-          allLabel={tx('Tat ca muc sao', 'All ratings')}
+          allLabel={tx('Tất cả mức sao', 'All ratings')}
         />
       </header>
 
@@ -79,11 +79,11 @@ export const AppReviewSection = () => {
       {isAuthenticated ? (
         <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/50">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            {tx('Danh gia cua ban', 'Your review')}
+            {tx('Đánh giá của bạn', 'Your review')}
           </h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {tx(
-              'Moi tai khoan chi co 1 review. Gui lai se cap nhat review hien tai.',
+              'Mỗi tài khoản chỉ có 1 đánh giá. Gửi lại sẽ cập nhật đánh giá hiện tại.',
               'Each account has one review. Submitting again updates the existing review.',
             )}
           </p>
@@ -106,7 +106,7 @@ export const AppReviewSection = () => {
 
           {isMyReviewLoading ? (
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              {tx('Dang tai review cua ban...', 'Loading your review...')}
+              {tx('Đang tải đánh giá của bạn...', 'Loading your review...')}
             </p>
           ) : (
             <div className="mt-3">
@@ -114,15 +114,15 @@ export const AppReviewSection = () => {
                 initialReview={myReview}
                 isSubmitting={isSubmitting}
                 isDeleting={isDeleting}
-                submitLabel={myReview ? tx('Cap nhat review', 'Update review') : tx('Gui review', 'Submit review')}
+                submitLabel={myReview ? tx('Cập nhật đánh giá', 'Update review') : tx('Gửi đánh giá', 'Submit review')}
                 onSubmit={async (payload) => {
                   const updated = await createOrUpdate(payload);
                   setMyReview(updated);
                   await Promise.all([refreshSummary(), refreshPublicReviews()]);
                   showToast(
                     myReview
-                      ? tx('Da cap nhat review cua ban.', 'Your review has been updated.')
-                      : tx('Da gui review cua ban.', 'Your review has been submitted.'),
+                      ? tx('Đã cập nhật đánh giá của bạn.', 'Your review has been updated.')
+                      : tx('Đã gửi đánh giá của bạn.', 'Your review has been submitted.'),
                     'success',
                   );
                 }}
@@ -132,7 +132,7 @@ export const AppReviewSection = () => {
                         await deleteMyReview();
                         setMyReview(null);
                         await Promise.all([refreshSummary(), refreshPublicReviews()]);
-                        showToast(tx('Da xoa review cua ban.', 'Your review has been deleted.'), 'success');
+                        showToast(tx('Đã xóa đánh giá của bạn.', 'Your review has been deleted.'), 'success');
                       }
                     : undefined
                 }
@@ -144,7 +144,7 @@ export const AppReviewSection = () => {
 
       <section className="space-y-3">
         <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-          {tx('Danh gia cong khai', 'Public reviews')}
+          {tx('Đánh giá công khai', 'Public reviews')}
         </h3>
         <AppReviewList
           reviews={reviews}

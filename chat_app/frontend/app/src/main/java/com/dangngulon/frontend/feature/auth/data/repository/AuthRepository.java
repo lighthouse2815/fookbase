@@ -21,6 +21,7 @@ import com.dangngulon.frontend.feature.auth.data.remote.dto.response.LoginRespon
 import com.dangngulon.frontend.feature.auth.data.remote.dto.response.RegisterResponse;
 import com.dangngulon.frontend.feature.auth.data.remote.dto.response.TokenResponse;
 import com.dangngulon.frontend.feature.auth.domain.repository.IAuthRepository;
+import com.dangngulon.frontend.core.session.domain.repository.ISessionRepository;
 import com.dangngulon.frontend.feature.auth.data.mapper.AuthResponseMapper;
 import com.dangngulon.frontend.core.network.model.MessageResponse;
 import com.dangngulon.frontend.core.utils.data.AuthManager;
@@ -36,7 +37,7 @@ import javax.inject.Singleton;
 import retrofit2.Call;
 
 @Singleton
-public class AuthRepository implements IAuthRepository {
+public class AuthRepository implements IAuthRepository, ISessionRepository {
 
     private final AuthApi api;
     private final ApiErrorMapper errorMapper;
@@ -76,6 +77,16 @@ public class AuthRepository implements IAuthRepository {
 
     @Override
     public String getDisplayName() {
+        return authManager.getDisplayName();
+    }
+
+    @Override
+    public String getCurrentUserId() {
+        return authManager.getUserId();
+    }
+
+    @Override
+    public String getCurrentDisplayName() {
         return authManager.getDisplayName();
     }
 

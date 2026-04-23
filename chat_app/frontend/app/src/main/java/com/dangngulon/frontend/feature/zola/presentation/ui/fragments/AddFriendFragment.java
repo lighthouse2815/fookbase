@@ -15,10 +15,10 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.R;
 import com.dangngulon.frontend.core.common.ui.animation.AuthAnimation;
 import com.dangngulon.frontend.core.common.ui.animation.ChatAppAnimation;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.core.common.ui.helpers.UiHelper;
 import com.dangngulon.frontend.core.utils.enums.FriendshipStatus;
 import com.dangngulon.frontend.core.utils.enums.ProfileType;
@@ -320,12 +320,7 @@ public class AddFriendFragment extends Fragment {
         binding.tvUserNameResult.setText(name);
         binding.tvPhone.setText(phoneNumber);
 
-        Glide.with(this)
-                .load(avatarUrl)
-                .placeholder(R.drawable.default_avatar)
-                .error(R.drawable.default_avatar)
-                .circleCrop()
-                .into(binding.imgAvatar);
+        AvatarImageLoader.load(binding.imgAvatar, avatarUrl);
 
         setupButtonAddFriend(status);
     }

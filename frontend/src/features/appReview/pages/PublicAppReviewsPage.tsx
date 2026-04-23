@@ -39,11 +39,11 @@ export const PublicAppReviewsPage = () => {
               </span>
               <div>
                 <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  {tx('Danh gia ung dung cong khai', 'Public app reviews')}
+                  {tx('Đánh giá ứng dụng công khai', 'Public app reviews')}
                 </h1>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   {tx(
-                    'Xem nhan xet an danh tu cong dong va tong quan so sao.',
+                    'Xem nhận xét ẩn danh từ cộng đồng và tổng quan số sao.',
                     'Browse anonymous community feedback and rating summary.',
                   )}
                 </p>
@@ -54,14 +54,14 @@ export const PublicAppReviewsPage = () => {
               <RatingFilter
                 value={ratingFilter}
                 onChange={setRatingFilter}
-                allLabel={tx('Tat ca muc sao', 'All ratings')}
+                allLabel={tx('Tất cả mức sao', 'All ratings')}
               />
               <Link
                 to={isAuthenticated ? '/' : '/login'}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <ArrowLeft size={15} />
-                {isAuthenticated ? tx('Ve trang chu', 'Back to home') : tx('Dang nhap de danh gia', 'Sign in to review')}
+                {isAuthenticated ? tx('Về trang chủ', 'Back to home') : tx('Đăng nhập để đánh giá', 'Sign in to review')}
               </Link>
             </div>
           </div>

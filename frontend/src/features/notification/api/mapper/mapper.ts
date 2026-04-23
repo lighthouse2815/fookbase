@@ -8,6 +8,8 @@ export const mapNotificationPayload = (payload: NotificationPayload): Notificati
   isRead: payload.isRead,
   type: payload.type ?? 'GENERAL',
   actorUserId: payload.actorUserId,
+  actorName: payload.actorDisplayName?.trim() || undefined,
+  avatarUrl: payload.actorAvatarUrl?.trim() || undefined,
   postId: payload.postId ?? undefined,
   commentId: payload.commentId ?? undefined,
 });

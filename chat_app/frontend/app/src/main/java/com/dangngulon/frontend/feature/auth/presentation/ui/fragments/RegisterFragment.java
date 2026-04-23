@@ -21,6 +21,7 @@ import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 import androidx.credentials.exceptions.ClearCredentialException;
 import androidx.credentials.exceptions.GetCredentialException;
+import androidx.credentials.exceptions.NoCredentialException;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -56,6 +57,7 @@ public class RegisterFragment extends Fragment {
             "com.dangngulon.frontend.feature.zola.presentation.ui.ChatAppActivity";
     private static final String GOOGLE_LOGIN_NOT_CONFIGURED = "Google login chua duoc cau hinh";
     private static final String GOOGLE_LOGIN_FAILED = "Dang nhap Google that bai";
+    private static final String GOOGLE_LOGIN_NO_ACCOUNT = "Khong tim thay tai khoan Google";
 
     private RegisterViewModel registerViewModel;
     private LoginViewModel loginViewModel;
@@ -384,6 +386,13 @@ public class RegisterFragment extends Fragment {
 
                     @Override
                     public void onError(@NonNull GetCredentialException e) {
+                        if (e instanceof NoCredentialException) {
+                            if (isAdded()) {
+                                UiHelper.showToast(requireContext(), GOOGLE_LOGIN_NO_ACCOUNT);
+                            }
+                            return;
+                        }
+
                         if (isAdded()) {
                             UiHelper.showToast(requireContext(), GOOGLE_LOGIN_FAILED);
                         }

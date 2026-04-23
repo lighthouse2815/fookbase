@@ -88,6 +88,7 @@
                 android:id="@+id/ivGroupAvatar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@drawable/circle_avatar"
                 android:scaleType="centerCrop"
                 android:visibility="gone"
                 android:contentDescription="@string/cd_group_avatar" />

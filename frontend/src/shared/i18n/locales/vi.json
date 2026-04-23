@@ -763,14 +763,36 @@
     }
   },
   "notifications": {
-    "title": "Thông báo",
-    "empty": "Không có thông báo mới",
-    "markAll": "Đánh dấu tất cả",
-    "markingAll": "Đang đánh dấu...",
-    "accept": "Chấp nhận",
-    "reject": "Từ chối",
-    "processing": "Đang xử lý...",
-    "someone": "Ai đó",
-    "friendRequestMessage": "{{name}} đã gửi cho bạn lời mời kết bạn."
+    "title": "Thong bao",
+    "empty": "Khong co thong bao moi",
+    "markAll": "Danh dau tat ca",
+    "markingAll": "Dang danh dau...",
+    "accept": "Chap nhan",
+    "reject": "Tu choi",
+    "processing": "Dang xu ly...",
+    "someone": "Ai do",
+    "generic": "Ban co thong bao moi.",
+    "friendRequestMessage": "{{name}} da gui cho ban loi moi ket ban.",
+    "templates": {
+      "friendRequest": "da gui cho ban loi moi ket ban.",
+      "friendPost": "da chia se mot bai viet moi.",
+      "postReaction": "da bay to cam xuc ve bai viet cua ban.",
+      "postComment": "da binh luan ve bai viet cua ban.",
+      "commentReply": "da tra loi binh luan cua ban.",
+      "commentReaction": "da bay to cam xuc ve binh luan cua ban.",
+      "storyReaction": "da bay to cam xuc ve story cua ban.",
+      "postReportApproved": "Bao cao bai viet cua ban da duoc duyet va bai viet vi pham da bi xoa.",
+      "postReportRejected": "Bao cao bai viet cua ban da bi tu choi sau khi xem xet.",
+      "postReportTargetAction": "Bai viet cua ban da bi admin xoa sau khi duyet bao cao.",
+      "commentReportApproved": "Bao cao binh luan cua ban da duoc duyet va binh luan vi pham da bi xoa.",
+      "commentReportRejected": "Bao cao binh luan cua ban da bi tu choi sau khi xem xet.",
+      "commentReportTargetAction": "Binh luan cua ban da bi admin xoa sau khi duyet bao cao.",
+      "storyReportApproved": "Bao cao story cua ban da duoc duyet va story vi pham da bi xoa.",
+      "storyReportRejected": "Bao cao story cua ban da bi tu choi sau khi xem xet.",
+      "storyReportTargetAction": "Story cua ban da bi admin xoa sau khi duyet bao cao.",
+      "userReportApproved": "Bao cao nguoi dung cua ban da duoc duyet va tai khoan vi pham da bi khoa.",
+      "userReportRejected": "Bao cao nguoi dung cua ban da bi tu choi sau khi xem xet.",
+      "userReportTargetAction": "Tai khoan cua ban da bi khoa do vi pham chinh sach."
+    }
   }
 }

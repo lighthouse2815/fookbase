@@ -453,7 +453,7 @@ public class PostService : IPostService
                 return;
             }
 
-            var authorName = await ResolveNotificationActorNameAsync(authorUserId, accessToken, cancellationToken);
+            var actorSummary = await ResolveNotificationActorSummaryAsync(authorUserId, accessToken, cancellationToken);
             var now = DateTime.UtcNow;
             var createdNotifications = new List<Notification>(friendIds.Count);
 
@@ -466,7 +466,7 @@ public class PostService : IPostService
                     ActorUserId = authorUserId,
                     PostId = postId,
                     Type = "FRIEND_POST",
-                    Message = $"{authorName} shared a new post.",
+                    Message = $"{actorSummary.DisplayName} shared a new post.",
                     IsRead = false,
                     CreatedAt = now
                 };
@@ -479,7 +479,9 @@ public class PostService : IPostService
 
             foreach (var notification in createdNotifications)
             {
-                await _notificationRealtimeService.NotifyCreatedAsync(notification.ToResponseDto(), cancellationToken);
+                await _notificationRealtimeService.NotifyCreatedAsync(
+                    notification.ToResponseDto(actorSummary.DisplayName, actorSummary.AvatarUrl),
+                    cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -495,7 +497,7 @@ public class PostService : IPostService
         }
     }
 
-    private async Task<string> ResolveNotificationActorNameAsync(
+    private async Task<AuthorSummaryDto> ResolveNotificationActorSummaryAsync(
         Guid actorUserId,
         string? accessToken,
         CancellationToken cancellationToken)
@@ -508,15 +510,32 @@ public class PostService : IPostService
                 accessToken: accessToken);
 
             var summaryDisplayName = profileSummary?.DisplayName.TrimToNull();
-            if (!string.IsNullOrWhiteSpace(summaryDisplayName))
+            var summaryAvatarUrl = profileSummary?.AvatarUrl.TrimToNull();
+            if (!string.IsNullOrWhiteSpace(summaryDisplayName) || !string.IsNullOrWhiteSpace(summaryAvatarUrl))
             {
-                return summaryDisplayName;
+                return new AuthorSummaryDto
+                {
+                    Id = actorUserId,
+                    DisplayName = summaryDisplayName ?? "Your friend",
+                    AvatarUrl = summaryAvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId)
+                };
             }
-            return "Your friend";
+
+            return new AuthorSummaryDto
+            {
+                Id = actorUserId,
+                DisplayName = "Your friend",
+                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId)
+            };
         }
         catch
         {
-            return "Your friend";
+            return new AuthorSummaryDto
+            {
+                Id = actorUserId,
+                DisplayName = "Your friend",
+                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId)
+            };
         }
     }
 

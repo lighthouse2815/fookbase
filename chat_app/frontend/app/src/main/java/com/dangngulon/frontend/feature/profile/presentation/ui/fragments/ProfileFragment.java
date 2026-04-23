@@ -152,15 +152,9 @@ public class ProfileFragment extends Fragment {
             handleOpenProfile(userId, displayName, displayName);
         });
 
-        binding.settingsItem.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Cai dat", Toast.LENGTH_SHORT).show();
-            handleSettings();
-        });
+        binding.settingsItem.setOnClickListener(v -> handleSettings());
 
-        binding.privacyItem.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Quyen rieng tu", Toast.LENGTH_SHORT).show();
-            handlePrivacy();
-        });
+        binding.privacyItem.setOnClickListener(v -> handlePrivacy());
 
         binding.logoutItem.setOnClickListener(v -> {
             Toast.makeText(getContext(), "Dang xuat", Toast.LENGTH_SHORT).show();
@@ -188,11 +182,11 @@ public class ProfileFragment extends Fragment {
     }
 
     private void handleSettings() {
-        // TODO: Handle settings
+        Toast.makeText(getContext(), getString(R.string.settings_coming_soon), Toast.LENGTH_SHORT).show();
     }
 
     private void handlePrivacy() {
-        // TODO: Handle privacy
+        Toast.makeText(getContext(), getString(R.string.settings_coming_soon), Toast.LENGTH_SHORT).show();
     }
 
     private void navigateToAuth() {

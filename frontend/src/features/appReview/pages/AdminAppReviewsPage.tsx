@@ -39,15 +39,15 @@ export const AdminAppReviewsPage = () => {
       updateReview(updated);
       showToast(
         updated.isHidden
-          ? tx('Da an review khoi danh sach cong khai.', 'Review is now hidden from public list.')
-          : tx('Da bo an review.', 'Review is public again.'),
+          ? tx('Đã ẩn đánh giá khỏi danh sách công khai.', 'Review is now hidden from public list.')
+          : tx('Đã bỏ ẩn đánh giá.', 'Review is public again.'),
         'success',
       );
     } catch (toggleError) {
       showToast(
         toggleError instanceof Error
           ? toggleError.message
-          : tx('Cap nhat trang thai review that bai.', 'Failed to update review visibility.'),
+          : tx('Cập nhật trạng thái đánh giá thất bại.', 'Failed to update review visibility.'),
         'error',
       );
     } finally {
@@ -60,10 +60,10 @@ export const AdminAppReviewsPage = () => {
     try {
       await deleteReview(review.id);
       removeReview(review.id);
-      showToast(tx('Da xoa review.', 'Review deleted.'), 'success');
+      showToast(tx('Đã xóa đánh giá.', 'Review deleted.'), 'success');
     } catch (deleteError) {
       showToast(
-        deleteError instanceof Error ? deleteError.message : tx('Xoa review that bai.', 'Failed to delete review.'),
+        deleteError instanceof Error ? deleteError.message : tx('Xóa đánh giá thất bại.', 'Failed to delete review.'),
         'error',
       );
     } finally {
@@ -75,11 +75,11 @@ export const AdminAppReviewsPage = () => {
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
         <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-          {tx('Quan tri app review', 'App review moderation')}
+          {tx('Quản trị đánh giá ứng dụng', 'App review moderation')}
         </h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {tx(
-            'Loc, an/hien va xoa review vi pham tren toan he thong.',
+            'Lọc, ẩn/hiện và xóa đánh giá vi phạm trên toàn hệ thống.',
             'Filter, hide/unhide, and delete violating app reviews.',
           )}
         </p>
@@ -88,7 +88,7 @@ export const AdminAppReviewsPage = () => {
           <RatingFilter
             value={filters.rating ?? null}
             onChange={setRatingFilter}
-            allLabel={tx('Tat ca muc sao', 'All ratings')}
+            allLabel={tx('Tất cả mức sao', 'All ratings')}
           />
           <select
             value={filters.isHidden === null ? '' : String(filters.isHidden)}
@@ -103,9 +103,9 @@ export const AdminAppReviewsPage = () => {
             }}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
           >
-            <option value="">{tx('Tat ca trang thai', 'All statuses')}</option>
-            <option value="false">{tx('Cong khai', 'Public')}</option>
-            <option value="true">{tx('Da an', 'Hidden')}</option>
+            <option value="">{tx('Tất cả trạng thái', 'All statuses')}</option>
+            <option value="false">{tx('Công khai', 'Public')}</option>
+            <option value="true">{tx('Đã ẩn', 'Hidden')}</option>
           </select>
           <button
             type="button"
@@ -114,7 +114,7 @@ export const AdminAppReviewsPage = () => {
             }}
             className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
-            {tx('Lam moi', 'Refresh')}
+            {tx('Làm mới', 'Refresh')}
           </button>
         </div>
       </section>
@@ -127,7 +127,7 @@ export const AdminAppReviewsPage = () => {
 
       {isLoading ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-300">
-          {tx('Dang tai danh sach review...', 'Loading app reviews...')}
+          {tx('Đang tải danh sách đánh giá...', 'Loading app reviews...')}
         </section>
       ) : (
         <AdminAppReviewTable
@@ -152,12 +152,12 @@ export const AdminAppReviewsPage = () => {
             disabled={isLoadingMore || isHideSubmitting || isDeleting}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
-            {isLoadingMore ? tx('Dang tai...', 'Loading...') : tx('Xem them', 'Load more')}
+            {isLoadingMore ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
           </button>
         </div>
       ) : reviews.length > 0 ? (
         <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-          {tx(`Da hien thi ${page} trang review.`, `Displayed ${page} page(s) of reviews.`)}
+          {tx(`Đã hiển thị ${page} trang đánh giá.`, `Displayed ${page} page(s) of reviews.`)}
         </p>
       ) : null}
 

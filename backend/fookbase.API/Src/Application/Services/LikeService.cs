@@ -107,10 +107,10 @@ public class LikeService : ILikeService
         var existingLike = await _likeRepository.GetByPostAndUserAsync(post.Id, user.Id, cancellationToken);
         var now = DateTime.UtcNow;
         Notification? createdNotification = null;
+        string? notificationActorDisplayName = null;
+        string? notificationActorAvatarUrl = null;
         if (existingLike is null)
         {
-            var actorName = "Someone";
-
             await _likeRepository.AddAsync(new Like
             {
                 Id = Guid.NewGuid(),
@@ -123,6 +123,10 @@ public class LikeService : ILikeService
 
             if (post.UserId != user.Id)
             {
+                var actorSummary = await ResolveNotificationActorSummaryAsync(user.Id, cancellationToken);
+                notificationActorDisplayName = actorSummary.DisplayName;
+                notificationActorAvatarUrl = actorSummary.AvatarUrl;
+
                 createdNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
@@ -130,7 +134,7 @@ public class LikeService : ILikeService
                     ActorUserId = user.Id,
                     PostId = post.Id,
                     Type = "LIKE",
-                    Message = $"{actorName} reacted to your post.",
+                    Message = $"{actorSummary.DisplayName} reacted to your post.",
                     IsRead = false,
                     CreatedAt = now
                 };
@@ -147,7 +151,9 @@ public class LikeService : ILikeService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (createdNotification is not null)
         {
-            await _notificationRealtimeService.NotifyCreatedAsync(createdNotification.ToResponseDto(), cancellationToken);
+            await _notificationRealtimeService.NotifyCreatedAsync(
+                createdNotification.ToResponseDto(notificationActorDisplayName, notificationActorAvatarUrl),
+                cancellationToken);
         }
 
         var reactionSummary = await ResolveReactionSummaryAsync(post.Id, cancellationToken);
@@ -273,6 +279,32 @@ public class LikeService : ILikeService
 
         var results = await Task.WhenAll(profileTasks);
         return results.ToDictionary(item => item.Key, item => item.Value);
+    }
+
+    private async Task<(string DisplayName, string AvatarUrl)> ResolveNotificationActorSummaryAsync(
+        Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var profile = await _javaApiService.GetProfileSummaryByUserId(actorUserId, cancellationToken: cancellationToken);
+            var displayName = profile?.DisplayName.TrimToNull() ?? "Someone";
+            var avatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId);
+            return (displayName, avatarUrl);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not resolve actor summary while creating post reaction notification for user {ActorUserId}.",
+                actorUserId);
+
+            return ("Someone", AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
+        }
     }
 
 }

@@ -8,6 +8,10 @@ public class NotificationResponseDto
 
     public Guid ActorUserId { get; init; }
 
+    public string ActorDisplayName { get; init; } = string.Empty;
+
+    public string ActorAvatarUrl { get; init; } = string.Empty;
+
     public Guid? PostId { get; init; }
 
     public Guid? CommentId { get; init; }

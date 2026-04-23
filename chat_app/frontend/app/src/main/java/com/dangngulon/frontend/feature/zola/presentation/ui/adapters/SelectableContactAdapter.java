@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.R;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.databinding.ItemSelectableContactBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.SelectableContactItem;
 import com.dangngulon.frontend.core.common.ui.helpers.TimeFormatter;
@@ -122,9 +122,7 @@ public class SelectableContactAdapter extends ListAdapter<SelectableContactItem,
             String time = TimeFormatter.formatLastChatTime(contact.getLastChatTime());
             binding.tvLastActive.setText(time);
 
-            Glide.with(binding.ivAvatar.getContext())
-                    .load(contact.getAvatar())
-                    .into(binding.ivAvatar);
+            AvatarImageLoader.load(binding.ivAvatar, contact.getAvatar());
 
             if (isSelected) {
                 binding.viewUnchecked.setVisibility(View.GONE);

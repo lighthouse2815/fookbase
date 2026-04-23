@@ -16,9 +16,11 @@ import androidx.lifecycle.ViewModelProvider;
 import com.dangngulon.frontend.R;
 import com.dangngulon.frontend.core.common.ui.helpers.UiHelper;
 import com.dangngulon.frontend.core.common.viewmodel.state.Result;
+import com.dangngulon.frontend.core.utils.AvatarDefaults;
 import com.dangngulon.frontend.databinding.FragmentCompleteProfileBinding;
 import com.dangngulon.frontend.feature.auth.presentation.viewmodel.CompleteProfileViewModel;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
@@ -49,7 +51,7 @@ public class CompleteProfileFragment extends Fragment {
     private CompleteProfileViewModel completeProfileViewModel;
 
     private boolean isGoogleMode;
-    private String avatarUrl;
+    private String avatarUrl = AvatarDefaults.DEFAULT_AVATAR_URL;
 
     @Nullable
     @Override
@@ -110,7 +112,7 @@ public class CompleteProfileFragment extends Fragment {
         binding.etEmail.setText(args.getString(ARG_EMAIL, ""));
         binding.etBirthday.setText(args.getString(ARG_BIRTHDAY, ""));
         binding.etGender.setText(formatGenderForDisplay(args.getString(ARG_GENDER, "")), false);
-        avatarUrl = normalize(args.getString(ARG_AVATAR_URL, null));
+        avatarUrl = AvatarDefaults.resolve(args.getString(ARG_AVATAR_URL, null));
     }
 
     private void initGenderDropdown() {
@@ -191,7 +193,7 @@ public class CompleteProfileFragment extends Fragment {
 
         String displayName = UiHelper.getText(binding.etDisplayName);
         String birthday = UiHelper.getText(binding.etBirthday);
-        String gender = normalizeGenderForApi(binding.etGender.getText() == null
+        String gender = normalizeGenderForApiValue(binding.etGender.getText() == null
                 ? null
                 : binding.etGender.getText().toString());
 
@@ -230,6 +232,7 @@ public class CompleteProfileFragment extends Fragment {
                 return;
             }
 
+            phoneNumber = normalizePhoneNumberForApi(phoneNumber);
             if (!PHONE_PATTERN.matcher(phoneNumber).matches()) {
                 binding.tilPhone.setError(getString(R.string.error_invalid_phone));
                 return;
@@ -272,22 +275,27 @@ public class CompleteProfileFragment extends Fragment {
         requireActivity().finish();
     }
 
-    private String normalizeGenderForApi(String value) {
+    private String normalizeGenderForApiValue(String value) {
         String normalized = normalize(value);
         if (normalized == null) {
             return null;
         }
 
-        String upperCase = normalized.toUpperCase(Locale.ROOT);
+        String upperCase = Normalizer.normalize(normalized, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D')
+                .toUpperCase(Locale.ROOT);
+
         if ("MALE".equals(upperCase) || "NAM".equals(upperCase)) {
             return "MALE";
         }
 
-        if ("FEMALE".equals(upperCase) || "NU".equals(upperCase) || "NỮ".equals(upperCase)) {
+        if ("FEMALE".equals(upperCase) || "NU".equals(upperCase)) {
             return "FEMALE";
         }
 
-        if ("OTHER".equals(upperCase) || "KHAC".equals(upperCase) || "KHÁC".equals(upperCase)) {
+        if ("OTHER".equals(upperCase) || "KHAC".equals(upperCase)) {
             return "OTHER";
         }
 
@@ -295,7 +303,7 @@ public class CompleteProfileFragment extends Fragment {
     }
 
     private String formatGenderForDisplay(String gender) {
-        String normalized = normalizeGenderForApi(gender);
+        String normalized = normalizeGenderForApiValue(gender);
         if (normalized == null) {
             return "";
         }
@@ -331,4 +339,36 @@ public class CompleteProfileFragment extends Fragment {
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
+
+    private String normalizePhoneNumberForApi(String value) {
+        String normalized = normalize(value);
+        if (normalized == null) {
+            return "";
+        }
+
+        String compact = normalized
+                .replace(" ", "")
+                .replace("-", "")
+                .replace(".", "")
+                .replace("(", "")
+                .replace(")", "");
+
+        if (compact.startsWith("+84")) {
+            compact = compact.substring(3);
+        } else if (compact.startsWith("84")) {
+            compact = compact.substring(2);
+        }
+
+        while (compact.startsWith("0") && compact.length() > 9) {
+            compact = compact.substring(1);
+        }
+
+        if (compact.length() == 9) {
+            return "0" + compact;
+        }
+
+        return compact;
+    }
 }
+
+

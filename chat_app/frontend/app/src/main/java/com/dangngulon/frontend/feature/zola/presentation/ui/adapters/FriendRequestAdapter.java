@@ -12,9 +12,9 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.R;
 import com.dangngulon.frontend.core.common.ui.helpers.TimeFormatter;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.core.utils.enums.ButtonType;
 import com.dangngulon.frontend.databinding.ItemFriendRequestBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.FriendRequestUiModel;
@@ -160,11 +160,7 @@ public class FriendRequestAdapter extends ListAdapter<FriendRequestUiModel, Frie
             binding.requestName.setText(request.getDisplayName());
             binding.requestMeta.setText(TimeFormatter.formatDate(request.getCreatedAt()));
 
-            Glide.with(binding.requestAvatar.getContext())
-                    .load(request.getAvatarUrl())
-                    .placeholder(R.drawable.default_avatar)
-                    .error(R.drawable.default_avatar)
-                    .into(binding.requestAvatar);
+            AvatarImageLoader.load(binding.requestAvatar, request.getAvatarUrl());
 
             binding.btnReject.setOnClickListener(v -> {
                 if (listener != null) {

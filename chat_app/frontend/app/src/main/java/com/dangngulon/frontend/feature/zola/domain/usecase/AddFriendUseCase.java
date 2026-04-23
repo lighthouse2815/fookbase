@@ -18,15 +18,15 @@ import javax.inject.Inject;
 public class AddFriendUseCase {
     private static final String QR_USER_PREFIX = "chat_app://user/";
 
-    private final IFriendshipRepository friendShipRepository;
+    private final IFriendshipRepository friendshipRepository;
     private final IAddFriendProfileRepository addFriendProfileRepository;
 
     @Inject
     public AddFriendUseCase(
-            IFriendshipRepository friendShipRepository,
+            IFriendshipRepository friendshipRepository,
             IAddFriendProfileRepository addFriendProfileRepository
     ){
-        this.friendShipRepository = friendShipRepository;
+        this.friendshipRepository = friendshipRepository;
         this.addFriendProfileRepository = addFriendProfileRepository;
     }
 
@@ -63,7 +63,7 @@ public class AddFriendUseCase {
             );
         }
 
-        return friendShipRepository.sendFriendRequest(
+        return friendshipRepository.sendFriendRequest(
                 new FriendshipCommand(userId.trim())
         );
     }

@@ -57,6 +57,8 @@ public class StoryReactionService : IStoryReactionService
         var now = DateTime.UtcNow;
         var existingReaction = await _storyReactionRepository.GetByStoryAndUserAsync(story.Id, user.Id, cancellationToken);
         Notification? createdNotification = null;
+        string? notificationActorDisplayName = null;
+        string? notificationActorAvatarUrl = null;
 
         if (existingReaction is null)
         {
@@ -72,14 +74,16 @@ public class StoryReactionService : IStoryReactionService
 
             if (story.UserId != user.Id)
             {
-                var actorName = await ResolveActorDisplayNameAsync(user.Id, cancellationToken);
+                var actorSummary = await ResolveActorSummaryAsync(user.Id, cancellationToken);
+                notificationActorDisplayName = actorSummary.DisplayName;
+                notificationActorAvatarUrl = actorSummary.AvatarUrl;
                 createdNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = story.UserId,
                     ActorUserId = user.Id,
                     Type = StoryReactionNotificationType,
-                    Message = $"{actorName} reacted to your story.",
+                    Message = $"{actorSummary.DisplayName} reacted to your story.",
                     IsRead = false,
                     CreatedAt = now
                 };
@@ -97,7 +101,9 @@ public class StoryReactionService : IStoryReactionService
 
         if (createdNotification is not null)
         {
-            await _notificationRealtimeService.NotifyCreatedAsync(createdNotification.ToResponseDto(), cancellationToken);
+            await _notificationRealtimeService.NotifyCreatedAsync(
+                createdNotification.ToResponseDto(notificationActorDisplayName, notificationActorAvatarUrl),
+                cancellationToken);
         }
 
         return new StoryReactionStateResponseDto
@@ -130,16 +136,20 @@ public class StoryReactionService : IStoryReactionService
         };
     }
 
-    private async Task<string> ResolveActorDisplayNameAsync(Guid actorUserId, CancellationToken cancellationToken)
+    private async Task<(string DisplayName, string AvatarUrl)> ResolveActorSummaryAsync(
+        Guid actorUserId,
+        CancellationToken cancellationToken)
     {
         try
         {
             var profile = await _javaApiService.GetProfileSummaryByUserId(actorUserId, cancellationToken: cancellationToken);
-            return profile?.DisplayName.TrimToNull() ?? "Someone";
+            var displayName = profile?.DisplayName.TrimToNull() ?? "Someone";
+            var avatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId);
+            return (displayName, avatarUrl);
         }
         catch
         {
-            return "Someone";
+            return ("Someone", AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
         }
     }
 

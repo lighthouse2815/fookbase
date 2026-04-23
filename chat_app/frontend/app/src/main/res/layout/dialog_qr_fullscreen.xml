@@ -85,6 +85,7 @@
                             android:id="@+id/ivUserAvatar"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:background="@drawable/circle_avatar"
                             android:scaleType="centerCrop"
                             android:contentDescription="@string/cd_user_avatar"
                             android:src="@drawable/default_avatar" />

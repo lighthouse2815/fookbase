@@ -11,8 +11,8 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.R;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.databinding.ItemSelectedMemberBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.SelectableContactItem;
 
@@ -115,9 +115,7 @@ public class SelectedMemberAdapter extends ListAdapter<SelectableContactItem, Se
         }
 
         public void bind(SelectableContactItem contact) {
-            Glide.with(binding.ivAvatar.getContext())
-                    .load(contact.getAvatar())
-                    .into(binding.ivAvatar);
+            AvatarImageLoader.load(binding.ivAvatar, contact.getAvatar());
 
             binding.ivRemove.setOnClickListener(v -> {
                 Animation animation = AnimationUtils.loadAnimation(v.getContext(), R.anim.fade_out);

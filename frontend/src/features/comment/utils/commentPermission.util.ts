@@ -20,7 +20,7 @@ export const canEditComment = (comment: Comment, context: CommentPermissionConte
 };
 
 export const canDeleteComment = (comment: Comment, context: CommentPermissionContext) => {
-  return isPostOwner(context) || isCommentOwner(comment, context.currentUserId);
+  return isCommentOwner(comment, context.currentUserId);
 };
 
 export const canReportComment = (comment: Comment, context: CommentPermissionContext) => {

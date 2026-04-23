@@ -14,6 +14,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.dangngulon.frontend.R;
+import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
 import com.dangngulon.frontend.databinding.DialogQrFullscreenBinding;
 import com.dangngulon.frontend.databinding.DialogQrOptionsBinding;
 import com.dangngulon.frontend.core.common.ui.animation.ChatAppAnimation;
@@ -94,6 +95,7 @@ public class FullscreenQRDialogFragment extends DialogFragment {
         );
 
         binding.tvUserNameLarge.setText(userName);
+        AvatarImageLoader.load(binding.ivUserAvatar, null);
 
         generateQr();
         setupAnimations();

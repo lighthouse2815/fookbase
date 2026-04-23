@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.dangngulon.frontend.core.common.usecase.UserSessionUseCase;
-import com.dangngulon.frontend.feature.auth.domain.repository.IAuthRepository;
 import com.dangngulon.frontend.feature.profile.domain.model.UserProfileDetail;
 import com.dangngulon.frontend.feature.profile.domain.model.UserProfileOverview;
 import com.dangngulon.frontend.feature.profile.domain.model.UserProfileSearchResult;
@@ -23,7 +22,6 @@ public class UserProfileViewModel extends ViewModel {
 
     private final UserProfileUseCase userProfileUseCase;
     private final UserSessionUseCase userSessionUseCase;
-    private final IAuthRepository authRepository;
 
     private final MutableLiveData<Result<UserProfileOverview>> myProfileResult = new MutableLiveData<>();
     private final MutableLiveData<Event<Result<UserProfileDetail>>> userProfileResult = new MutableLiveData<>();
@@ -33,12 +31,10 @@ public class UserProfileViewModel extends ViewModel {
     @Inject
     public UserProfileViewModel(
             UserProfileUseCase userProfileUseCase,
-            UserSessionUseCase userSessionUseCase,
-            IAuthRepository authRepository
+            UserSessionUseCase userSessionUseCase
     ) {
         this.userProfileUseCase = userProfileUseCase;
         this.userSessionUseCase = userSessionUseCase;
-        this.authRepository = authRepository;
     }
 
     public LiveData<Result<UserProfileOverview>> getMyProfileResult() {
@@ -89,7 +85,7 @@ public class UserProfileViewModel extends ViewModel {
     public void logout() {
         ViewModelHelper.callFutureEvent(
                 logoutResult,
-                authRepository.logout()
+                userSessionUseCase.logout()
         );
     }
 }

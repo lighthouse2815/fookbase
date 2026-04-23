@@ -48,6 +48,7 @@ export const useMainLayoutData = (): MainLayoutData => {
         id: `friend-request-${request.id}`,
         type: 'FRIEND_REQUEST',
         actorUserId: request.id,
+        actorName,
         requestId: request.requestId,
         message: t('notifications.friendRequestMessage', { name: actorName }),
         createdAt: request.requestedAt ?? new Date().toISOString(),

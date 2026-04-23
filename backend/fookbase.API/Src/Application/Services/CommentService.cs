@@ -230,7 +230,9 @@ public class CommentService : ICommentService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (createdNotification is not null)
         {
-            await _notificationRealtimeService.NotifyCreatedAsync(createdNotification.ToResponseDto(), cancellationToken);
+            await _notificationRealtimeService.NotifyCreatedAsync(
+                createdNotification.ToResponseDto(actorName, author.AvatarUrl),
+                cancellationToken);
         }
 
         return await GetByIdAsync(comment.Id, userId, cancellationToken);
