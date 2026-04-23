@@ -6,7 +6,8 @@ interface PetalConfig {
   left: number;
   size: number;
   duration: number;
-  delay: number;
+  fallDelay: number;
+  swayDelay: number;
   drift: number;
   opacity: number;
   rotation: number;
@@ -21,12 +22,21 @@ const createPetals = (): PetalConfig[] => {
     left: 2 + Math.random() * 96,
     size: 10 + Math.random() * 12,
     duration: 9 + Math.random() * 8,
-    delay: Math.random() * 10,
+    fallDelay: 0,
+    swayDelay: 0,
     drift: -42 + Math.random() * 84,
     opacity: 0.35 + Math.random() * 0.45,
     rotation: Math.random() * 360,
     blur: Math.random() * 0.7,
-  }));
+  })).map((petal) => {
+    const swayDuration = Math.max(2.8, petal.duration * 0.44);
+    return {
+      ...petal,
+      // Negative delays make petals appear mid-flight immediately after mount.
+      fallDelay: -Math.random() * petal.duration,
+      swayDelay: -Math.random() * swayDuration,
+    };
+  });
 };
 
 export const CherryBlossomFall = () => {
@@ -51,7 +61,7 @@ export const CherryBlossomFall = () => {
             filter: `blur(${petal.blur}px)`,
             transform: `translate3d(0,-16vh,0) rotate(${petal.rotation}deg)`,
             animationDuration: `${petal.duration}s, ${Math.max(2.8, petal.duration * 0.44)}s`,
-            animationDelay: `${petal.delay}s, ${petal.delay}s`,
+            animationDelay: `${petal.fallDelay}s, ${petal.swayDelay}s`,
             ['--cherry-drift' as string]: `${petal.drift}px`,
           }}
           aria-hidden
