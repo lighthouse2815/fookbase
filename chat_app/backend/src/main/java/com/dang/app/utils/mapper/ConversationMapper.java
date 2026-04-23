@@ -39,6 +39,8 @@ public class ConversationMapper {
         LocalDateTime timestamp =
                 conversation.getLastMessageAt() != null
                         ? conversation.getLastMessageAt()
+                        : conversation.getUpdatedAt() != null
+                        ? conversation.getUpdatedAt()
                         : conversation.getCreatedAt();
 
         int unreadCount = safeUnreadMap.getOrDefault(conversation.getId(), 0);

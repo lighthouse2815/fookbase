@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.dangngulon.frontend.R;
 import com.dangngulon.frontend.core.common.ui.helpers.AvatarImageLoader;
+import com.dangngulon.frontend.core.common.ui.helpers.TimeFormatter;
 import com.dangngulon.frontend.core.utils.enums.ConversationType;
 import com.dangngulon.frontend.databinding.ItemConversationBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.ConversationUiModel;
@@ -23,6 +24,7 @@ import java.util.Objects;
 
 public class ConversationAdapter extends ListAdapter<ConversationUiModel, ConversationAdapter.ViewHolder> {
     private OnConversationClickListener listener;
+    private String currentUserId;
     private int lastPosition = -1;
 
     public ConversationAdapter() {
@@ -36,6 +38,7 @@ public class ConversationAdapter extends ListAdapter<ConversationUiModel, Conver
             public boolean areContentsTheSame(@NonNull ConversationUiModel oldItem, @NonNull ConversationUiModel newItem) {
                 return Objects.equals(oldItem.getName(), newItem.getName()) &&
                         Objects.equals(oldItem.getAvatarUrl(), newItem.getAvatarUrl()) &&
+                        Objects.equals(oldItem.getLastSenderId(), newItem.getLastSenderId()) &&
                         Objects.equals(oldItem.getLastMessagePreview(), newItem.getLastMessagePreview()) &&
                         Objects.equals(oldItem.getLastSenderName(), newItem.getLastSenderName()) &&
                         Objects.equals(oldItem.getLastMessageAt(), newItem.getLastMessageAt()) &&
@@ -56,6 +59,11 @@ public class ConversationAdapter extends ListAdapter<ConversationUiModel, Conver
         this.listener = listener;
     }
 
+    public void setCurrentUserId(String currentUserId) {
+        this.currentUserId = currentUserId == null ? null : currentUserId.trim();
+        notifyDataSetChanged();
+    }
+
     public void submitConversations(List<ConversationUiModel> conversations) {
         submitList(conversations);
     }
@@ -72,7 +80,7 @@ public class ConversationAdapter extends ListAdapter<ConversationUiModel, Conver
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ConversationUiModel conversation = getItem(position);
-        holder.bind(conversation);
+        holder.bind(conversation, currentUserId);
         setAnimation(holder.itemView, position);
     }
 
@@ -106,23 +114,23 @@ public class ConversationAdapter extends ListAdapter<ConversationUiModel, Conver
         }
 
         @SuppressLint("SetTextI18n")
-        void bind(ConversationUiModel conversation) {
+        void bind(ConversationUiModel conversation, String currentUserId) {
             binding.conversationName.setText(conversation.getName());
-            binding.timestamp.setText(conversation.getLastMessageAt());
+            binding.timestamp.setText(TimeFormatter.formatConversationTimestamp(conversation.getLastMessageAt()));
 
             AvatarImageLoader.load(binding.avatar, conversation.getAvatarUrl());
 
             String preview = conversation.getLastMessagePreview() == null ? "" : conversation.getLastMessagePreview();
+            String senderId = conversation.getLastSenderId();
+            boolean isSentByCurrentUser = hasText(currentUserId) && hasText(senderId) && currentUserId.equals(senderId);
+            String previewText = preview.isEmpty() ? "" : (isSentByCurrentUser ? "B\u1ea1n: " + preview : preview);
+
             if (conversation.getType() == ConversationType.PRIVATE) {
-                if (!preview.isEmpty()) {
-                    binding.lastMessage.setText(preview);
-                }
+                binding.lastMessage.setText(previewText);
                 binding.memberCount.setVisibility(View.GONE);
                 binding.onlineIndicator.setVisibility(View.VISIBLE);
             } else {
-                if (!preview.isEmpty()) {
-                    binding.lastMessage.setText(conversation.getLastSenderName() + ": " + preview);
-                }
+                binding.lastMessage.setText(previewText);
                 binding.memberCount.setText(String.valueOf(conversation.getMemberCount()));
                 binding.memberCount.setVisibility(View.VISIBLE);
                 binding.onlineIndicator.setVisibility(View.GONE);
@@ -147,6 +155,10 @@ public class ConversationAdapter extends ListAdapter<ConversationUiModel, Conver
                 }
                 return true;
             });
+        }
+
+        private boolean hasText(String value) {
+            return value != null && !value.trim().isEmpty();
         }
     }
 }

@@ -72,7 +72,7 @@ public class MessageService {
         boolean hasAttachments = attachmentsRequest != null && !attachmentsRequest.isEmpty();
         MessageType messageType = hasAttachments ? MessageType.ATTACHMENT : MessageType.TEXT;
 
-        Message message = messageRepository.save(
+        Message message = messageRepository.saveAndFlush(
                 Message.builder()
                         .conversation(conversation)
                         .sender(sender)

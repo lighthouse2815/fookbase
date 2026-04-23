@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
@@ -54,6 +55,24 @@ public class TimeFormatter {
         }
     }
 
+    public static String formatConversationTimestamp(String timestamp) {
+        if (timestamp == null || timestamp.trim().isEmpty()) {
+            return "";
+        }
+
+        LocalDateTime dateTime = parseToLocalDateTime(timestamp.trim());
+        if (dateTime == null) {
+            return timestamp;
+        }
+
+        LocalDateTime threshold = LocalDateTime.now().minusHours(24);
+        if (!dateTime.isBefore(threshold)) {
+            return dateTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+        }
+
+        return dateTime.format(DateTimeFormatter.ofPattern("d 'thg' M"));
+    }
+
     public static String formatDate(String isoDate) {
         if (isoDate == null || isoDate.trim().isEmpty()) {
             return "";
@@ -78,6 +97,31 @@ public class TimeFormatter {
                     .format(formatter);
         } catch (Exception ignored) {
             return isoDate;
+        }
+    }
+
+    private static LocalDateTime parseToLocalDateTime(String value) {
+        ZoneId zoneId = ZoneId.systemDefault();
+
+        try {
+            Instant instant = Instant.parse(value);
+            return instant.atZone(zoneId).toLocalDateTime();
+        } catch (Exception ignored) {
+            // fallback below
+        }
+
+        try {
+            return OffsetDateTime.parse(value)
+                    .atZoneSameInstant(zoneId)
+                    .toLocalDateTime();
+        } catch (Exception ignored) {
+            // fallback below
+        }
+
+        try {
+            return LocalDateTime.parse(value);
+        } catch (Exception ignored) {
+            return null;
         }
     }
 }

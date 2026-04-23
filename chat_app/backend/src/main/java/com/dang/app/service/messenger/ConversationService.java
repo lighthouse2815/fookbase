@@ -232,7 +232,10 @@ public class ConversationService {
         conversation.setLastMessageId(lastMessage.getId());
         conversation.setLastMessagePreview(lastMessagePreview);
         conversation.setLastSenderId(lastMessage.getSender().getId());
-        conversation.setLastMessageAt(lastMessage.getCreatedAt());
+        LocalDateTime resolvedLastMessageAt = lastMessage.getCreatedAt() != null
+                ? lastMessage.getCreatedAt()
+                : LocalDateTime.now();
+        conversation.setLastMessageAt(resolvedLastMessageAt);
 
         conversationRepository.save(conversation);
     }
@@ -458,6 +461,10 @@ public class ConversationService {
     private LocalDateTime resolveConversationSortTime(Conversation conversation) {
         if (conversation.getLastMessageAt() != null) {
             return conversation.getLastMessageAt();
+        }
+
+        if (conversation.getUpdatedAt() != null) {
+            return conversation.getUpdatedAt();
         }
 
         if (conversation.getCreatedAt() != null) {

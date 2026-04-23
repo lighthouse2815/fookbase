@@ -140,7 +140,8 @@ public class ChatAppActivity extends AppCompatActivity {
                 } else if (destId == R.id.userProfileFragment
                         || destId == R.id.createGroupFragment
                         || destId == R.id.addFriendFragment
-                        || destId == R.id.friendRequestsFragment) {
+                        || destId == R.id.friendRequestsFragment
+                        || destId == R.id.chatDetailFragment) {
                     currentTabMode = TAB_MODE_NONE;
                     hideHeaderAndBottomNav();
                 }

@@ -68,6 +68,7 @@ public class MessagesFragment extends Fragment {
 
     private void setupRecyclerView() {
         adapter = new ConversationAdapter();
+        adapter.setCurrentUserId(messagesViewModel.getCurrentUserId());
         binding.conversationsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.conversationsRecyclerView.setAdapter(adapter);
 
