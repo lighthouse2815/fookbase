@@ -43,7 +43,7 @@ public class UserService {
             Set<AuthProvider> authProviders
     ) {
         if (userRepository.existsByUsername(username)) {
-            throw new BusinessException(ErrorCode.USERNAME_EXISTS);
+            throw new BusinessException(ErrorCode.PHONENUMBER_EXISTS);
         }
 
         User user = User.builder()
