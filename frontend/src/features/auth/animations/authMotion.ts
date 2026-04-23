@@ -9,23 +9,26 @@ export const AUTH_BASE_TRANSITION: Transition = {
 
 export const AUTH_ROUTE_VARIANTS: Variants = {
   initial: {
-    opacity: 0,
-    y: 18,
-    scale: 0.985,
+    opacity: 0.42,
+    y: 12,
+    scale: 0.992,
+    filter: 'blur(8px)',
   },
   enter: {
     opacity: 1,
     y: 0,
     scale: 1,
+    filter: 'blur(0px)',
     transition: AUTH_BASE_TRANSITION,
   },
   exit: {
-    opacity: 0,
-    y: -14,
-    scale: 0.985,
+    opacity: 0.32,
+    y: -8,
+    scale: 0.992,
+    filter: 'blur(8px)',
     transition: {
-      duration: 0.38,
-      ease: [0.4, 0, 1, 1],
+      duration: 0.34,
+      ease: [0.4, 0, 0.2, 1],
     },
   },
 };

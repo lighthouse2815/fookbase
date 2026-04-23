@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Chrome, Sparkles } from 'lucide-react';
+import { Chrome, Sparkles } from 'lucide-react';
 import { Navigate, Link } from 'react-router-dom';
 
 import { AUTH_FIELD_ITEM_VARIANTS, AUTH_FIELD_STAGGER_VARIANTS } from '@/features/auth/animations/authMotion';
@@ -302,17 +302,6 @@ export const LoginPage = () => {
         )}
       </AnimatePresence>
 
-      {!isOtpStep ? (
-        <div className="mt-4 flex justify-center">
-          <Link
-            className="inline-flex items-center gap-2 text-sm text-slate-200/85 transition hover:text-white"
-            to="/admin/login"
-          >
-            <ArrowLeft size={15} />
-            Switch to admin sign in
-          </Link>
-        </div>
-      ) : null}
     </AuthLayout>
   );
 };
