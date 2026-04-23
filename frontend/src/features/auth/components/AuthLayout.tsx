@@ -7,6 +7,7 @@ import {
   AUTH_HERO_STAGGER_VARIANTS,
 } from '@/features/auth/animations/authMotion';
 import { AuthBackground } from '@/features/auth/components/AuthBackground';
+import { AuthHeroIllustration } from '@/features/auth/components/AuthHeroIllustration';
 import { CherryBlossomFall } from '@/features/auth/components/CherryBlossomFall';
 import type { AuthTone } from '@/features/auth/components/AuthBackground';
 
@@ -74,6 +75,10 @@ export const AuthLayout = ({
               </motion.li>
             ))}
           </ul>
+
+          <motion.div variants={reduceMotion ? undefined : AUTH_HERO_LINE_VARIANTS}>
+            <AuthHeroIllustration tone={tone} />
+          </motion.div>
         </motion.section>
 
         <motion.section

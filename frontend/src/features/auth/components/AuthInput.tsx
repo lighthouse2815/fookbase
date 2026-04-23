@@ -41,11 +41,11 @@ export const AuthInput = ({
       </span>
       <div
         className={clsx(
-          'group flex items-center rounded-2xl border border-white/15 bg-white/[0.04] transition-all duration-300',
+          'group flex items-center rounded-2xl border border-white/20 bg-white/[0.08] backdrop-blur-xl transition-all duration-300',
           toneFocusMap[tone],
           error
             ? 'border-rose-300/60 shadow-[0_0_0_4px_rgba(244,63,94,0.18)]'
-            : 'hover:border-white/30',
+            : 'hover:border-white/35',
         )}
       >
         <input

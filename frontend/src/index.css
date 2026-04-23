@@ -89,6 +89,43 @@ svg {
   }
 }
 
+@keyframes auth-galaxy-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-1.2%, 1.4%, 0) scale(1.02);
+  }
+}
+
+@keyframes auth-galaxy-twinkle {
+  0%,
+  100% {
+    opacity: 0.34;
+  }
+
+  45% {
+    opacity: 0.66;
+  }
+
+  72% {
+    opacity: 0.48;
+  }
+}
+
+.auth-galaxy-stars {
+  pointer-events: none;
+  background-repeat: no-repeat;
+  animation: auth-galaxy-drift 24s ease-in-out infinite, auth-galaxy-twinkle 10s ease-in-out infinite;
+}
+
+.auth-galaxy-stars.auth-galaxy-stars-alt {
+  animation-duration: 32s, 13.5s;
+  animation-direction: alternate, normal;
+}
+
 .auth-cherry-petal {
   position: absolute;
   top: -15vh;
@@ -106,6 +143,12 @@ svg {
 @media (max-width: 640px) {
   .auth-cherry-petal:nth-child(n + 13) {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-galaxy-stars {
+    animation: none;
   }
 }
 
