@@ -1,6 +1,7 @@
 import { Ban } from 'lucide-react';
 
 import { CornerToast } from '@/shared/ui/feedback/CornerToast';
+import { CreatePostBox } from '@/features/post/components/CreatePostBox';
 import { PostCard } from '@/features/post/components/PostCard';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 
@@ -13,6 +14,8 @@ export const ProfilePage = () => {
     isOwnProfile,
     profile,
     personalPosts,
+    isSubmittingPost,
+    createPostError,
     toast,
     showToast,
     isPrimaryActionLoading,
@@ -20,6 +23,7 @@ export const ProfilePage = () => {
     primaryActionMeta,
     friendshipStatus,
     infoItems,
+    handleCreatePost,
     handlePostDeleted,
     handlePrimaryAction,
     handleCancelSentRequest,
@@ -107,6 +111,19 @@ export const ProfilePage = () => {
         </aside>
 
         <section className={`${postColumnClass} min-w-0 space-y-4`}>
+          {isOwnProfile ? (
+            <>
+              <CreatePostBox
+                currentUser={currentUser}
+                isSubmitting={isSubmittingPost}
+                onCreatePost={handleCreatePost}
+              />
+              {createPostError ? (
+                <p className="text-sm text-rose-600 dark:text-rose-400">{createPostError}</p>
+              ) : null}
+            </>
+          ) : null}
+
           {personalPosts.map((post) => (
             <PostCard
               key={post.id}

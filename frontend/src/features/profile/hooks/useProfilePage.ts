@@ -7,8 +7,9 @@ import type { MainLayoutOutletContext } from '@/shared/types/layout';
 import { friendshipService } from '@/features/friendship/api/service/friendshipService';
 import { postService } from '@/features/post/api/service/postService';
 import { profileService } from '@/features/profile/api/service/profileService';
-import type { Post } from '@/features/post/types/contracts';
+import type { CreatePostDraft, Post } from '@/features/post/types/contracts';
 import { getApiErrorMessage } from '@/shared/api/error';
+import { cloudinaryService } from '@/shared/services/cloudinary/cloudinaryService';
 
 import type { Profile, UseProfilePageReturn } from '@/features/profile/types/hooks';
 import type { FriendshipStatusCode, ProfileMenuAction } from '@/features/profile/types/pages';
@@ -30,6 +31,8 @@ export const useProfilePage = (): UseProfilePageReturn => {
   const isOwnProfile = targetUserId === currentUser.id;
   const [profile, setProfile] = useState<Profile>(() => createFallbackProfile(targetUserId, currentUser));
   const [personalPosts, setPersonalPosts] = useState<Post[]>([]);
+  const [isSubmittingPost, setIsSubmittingPost] = useState(false);
+  const [createPostError, setCreatePostError] = useState<string | null>(null);
   const { toast, showToast } = useCornerToast();
   const [isPrimaryActionLoading, setIsPrimaryActionLoading] = useState(false);
   const [menuActionLoading, setMenuActionLoading] = useState<ProfileMenuAction | null>(null);
@@ -148,6 +151,8 @@ export const useProfilePage = (): UseProfilePageReturn => {
   useEffect(() => {
     setIsPrimaryActionLoading(false);
     setMenuActionLoading(null);
+    setCreatePostError(null);
+    setIsSubmittingPost(false);
   }, [targetUserId]);
 
   useEffect(() => {
@@ -168,6 +173,49 @@ export const useProfilePage = (): UseProfilePageReturn => {
 
     void loadPersonalPosts();
   }, [friendshipStatus, isBannedProfile, isOwnProfile, targetUserId]);
+
+  const handleCreatePost = async (draft: CreatePostDraft) => {
+    if (!isOwnProfile) {
+      return false;
+    }
+
+    setIsSubmittingPost(true);
+    setCreatePostError(null);
+
+    try {
+      let uploadedVideoUrl: string | undefined;
+      let uploadedImageUrls: string[] = [];
+
+      if (draft.videoFile) {
+        uploadedVideoUrl = await cloudinaryService.uploadMedia(draft.videoFile);
+      }
+
+      if (draft.imageFiles && draft.imageFiles.length > 0) {
+        uploadedImageUrls = await Promise.all(
+          draft.imageFiles.map((file) => cloudinaryService.uploadMedia(file)),
+        );
+      }
+
+      const mediaUrls = uploadedVideoUrl
+        ? [uploadedVideoUrl]
+        : uploadedImageUrls.length > 0
+          ? uploadedImageUrls
+          : undefined;
+
+      const created = await postService.createPost({
+        content: draft.content,
+        imageUrls: mediaUrls,
+      });
+
+      setPersonalPosts((previous) => [created, ...previous]);
+      return true;
+    } catch (error) {
+      setCreatePostError(getApiErrorMessage(error, 'Unable to create post.'));
+      return false;
+    } finally {
+      setIsSubmittingPost(false);
+    }
+  };
 
   const handlePostDeleted = (postId: string) => {
     setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));
@@ -348,6 +396,8 @@ export const useProfilePage = (): UseProfilePageReturn => {
     isOwnProfile,
     profile,
     personalPosts,
+    isSubmittingPost,
+    createPostError,
     toast,
     showToast,
     isPrimaryActionLoading,
@@ -355,6 +405,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
     primaryActionMeta,
     friendshipStatus,
     infoItems,
+    handleCreatePost,
     handlePostDeleted,
     handlePrimaryAction,
     handleCancelSentRequest,

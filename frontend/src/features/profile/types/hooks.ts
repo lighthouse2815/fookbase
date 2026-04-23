@@ -1,6 +1,6 @@
 ﻿import type { TFunction } from 'i18next';
 
-import type { Post } from '@/features/post/types/contracts';
+import type { CreatePostDraft, Post } from '@/features/post/types/contracts';
 import type { Profile } from '@/features/profile/types/contracts';
 import type { MainLayoutOutletContext } from '@/shared/types/layout';
 
@@ -27,6 +27,8 @@ export interface UseProfilePageReturn {
   isOwnProfile: boolean;
   profile: Profile;
   personalPosts: Post[];
+  isSubmittingPost: boolean;
+  createPostError: string | null;
   toast: { message: string; type: 'success' | 'error' } | null;
   showToast: (message: string, type?: 'success' | 'error', durationMs?: number) => void;
   isPrimaryActionLoading: boolean;
@@ -34,6 +36,7 @@ export interface UseProfilePageReturn {
   primaryActionMeta: ProfilePrimaryActionMeta;
   friendshipStatus: FriendshipStatusCode;
   infoItems: ProfileInfoItem[];
+  handleCreatePost: (draft: CreatePostDraft) => Promise<boolean>;
   handlePostDeleted: (postId: string) => void;
   handlePrimaryAction: () => Promise<void>;
   handleCancelSentRequest: () => Promise<void>;
