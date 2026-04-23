@@ -41,11 +41,15 @@ const createPetals = (): PetalConfig[] => {
   });
 };
 
-export const CherryBlossomFall = () => {
+interface CherryBlossomFallProps {
+  enabled?: boolean;
+}
+
+export const CherryBlossomFall = ({ enabled = true }: CherryBlossomFallProps) => {
   const reduceMotion = useReducedMotion();
   const petals = useMemo(() => createPetals(), []);
 
-  if (reduceMotion) {
+  if (!enabled || reduceMotion) {
     return null;
   }
 

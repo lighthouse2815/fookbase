@@ -5,6 +5,7 @@ export type AuthTone = 'user' | 'register' | 'recovery' | 'admin';
 
 interface AuthBackgroundProps {
   tone?: AuthTone;
+  compact?: boolean;
 }
 
 const STAR_PRIMARY_POSITIONS: Array<[number, number]> = [
@@ -114,11 +115,26 @@ const toneStyles: Record<
   },
 };
 
-export const AuthBackground = ({ tone = 'user' }: AuthBackgroundProps) => {
+export const AuthBackground = ({ tone = 'user', compact = false }: AuthBackgroundProps) => {
   const reduceMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion || compact;
   const style = toneStyles[tone];
-  const primaryStars = buildStarLayer(STAR_PRIMARY_POSITIONS, style.starPrimaryColors, 1.25, 2.2);
-  const secondaryStars = buildStarLayer(STAR_SECONDARY_POSITIONS, style.starSecondaryColors, 1.08, 2);
+  const primaryStars = compact
+    ? ''
+    : buildStarLayer(STAR_PRIMARY_POSITIONS, style.starPrimaryColors, 1.25, 2.2);
+  const secondaryStars = compact
+    ? ''
+    : buildStarLayer(STAR_SECONDARY_POSITIONS, style.starSecondaryColors, 1.08, 2);
+
+  if (compact) {
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className={clsx('absolute inset-0 bg-gradient-to-br', style.grain)} />
+        <div className="absolute inset-0" style={{ backgroundImage: style.nebula }} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.08),transparent_42%)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -130,7 +146,7 @@ export const AuthBackground = ({ tone = 'user' }: AuthBackgroundProps) => {
           style.glowA,
         )}
         animate={
-          reduceMotion
+          shouldReduceMotion
             ? undefined
             : {
                 x: [0, 18, 0],
@@ -151,7 +167,7 @@ export const AuthBackground = ({ tone = 'user' }: AuthBackgroundProps) => {
           style.glowB,
         )}
         animate={
-          reduceMotion
+          shouldReduceMotion
             ? undefined
             : {
                 x: [0, -20, 0],
@@ -170,14 +186,14 @@ export const AuthBackground = ({ tone = 'user' }: AuthBackgroundProps) => {
         className="auth-galaxy-stars absolute inset-[-6%] opacity-[0.72]"
         style={{
           backgroundImage: primaryStars,
-          animation: reduceMotion ? 'none' : undefined,
+          animation: shouldReduceMotion ? 'none' : undefined,
         }}
       />
       <div
         className="auth-galaxy-stars auth-galaxy-stars-alt absolute inset-[-12%] opacity-[0.58]"
         style={{
           backgroundImage: secondaryStars,
-          animation: reduceMotion ? 'none' : undefined,
+          animation: shouldReduceMotion ? 'none' : undefined,
         }}
       />
 

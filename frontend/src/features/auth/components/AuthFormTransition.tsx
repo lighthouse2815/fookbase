@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 import { AUTH_FORM_CONTENT_VARIANTS } from '@/features/auth/animations/authMotion';
+import { useAuthMobileViewport } from '@/features/auth/hooks/useAuthMobileViewport';
 
 interface AuthFormTransitionProps {
   transitionKey: string;
@@ -15,16 +16,19 @@ export const AuthFormTransition = ({
   className,
 }: AuthFormTransitionProps) => {
   const reduceMotion = useReducedMotion();
+  const isMobileViewport = useAuthMobileViewport();
+  const shouldReduceMotion = reduceMotion || isMobileViewport;
 
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={transitionKey}
         layout
-        variants={reduceMotion ? undefined : AUTH_FORM_CONTENT_VARIANTS}
-        initial={reduceMotion ? false : 'initial'}
-        animate={reduceMotion ? undefined : 'animate'}
-        exit={reduceMotion ? undefined : 'exit'}
+        transition={shouldReduceMotion ? { duration: 0 } : undefined}
+        variants={shouldReduceMotion ? undefined : AUTH_FORM_CONTENT_VARIANTS}
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate={shouldReduceMotion ? undefined : 'animate'}
+        exit={shouldReduceMotion ? undefined : 'exit'}
         className={className}
       >
         {children}

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 import type { AuthTone } from '@/features/auth/components/AuthBackground';
+import { useAuthMobileViewport } from '@/features/auth/hooks/useAuthMobileViewport';
 import {
   AUTH_CARD_HEADER_VARIANTS,
   AUTH_CARD_LAYOUT_TRANSITION,
@@ -43,31 +44,37 @@ export const AuthCard = ({
   layoutId = 'auth-main-card',
 }: AuthCardProps) => {
   const reduceMotion = useReducedMotion();
+  const isMobileViewport = useAuthMobileViewport();
+  const shouldReduceMotion = reduceMotion || isMobileViewport;
 
   return (
     <motion.section
       layout
       layoutId={layoutId}
-      transition={AUTH_CARD_LAYOUT_TRANSITION}
-      variants={reduceMotion ? undefined : AUTH_CARD_VARIANTS}
-      initial={reduceMotion ? false : 'hidden'}
-      animate={reduceMotion ? undefined : 'visible'}
+      transition={shouldReduceMotion ? { duration: 0 } : AUTH_CARD_LAYOUT_TRANSITION}
+      variants={shouldReduceMotion ? undefined : AUTH_CARD_VARIANTS}
+      initial={shouldReduceMotion ? false : 'hidden'}
+      animate={shouldReduceMotion ? undefined : 'visible'}
       className={clsx(
-        'relative overflow-hidden rounded-[2rem] border bg-slate-950/55 p-5 backdrop-blur-2xl sm:p-8',
+        'relative overflow-hidden rounded-[2rem] border bg-slate-950/55 p-5 backdrop-blur-2xl max-md:rounded-3xl max-md:bg-slate-950/80 max-md:backdrop-blur-md max-md:shadow-none sm:p-8',
         toneBorderMap[tone],
       )}
     >
-      <div className={clsx('pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b', toneGlowMap[tone])} />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15),transparent_48%)]" />
+      {!isMobileViewport ? (
+        <>
+          <div className={clsx('pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b', toneGlowMap[tone])} />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15),transparent_48%)]" />
+        </>
+      ) : null}
 
       <div className="relative">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={headerKey ?? `${title}-${subtitle}`}
-            variants={reduceMotion ? undefined : AUTH_CARD_HEADER_VARIANTS}
-            initial={reduceMotion ? false : 'initial'}
-            animate={reduceMotion ? undefined : 'animate'}
-            exit={reduceMotion ? undefined : 'exit'}
+            variants={shouldReduceMotion ? undefined : AUTH_CARD_HEADER_VARIANTS}
+            initial={shouldReduceMotion ? false : 'initial'}
+            animate={shouldReduceMotion ? undefined : 'animate'}
+            exit={shouldReduceMotion ? undefined : 'exit'}
           >
             <h2 className="text-2xl font-semibold text-white sm:text-[1.72rem]">{title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-200/75">{subtitle}</p>

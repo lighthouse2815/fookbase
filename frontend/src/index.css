@@ -146,6 +146,13 @@ svg {
   }
 }
 
+@media (max-width: 767px) {
+  .auth-galaxy-stars,
+  .auth-cherry-petal {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-galaxy-stars {
     animation: none;
