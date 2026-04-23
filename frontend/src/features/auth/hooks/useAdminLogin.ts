@@ -15,7 +15,7 @@ export const useAdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { loginAdmin, isAuthenticated, isAdmin } = useAuth();
-  const { playSuccessTransition } = useAuthSuccessTransition();
+  const { playSuccessTransition, isTransitioning } = useAuthSuccessTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
 
@@ -55,6 +55,7 @@ export const useAdminLogin = () => {
     t,
     isAuthenticated,
     isAdmin,
+    isTransitioning,
     showPassword,
     setShowPassword,
     apiError,

@@ -35,10 +35,10 @@ export const SuccessTransitionOverlay = ({
       {isActive ? (
         <motion.div
           key="auth-success-overlay"
-          initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+          initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0.1 : 0.42, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.24, ease: [0.4, 0, 0.2, 1] }}
           className="pointer-events-none fixed inset-0 z-[120] overflow-hidden"
         >
           <div className={clsx('absolute inset-0 bg-gradient-to-br', style.base)} />

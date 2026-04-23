@@ -28,7 +28,7 @@ export const useRegister = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { register: registerUser, authWithGoogle, isAuthenticated } = useAuth();
-  const { playSuccessTransition } = useAuthSuccessTransition();
+  const { playSuccessTransition, isTransitioning } = useAuthSuccessTransition();
 
   const [step, setStep] = useState<RegisterStep>('register');
   const [registeredEmail, setRegisteredEmail] = useState<string>('');
@@ -179,6 +179,7 @@ export const useRegister = () => {
   return {
     t,
     isAuthenticated,
+    isTransitioning,
     step,
     registeredEmail,
     showPassword,

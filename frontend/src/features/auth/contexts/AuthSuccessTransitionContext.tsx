@@ -13,6 +13,7 @@ interface PlaySuccessTransitionParams {
 
 interface AuthSuccessTransitionContextValue {
   playSuccessTransition: (params: PlaySuccessTransitionParams) => void;
+  isTransitioning: boolean;
   landingTone: AuthTransitionTone | null;
   clearLandingTone: () => void;
 }
@@ -27,6 +28,7 @@ export const AuthSuccessTransitionProvider = ({
   children,
 }: AuthSuccessTransitionProviderProps) => {
   const [isOverlayActive, setIsOverlayActive] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [overlayTone, setOverlayTone] = useState<AuthTransitionTone>('user');
   const [landingTone, setLandingTone] = useState<AuthTransitionTone | null>(null);
   const timeoutRef = useRef<number[]>([]);
@@ -51,11 +53,13 @@ export const AuthSuccessTransitionProvider = ({
       clearTimers();
 
       if (prefersReducedMotion) {
+        setIsTransitioning(false);
         setLandingTone(tone);
         onNavigate();
         return;
       }
 
+      setIsTransitioning(true);
       setOverlayTone(tone);
       setIsOverlayActive(true);
 
@@ -66,6 +70,7 @@ export const AuthSuccessTransitionProvider = ({
 
       const closeTimeout = window.setTimeout(() => {
         setIsOverlayActive(false);
+        setIsTransitioning(false);
       }, 1560);
 
       timeoutRef.current.push(navigateTimeout, closeTimeout);
@@ -80,10 +85,11 @@ export const AuthSuccessTransitionProvider = ({
   const value = useMemo(
     () => ({
       playSuccessTransition,
+      isTransitioning,
       landingTone,
       clearLandingTone,
     }),
-    [clearLandingTone, landingTone, playSuccessTransition],
+    [clearLandingTone, isTransitioning, landingTone, playSuccessTransition],
   );
 
   return (

@@ -24,7 +24,7 @@ export const useLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, authWithGoogle, isAuthenticated } = useAuth();
-  const { playSuccessTransition } = useAuthSuccessTransition();
+  const { playSuccessTransition, isTransitioning } = useAuthSuccessTransition();
   const locationState = location.state as LoginLocationState | null;
 
   const [step, setStep] = useState<LoginStep>('login');
@@ -187,6 +187,7 @@ export const useLogin = () => {
   return {
     t,
     isAuthenticated,
+    isTransitioning,
     step,
     locationState,
     destination,

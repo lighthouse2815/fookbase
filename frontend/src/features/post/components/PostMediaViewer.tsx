@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { WheelEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { MediaKind } from '@/features/post/utils/media';
 
@@ -30,11 +31,11 @@ export const PostMediaViewer = ({
   onNext,
   onWheel,
 }: PostMediaViewerProps) => {
-  if (!isOpen || !activeMediaUrl) {
+  if (!isOpen || !activeMediaUrl || typeof document === 'undefined') {
     return null;
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
       <button
         type="button"
@@ -99,6 +100,7 @@ export const PostMediaViewer = ({
           <X size={18} />
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

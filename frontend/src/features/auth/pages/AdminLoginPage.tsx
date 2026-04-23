@@ -17,6 +17,7 @@ export const AdminLoginPage = () => {
     t,
     isAuthenticated,
     isAdmin,
+    isTransitioning,
     showPassword,
     setShowPassword,
     apiError,
@@ -28,11 +29,11 @@ export const AdminLoginPage = () => {
     onSubmit,
   } = useAdminLogin();
 
-  if (isAuthenticated && isAdmin) {
+  if (isAuthenticated && isAdmin && !isTransitioning) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  if (isAuthenticated && !isAdmin) {
+  if (isAuthenticated && !isAdmin && !isTransitioning) {
     return <Navigate to="/" replace />;
   }
 

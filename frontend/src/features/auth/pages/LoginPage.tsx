@@ -16,6 +16,7 @@ export const LoginPage = () => {
   const {
     t,
     isAuthenticated,
+    isTransitioning,
     step,
     locationState,
     apiError,
@@ -37,7 +38,7 @@ export const LoginPage = () => {
     onSubmitGoogle,
   } = useLogin();
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !isTransitioning) {
     return <Navigate to="/" replace />;
   }
 

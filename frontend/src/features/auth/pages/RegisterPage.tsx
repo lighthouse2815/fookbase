@@ -16,6 +16,7 @@ export const RegisterPage = () => {
   const {
     t,
     isAuthenticated,
+    isTransitioning,
     step,
     registeredEmail,
     showPassword,
@@ -40,7 +41,7 @@ export const RegisterPage = () => {
     onSubmitGoogle,
   } = useRegister();
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !isTransitioning) {
     return <Navigate to="/" replace />;
   }
 
