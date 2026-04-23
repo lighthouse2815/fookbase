@@ -9,6 +9,8 @@ import com.dangngulon.frontend.core.common.result.AppResult;
 import com.dangngulon.frontend.core.common.usecase.UserSessionUseCase;
 import com.dangngulon.frontend.core.common.viewmodel.helpers.ViewModelHelper;
 import com.dangngulon.frontend.core.common.viewmodel.state.Result;
+import com.dangngulon.frontend.core.utils.enums.AttachmentType;
+import com.dangngulon.frontend.feature.zola.domain.model.AttachmentCommand;
 import com.dangngulon.frontend.feature.zola.domain.usecase.ChatDetailUseCase;
 import com.dangngulon.frontend.feature.zola.presentation.mapper.ZolaUiMapper;
 import com.dangngulon.frontend.feature.zola.presentation.model.AttachmentUiModel;
@@ -16,7 +18,9 @@ import com.dangngulon.frontend.feature.zola.presentation.model.MessageCursorPage
 import com.dangngulon.frontend.feature.zola.presentation.model.MessageUiModel;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
@@ -134,18 +138,112 @@ public class ChatDetailViewModel extends ViewModel {
     }
 
     public boolean sendMessageRealTime(String content) {
+        return sendMessageRealTime(content, null);
+    }
+
+    public boolean sendMessageRealTime(String content, List<AttachmentUiModel> attachments) {
         if (currentConversationId == null) {
             sendMessageResult.setValue(Result.error("Conversation ID not set"));
             return false;
         }
 
-        AppResult<Void> result = chatDetailUseCase.sendRealTime(currentConversationId, content, null);
+        AppResult<Void> result = chatDetailUseCase.sendRealTime(
+                currentConversationId,
+                content,
+                ZolaUiMapper.toAttachmentCommands(attachments)
+        );
         if (result instanceof AppResult.Error<Void> error) {
             sendMessageResult.setValue(Result.error(error.getError().getMessage()));
             return false;
         }
 
         return true;
+    }
+
+    public CompletableFuture<AppResult<Void>> sendAttachmentMessage(
+            byte[] fileBytes,
+            String fileName,
+            String contentType,
+            AttachmentType attachmentType
+    ) {
+        if (currentConversationId == null) {
+            return CompletableFuture.completedFuture(
+                    AppResult.error(new AppError("Conversation ID not set"))
+            );
+        }
+
+        if (fileBytes == null || fileBytes.length == 0) {
+            return CompletableFuture.completedFuture(
+                    AppResult.error(new AppError("File content is empty"))
+            );
+        }
+
+        String safeFileName = (fileName == null || fileName.trim().isEmpty())
+                ? "upload_" + System.currentTimeMillis()
+                : fileName.trim();
+
+        String safeContentType = (contentType == null || contentType.trim().isEmpty())
+                ? "application/octet-stream"
+                : contentType.trim();
+
+        return chatDetailUseCase.uploadAttachment(safeFileName, safeContentType, fileBytes)
+                .thenApply(uploadResult -> {
+                    if (uploadResult instanceof AppResult.Error<String> uploadError) {
+                        return AppResult.error(uploadError.getError());
+                    }
+
+                    String fileUrl = null;
+                    if (uploadResult instanceof AppResult.Success<String> success) {
+                        fileUrl = success.getData();
+                    }
+
+                    if (fileUrl == null || fileUrl.trim().isEmpty()) {
+                        return AppResult.error(new AppError("Uploaded URL is empty"));
+                    }
+
+                    List<AttachmentCommand> attachmentCommands = new ArrayList<>();
+                    attachmentCommands.add(new AttachmentCommand(
+                            fileUrl,
+                            safeFileName,
+                            attachmentType,
+                            (long) fileBytes.length,
+                            safeContentType
+                    ));
+
+                    AppResult<Void> sendResult = chatDetailUseCase.sendRealTime(
+                            currentConversationId,
+                            null,
+                            attachmentCommands
+                    );
+
+                    if (sendResult instanceof AppResult.Error<Void> sendError) {
+                        return AppResult.error(sendError.getError());
+                    }
+
+                    return AppResult.success(null);
+                });
+    }
+
+    public CompletableFuture<AppResult<String>> uploadAttachment(
+            byte[] fileBytes,
+            String fileName,
+            String contentType
+    ) {
+        if (fileBytes == null || fileBytes.length == 0) {
+            return CompletableFuture.completedFuture(
+                    AppResult.error(new AppError("File content is empty"))
+            );
+        }
+
+        String safeFileName = (fileName == null || fileName.trim().isEmpty())
+                ? "upload_" + System.currentTimeMillis()
+                : fileName.trim();
+
+        String safeContentType = (contentType == null || contentType.trim().isEmpty())
+                ? "application/octet-stream"
+                : contentType.trim();
+
+        return chatDetailUseCase.uploadAttachment(safeFileName, safeContentType, fileBytes);
     }
 
     public void setCurrentMessages(MessageCursorPageUiModel messages) {

@@ -61,6 +61,8 @@ cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:}
   api-key: ${CLOUDINARY_API_KEY:}
   api-secret: ${CLOUDINARY_API_SECRET:}
+  upload-preset: ${CLOUDINARY_UPLOAD_PRESET:}
+  upload-folder: ${CLOUDINARY_UPLOAD_FOLDER:chat_images}
 
 google:
   oauth:
@@ -78,7 +80,6 @@ app:
       - "http://localhost:*"
       - "http://127.0.0.1:*"
       - "http://192.168.1.*:*"
-
 
 
 

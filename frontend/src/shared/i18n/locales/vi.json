@@ -19,7 +19,7 @@
     "switch": "Đổi giao diện"
   },
   "nav": {
-    "searchPlaceholder": "Tìm kiếm InteractHub",
+    "searchPlaceholder": "Tìm kiếm Footbase",
     "home": "Trang chủ",
     "friends": "Bạn bè",
     "messages": "Tin nhắn",
@@ -563,7 +563,7 @@
   },
   "auth": {
     "loginTitle": "Chào mừng quay lại",
-    "loginSubtitle": "Đăng nhập để tiếp tục cùng InteractHub",
+    "loginSubtitle": "Đăng nhập để tiếp tục cùng Footbase",
     "loginEyebrowWelcome": "Chào mừng trở lại",
     "loginEyebrowVerifyEmail": "Xác minh email",
     "loginHighlightFast": "Đăng nhập nhanh và an toàn",

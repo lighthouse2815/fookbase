@@ -3,13 +3,18 @@ package com.dangngulon.frontend.feature.zola.presentation.ui.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.dangngulon.frontend.R;
 import com.dangngulon.frontend.core.common.ui.helpers.TimeFormatter;
+import com.dangngulon.frontend.core.utils.enums.AttachmentType;
 import com.dangngulon.frontend.databinding.ItemChatMessageReceivedBinding;
 import com.dangngulon.frontend.databinding.ItemChatMessageSentBinding;
 import com.dangngulon.frontend.feature.zola.presentation.model.AttachmentUiModel;
@@ -47,8 +52,6 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
         void onMessageClick(MessageUiModel message);
 
         void onMessageLongClick(MessageUiModel message);
-
-        void onAttachmentClick(AttachmentUiModel attachment);
     }
 
     public void setOnMessageClickListener(OnMessageClickListener listener) {
@@ -60,17 +63,48 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
     }
 
     public void submitMessages(List<MessageUiModel> messages) {
-        submitList(messages);
+        submitMessages(messages, null);
+    }
+
+    public void submitMessages(List<MessageUiModel> messages, Runnable onCommitted) {
+        submitList(messages, () -> {
+            notifyDataSetChanged();
+            if (onCommitted != null) {
+                onCommitted.run();
+            }
+        });
     }
 
     public void add(MessageUiModel message) {
+        add(message, null);
+    }
+
+    public void add(MessageUiModel message, Runnable onCommitted) {
         if (message == null) {
             return;
         }
 
         List<MessageUiModel> newList = new ArrayList<>(getCurrentList());
         newList.add(message);
-        submitList(newList);
+        int previousLastIndex = newList.size() - 2;
+        submitList(newList, () -> {
+            if (previousLastIndex >= 0) {
+                notifyItemChanged(previousLastIndex);
+            }
+
+            if (onCommitted != null) {
+                onCommitted.run();
+            }
+        });
+    }
+
+    @Nullable
+    public MessageUiModel getMessageAt(int position) {
+        if (position < 0 || position >= getCurrentList().size()) {
+            return null;
+        }
+
+        return getCurrentList().get(position);
     }
 
     @Override
@@ -97,7 +131,83 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(getItem(position));
+        holder.bind(getItem(position), shouldShowMessageTime(position));
+    }
+
+    private boolean shouldShowMessageTime(int position) {
+        MessageUiModel current = getItem(position);
+        if (current == null || current.getCreatedAt() == null) {
+            return false;
+        }
+
+        int nextPosition = position + 1;
+        if (nextPosition >= getItemCount()) {
+            return true;
+        }
+
+        MessageUiModel next = getItem(nextPosition);
+        if (next == null) {
+            return true;
+        }
+
+        if (!Objects.equals(current.getSenderId(), next.getSenderId())) {
+            return true;
+        }
+
+        return !TimeFormatter.isSameLocalDate(current.getCreatedAt(), next.getCreatedAt());
+    }
+
+    @NonNull
+    private static String resolveDisplayContent(@NonNull MessageUiModel message) {
+        String content = message.getContent();
+        if (!TextUtils.isEmpty(content)) {
+            return content;
+        }
+
+        List<AttachmentUiModel> attachments = message.getAttachments();
+        if (attachments == null || attachments.isEmpty()) {
+            return "";
+        }
+
+        AttachmentUiModel firstAttachment = attachments.get(0);
+        if (firstAttachment == null) {
+            return "";
+        }
+
+        if (firstAttachment.getType() == null) {
+            return "[File]";
+        }
+
+        return switch (firstAttachment.getType()) {
+            case IMAGE -> "[Image]";
+            case AUDIO -> "[Voice]";
+            case VIDEO -> "[Video]";
+            case FILE -> {
+                String fileName = firstAttachment.getFileName();
+                yield TextUtils.isEmpty(fileName) ? "[File]" : "[File] " + fileName;
+            }
+        };
+    }
+
+    @NonNull
+    public static List<AttachmentUiModel> getImageAttachments(@NonNull MessageUiModel message) {
+        List<AttachmentUiModel> attachments = message.getAttachments();
+        if (attachments == null || attachments.isEmpty()) {
+            return List.of();
+        }
+
+        List<AttachmentUiModel> imageAttachments = new ArrayList<>();
+        for (AttachmentUiModel attachment : attachments) {
+            if (attachment == null) {
+                continue;
+            }
+
+            if (attachment.getType() == AttachmentType.IMAGE && !TextUtils.isEmpty(attachment.getUrl())) {
+                imageAttachments.add(attachment);
+            }
+        }
+
+        return imageAttachments;
     }
 
     public abstract static class ViewHolder extends RecyclerView.ViewHolder {
@@ -108,7 +218,7 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
             this.listener = listener;
         }
 
-        public abstract void bind(MessageUiModel message);
+        public abstract void bind(MessageUiModel message, boolean showTime);
     }
 
     public static class SentMessageViewHolder extends ViewHolder {
@@ -120,15 +230,50 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
         }
 
         @Override
-        public void bind(MessageUiModel message) {
-            if (message.getContent() != null && !message.getContent().isEmpty()) {
-                binding.txtMessageSent.setText(message.getContent());
+        public void bind(MessageUiModel message, boolean showTime) {
+            List<AttachmentUiModel> imageAttachments = getImageAttachments(message);
+            if (!imageAttachments.isEmpty()) {
+                AttachmentUiModel firstImageAttachment = imageAttachments.get(0);
+                binding.layoutAttachmentSent.setVisibility(View.VISIBLE);
+                Glide.with(binding.imgAttachmentSent)
+                        .load(firstImageAttachment.getUrl())
+                        .placeholder(R.drawable.default_avatar)
+                        .error(R.drawable.default_avatar)
+                        .into(binding.imgAttachmentSent);
+
+                int imageCount = imageAttachments.size();
+                if (imageCount > 1) {
+                    binding.txtAttachmentCountSent.setText(itemView.getContext()
+                            .getString(R.string.chat_detail_image_count_format, imageCount));
+                    binding.txtAttachmentCountSent.setVisibility(View.VISIBLE);
+                } else {
+                    binding.txtAttachmentCountSent.setVisibility(View.GONE);
+                }
+
+                binding.layoutAttachmentSent.setOnClickListener(v -> {
+                    if (listener != null) {
+                        listener.onMessageClick(message);
+                    }
+                });
+            } else {
+                binding.layoutAttachmentSent.setVisibility(View.GONE);
+                binding.txtAttachmentCountSent.setVisibility(View.GONE);
+                binding.layoutAttachmentSent.setOnClickListener(null);
+            }
+
+            String messageText = message.getContent();
+            String displayContent = !TextUtils.isEmpty(messageText)
+                    ? messageText
+                    : (imageAttachments.isEmpty() ? resolveDisplayContent(message) : "");
+
+            if (!displayContent.isEmpty()) {
+                binding.txtMessageSent.setText(displayContent);
                 binding.txtMessageSent.setVisibility(View.VISIBLE);
             } else {
                 binding.txtMessageSent.setVisibility(View.GONE);
             }
 
-            if (message.getCreatedAt() != null) {
+            if (showTime && message.getCreatedAt() != null) {
                 binding.txtTimeSent.setText(TimeFormatter.formatTimestamp(message.getCreatedAt()));
                 binding.txtTimeSent.setVisibility(View.VISIBLE);
             } else {
@@ -159,15 +304,50 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
         }
 
         @Override
-        public void bind(MessageUiModel message) {
-            if (message.getContent() != null && !message.getContent().isEmpty()) {
-                binding.txtMessageReceived.setText(message.getContent());
+        public void bind(MessageUiModel message, boolean showTime) {
+            List<AttachmentUiModel> imageAttachments = getImageAttachments(message);
+            if (!imageAttachments.isEmpty()) {
+                AttachmentUiModel firstImageAttachment = imageAttachments.get(0);
+                binding.layoutAttachmentReceived.setVisibility(View.VISIBLE);
+                Glide.with(binding.imgAttachmentReceived)
+                        .load(firstImageAttachment.getUrl())
+                        .placeholder(R.drawable.default_avatar)
+                        .error(R.drawable.default_avatar)
+                        .into(binding.imgAttachmentReceived);
+
+                int imageCount = imageAttachments.size();
+                if (imageCount > 1) {
+                    binding.txtAttachmentCountReceived.setText(itemView.getContext()
+                            .getString(R.string.chat_detail_image_count_format, imageCount));
+                    binding.txtAttachmentCountReceived.setVisibility(View.VISIBLE);
+                } else {
+                    binding.txtAttachmentCountReceived.setVisibility(View.GONE);
+                }
+
+                binding.layoutAttachmentReceived.setOnClickListener(v -> {
+                    if (listener != null) {
+                        listener.onMessageClick(message);
+                    }
+                });
+            } else {
+                binding.layoutAttachmentReceived.setVisibility(View.GONE);
+                binding.txtAttachmentCountReceived.setVisibility(View.GONE);
+                binding.layoutAttachmentReceived.setOnClickListener(null);
+            }
+
+            String messageText = message.getContent();
+            String displayContent = !TextUtils.isEmpty(messageText)
+                    ? messageText
+                    : (imageAttachments.isEmpty() ? resolveDisplayContent(message) : "");
+
+            if (!displayContent.isEmpty()) {
+                binding.txtMessageReceived.setText(displayContent);
                 binding.txtMessageReceived.setVisibility(View.VISIBLE);
             } else {
                 binding.txtMessageReceived.setVisibility(View.GONE);
             }
 
-            if (message.getCreatedAt() != null) {
+            if (showTime && message.getCreatedAt() != null) {
                 binding.txtTimeReceived.setText(TimeFormatter.formatTimestamp(message.getCreatedAt()));
                 binding.txtTimeReceived.setVisibility(View.VISIBLE);
             } else {

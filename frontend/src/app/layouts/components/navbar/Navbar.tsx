@@ -45,8 +45,11 @@ export const Navbar = (props: NavbarProps) => {
       <div className="mx-auto max-w-[1360px] px-2 sm:px-3 md:px-4 lg:px-6">
         <div className="flex h-14 items-center justify-between sm:h-16">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <Link to="/" className="rounded-xl bg-brand-600 px-3 py-1.5 text-base font-bold text-white sm:text-lg">
-              IH
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-sm transition hover:opacity-90 dark:border-slate-700 dark:bg-slate-900"
+            >
+              <img src="/logo.png" alt={t('app.name')} className="h-7 w-7 object-contain sm:h-8 sm:w-8" />
             </Link>
             <span className="hidden text-sm font-semibold text-slate-700 dark:text-slate-200 lg:block">
               {t('app.name')}

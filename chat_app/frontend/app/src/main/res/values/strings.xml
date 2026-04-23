@@ -281,6 +281,30 @@
     <string name="cd_open_camera">Open camera</string>
     <string name="cd_attach_file">Attach file</string>
     <string name="hint_type_message">Type a message</string>
+    <string name="chat_detail_emoji_picker_title">Choose an emoji</string>
+    <string name="chat_detail_unknown_file">Unknown file</string>
+    <string name="chat_detail_file_message_format">[File] %1$s</string>
+    <string name="chat_detail_photo_message">[Photo]</string>
+    <string name="chat_detail_voice_message_format">[Voice] %1$s</string>
+    <string name="chat_detail_voice_recorder_not_available">No voice recorder app found</string>
+    <string name="chat_detail_camera_not_available">No camera app found</string>
+    <string name="chat_detail_camera_permission_denied">Camera permission is required</string>
+    <string name="chat_detail_send_generated_message_failed">Unable to send this message</string>
+    <string name="chat_detail_voice_call_coming_soon">Voice call will be available soon</string>
+    <string name="chat_detail_video_call_coming_soon">Video call will be available soon</string>
+    <string name="chat_detail_file_read_failed">Cannot read selected file</string>
+    <string name="chat_detail_file_too_large">File is too large to upload</string>
+    <string name="chat_detail_upload_failed">Upload failed</string>
+    <string name="chat_detail_image_count_format">%1$d images</string>
+    <string name="chat_detail_pick_images">Pick images</string>
+    <string name="chat_detail_pending_image_remove">Remove image</string>
+    <string name="chat_detail_image_preview_title">Image preview</string>
+    <string name="chat_detail_image_send_failed">Cannot send selected images</string>
+    <string name="chat_detail_image_read_failed">Cannot read selected images</string>
+    <string name="chat_detail_image_picker_empty">No image selected</string>
+    <string name="chat_detail_audio_permission_denied">Microphone permission is required</string>
+    <string name="chat_detail_recording_started">Recording... tap mic again to send</string>
+    <string name="chat_detail_recording_failed">Voice recording failed</string>
 
     <!-- ========== FRIEND REQUESTS FRAGMENT ========== -->
     

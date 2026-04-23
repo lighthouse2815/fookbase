@@ -9,6 +9,7 @@ import com.dangngulon.frontend.feature.zola.domain.model.MessageCursorPage;
 import com.dangngulon.frontend.feature.zola.domain.model.SendMessageCommand;
 import com.dangngulon.frontend.feature.zola.domain.repository.IChatRepository;
 import com.dangngulon.frontend.feature.zola.domain.repository.IMessageRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IUploadRepository;
 
 import java.time.Instant;
 import java.util.List;
@@ -20,11 +21,17 @@ import javax.inject.Inject;
 public class ChatDetailUseCase {
     private final IMessageRepository messageRepository;
     private final IChatRepository repository;
+    private final IUploadRepository uploadRepository;
 
     @Inject
-    public ChatDetailUseCase(IMessageRepository messageRepository, IChatRepository repository) {
+    public ChatDetailUseCase(
+            IMessageRepository messageRepository,
+            IChatRepository repository,
+            IUploadRepository uploadRepository
+    ) {
         this.messageRepository = messageRepository;
         this.repository = repository;
+        this.uploadRepository = uploadRepository;
     }
 
     public AppResult<Void> sendRealTime(
@@ -108,5 +115,13 @@ public class ChatDetailUseCase {
             String cursorMessageId
     ) {
         return getMessages(conversationId, cursorCreatedAt, cursorMessageId, 20);
+    }
+
+    public CompletableFuture<AppResult<String>> uploadAttachment(
+            String fileName,
+            String contentType,
+            byte[] bytes
+    ) {
+        return uploadRepository.upload(fileName, contentType, bytes);
     }
 }

@@ -7,6 +7,7 @@ import com.dangngulon.frontend.feature.zola.data.repository.ConversationReposito
 import com.dangngulon.frontend.feature.zola.data.repository.FriendshipRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.MediaRepository;
 import com.dangngulon.frontend.feature.zola.data.repository.MessageRepository;
+import com.dangngulon.frontend.feature.zola.data.repository.UploadRepository;
 import com.dangngulon.frontend.feature.zola.domain.repository.IAddFriendProfileRepository;
 import com.dangngulon.frontend.feature.zola.domain.repository.IChatRepository;
 import com.dangngulon.frontend.feature.zola.domain.repository.IContactRepository;
@@ -14,6 +15,7 @@ import com.dangngulon.frontend.feature.zola.domain.repository.IConversationRepos
 import com.dangngulon.frontend.feature.zola.domain.repository.IFriendshipRepository;
 import com.dangngulon.frontend.feature.zola.domain.repository.IMediaRepository;
 import com.dangngulon.frontend.feature.zola.domain.repository.IMessageRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IUploadRepository;
 
 import javax.inject.Singleton;
 
@@ -53,4 +55,8 @@ public abstract class ZolaRepositoryModule {
     @Binds
     @Singleton
     public abstract IChatRepository bindChatRepository(ChatRepository impl);
+
+    @Binds
+    @Singleton
+    public abstract IUploadRepository bindUploadRepository(UploadRepository impl);
 }

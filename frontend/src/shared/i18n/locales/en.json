@@ -19,7 +19,7 @@
     "switch": "Switch theme"
   },
   "nav": {
-    "searchPlaceholder": "Search InteractHub",
+    "searchPlaceholder": "Search Footbase",
     "home": "Home",
     "friends": "Friends",
     "messages": "Messages",
@@ -605,7 +605,7 @@
   },
   "auth": {
     "loginTitle": "Welcome back",
-    "loginSubtitle": "Log in to continue your InteractHub journey",
+    "loginSubtitle": "Log in to continue your Footbase journey",
     "loginEyebrowWelcome": "Welcome Back",
     "loginEyebrowVerifyEmail": "Email Verification",
     "loginHighlightFast": "Fast and secure sign in",

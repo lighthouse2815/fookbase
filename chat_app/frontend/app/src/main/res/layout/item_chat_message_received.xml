@@ -7,11 +7,50 @@
     android:paddingTop="3dp"
     android:paddingBottom="3dp">
 
+    <FrameLayout
+        android:id="@+id/layoutAttachmentReceived"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/imgAttachmentReceived"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="centerCrop"
+            tools:src="@drawable/default_avatar"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/txtAttachmentCountReceived"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_chat_bubble_received"
+            android:paddingStart="10dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="4dp"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="3 ảnh"
+            tools:visibility="visible" />
+
+    </FrameLayout>
+
     <TextView
         android:id="@+id/txtMessageReceived"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
         android:background="@drawable/bg_chat_bubble_received"
         android:maxWidth="280dp"
         android:paddingStart="14dp"
@@ -21,7 +60,7 @@
         android:textColor="#FFFFFF"
         android:textSize="17sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutAttachmentReceived"
         tools:text="How much is the budget?" />
 
     <TextView

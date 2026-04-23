@@ -2,12 +2,14 @@ package com.dangngulon.frontend.core.network.interceptor;
 
 import androidx.annotation.NonNull;
 
+import com.dangngulon.frontend.BuildConfig;
 import com.dangngulon.frontend.core.utils.data.AuthManager;
 
 import java.io.IOException;
 
 import javax.inject.Inject;
 
+import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -26,6 +28,13 @@ public class AuthInterceptor implements Interceptor {
     @Override
     public Response intercept(Chain chain) throws IOException {
         Request original = chain.request();
+
+        // Do not leak bearer token to third-party hosts such as Cloudinary.
+        HttpUrl baseUrl = HttpUrl.parse(BuildConfig.BASE_URL);
+        if (baseUrl != null && !original.url().host().equalsIgnoreCase(baseUrl.host())) {
+            return chain.proceed(original);
+        }
+
         String path = original.url().encodedPath();
 
         // Cho phép auth API public đi thẳng (không attach Bearer),

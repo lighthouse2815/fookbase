@@ -5,6 +5,7 @@ import com.dangngulon.frontend.feature.zola.data.remote.api.ContactApi;
 import com.dangngulon.frontend.feature.zola.data.remote.api.ConversationApi;
 import com.dangngulon.frontend.feature.zola.data.remote.api.FriendshipApi;
 import com.dangngulon.frontend.feature.zola.data.remote.api.MessageApi;
+import com.dangngulon.frontend.feature.zola.data.remote.api.UploadApi;
 
 import javax.inject.Singleton;
 
@@ -49,5 +50,11 @@ public final class ZolaNetworkModule {
     @Singleton
     static FriendshipApi provideFriendshipApi(Retrofit retrofit) {
         return retrofit.create(FriendshipApi.class);
+    }
+
+    @Provides
+    @Singleton
+    static UploadApi provideUploadApi(Retrofit retrofit) {
+        return retrofit.create(UploadApi.class);
     }
 }
