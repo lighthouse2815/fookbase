@@ -34,13 +34,13 @@ export const AuthLayout = ({
   const shouldReduceMotion = reduceMotion || isMobileViewport;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white max-md:min-h-[100svh]">
       <AuthBackground tone={tone} compact={isMobileViewport} />
       <div className="absolute inset-0 z-[3]">
         <CherryBlossomFall />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-4 pb-7 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:flex-row lg:items-center lg:gap-14 lg:px-10 lg:py-10">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-4 pb-7 pt-6 max-md:min-h-[100svh] max-md:justify-center sm:px-6 sm:pb-10 sm:pt-8 lg:flex-row lg:items-center lg:gap-14 lg:px-10 lg:py-10">
         <motion.section
           layout
           layoutId="auth-hero-panel"

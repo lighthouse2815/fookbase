@@ -11,10 +11,10 @@ export const AuthRouteFrame = () => {
   const shouldReduceMotion = reduceMotion || isMobileViewport;
 
   return (
-    <div className="relative min-h-screen bg-slate-950">
+    <div className="relative min-h-screen bg-slate-950 max-md:min-h-[100svh]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(59,130,246,0.14),transparent_34%),radial-gradient(circle_at_85%_85%,rgba(99,102,241,0.14),transparent_38%),linear-gradient(180deg,#020617,#020617)] max-md:bg-[linear-gradient(180deg,#020617,#020617)]" />
       <LayoutGroup id="auth-shared-shell">
-        <AnimatePresence mode="sync" initial={false}>
+        <AnimatePresence mode={isMobileViewport ? 'wait' : 'sync'} initial={false}>
           <motion.div
             key={location.pathname}
             variants={shouldReduceMotion ? undefined : AUTH_ROUTE_VARIANTS}
