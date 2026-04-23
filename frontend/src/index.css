@@ -68,3 +68,44 @@ svg {
   animation: story-reaction-fly-up 0.72s ease-out forwards;
 }
 
+@keyframes auth-cherry-fall {
+  0% {
+    transform: translate3d(0, -16vh, 0) rotate(0deg);
+  }
+
+  100% {
+    transform: translate3d(var(--cherry-drift, 0px), 112vh, 0) rotate(380deg);
+  }
+}
+
+@keyframes auth-cherry-sway {
+  0%,
+  100% {
+    margin-left: -8px;
+  }
+
+  50% {
+    margin-left: 8px;
+  }
+}
+
+.auth-cherry-petal {
+  position: absolute;
+  top: -15vh;
+  border-radius: 70% 90% 66% 94%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.22) 26%, transparent 27%),
+    radial-gradient(circle at 72% 72%, rgba(240, 126, 168, 0.92), rgba(230, 84, 146, 0.9));
+  box-shadow: 0 0 14px rgba(244, 168, 203, 0.32);
+  will-change: transform;
+  animation-name: auth-cherry-fall, auth-cherry-sway;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+@media (max-width: 640px) {
+  .auth-cherry-petal:nth-child(n + 13) {
+    display: none;
+  }
+}
+
