@@ -44,6 +44,19 @@ export const AuthSuccessTransitionProvider = ({
     };
   }, [clearTimers]);
 
+  useEffect(() => {
+    if (!isOverlayActive) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOverlayActive]);
+
   const playSuccessTransition = useCallback(
     ({ onNavigate, tone = 'user' }: PlaySuccessTransitionParams) => {
       const prefersReducedMotion =
@@ -66,12 +79,12 @@ export const AuthSuccessTransitionProvider = ({
       const navigateTimeout = window.setTimeout(() => {
         setLandingTone(tone);
         onNavigate();
-      }, 720);
+      }, 560);
 
       const closeTimeout = window.setTimeout(() => {
         setIsOverlayActive(false);
         setIsTransitioning(false);
-      }, 1560);
+      }, 1180);
 
       timeoutRef.current.push(navigateTimeout, closeTimeout);
     },

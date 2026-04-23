@@ -38,6 +38,8 @@ export const AuthLayout = ({
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-4 pb-7 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:flex-row lg:items-center lg:gap-14 lg:px-10 lg:py-10">
         <motion.section
+          layout
+          layoutId="auth-hero-panel"
           variants={reduceMotion ? undefined : AUTH_HERO_STAGGER_VARIANTS}
           initial={reduceMotion ? false : 'hidden'}
           animate={reduceMotion ? undefined : 'visible'}
@@ -75,6 +77,8 @@ export const AuthLayout = ({
         </motion.section>
 
         <motion.section
+          layout
+          layoutId="auth-form-panel"
           variants={reduceMotion ? undefined : AUTH_FORM_SHELL_VARIANTS}
           initial={reduceMotion ? false : 'hidden'}
           animate={reduceMotion ? undefined : 'visible'}

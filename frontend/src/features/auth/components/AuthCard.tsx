@@ -1,9 +1,13 @@
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 import type { AuthTone } from '@/features/auth/components/AuthBackground';
-import { AUTH_CARD_VARIANTS } from '@/features/auth/animations/authMotion';
+import {
+  AUTH_CARD_HEADER_VARIANTS,
+  AUTH_CARD_LAYOUT_TRANSITION,
+  AUTH_CARD_VARIANTS,
+} from '@/features/auth/animations/authMotion';
 
 interface AuthCardProps {
   title: string;
@@ -11,6 +15,8 @@ interface AuthCardProps {
   tone?: AuthTone;
   children: ReactNode;
   footer?: ReactNode;
+  headerKey?: string;
+  layoutId?: string;
 }
 
 const toneBorderMap: Record<AuthTone, string> = {
@@ -33,11 +39,16 @@ export const AuthCard = ({
   tone = 'user',
   children,
   footer,
+  headerKey,
+  layoutId = 'auth-main-card',
 }: AuthCardProps) => {
   const reduceMotion = useReducedMotion();
 
   return (
     <motion.section
+      layout
+      layoutId={layoutId}
+      transition={AUTH_CARD_LAYOUT_TRANSITION}
       variants={reduceMotion ? undefined : AUTH_CARD_VARIANTS}
       initial={reduceMotion ? false : 'hidden'}
       animate={reduceMotion ? undefined : 'visible'}
@@ -50,12 +61,28 @@ export const AuthCard = ({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15),transparent_48%)]" />
 
       <div className="relative">
-        <h2 className="text-2xl font-semibold text-white sm:text-[1.72rem]">{title}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-200/75">{subtitle}</p>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={headerKey ?? `${title}-${subtitle}`}
+            variants={reduceMotion ? undefined : AUTH_CARD_HEADER_VARIANTS}
+            initial={reduceMotion ? false : 'initial'}
+            animate={reduceMotion ? undefined : 'animate'}
+            exit={reduceMotion ? undefined : 'exit'}
+          >
+            <h2 className="text-2xl font-semibold text-white sm:text-[1.72rem]">{title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-200/75">{subtitle}</p>
+          </motion.div>
+        </AnimatePresence>
 
-        <div className="mt-6">{children}</div>
+        <motion.div layout className="mt-6">
+          {children}
+        </motion.div>
 
-        {footer ? <div className="mt-6 border-t border-white/10 pt-5 text-sm text-slate-200/80">{footer}</div> : null}
+        {footer ? (
+          <motion.div layout className="mt-6 border-t border-white/10 pt-5 text-sm text-slate-200/80">
+            {footer}
+          </motion.div>
+        ) : null}
       </div>
     </motion.section>
   );

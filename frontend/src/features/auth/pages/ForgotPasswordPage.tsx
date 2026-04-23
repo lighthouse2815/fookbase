@@ -1,8 +1,9 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Navigate } from 'react-router-dom';
 
 import { AUTH_FIELD_ITEM_VARIANTS, AUTH_FIELD_STAGGER_VARIANTS } from '@/features/auth/animations/authMotion';
 import { AuthCard } from '@/features/auth/components/AuthCard';
+import { AuthFormTransition } from '@/features/auth/components/AuthFormTransition';
 import { AuthInput } from '@/features/auth/components/AuthInput';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
 import { AuthMessage } from '@/features/auth/components/AuthMessage';
@@ -53,10 +54,22 @@ export const ForgotPasswordPage = () => {
       : step === 'otp'
         ? t('auth.verifyResetOtpSubtitle')
         : t('auth.resetPasswordSubtitle');
+  const footerByStep =
+    step === 'email' ? (
+      <AuthSwitcher
+        prompt={t('auth.rememberedPasswordPrompt')}
+        actionLabel={t('auth.backToLoginShort')}
+        to="/login"
+      />
+    ) : step === 'otp' ? (
+      <AuthSwitcher prompt="" actionLabel={t('auth.backToEmailStep')} onClick={backToEmailStep} />
+    ) : (
+      <AuthSwitcher prompt="" actionLabel={t('auth.backToOtpStep')} onClick={backToOtpFromReset} />
+    );
 
   return (
     <AuthLayout
-      tone="recovery"
+      tone={toneByStep}
       eyebrow={t('auth.recoveryEyebrow')}
       title={titleByStep}
       description={subtitleByStep}
@@ -66,148 +79,125 @@ export const ForgotPasswordPage = () => {
         t('auth.recoveryHighlightSession'),
       ]}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {step === 'email' ? (
-          <motion.div key="forgot-email-step" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}>
-            <AuthCard
-              tone="recovery"
-              title={t('auth.forgotPasswordTitle')}
-              subtitle={t('auth.forgotPasswordSubtitle')}
-              footer={
-                <AuthSwitcher
-                  prompt={t('auth.rememberedPasswordPrompt')}
-                  actionLabel={t('auth.backToLoginShort')}
-                  to="/login"
-                />
-              }
+      <AuthCard
+        tone={toneByStep}
+        title={titleByStep}
+        subtitle={subtitleByStep}
+        headerKey={`forgot-header-${step}`}
+        layoutId="auth-primary-card"
+        footer={footerByStep}
+      >
+        <AuthFormTransition transitionKey={`forgot-content-${step}`}>
+          {step === 'email' ? (
+            <form
+              className="space-y-4"
+              onSubmit={(event) => void emailForm.handleSubmit(onSubmitEmail)(event)}
+              noValidate
             >
-              <form
-                className="space-y-4"
-                onSubmit={(event) => void emailForm.handleSubmit(onSubmitEmail)(event)}
-                noValidate
-              >
-                <motion.div variants={AUTH_FIELD_STAGGER_VARIANTS} initial="hidden" animate="visible" className="space-y-4">
-                  <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                    <AuthInput
-                      tone="recovery"
-                      label={t('auth.email')}
-                      placeholder={t('auth.email')}
-                      type="email"
-                      autoComplete="email"
-                      registration={emailForm.register('email', {
-                        required: t('auth.required'),
-                        pattern: {
-                          value: emailPattern,
-                          message: t('auth.invalidEmail'),
-                        },
-                      })}
-                      error={emailForm.formState.errors.email?.message}
-                    />
-                  </motion.div>
-
-                  {apiError ? (
-                    <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                      <AuthMessage kind="error">{apiError}</AuthMessage>
-                    </motion.div>
-                  ) : null}
-
-                  <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                    <AuthSubmitButton
-                      tone="recovery"
-                      label={t('auth.sendOtpButton')}
-                      loadingLabel={t('common.loading')}
-                      isLoading={emailForm.formState.isSubmitting}
-                    />
-                  </motion.div>
+              <motion.div variants={AUTH_FIELD_STAGGER_VARIANTS} initial="hidden" animate="visible" className="space-y-4">
+                <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                  <AuthInput
+                    tone="recovery"
+                    label={t('auth.email')}
+                    placeholder={t('auth.email')}
+                    type="email"
+                    autoComplete="email"
+                    registration={emailForm.register('email', {
+                      required: t('auth.required'),
+                      pattern: {
+                        value: emailPattern,
+                        message: t('auth.invalidEmail'),
+                      },
+                    })}
+                    error={emailForm.formState.errors.email?.message}
+                  />
                 </motion.div>
-              </form>
-            </AuthCard>
-          </motion.div>
-        ) : null}
 
-        {step === 'otp' ? (
-          <motion.div key="forgot-otp-step" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}>
-            <AuthCard
-              tone="recovery"
-              title={t('auth.verifyResetOtpTitle')}
-              subtitle={t('auth.verifyResetOtpSubtitle')}
-              footer={<AuthSwitcher prompt="" actionLabel={t('auth.backToEmailStep')} onClick={backToEmailStep} />}
-            >
-              <form
-                className="space-y-4"
-                onSubmit={(event) => void otpForm.handleSubmit(onSubmitOtp)(event)}
-                noValidate
-              >
-                <motion.div variants={AUTH_FIELD_STAGGER_VARIANTS} initial="hidden" animate="visible" className="space-y-4">
-                  {infoMessage ? (
-                    <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                      <AuthMessage kind="success">{infoMessage}</AuthMessage>
-                    </motion.div>
-                  ) : null}
-
+                {apiError ? (
                   <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                    <AuthMessage kind="info">
-                      {t('auth.verifyingFor')}: <span className="font-semibold">{email}</span>
-                    </AuthMessage>
+                    <AuthMessage kind="error">{apiError}</AuthMessage>
                   </motion.div>
+                ) : null}
 
-                  <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                    <AuthInput
-                      tone="recovery"
-                      label={t('auth.otpCode')}
-                      placeholder={t('auth.otpCode')}
-                      autoComplete="one-time-code"
-                      registration={otpForm.register('otp', {
-                        required: t('auth.required'),
-                        pattern: {
-                          value: otpPattern,
-                          message: t('auth.invalidOtp'),
-                        },
-                      })}
-                      error={otpForm.formState.errors.otp?.message}
-                    />
-                  </motion.div>
-
-                  <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.985 }}
-                      className="w-full rounded-2xl border border-cyan-200/30 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/55 hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-70"
-                      onClick={() => void handleResendOtp()}
-                      disabled={otpForm.formState.isSubmitting}
-                    >
-                      {t('auth.resendOtpButton')}
-                    </motion.button>
-                  </motion.div>
-
-                  {apiError ? (
-                    <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                      <AuthMessage kind="error">{apiError}</AuthMessage>
-                    </motion.div>
-                  ) : null}
-
-                  <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
-                    <AuthSubmitButton
-                      tone="recovery"
-                      label={t('auth.verifyOtpButton')}
-                      loadingLabel={t('common.loading')}
-                      isLoading={otpForm.formState.isSubmitting}
-                    />
-                  </motion.div>
+                <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                  <AuthSubmitButton
+                    tone="recovery"
+                    label={t('auth.sendOtpButton')}
+                    loadingLabel={t('common.loading')}
+                    isLoading={emailForm.formState.isSubmitting}
+                  />
                 </motion.div>
-              </form>
-            </AuthCard>
-          </motion.div>
-        ) : null}
+              </motion.div>
+            </form>
+          ) : null}
 
-        {step === 'reset' ? (
-          <motion.div key="forgot-reset-step" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}>
-            <AuthCard
-              tone={toneByStep}
-              title={t('auth.resetPasswordTitle')}
-              subtitle={t('auth.resetPasswordSubtitle')}
-              footer={<AuthSwitcher prompt="" actionLabel={t('auth.backToOtpStep')} onClick={backToOtpFromReset} />}
+          {step === 'otp' ? (
+            <form
+              className="space-y-4"
+              onSubmit={(event) => void otpForm.handleSubmit(onSubmitOtp)(event)}
+              noValidate
             >
+              <motion.div variants={AUTH_FIELD_STAGGER_VARIANTS} initial="hidden" animate="visible" className="space-y-4">
+                {infoMessage ? (
+                  <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                    <AuthMessage kind="success">{infoMessage}</AuthMessage>
+                  </motion.div>
+                ) : null}
+
+                <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                  <AuthMessage kind="info">
+                    {t('auth.verifyingFor')}: <span className="font-semibold">{email}</span>
+                  </AuthMessage>
+                </motion.div>
+
+                <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                  <AuthInput
+                    tone="recovery"
+                    label={t('auth.otpCode')}
+                    placeholder={t('auth.otpCode')}
+                    autoComplete="one-time-code"
+                    registration={otpForm.register('otp', {
+                      required: t('auth.required'),
+                      pattern: {
+                        value: otpPattern,
+                        message: t('auth.invalidOtp'),
+                      },
+                    })}
+                    error={otpForm.formState.errors.otp?.message}
+                  />
+                </motion.div>
+
+                <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.985 }}
+                    className="w-full rounded-2xl border border-cyan-200/30 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/55 hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-70"
+                    onClick={() => void handleResendOtp()}
+                    disabled={otpForm.formState.isSubmitting}
+                  >
+                    {t('auth.resendOtpButton')}
+                  </motion.button>
+                </motion.div>
+
+                {apiError ? (
+                  <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                    <AuthMessage kind="error">{apiError}</AuthMessage>
+                  </motion.div>
+                ) : null}
+
+                <motion.div variants={AUTH_FIELD_ITEM_VARIANTS}>
+                  <AuthSubmitButton
+                    tone="recovery"
+                    label={t('auth.verifyOtpButton')}
+                    loadingLabel={t('common.loading')}
+                    isLoading={otpForm.formState.isSubmitting}
+                  />
+                </motion.div>
+              </motion.div>
+            </form>
+          ) : null}
+
+          {step === 'reset' ? (
               <form
                 className="space-y-4"
                 onSubmit={(event) => void resetPasswordForm.handleSubmit(onSubmitResetPassword)(event)}
@@ -276,10 +266,9 @@ export const ForgotPasswordPage = () => {
                   </motion.div>
                 </motion.div>
               </form>
-            </AuthCard>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+          ) : null}
+        </AuthFormTransition>
+      </AuthCard>
     </AuthLayout>
   );
 };

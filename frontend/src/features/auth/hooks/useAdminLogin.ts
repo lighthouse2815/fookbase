@@ -18,6 +18,7 @@ export const useAdminLogin = () => {
   const { playSuccessTransition, isTransitioning } = useAuthSuccessTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
+  const [isCompletingAdminLogin, setIsCompletingAdminLogin] = useState(false);
 
   const locationState = (location.state as AdminLoginLocationState | null) ?? null;
 
@@ -37,6 +38,7 @@ export const useAdminLogin = () => {
   const onSubmit = async (data: AdminLoginFormValues) => {
     try {
       setApiError(undefined);
+      setIsCompletingAdminLogin(true);
       await loginAdmin(data);
 
       const destination = resolveAdminLoginDestination(locationState);
@@ -44,9 +46,11 @@ export const useAdminLogin = () => {
         tone: 'admin',
         onNavigate: () => {
           navigate(destination, { replace: true });
+          setIsCompletingAdminLogin(false);
         },
       });
     } catch (error) {
+      setIsCompletingAdminLogin(false);
       setApiError(getApiErrorMessage(error, t('auth.adminLoginError')));
     }
   };
@@ -56,6 +60,7 @@ export const useAdminLogin = () => {
     isAuthenticated,
     isAdmin,
     isTransitioning,
+    isCompletingAdminLogin,
     showPassword,
     setShowPassword,
     apiError,

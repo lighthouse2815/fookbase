@@ -33,6 +33,7 @@ export const useLogin = () => {
   const [bannedMessage, setBannedMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isCompletingLogin, setIsCompletingLogin] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
   const [infoMessage, setInfoMessage] = useState<string | undefined>();
 
@@ -59,6 +60,7 @@ export const useLogin = () => {
       tone: 'user',
       onNavigate: () => {
         navigate(target, { replace: true });
+        setIsCompletingLogin(false);
       },
     });
   };
@@ -76,9 +78,11 @@ export const useLogin = () => {
     try {
       setApiError(undefined);
       setInfoMessage(undefined);
+      setIsCompletingLogin(true);
       await login(data);
       navigateWithSuccessTransition(destination);
     } catch (error) {
+      setIsCompletingLogin(false);
       if (error instanceof InactiveAccountError) {
         if (!error.email) {
           setApiError(t('auth.sendOtpError'));
@@ -111,6 +115,7 @@ export const useLogin = () => {
 
   const onSubmitOtp = async (data: LoginOtpFormValues) => {
     if (!inactiveEmail || !pendingLogin) {
+      setIsCompletingLogin(false);
       setStep('login');
       setApiError(t('auth.loginError'));
       return;
@@ -118,6 +123,7 @@ export const useLogin = () => {
 
     try {
       setApiError(undefined);
+      setIsCompletingLogin(true);
       await authService.verifyEmailOtpWhenNotLogin({
         email: inactiveEmail,
         otp: data.otp.trim(),
@@ -126,6 +132,7 @@ export const useLogin = () => {
       await login(pendingLogin);
       navigateWithSuccessTransition(destination);
     } catch (error) {
+      setIsCompletingLogin(false);
       setApiError(getApiErrorMessage(error, t('auth.verifyOtpError')));
     }
   };
@@ -167,11 +174,13 @@ export const useLogin = () => {
       setApiError(undefined);
       setInfoMessage(undefined);
       setIsGoogleSubmitting(true);
+      setIsCompletingLogin(true);
 
       const tokenId = await requestGoogleIdToken(clientId);
       await authWithGoogle(tokenId, loginForm.getValues('rememberMe'));
       navigateWithSuccessTransition(destination);
     } catch (error) {
+      setIsCompletingLogin(false);
       if (error instanceof BannedAccountError) {
         setBannedMessage(error.message);
         setStep('banned');
@@ -188,6 +197,7 @@ export const useLogin = () => {
     t,
     isAuthenticated,
     isTransitioning,
+    isCompletingLogin,
     step,
     locationState,
     destination,

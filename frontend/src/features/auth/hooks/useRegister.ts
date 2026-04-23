@@ -35,6 +35,7 @@ export const useRegister = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isCompletingRegisterAuth, setIsCompletingRegisterAuth] = useState(false);
   const [apiError, setApiError] = useState<string | undefined>();
   const [infoMessage, setInfoMessage] = useState<string | undefined>();
 
@@ -155,6 +156,7 @@ export const useRegister = () => {
       setApiError(undefined);
       setInfoMessage(undefined);
       setIsGoogleSubmitting(true);
+      setIsCompletingRegisterAuth(true);
 
       const tokenId = await requestGoogleIdToken(clientId);
       await authWithGoogle(tokenId, true);
@@ -162,9 +164,11 @@ export const useRegister = () => {
         tone: 'user',
         onNavigate: () => {
           navigate('/', { replace: true });
+          setIsCompletingRegisterAuth(false);
         },
       });
     } catch (error) {
+      setIsCompletingRegisterAuth(false);
       if (error instanceof BannedAccountError) {
         setApiError(error.message);
         return;
@@ -180,6 +184,7 @@ export const useRegister = () => {
     t,
     isAuthenticated,
     isTransitioning,
+    isCompletingRegisterAuth,
     step,
     registeredEmail,
     showPassword,

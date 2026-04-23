@@ -46,11 +46,11 @@ export const HomePage = () => {
       className="space-y-4"
       initial={
         landingTone
-          ? { opacity: 0, y: 16, scale: 0.992, filter: 'blur(8px)' }
+          ? { opacity: 0.4, y: 18, scale: 0.995 }
           : false
       }
-      animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-      transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.58, ease: [0.16, 1, 0.3, 1] }}
     >
       {landingTone ? (
         <motion.div
@@ -66,7 +66,12 @@ export const HomePage = () => {
         />
       ) : null}
 
-      <section className={`${postColumnClass} space-y-4`}>
+      <motion.section
+        className={`${postColumnClass} space-y-4`}
+        initial={landingTone ? { opacity: 0.6, y: 10 } : false}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1], delay: landingTone ? 0.12 : 0 }}
+      >
         <CreatePostBox currentUser={currentUser} isSubmitting={isSubmitting} onCreatePost={handleCreatePost} />
         {createError ? <p className="text-sm text-rose-600 dark:text-rose-400">{createError}</p> : null}
         <StoryList currentUser={currentUser} onActionToast={showToast} />
@@ -83,7 +88,7 @@ export const HomePage = () => {
             onPostDeleted={handlePostDeleted}
           />
         ))}
-      </section>
+      </motion.section>
 
       <div className="flex justify-center pb-2">
         {hasMore ? (
