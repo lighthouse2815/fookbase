@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/error';
@@ -33,13 +33,13 @@ export const useCommentReactionActions = ({
     };
   }, []);
 
-  const resetReactionState = () => {
+  const resetReactionState = useCallback(() => {
     if (reactionHoverCloseTimeoutRef.current) {
       window.clearTimeout(reactionHoverCloseTimeoutRef.current);
       reactionHoverCloseTimeoutRef.current = null;
     }
     setHoveredReactionCommentId(null);
-  };
+  }, []);
 
   const handleSetReaction = async (commentId: string, reactionType: CommentReactionType) => {
     if (isReactionUpdatingCommentId) {

@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/error';
@@ -53,11 +53,11 @@ export const useCommentModerationActions = ({
   const [reportReasonError, setReportReasonError] = useState<string | null>(null);
   const [isReportingComment, setIsReportingComment] = useState(false);
 
-  const closeCommentMenu = () => {
+  const closeCommentMenu = useCallback(() => {
     setOpenMenuCommentId(null);
-  };
+  }, [setOpenMenuCommentId]);
 
-  const resetModerationState = () => {
+  const resetModerationState = useCallback(() => {
     setOpenMenuCommentId(null);
     setEditingCommentId(null);
     setEditingDraft('');
@@ -65,7 +65,7 @@ export const useCommentModerationActions = ({
     setReportReason('');
     setReportReasonError(null);
     setReportingComment(null);
-  };
+  }, [setOpenMenuCommentId]);
 
   const handleStartEditComment = (comment: Comment) => {
     setOpenMenuCommentId(null);

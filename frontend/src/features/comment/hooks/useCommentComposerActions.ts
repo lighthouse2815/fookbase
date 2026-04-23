@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/error';
@@ -40,12 +40,12 @@ export const useCommentComposerActions = ({
   const [replyDraft, setReplyDraft] = useState('');
   const [isReplySubmittingCommentId, setIsReplySubmittingCommentId] = useState<string | null>(null);
 
-  const resetComposerState = () => {
+  const resetComposerState = useCallback(() => {
     setReplyTargetCommentId(null);
     setReplyTargetDisplayName('');
     setReplyDraft('');
     setIsReplySubmittingCommentId(null);
-  };
+  }, []);
 
   const handleAddComment = async () => {
     const trimmed = draft.trim();

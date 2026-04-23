@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import type { Comment } from '@/features/comment/types/contracts';
@@ -62,11 +62,15 @@ export const useCommentActions = ({
     onActionToast,
   });
 
-  const resetInteractionState = () => {
+  const resetInteractionState = useCallback(() => {
     commentComposer.resetComposerState();
     commentReaction.resetReactionState();
     commentModeration.resetModerationState();
-  };
+  }, [
+    commentComposer.resetComposerState,
+    commentReaction.resetReactionState,
+    commentModeration.resetModerationState,
+  ]);
 
   return {
     ...commentComposer,
