@@ -15,6 +15,7 @@ interface PetalConfig {
 }
 
 const PETAL_COUNT = 20;
+const INSTANT_VISIBLE_PETAL_COUNT = 7;
 
 const createPetals = (): PetalConfig[] => {
   return Array.from({ length: PETAL_COUNT }, (_, index) => ({
@@ -28,12 +29,13 @@ const createPetals = (): PetalConfig[] => {
     opacity: 0.35 + Math.random() * 0.45,
     rotation: Math.random() * 360,
     blur: Math.random() * 0.7,
-  })).map((petal) => {
+  })).map((petal, index) => {
     const swayDuration = Math.max(2.8, petal.duration * 0.44);
+    const shouldBeImmediatelyVisible = index < INSTANT_VISIBLE_PETAL_COUNT;
     return {
       ...petal,
       // Negative delays make petals appear mid-flight immediately after mount.
-      fallDelay: -Math.random() * petal.duration,
+      fallDelay: shouldBeImmediatelyVisible ? -Math.random() * petal.duration : 0,
       swayDelay: -Math.random() * swayDuration,
     };
   });
