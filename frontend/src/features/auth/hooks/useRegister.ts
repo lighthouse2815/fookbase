@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -77,13 +77,23 @@ export const useRegister = () => {
     setInfoMessage(response.result || t('auth.otpSent'));
   };
 
+  const standardizePhoneNumber = useCallback((phoneNumber: string): string => {
+    const trimmedPhone = phoneNumber.trim();
+
+    if (trimmedPhone.startsWith("+84")) {
+      return "0" + trimmedPhone.slice(3);
+    }
+
+    return trimmedPhone;
+  }, []);
+
   const onSubmitRegister = async (data: RegisterFormValues) => {
     try {
       setApiError(undefined);
       setInfoMessage(undefined);
 
       await registerUser({
-        username: data.phone.trim(),
+        username: standardizePhoneNumber(data.phone.trim()) ,
         email: data.email.trim(),
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),

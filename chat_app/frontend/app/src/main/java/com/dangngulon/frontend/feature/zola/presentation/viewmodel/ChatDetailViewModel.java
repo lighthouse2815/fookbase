@@ -121,6 +121,21 @@ public class ChatDetailViewModel extends ViewModel {
         sendMessage(content, null);
     }
 
+    public CompletableFuture<AppResult<MessageUiModel>> sendMessageAsync(
+            String content,
+            List<AttachmentUiModel> attachments
+    ) {
+        if (currentConversationId == null) {
+            return CompletableFuture.completedFuture(
+                    AppResult.error(new AppError("Conversation ID not set"))
+            );
+        }
+
+        return chatDetailUseCase
+                .sendMessage(currentConversationId, content, ZolaUiMapper.toAttachmentCommands(attachments))
+                .thenApply(this::toMessageUiResult);
+    }
+
     public void subscribeMessages() {
         if (currentConversationId == null) {
             return;

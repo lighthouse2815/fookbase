@@ -302,6 +302,11 @@
     <string name="chat_detail_image_send_failed">Cannot send selected images</string>
     <string name="chat_detail_image_read_failed">Cannot read selected images</string>
     <string name="chat_detail_image_picker_empty">No image selected</string>
+    <string name="chat_detail_save_image">Save image</string>
+    <string name="chat_detail_save_image_started">Downloading image...</string>
+    <string name="chat_detail_save_image_failed">Cannot save image</string>
+    <string name="chat_detail_downloading_image">Downloading to device</string>
+    <string name="chat_detail_image_counter_format">%1$d/%2$d</string>
     <string name="chat_detail_audio_permission_denied">Microphone permission is required</string>
     <string name="chat_detail_recording_started">Recording... tap mic again to send</string>
     <string name="chat_detail_recording_failed">Voice recording failed</string>

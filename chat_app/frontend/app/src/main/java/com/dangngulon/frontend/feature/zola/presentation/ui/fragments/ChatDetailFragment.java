@@ -1,12 +1,16 @@
 package com.dangngulon.frontend.feature.zola.presentation.ui.fragments;
 
 import android.Manifest;
+import android.app.Dialog;
+import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.text.Editable;
@@ -35,7 +39,9 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.PopupMenu;
 
 import com.bumptech.glide.Glide;
 import com.dangngulon.frontend.core.common.result.AppError;
@@ -72,6 +78,7 @@ public class ChatDetailFragment extends Fragment {
     private static final String ARG_NICKNAME = "nickname";
     private static final String ARG_CONVERSATION_ID = "conversationId";
     private static final long MAX_UPLOAD_BYTES = 20L * 1024L * 1024L;
+    private static final int MENU_ID_SAVE_IMAGE = 1;
     private static final String[] QUICK_EMOJIS = {
             "\uD83D\uDE03", // smiling face
             "\uD83D\uDE02", // face with tears of joy
@@ -793,15 +800,31 @@ public class ChatDetailFragment extends Fragment {
                         uploadedAttachments = success.getData();
                     }
 
-                    boolean sent = viewModel.sendMessageRealTime(textContent, uploadedAttachments);
-                    if (!sent) {
-                        showError(getString(R.string.chat_detail_image_send_failed));
-                        return;
-                    }
+                    viewModel.sendMessageAsync(textContent, uploadedAttachments)
+                            .whenComplete((sendResult, sendThrowable) -> runOnMainThread(() -> {
+                                if (!isUiReady()) {
+                                    return;
+                                }
 
-                    pendingImageAttachments.clear();
-                    binding.edtMessage.setText("");
-                    renderPendingImagePreviews();
+                                if (sendThrowable != null) {
+                                    showError(getString(R.string.chat_detail_image_send_failed));
+                                    return;
+                                }
+
+                                if (sendResult instanceof AppResult.Error<MessageUiModel> error) {
+                                    showError(error.getError().getMessage());
+                                    return;
+                                }
+
+                                if (sendResult instanceof AppResult.Success<MessageUiModel> successResult
+                                        && successResult.getData() != null) {
+                                    messageAdapter.add(successResult.getData(), this::scrollToBottom);
+                                }
+
+                                pendingImageAttachments.clear();
+                                binding.edtMessage.setText("");
+                                renderPendingImagePreviews();
+                            }));
                 }));
     }
 
@@ -1205,29 +1228,176 @@ public class ChatDetailFragment extends Fragment {
             return;
         }
 
+        Dialog dialog = new Dialog(requireContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         View dialogView = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_chat_image_gallery, null, false);
+                .inflate(R.layout.dialog_chat_image_viewer_fullscreen, null, false);
 
-        RecyclerView galleryRecyclerView = dialogView.findViewById(R.id.rvImageGallery);
-        ImageButton closeButton = dialogView.findViewById(R.id.btnCloseImageGallery);
+        ImageButton closeButton = dialogView.findViewById(R.id.btnCloseImageViewer);
+        ImageButton moreButton = dialogView.findViewById(R.id.btnMoreImageViewer);
+        RecyclerView imageViewerRecyclerView = dialogView.findViewById(R.id.rvImageViewer);
+        TextView counterTextView = dialogView.findViewById(R.id.txtImageCounter);
 
-        galleryRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        galleryRecyclerView.setAdapter(new ChatImageGalleryAdapter(imageUrls));
+        LinearLayoutManager horizontalLayoutManager = new LinearLayoutManager(
+                requireContext(),
+                LinearLayoutManager.HORIZONTAL,
+                false
+        );
+        imageViewerRecyclerView.setLayoutManager(horizontalLayoutManager);
+        imageViewerRecyclerView.setAdapter(new FullscreenImageAdapter(imageUrls));
 
-        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
-                .setView(dialogView)
-                .create();
+        PagerSnapHelper pagerSnapHelper = new PagerSnapHelper();
+        pagerSnapHelper.attachToRecyclerView(imageViewerRecyclerView);
+
+        int[] currentIndex = new int[]{0};
+        updateImageCounter(counterTextView, currentIndex[0], imageUrls.size());
+
+        imageViewerRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (newState != RecyclerView.SCROLL_STATE_IDLE) {
+                    return;
+                }
+
+                View snappedView = pagerSnapHelper.findSnapView(horizontalLayoutManager);
+                if (snappedView == null) {
+                    return;
+                }
+
+                int adapterPosition = horizontalLayoutManager.getPosition(snappedView);
+                if (adapterPosition < 0 || adapterPosition >= imageUrls.size()) {
+                    return;
+                }
+
+                currentIndex[0] = adapterPosition;
+                updateImageCounter(counterTextView, currentIndex[0], imageUrls.size());
+            }
+        });
 
         closeButton.setOnClickListener(v -> dialog.dismiss());
+        moreButton.setOnClickListener(v -> showImageViewerMenu(v, imageUrls, currentIndex[0]));
+
+        dialog.setContentView(dialogView);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+            );
+        }
         dialog.show();
     }
 
-    private static final class ChatImageGalleryAdapter
-            extends RecyclerView.Adapter<ChatImageGalleryAdapter.ImageViewHolder> {
+    private void showImageViewerMenu(
+            @NonNull View anchor,
+            @NonNull List<String> imageUrls,
+            int currentIndex
+    ) {
+        if (!isUiReady() || imageUrls.isEmpty()) {
+            return;
+        }
+
+        int safeIndex = Math.max(0, Math.min(currentIndex, imageUrls.size() - 1));
+        String selectedImageUrl = imageUrls.get(safeIndex);
+
+        PopupMenu popupMenu = new PopupMenu(requireContext(), anchor);
+        popupMenu.getMenu().add(0, MENU_ID_SAVE_IMAGE, 0, getString(R.string.chat_detail_save_image));
+        popupMenu.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() != MENU_ID_SAVE_IMAGE) {
+                return false;
+            }
+
+            saveImageToDevice(selectedImageUrl);
+            return true;
+        });
+        popupMenu.show();
+    }
+
+    private void saveImageToDevice(@Nullable String imageUrl) {
+        if (!isUiReady() || TextUtils.isEmpty(imageUrl)) {
+            showError(getString(R.string.chat_detail_save_image_failed));
+            return;
+        }
+
+        DownloadManager downloadManager = (DownloadManager) requireContext()
+                .getSystemService(Context.DOWNLOAD_SERVICE);
+        if (downloadManager == null) {
+            showError(getString(R.string.chat_detail_save_image_failed));
+            return;
+        }
+
+        String fileName = buildDownloadFileName(imageUrl);
+
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(imageUrl));
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        request.setTitle(fileName);
+        request.setDescription(getString(R.string.chat_detail_downloading_image));
+        request.setMimeType("image/*");
+        request.setAllowedOverMetered(true);
+        request.setAllowedOverRoaming(true);
+
+        try {
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+        } catch (Exception ignored) {
+            // Fall back to DownloadManager default destination.
+        }
+
+        try {
+            downloadManager.enqueue(request);
+            UiHelper.showToast(requireContext(), R.string.chat_detail_save_image_started);
+        } catch (Exception exception) {
+            showError(getString(R.string.chat_detail_save_image_failed));
+        }
+    }
+
+    @NonNull
+    private String buildDownloadFileName(@Nullable String imageUrl) {
+        String defaultName = "chat_image_" + System.currentTimeMillis() + ".jpg";
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            return defaultName;
+        }
+
+        try {
+            Uri parsedUri = Uri.parse(imageUrl);
+            String lastSegment = parsedUri.getLastPathSegment();
+            if (lastSegment == null || lastSegment.trim().isEmpty()) {
+                return defaultName;
+            }
+
+            String sanitized = lastSegment.trim();
+            int queryIndex = sanitized.indexOf('?');
+            if (queryIndex >= 0) {
+                sanitized = sanitized.substring(0, queryIndex);
+            }
+
+            if (sanitized.isEmpty()) {
+                return defaultName;
+            }
+
+            if (sanitized.contains(".")) {
+                return sanitized;
+            }
+
+            return sanitized + ".jpg";
+        } catch (Exception ignored) {
+            return defaultName;
+        }
+    }
+
+    private void updateImageCounter(@NonNull TextView counterTextView, int currentIndex, int totalImages) {
+        int currentDisplayIndex = Math.max(1, Math.min(currentIndex + 1, Math.max(totalImages, 1)));
+        counterTextView.setText(getString(
+                R.string.chat_detail_image_counter_format,
+                currentDisplayIndex,
+                Math.max(totalImages, 1)
+        ));
+    }
+
+    private static final class FullscreenImageAdapter
+            extends RecyclerView.Adapter<FullscreenImageAdapter.ImageViewHolder> {
 
         private final List<String> imageUrls;
 
-        private ChatImageGalleryAdapter(@NonNull List<String> imageUrls) {
+        private FullscreenImageAdapter(@NonNull List<String> imageUrls) {
             this.imageUrls = imageUrls;
         }
 
@@ -1235,7 +1405,7 @@ public class ChatDetailFragment extends Fragment {
         @Override
         public ImageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_chat_gallery_image, parent, false);
+                    .inflate(R.layout.item_chat_image_viewer_page, parent, false);
             return new ImageViewHolder(view);
         }
 

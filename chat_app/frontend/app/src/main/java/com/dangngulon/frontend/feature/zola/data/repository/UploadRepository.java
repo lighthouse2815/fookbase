@@ -310,7 +310,7 @@ public class UploadRepository implements IUploadRepository {
             return null;
         }
 
-        String[] preferredKeys = {"url", "imageUrl", "secure_url", "secureUrl", "fileUrl", "filePath", "path"};
+        String[] preferredKeys = {"secure_url", "secureUrl", "url", "imageUrl", "fileUrl", "filePath", "path"};
         for (String key : preferredKeys) {
             Object value = payload.get(key);
             String normalizedUrl = normalizeUploadedUrl(value);
@@ -380,6 +380,10 @@ public class UploadRepository implements IUploadRepository {
         }
 
         if (isHttpUrl(trimmed)) {
+            // Backend validator accepts only HTTPS URLs for attachments.
+            if (trimmed.startsWith("http://res.cloudinary.com/")) {
+                return "https://" + trimmed.substring("http://".length());
+            }
             return trimmed;
         }
 

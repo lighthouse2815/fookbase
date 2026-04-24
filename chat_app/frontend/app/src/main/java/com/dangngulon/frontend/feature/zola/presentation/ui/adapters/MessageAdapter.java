@@ -22,6 +22,7 @@ import com.dangngulon.frontend.feature.zola.presentation.model.MessageUiModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.ViewHolder> {
@@ -85,6 +86,21 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
         }
 
         List<MessageUiModel> newList = new ArrayList<>(getCurrentList());
+        String newMessageId = message.getMessageId();
+        if (newMessageId != null) {
+            for (MessageUiModel existing : newList) {
+                if (existing == null) {
+                    continue;
+                }
+                if (newMessageId.equals(existing.getMessageId())) {
+                    if (onCommitted != null) {
+                        onCommitted.run();
+                    }
+                    return;
+                }
+            }
+        }
+
         newList.add(message);
         int previousLastIndex = newList.size() - 2;
         submitList(newList, () -> {
@@ -202,12 +218,75 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
                 continue;
             }
 
-            if (attachment.getType() == AttachmentType.IMAGE && !TextUtils.isEmpty(attachment.getUrl())) {
+            if (isImageAttachment(attachment)) {
                 imageAttachments.add(attachment);
             }
         }
 
         return imageAttachments;
+    }
+
+    private static boolean isImageAttachment(@NonNull AttachmentUiModel attachment) {
+        String url = safeTrim(attachment.getUrl());
+        if (url == null) {
+            return false;
+        }
+
+        if (attachment.getType() == AttachmentType.IMAGE) {
+            return true;
+        }
+
+        String contentType = safeTrim(attachment.getContentType());
+        if (contentType != null && contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            return true;
+        }
+
+        String fileName = safeTrim(attachment.getFileName());
+        if (fileName != null) {
+            String lower = fileName.toLowerCase(Locale.ROOT);
+            if (lower.endsWith(".jpg")
+                    || lower.endsWith(".jpeg")
+                    || lower.endsWith(".png")
+                    || lower.endsWith(".webp")
+                    || lower.endsWith(".gif")
+                    || lower.endsWith(".bmp")
+                    || lower.endsWith(".heic")
+                    || lower.endsWith(".heif")) {
+                return true;
+            }
+        }
+
+        String lowerUrl = url.toLowerCase(Locale.ROOT);
+        return lowerUrl.contains("/image/upload/")
+                || lowerUrl.endsWith(".jpg")
+                || lowerUrl.endsWith(".jpeg")
+                || lowerUrl.endsWith(".png")
+                || lowerUrl.endsWith(".webp")
+                || lowerUrl.endsWith(".gif");
+    }
+
+    @NonNull
+    private static String resolveImageDisplayUrl(@NonNull String url) {
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+
+        // Force browser-friendly delivery format for Cloudinary assets.
+        if (trimmed.contains("res.cloudinary.com") && trimmed.contains("/upload/")) {
+            return trimmed.replace("/upload/", "/upload/f_auto,q_auto/");
+        }
+
+        return trimmed;
+    }
+
+    @Nullable
+    private static String safeTrim(@Nullable String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public abstract static class ViewHolder extends RecyclerView.ViewHolder {
@@ -236,7 +315,7 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
                 AttachmentUiModel firstImageAttachment = imageAttachments.get(0);
                 binding.layoutAttachmentSent.setVisibility(View.VISIBLE);
                 Glide.with(binding.imgAttachmentSent)
-                        .load(firstImageAttachment.getUrl())
+                        .load(resolveImageDisplayUrl(firstImageAttachment.getUrl()))
                         .placeholder(R.drawable.default_avatar)
                         .error(R.drawable.default_avatar)
                         .into(binding.imgAttachmentSent);
@@ -310,7 +389,7 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
                 AttachmentUiModel firstImageAttachment = imageAttachments.get(0);
                 binding.layoutAttachmentReceived.setVisibility(View.VISIBLE);
                 Glide.with(binding.imgAttachmentReceived)
-                        .load(firstImageAttachment.getUrl())
+                        .load(resolveImageDisplayUrl(firstImageAttachment.getUrl()))
                         .placeholder(R.drawable.default_avatar)
                         .error(R.drawable.default_avatar)
                         .into(binding.imgAttachmentReceived);
