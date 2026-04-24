@@ -1,3 +1,4 @@
+import { motion, useAnimationControls } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -182,6 +183,7 @@ export const RegisterTermsModal = ({ onClose }: RegisterTermsModalProps) => {
   const [language, setLanguage] = useState<TermsLanguage>('vi');
   const [hasReachedBottom, setHasReachedBottom] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const shakeControls = useAnimationControls();
 
   const copy = TERMS_MODAL_COPY[language];
   const clauses = useMemo(
@@ -201,13 +203,21 @@ export const RegisterTermsModal = ({ onClose }: RegisterTermsModalProps) => {
     }
   }, []);
 
+  const shakeModalOnce = useCallback(() => {
+    void shakeControls.start({
+      x: [0, -14, 12, -9, 7, -4, 0],
+      transition: { duration: 0.35, ease: 'easeInOut' },
+    });
+  }, [shakeControls]);
+
   const handleTryClose = useCallback(() => {
     if (!hasReachedBottom) {
+      shakeModalOnce();
       return;
     }
 
     onClose();
-  }, [hasReachedBottom, onClose]);
+  }, [hasReachedBottom, onClose, shakeModalOnce]);
 
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -239,16 +249,14 @@ export const RegisterTermsModal = ({ onClose }: RegisterTermsModalProps) => {
       }
 
       event.preventDefault();
-      if (hasReachedBottom) {
-        onClose();
-      }
+      handleTryClose();
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [hasReachedBottom, onClose]);
+  }, [handleTryClose]);
 
   return (
     <div className="fixed inset-0 z-[230] flex items-center justify-center p-4 sm:p-6">
@@ -259,10 +267,12 @@ export const RegisterTermsModal = ({ onClose }: RegisterTermsModalProps) => {
         aria-label={copy.overlayAriaLabel}
       />
 
-      <div
+      <motion.div
         role="dialog"
         aria-modal="true"
         aria-labelledby="register-terms-title"
+        animate={shakeControls}
+        initial={false}
         className="relative z-10 w-full max-w-3xl overflow-hidden rounded-3xl border border-indigo-100/20 bg-slate-950 text-slate-100 shadow-[0_36px_90px_-40px_rgba(15,23,42,0.95)]"
       >
         <div className="h-1.5 w-full bg-gradient-to-r from-cyan-400 via-indigo-400 to-emerald-400" />
@@ -303,13 +313,12 @@ export const RegisterTermsModal = ({ onClose }: RegisterTermsModalProps) => {
           <button
             type="button"
             onClick={handleTryClose}
-            disabled={!hasReachedBottom}
             aria-label={copy.closeButtonAriaLabel}
             title={hasReachedBottom ? copy.closeButtonHint : copy.scrollToBottomHint}
             className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${
               hasReachedBottom
                 ? 'border-white/25 text-white hover:border-cyan-300/80 hover:text-cyan-100'
-                : 'cursor-not-allowed border-white/10 text-slate-500'
+                : 'border-amber-200/30 text-amber-100/85 hover:border-amber-200/50'
             }`}
           >
             <X size={18} />
@@ -344,7 +353,7 @@ export const RegisterTermsModal = ({ onClose }: RegisterTermsModalProps) => {
         >
           {hasReachedBottom ? copy.readyToCloseText : copy.scrollToBottomHint}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

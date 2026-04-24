@@ -15,6 +15,8 @@ import { PasswordField } from '@/features/auth/components/PasswordField';
 import { RegisterTermsModal } from '@/features/auth/components/RegisterTermsModal';
 import { useRegister } from '@/features/auth/hooks/useRegister';
 
+type TermsModalSource = 'checkbox' | 'link';
+
 export const RegisterPage = () => {
   const {
     t,
@@ -45,6 +47,8 @@ export const RegisterPage = () => {
     onSubmitGoogle,
   } = useRegister();
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [hasReadTerms, setHasReadTerms] = useState(false);
+  const [termsModalSource, setTermsModalSource] = useState<TermsModalSource>('link');
 
   if (isAuthenticated && !isTransitioning && !isCompletingRegisterAuth) {
     return <Navigate to="/" replace />;
@@ -52,6 +56,27 @@ export const RegisterPage = () => {
 
   const isOtpStep = step === 'otp';
   const tone = isOtpStep ? 'recovery' : 'register';
+  const acceptTermsRegistration = registerForm.register('acceptTerms', {
+    validate: (value) => value || t('auth.acceptTermsRequired'),
+  });
+
+  const openTermsModal = (source: TermsModalSource) => {
+    setTermsModalSource(source);
+    setIsTermsModalOpen(true);
+  };
+
+  const handleTermsModalClose = () => {
+    setIsTermsModalOpen(false);
+    setHasReadTerms(true);
+
+    if (termsModalSource === 'checkbox') {
+      registerForm.setValue('acceptTerms', true, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    }
+  };
 
   return (
     <>
@@ -299,9 +324,13 @@ export const RegisterPage = () => {
                       <input
                         type="checkbox"
                         className="mt-0.5 h-4 w-4 rounded border-white/30 bg-white/10 text-brand-500 focus:ring-2 focus:ring-brand-400"
-                        {...registerForm.register('acceptTerms', {
-                          validate: (value) => value || t('auth.acceptTermsRequired'),
-                        })}
+                        {...acceptTermsRegistration}
+                        onClick={(event) => {
+                          if (!hasReadTerms) {
+                            event.preventDefault();
+                            openTermsModal('checkbox');
+                          }
+                        }}
                       />
                       <span>
                         {t('auth.termsPrefix')}{' '}
@@ -310,7 +339,7 @@ export const RegisterPage = () => {
                           href="#"
                           onClick={(event) => {
                             event.preventDefault();
-                            setIsTermsModalOpen(true);
+                            openTermsModal('link');
                           }}
                         >
                           {t('auth.termsTitle')}
@@ -355,7 +384,7 @@ export const RegisterPage = () => {
         </AuthCard>
       </AuthLayout>
 
-      {isTermsModalOpen ? <RegisterTermsModal onClose={() => setIsTermsModalOpen(false)} /> : null}
+      {isTermsModalOpen ? <RegisterTermsModal onClose={handleTermsModalClose} /> : null}
     </>
   );
 };
