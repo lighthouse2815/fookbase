@@ -13,8 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  frontend-build:
-    name: Frontend Build
+  frontend-build-deploy:
+    name: Frontend Build Deploy
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,15 +40,38 @@ jobs:
           VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID }}
         run: npm run build
 
-      - name: Upload frontend artifact
-        uses: actions/upload-artifact@v4
+      - name: Azure login
+        if: github.event_name != 'pull_request'
+        uses: azure/login@v2
         with:
-          name: frontend-dist
-          path: frontend/dist
-          if-no-files-found: error
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-  backend-build-test-publish:
-    name: Backend Build Test Publish
+      - name: Enable static website hosting
+        if: github.event_name != 'pull_request'
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az storage blob service-properties update \
+              --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
+              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
+              --static-website \
+              --index-document index.html \
+              --404-document index.html
+
+      - name: Upload frontend dist to $web
+        if: github.event_name != 'pull_request'
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az storage blob upload-batch \
+              --destination '$web' \
+              --source frontend/dist \
+              --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
+              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
+              --overwrite
+
+  backend-build-test-deploy:
+    name: Backend Build Test Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -76,75 +99,15 @@ jobs:
       - name: Publish backend
         run: dotnet publish backend/fookbase.API/fookbase.API.csproj --configuration Release --no-build --output ${{ github.workspace }}/backend_publish
 
-      - name: Upload backend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-publish
-          path: backend_publish
-          if-no-files-found: error
-
-  deploy-backend-azure:
-    name: Deploy Backend To Azure Web App
-    runs-on: ubuntu-latest
-    needs: backend-build-test-publish
-    if: github.event_name != 'pull_request'
-    environment:
-      name: production
-    steps:
-      - name: Download backend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-publish
-          path: backend_publish
-
       - name: Azure login
+        if: github.event_name != 'pull_request'
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy backend package
+        if: github.event_name != 'pull_request'
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}
           package: backend_publish
-
-  deploy-frontend-azure-blob:
-    name: Deploy Frontend To Azure Blob Static Website
-    runs-on: ubuntu-latest
-    needs: frontend-build
-    if: github.event_name != 'pull_request'
-    environment:
-      name: production
-    steps:
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend-dist
-
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Enable static website hosting
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az storage blob service-properties update \
-              --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
-              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
-              --static-website \
-              --index-document index.html \
-              --404-document index.html
-
-      - name: Upload frontend dist to $web
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az storage blob upload-batch \
-              --destination '$web' \
-              --source frontend-dist \
-              --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
-              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
-              --overwrite
