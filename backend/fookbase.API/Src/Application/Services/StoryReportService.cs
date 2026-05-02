@@ -28,6 +28,7 @@ public class StoryReportService : IStoryReportService
     private readonly IStoryReportRepository _storyReportRepository;
     private readonly IStoryRepository _storyRepository;
     private readonly IJavaApiService _javaApiService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly INotificationService _notificationService;
     private readonly IAdminAuditLogService _adminAuditLogService;
     private readonly IUnitOfWork _unitOfWork;
@@ -37,6 +38,7 @@ public class StoryReportService : IStoryReportService
         IStoryReportRepository storyReportRepository,
         IStoryRepository storyRepository,
         IJavaApiService javaApiService,
+        IUserReadModelService userReadModelService,
         INotificationService notificationService,
         IAdminAuditLogService adminAuditLogService,
         IUnitOfWork unitOfWork,
@@ -45,6 +47,7 @@ public class StoryReportService : IStoryReportService
         _storyReportRepository = storyReportRepository;
         _storyRepository = storyRepository;
         _javaApiService = javaApiService;
+        _userReadModelService = userReadModelService;
         _notificationService = notificationService;
         _adminAuditLogService = adminAuditLogService;
         _unitOfWork = unitOfWork;
@@ -249,7 +252,11 @@ public class StoryReportService : IStoryReportService
             .Distinct()
             .ToList();
 
-        var userSummaries = await ResolveUserSummariesAsync(userIds, cancellationToken);
+        var userSummaries = await _userReadModelService.ResolveAuthorsAsync(
+            userIds,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "user");
 
         return reports
             .Select(report =>
@@ -263,47 +270,6 @@ public class StoryReportService : IStoryReportService
                         : null);
             })
             .ToList();
-    }
-
-    private async Task<Dictionary<Guid, AuthorSummaryDto>> ResolveUserSummariesAsync(
-        IEnumerable<Guid> userIds,
-        CancellationToken cancellationToken)
-    {
-        var distinctUserIds = userIds.Distinct().ToList();
-        if (distinctUserIds.Count == 0)
-        {
-            return new Dictionary<Guid, AuthorSummaryDto>();
-        }
-
-        var tasks = distinctUserIds.Select(async userId =>
-        {
-            try
-            {
-                var profile = await _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
-                var summary = profile is null
-                    ? BuildFallbackSummary(userId)
-                    : new AuthorSummaryDto
-                    {
-                        Id = userId,
-                        DisplayName = string.IsNullOrWhiteSpace(profile.DisplayName)
-                            ? "user"
-                            : profile.DisplayName.Trim(),
-                        AvatarUrl = string.IsNullOrWhiteSpace(profile.AvatarUrl)
-                            ? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-                            : profile.AvatarUrl.Trim()
-                    };
-
-                return new KeyValuePair<Guid, AuthorSummaryDto>(userId, summary);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                _logger.LogWarning(exception, "Could not load user summary for story report user {UserId}.", userId);
-                return new KeyValuePair<Guid, AuthorSummaryDto>(userId, BuildFallbackSummary(userId));
-            }
-        });
-
-        var pairs = await Task.WhenAll(tasks);
-        return pairs.ToDictionary(pair => pair.Key, pair => pair.Value);
     }
 
     private async Task TryCreateResolveNotificationsAsync(

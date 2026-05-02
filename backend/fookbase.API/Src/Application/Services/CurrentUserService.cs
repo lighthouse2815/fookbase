@@ -1,4 +1,3 @@
-using System.Net;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
@@ -11,13 +10,16 @@ namespace InteractHub.Api.Application.Services;
 public class CurrentUserService : ICurrentUserService
 {
     private readonly IJavaApiService _javaApiService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly ILogger<CurrentUserService> _logger;
 
     public CurrentUserService(
         IJavaApiService javaApiService,
+        IUserReadModelService userReadModelService,
         ILogger<CurrentUserService> logger)
     {
         _javaApiService = javaApiService;
+        _userReadModelService = userReadModelService;
         _logger = logger;
     }
 
@@ -28,12 +30,13 @@ public class CurrentUserService : ICurrentUserService
     {
         try
         {
-            var profile = await _javaApiService.GetProfileSummaryByUserId(
-                userId,
-                cancellationToken: cancellationToken,
+            var profileLookup = await _userReadModelService.ResolveProfileLookupAsync(
+                [userId],
+                cancellationToken,
+                requireFresh: false,
                 accessToken: accessToken);
 
-            if (profile is null)
+            if (!profileLookup.TryGetValue(userId, out var profile) || profile is null)
             {
                 return JavaApiCallResult<CurrentUserResponseDto>.Failure(
                     StatusCodes.Status404NotFound,
@@ -57,19 +60,16 @@ public class CurrentUserService : ICurrentUserService
 
             return JavaApiCallResult<CurrentUserResponseDto>.Success(response, StatusCodes.Status200OK);
         }
-        catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _logger.LogWarning(exception, "Java profile API rejected token for user {UserId}.", userId);
-            return JavaApiCallResult<CurrentUserResponseDto>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
+            throw;
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception)
         {
-            _logger.LogError(exception, "Java profile API is unavailable when loading /api/users/me for user {UserId}.", userId);
+            _logger.LogError(exception, "Could not load current-user profile for user {UserId}.", userId);
             return JavaApiCallResult<CurrentUserResponseDto>.Failure(
                 StatusCodes.Status503ServiceUnavailable,
-                "Java profile API is unavailable.");
+                "Current user profile is unavailable.");
         }
     }
 

@@ -37,6 +37,7 @@ public class StoryService : IStoryService
     private readonly IStoryRepository _storyRepository;
     private readonly IStoryReactionRepository _storyReactionRepository;
     private readonly IJavaApiService _javaApiService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<StoryService> _logger;
@@ -45,6 +46,7 @@ public class StoryService : IStoryService
         IStoryRepository storyRepository,
         IStoryReactionRepository storyReactionRepository,
         IJavaApiService javaApiService,
+        IUserReadModelService userReadModelService,
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
         ILogger<StoryService> logger)
@@ -52,6 +54,7 @@ public class StoryService : IStoryService
         _storyRepository = storyRepository;
         _storyReactionRepository = storyReactionRepository;
         _javaApiService = javaApiService;
+        _userReadModelService = userReadModelService;
         _unitOfWork = unitOfWork;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
@@ -66,7 +69,7 @@ public class StoryService : IStoryService
         query.Normalize();
 
         var feedUserIds = await ResolveFeedUserIdsAsync(currentUserId, accessToken, cancellationToken);
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken, requireFresh: false);
         if (blockedUserIds.Count > 0)
         {
             feedUserIds = feedUserIds
@@ -100,7 +103,7 @@ public class StoryService : IStoryService
     {
         query.Normalize();
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken, requireFresh: true);
         if (blockedUserIds.Contains(targetUserId))
         {
             return PagedResult<StoryResponseDto>.Create(new List<StoryResponseDto>(), query.Page, query.PageSize, 0);
@@ -136,7 +139,7 @@ public class StoryService : IStoryService
         var story = await _storyRepository.GetByIdAsync(storyId, cancellationToken)
             ?? throw new NotFoundException("Story not found.");
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken, requireFresh: true);
         if (blockedUserIds.Contains(story.UserId))
         {
             throw new NotFoundException("Story not found.");
@@ -183,7 +186,7 @@ public class StoryService : IStoryService
         var story = await _storyRepository.GetByIdForUpdateAsync(storyId, cancellationToken)
             ?? throw new NotFoundException("Story not found.");
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(viewerUserId, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(viewerUserId, cancellationToken, requireFresh: true);
         if (blockedUserIds.Contains(story.UserId))
         {
             throw new NotFoundException("Story not found.");
@@ -229,38 +232,13 @@ public class StoryService : IStoryService
         string? accessToken,
         CancellationToken cancellationToken)
     {
-        var userIds = new HashSet<Guid> { currentUserId };
+        var userIds = await _userReadModelService.ResolveContactIdsAsync(
+            currentUserId,
+            accessToken,
+            cancellationToken,
+            requireFresh: false);
 
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return userIds;
-        }
-
-        try
-        {
-            var contactsResult = await _javaApiService.GetContactsByUserAsync(accessToken, cancellationToken);
-            if (!contactsResult.IsSuccess || contactsResult.Data is null)
-            {
-                return userIds;
-            }
-
-            foreach (var contact in contactsResult.Data)
-            {
-                if (Guid.TryParse(contact.UserId, out var friendId))
-                {
-                    userIds.Add(friendId);
-                }
-            }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(exception, "Could not resolve contacts for story feed of user {UserId}.", currentUserId);
-        }
-
+        userIds.Add(currentUserId);
         return userIds;
     }
 
@@ -268,53 +246,20 @@ public class StoryService : IStoryService
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        var distinctUserIds = userIds.Distinct().ToList();
-        if (distinctUserIds.Count == 0)
-        {
-            return new Dictionary<Guid, AuthorSummaryDto>();
-        }
-
-        var tasks = distinctUserIds.Select(async userId =>
-            new KeyValuePair<Guid, AuthorSummaryDto>(userId, await ResolveAuthorAsync(userId, cancellationToken)));
-
-        var results = await Task.WhenAll(tasks);
-        return results.ToDictionary(pair => pair.Key, pair => pair.Value);
+        return await _userReadModelService.ResolveAuthorsAsync(
+            userIds,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "user");
     }
 
     private async Task<AuthorSummaryDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var profileTask = _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
-            var profile = await profileTask;
-            var displayName = profile?.DisplayName.TrimToNull()
-                ?? "user";
-
-            return new AuthorSummaryDto
-            {
-                Id = userId,
-                DisplayName = displayName,
-                AvatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-            };
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Falling back to default story author for user {UserId}.",
-                userId);
-
-            return new AuthorSummaryDto
-            {
-                Id = userId,
-                DisplayName = "user",
-                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-            };
-        }
+        return await _userReadModelService.ResolveAuthorAsync(
+            userId,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "user");
     }
 
     private StoryResponseDto MapStoryToResponse(
@@ -496,36 +441,15 @@ public class StoryService : IStoryService
         return content.Trim();
     }
 
-    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid currentUserId, CancellationToken cancellationToken)
+    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(
+        Guid currentUserId,
+        CancellationToken cancellationToken,
+        bool requireFresh = false)
     {
-        try
-        {
-            var result = await _javaApiService.GetBlockedUserIdsAsync(string.Empty, cancellationToken);
-            if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
-            {
-                return new HashSet<Guid>();
-            }
-
-            return result.Data
-                .Where(userId => !string.IsNullOrWhiteSpace(userId))
-                .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
-                .Where(parsedUserId => parsedUserId.HasValue)
-                .Select(parsedUserId => parsedUserId!.Value)
-                .ToHashSet();
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Could not resolve blocked users for story request of user {UserId}.",
-                currentUserId);
-
-            return new HashSet<Guid>();
-        }
+        return await _userReadModelService.ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            requireFresh: requireFresh);
     }
 
 }

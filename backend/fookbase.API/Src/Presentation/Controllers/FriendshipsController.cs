@@ -39,7 +39,7 @@ public class FriendshipsController : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<ContactDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<ContactDto>>>> GetContacts(CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.GetContactsAsync(ExtractAccessToken(), cancellationToken);
+        var result = await _friendshipService.GetContactsAsync(GetCurrentUserId(), ExtractAccessToken(), cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             return BuildErrorResponse<List<ContactDto>>(result, "Load contacts failed.");

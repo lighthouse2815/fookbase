@@ -21,6 +21,7 @@ public class LikeService : ILikeService
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<LikeService> _logger;
 
@@ -30,6 +31,7 @@ public class LikeService : ILikeService
         IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
+        IUserReadModelService userReadModelService,
         IUnitOfWork unitOfWork,
         ILogger<LikeService> logger)
     {
@@ -38,6 +40,7 @@ public class LikeService : ILikeService
         _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
+        _userReadModelService = userReadModelService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -249,62 +252,23 @@ public class LikeService : ILikeService
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        var distinctIds = userIds.Distinct().ToList();
-        if (distinctIds.Count == 0)
-        {
-            return new Dictionary<Guid, UserProfileSummaryDto?>();
-        }
-
-        var profileTasks = distinctIds.Select(async userId =>
-        {
-            try
-            {
-                var profile = await _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
-                return new KeyValuePair<Guid, UserProfileSummaryDto?>(userId, profile);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                _logger.LogWarning(
-                    exception,
-                    "Failed to resolve profile summary while loading post reactions for user {UserId}.",
-                    userId);
-
-                return new KeyValuePair<Guid, UserProfileSummaryDto?>(userId, null);
-            }
-        });
-
-        var results = await Task.WhenAll(profileTasks);
-        return results.ToDictionary(item => item.Key, item => item.Value);
+        return await _userReadModelService.ResolveProfileLookupAsync(
+            userIds,
+            cancellationToken,
+            requireFresh: false);
     }
 
     private async Task<(string DisplayName, string AvatarUrl)> ResolveNotificationActorSummaryAsync(
         Guid actorUserId,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var profile = await _javaApiService.GetProfileSummaryByUserId(actorUserId, cancellationToken: cancellationToken);
-            var displayName = profile?.DisplayName.TrimToNull() ?? "Someone";
-            var avatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId);
-            return (displayName, avatarUrl);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Could not resolve actor summary while creating post reaction notification for user {ActorUserId}.",
-                actorUserId);
+        var summary = await _userReadModelService.ResolveAuthorAsync(
+            actorUserId,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "Someone");
 
-            return ("Someone", AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
-        }
+        return (summary.DisplayName, summary.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
     }
 
 }

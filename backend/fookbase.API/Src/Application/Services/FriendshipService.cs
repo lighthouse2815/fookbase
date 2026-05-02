@@ -1,7 +1,9 @@
 using InteractHub.Api.Application.DTOs.Friendships;
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Http;
 
 namespace InteractHub.Api.Application.Services;
@@ -9,10 +11,12 @@ namespace InteractHub.Api.Application.Services;
 public class FriendshipService : IFriendshipService
 {
     private readonly IJavaApiService _javaApiService;
+    private readonly IUserReadModelService _userReadModelService;
 
-    public FriendshipService(IJavaApiService javaApiService)
+    public FriendshipService(IJavaApiService javaApiService, IUserReadModelService userReadModelService)
     {
         _javaApiService = javaApiService;
+        _userReadModelService = userReadModelService;
     }
 
     public async Task<JavaApiCallResult<List<PendingFriendRequesterDto>>> GetPendingRequestersAsync(
@@ -37,6 +41,7 @@ public class FriendshipService : IFriendshipService
     }
 
     public async Task<JavaApiCallResult<List<ContactDto>>> GetContactsAsync(
+        Guid currentUserId,
         string? accessToken,
         CancellationToken cancellationToken)
     {
@@ -45,16 +50,45 @@ public class FriendshipService : IFriendshipService
             return UnauthorizedResult<List<ContactDto>>();
         }
 
-        var result = await _javaApiService.GetContactsByUserAsync(accessToken.Trim(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
+        var contactIds = await _userReadModelService.ResolveContactIdsAsync(
+            currentUserId,
+            accessToken.Trim(),
+            cancellationToken,
+            requireFresh: false);
+
+        contactIds.Remove(currentUserId);
+        if (contactIds.Count == 0)
         {
-            return BuildFailure<List<ContactDto>>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Load contacts failed.");
+            return JavaApiCallResult<List<ContactDto>>.Success(new List<ContactDto>(), StatusCodes.Status200OK);
         }
 
-        return JavaApiCallResult<List<ContactDto>>.Success(result.Data, ResolveSuccessStatusCode(result.StatusCode));
+        var summaries = await _userReadModelService.ResolveAuthorsAsync(
+            contactIds,
+            cancellationToken,
+            requireFresh: false,
+            accessToken: accessToken.Trim(),
+            fallbackDisplayName: "user");
+
+        var mappedContacts = contactIds
+            .Select(contactUserId =>
+            {
+                var summary = summaries.TryGetValue(contactUserId, out var author)
+                    ? author
+                    : BuildFallbackAuthor(contactUserId);
+
+                return new ContactDto
+                {
+                    ContactId = contactUserId.ToString(),
+                    UserId = contactUserId.ToString(),
+                    AvatarUrl = summary.AvatarUrl,
+                    NickName = summary.DisplayName
+                };
+            })
+            .OrderBy(contact => contact.NickName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(contact => contact.UserId, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return JavaApiCallResult<List<ContactDto>>.Success(mappedContacts, StatusCodes.Status200OK);
     }
 
     public async Task<JavaApiCallResult<List<UserProfilePresenceDto>>> GetFriendPresenceAsync(
@@ -344,5 +378,15 @@ public class FriendshipService : IFriendshipService
             : errorMessage;
 
         return JavaApiCallResult<TDestination>.Failure(resolvedStatusCode, resolvedErrorMessage);
+    }
+
+    private static AuthorSummaryDto BuildFallbackAuthor(Guid userId)
+    {
+        return new AuthorSummaryDto
+        {
+            Id = userId,
+            DisplayName = "user",
+            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
+        };
     }
 }

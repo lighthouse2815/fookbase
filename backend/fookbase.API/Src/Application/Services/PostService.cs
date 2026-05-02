@@ -23,6 +23,7 @@ public class PostService : IPostService
     private readonly IHashtagRepository _hashtagRepository;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PostService> _logger;
 
@@ -32,6 +33,7 @@ public class PostService : IPostService
         IHashtagRepository hashtagRepository,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
+        IUserReadModelService userReadModelService,
         IUnitOfWork unitOfWork,
         ILogger<PostService> logger)
     {
@@ -40,6 +42,7 @@ public class PostService : IPostService
         _hashtagRepository = hashtagRepository;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
+        _userReadModelService = userReadModelService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -281,47 +284,20 @@ public class PostService : IPostService
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        var distinctUserIds = userIds.Distinct().ToList();
-        if (distinctUserIds.Count == 0)
-        {
-            return new Dictionary<Guid, AuthorSummaryDto>();
-        }
-
-        var tasks = distinctUserIds.Select(async userId =>
-            new KeyValuePair<Guid, AuthorSummaryDto>(userId, await ResolveAuthorAsync(userId, cancellationToken)));
-
-        var results = await Task.WhenAll(tasks);
-        return results.ToDictionary(pair => pair.Key, pair => pair.Value);
+        return await _userReadModelService.ResolveAuthorsAsync(
+            userIds,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "user");
     }
 
     private async Task<AuthorSummaryDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var profileTask = _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
-            var profile = await profileTask;
-            var displayName = profile?.DisplayName.TrimToNull()
-                ?? "user";
-
-            return new AuthorSummaryDto
-            {
-                Id = userId,
-                DisplayName = displayName,
-                AvatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-            };
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Falling back to default post author for user {UserId} while loading feed.",
-                userId);
-            return CreateFallbackAuthor(userId);
-        }
+        return await _userReadModelService.ResolveAuthorAsync(
+            userId,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "user");
     }
 
     private static AuthorSummaryDto CreateFallbackAuthor(Guid userId)
@@ -428,26 +404,15 @@ public class PostService : IPostService
         string? accessToken,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return;
-        }
-
         try
         {
-            var contactsResult = await _javaApiService.GetContactsByUserAsync(accessToken, cancellationToken);
-            if (!contactsResult.IsSuccess || contactsResult.Data is null || contactsResult.Data.Count == 0)
-            {
-                return;
-            }
+            var friendIds = await _userReadModelService.ResolveContactIdsAsync(
+                authorUserId,
+                accessToken?.Trim(),
+                cancellationToken,
+                requireFresh: false);
 
-            var friendIds = contactsResult.Data
-                .Select(contact => ParseGuid(contact.UserId))
-                .Where(friendId => friendId.HasValue && friendId.Value != authorUserId)
-                .Select(friendId => friendId!.Value)
-                .Distinct()
-                .ToList();
-
+            friendIds.Remove(authorUserId);
             if (friendIds.Count == 0)
             {
                 return;
@@ -502,83 +467,20 @@ public class PostService : IPostService
         string? accessToken,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var profileSummary = await _javaApiService.GetProfileSummaryByUserId(
-                actorUserId,
-                cancellationToken: cancellationToken,
-                accessToken: accessToken);
-
-            var summaryDisplayName = profileSummary?.DisplayName.TrimToNull();
-            var summaryAvatarUrl = profileSummary?.AvatarUrl.TrimToNull();
-            if (!string.IsNullOrWhiteSpace(summaryDisplayName) || !string.IsNullOrWhiteSpace(summaryAvatarUrl))
-            {
-                return new AuthorSummaryDto
-                {
-                    Id = actorUserId,
-                    DisplayName = summaryDisplayName ?? "Your friend",
-                    AvatarUrl = summaryAvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId)
-                };
-            }
-
-            return new AuthorSummaryDto
-            {
-                Id = actorUserId,
-                DisplayName = "Your friend",
-                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId)
-            };
-        }
-        catch
-        {
-            return new AuthorSummaryDto
-            {
-                Id = actorUserId,
-                DisplayName = "Your friend",
-                AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId)
-            };
-        }
-    }
-
-    private static Guid? ParseGuid(string? value)
-    {
-        return Guid.TryParse(value, out var parsed) ? parsed : null;
+        return await _userReadModelService.ResolveAuthorAsync(
+            actorUserId,
+            cancellationToken,
+            requireFresh: false,
+            accessToken: accessToken,
+            fallbackDisplayName: "Your friend");
     }
 
     private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid? currentUserId, CancellationToken cancellationToken)
     {
-        if (!currentUserId.HasValue)
-        {
-            return new HashSet<Guid>();
-        }
-
-        try
-        {
-            var result = await _javaApiService.GetBlockedUserIdsAsync(string.Empty, cancellationToken);
-            if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
-            {
-                return new HashSet<Guid>();
-            }
-
-            return result.Data
-                .Where(userId => !string.IsNullOrWhiteSpace(userId))
-                .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
-                .Where(parsedUserId => parsedUserId.HasValue)
-                .Select(parsedUserId => parsedUserId!.Value)
-                .ToHashSet();
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Could not resolve blocked users for post feed of user {UserId}.",
-                currentUserId.Value);
-
-            return new HashSet<Guid>();
-        }
+        return await _userReadModelService.ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            requireFresh: false);
     }
 
 }

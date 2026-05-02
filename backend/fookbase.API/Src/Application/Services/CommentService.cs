@@ -22,6 +22,7 @@ public class CommentService : ICommentService
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CommentService> _logger;
 
@@ -32,6 +33,7 @@ public class CommentService : ICommentService
         IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
+        IUserReadModelService userReadModelService,
         IUnitOfWork unitOfWork,
         ILogger<CommentService> logger)
     {
@@ -41,6 +43,7 @@ public class CommentService : ICommentService
         _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
+        _userReadModelService = userReadModelService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -151,7 +154,10 @@ public class CommentService : ICommentService
         var post = await _postRepository.GetByIdForUpdateAsync(request.PostId, cancellationToken)
             ?? throw new NotFoundException("Post not found.");
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(
+            userId,
+            cancellationToken,
+            requireFresh: true);
         if (blockedUserIds.Contains(post.UserId))
         {
             throw new ForbiddenException("You are not allowed to comment on this post.");
@@ -376,48 +382,20 @@ public class CommentService : ICommentService
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        var distinctUserIds = userIds.Distinct().ToList();
-        if (distinctUserIds.Count == 0)
-        {
-            return new Dictionary<Guid, AuthorSummaryDto>();
-        }
-
-        var tasks = distinctUserIds.Select(async userId =>
-            new KeyValuePair<Guid, AuthorSummaryDto>(userId, await ResolveAuthorAsync(userId, cancellationToken)));
-
-        var results = await Task.WhenAll(tasks);
-        return results.ToDictionary(pair => pair.Key, pair => pair.Value);
+        return await _userReadModelService.ResolveAuthorsAsync(
+            userIds,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "user");
     }
 
     private async Task<AuthorSummaryDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var profileTask = _javaApiService.GetProfileSummaryByUserId(userId, cancellationToken: cancellationToken);
-            var profile = await profileTask;
-            var displayName = profile?.DisplayName.TrimToNull()
-                ?? "đăng siu đẹp trai";
-
-            return new AuthorSummaryDto
-            {
-                Id = userId,
-                DisplayName = displayName,
-                AvatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-            };
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Falling back to default comment author for user {UserId} while loading comments.",
-                userId);
-
-            return CreateFallbackAuthor(userId);
-        }
+        return await _userReadModelService.ResolveAuthorAsync(
+            userId,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "user");
     }
 
     private static AuthorSummaryDto CreateFallbackAuthor(Guid userId)
@@ -425,7 +403,7 @@ public class CommentService : ICommentService
         return new AuthorSummaryDto
         {
             Id = userId,
-            DisplayName = "đăng đẹp trai fallback debug",
+            DisplayName = "user",
             AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
         };
     }
@@ -522,41 +500,15 @@ public class CommentService : ICommentService
         return new CommentReactionSummary(0, Array.Empty<string>());
     }
 
-    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid? currentUserId, CancellationToken cancellationToken)
+    private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(
+        Guid? currentUserId,
+        CancellationToken cancellationToken,
+        bool requireFresh = false)
     {
-        if (!currentUserId.HasValue)
-        {
-            return new HashSet<Guid>();
-        }
-
-        try
-        {
-            var result = await _javaApiService.GetBlockedUserIdsAsync(string.Empty, cancellationToken);
-            if (!result.IsSuccess || result.Data is null || result.Data.Count == 0)
-            {
-                return new HashSet<Guid>();
-            }
-
-            return result.Data
-                .Where(userId => !string.IsNullOrWhiteSpace(userId))
-                .Select(userId => Guid.TryParse(userId, out var parsedUserId) ? parsedUserId : (Guid?)null)
-                .Where(parsedUserId => parsedUserId.HasValue)
-                .Select(parsedUserId => parsedUserId!.Value)
-                .ToHashSet();
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Could not resolve blocked users for comments request of user {UserId}.",
-                currentUserId.Value);
-
-            return new HashSet<Guid>();
-        }
+        return await _userReadModelService.ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            requireFresh: requireFresh);
     }
 
 }

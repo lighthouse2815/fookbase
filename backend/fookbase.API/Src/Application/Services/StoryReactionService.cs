@@ -18,6 +18,7 @@ public class StoryReactionService : IStoryReactionService
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly IUnitOfWork _unitOfWork;
 
     public StoryReactionService(
@@ -26,6 +27,7 @@ public class StoryReactionService : IStoryReactionService
         IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
+        IUserReadModelService userReadModelService,
         IUnitOfWork unitOfWork)
     {
         _storyRepository = storyRepository;
@@ -33,6 +35,7 @@ public class StoryReactionService : IStoryReactionService
         _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
+        _userReadModelService = userReadModelService;
         _unitOfWork = unitOfWork;
     }
 
@@ -140,17 +143,13 @@ public class StoryReactionService : IStoryReactionService
         Guid actorUserId,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var profile = await _javaApiService.GetProfileSummaryByUserId(actorUserId, cancellationToken: cancellationToken);
-            var displayName = profile?.DisplayName.TrimToNull() ?? "Someone";
-            var avatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId);
-            return (displayName, avatarUrl);
-        }
-        catch
-        {
-            return ("Someone", AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
-        }
+        var summary = await _userReadModelService.ResolveAuthorAsync(
+            actorUserId,
+            cancellationToken,
+            requireFresh: false,
+            fallbackDisplayName: "Someone");
+
+        return (summary.DisplayName, summary.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
     }
 
     private static void EnsureStoryIsActive(Story story)

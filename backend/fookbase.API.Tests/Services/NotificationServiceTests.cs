@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Notifications;
+using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
@@ -15,15 +16,28 @@ public class NotificationServiceTests
     private readonly Mock<INotificationRepository> _notificationRepositoryMock = new();
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
     private readonly Mock<INotificationRealtimeService> _notificationRealtimeServiceMock = new();
+    private readonly Mock<IUserReadModelService> _userReadModelServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ILogger<NotificationService>> _loggerMock = new();
 
     private NotificationService CreateService()
     {
+        _userReadModelServiceMock
+            .Setup(service => service.ResolveProfileLookupAsync(
+                It.IsAny<IEnumerable<Guid>>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<bool>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync((IEnumerable<Guid> userIds, CancellationToken _, bool _, string? _) =>
+                userIds
+                    .Distinct()
+                    .ToDictionary(userId => userId, _ => (UserProfileSummaryDto?)null));
+
         return new NotificationService(
             _notificationRepositoryMock.Object,
             _javaApiServiceMock.Object,
             _notificationRealtimeServiceMock.Object,
+            _userReadModelServiceMock.Object,
             _unitOfWorkMock.Object,
             _loggerMock.Object);
     }

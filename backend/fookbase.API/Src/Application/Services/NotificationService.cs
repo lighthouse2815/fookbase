@@ -16,6 +16,7 @@ public class NotificationService : INotificationService
     private readonly INotificationRepository _notificationRepository;
     private readonly IJavaApiService _javaApiService;
     private readonly INotificationRealtimeService _notificationRealtimeService;
+    private readonly IUserReadModelService _userReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<NotificationService> _logger;
 
@@ -23,12 +24,14 @@ public class NotificationService : INotificationService
         INotificationRepository notificationRepository,
         IJavaApiService javaApiService,
         INotificationRealtimeService notificationRealtimeService,
+        IUserReadModelService userReadModelService,
         IUnitOfWork unitOfWork,
         ILogger<NotificationService> logger)
     {
         _notificationRepository = notificationRepository;
         _javaApiService = javaApiService;
         _notificationRealtimeService = notificationRealtimeService;
+        _userReadModelService = userReadModelService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -173,43 +176,10 @@ public class NotificationService : INotificationService
         IEnumerable<Guid> actorUserIds,
         CancellationToken cancellationToken)
     {
-        var distinctActorUserIds = actorUserIds
-            .Where(userId => userId != Guid.Empty)
-            .Distinct()
-            .ToList();
-
-        if (distinctActorUserIds.Count == 0)
-        {
-            return new Dictionary<Guid, UserProfileSummaryDto?>();
-        }
-
-        var profileTasks = distinctActorUserIds.Select(async actorUserId =>
-        {
-            try
-            {
-                var profile = await _javaApiService.GetProfileSummaryByUserId(
-                    actorUserId,
-                    cancellationToken: cancellationToken);
-
-                return new KeyValuePair<Guid, UserProfileSummaryDto?>(actorUserId, profile);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                _logger.LogWarning(
-                    exception,
-                    "Could not resolve actor profile summary for notification actor {ActorUserId}.",
-                    actorUserId);
-
-                return new KeyValuePair<Guid, UserProfileSummaryDto?>(actorUserId, null);
-            }
-        });
-
-        var resolvedProfiles = await Task.WhenAll(profileTasks);
-        return resolvedProfiles.ToDictionary(item => item.Key, item => item.Value);
+        return await _userReadModelService.ResolveProfileLookupAsync(
+            actorUserIds,
+            cancellationToken,
+            requireFresh: false);
     }
 
 }

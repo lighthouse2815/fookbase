@@ -1,3 +1,0 @@
-1. gim story vào trang các nhân, story này sẽ không bị xóa nauwx
-2. tương tự cho post, post bị gim sẽ ưu tiên đứng đầu trong profile 
-có thể thêm 1 trường trong entity hoặc tạo mẹ thêm 1 entity gim luôn

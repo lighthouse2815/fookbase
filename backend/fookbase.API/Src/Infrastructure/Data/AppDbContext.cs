@@ -46,6 +46,14 @@ public class AppDbContext : DbContext
 
     public DbSet<AppReview> AppReviews => Set<AppReview>();
 
+    public DbSet<UserProfileReadModel> UserProfileReadModels => Set<UserProfileReadModel>();
+
+    public DbSet<UserBlockRelationReadModel> UserBlockRelationReadModels => Set<UserBlockRelationReadModel>();
+
+    public DbSet<UserContactReadModel> UserContactReadModels => Set<UserContactReadModel>();
+
+    public DbSet<UserReadModelSyncState> UserReadModelSyncStates => Set<UserReadModelSyncState>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureSocialTables(modelBuilder);
@@ -393,7 +401,7 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("AppReview", table =>
             {
-                table.HasCheckConstraint("CK_AppReview_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+                table.HasCheckConstraint("CK_AppReview_Rating", "\"Rating\" >= 1 AND \"Rating\" <= 5");
             });
             entity.HasKey(review => review.Id);
 
@@ -412,6 +420,54 @@ public class AppDbContext : DbContext
             entity.HasIndex(review => review.IsHidden);
             entity.HasIndex(review => review.Rating);
             entity.HasIndex(review => review.CreatedAt);
+        });
+
+        modelBuilder.Entity<UserProfileReadModel>(entity =>
+        {
+            entity.ToTable("UserProfileReadModel");
+            entity.HasKey(profile => profile.UserId);
+
+            entity.Property(profile => profile.DisplayName)
+                .HasMaxLength(120)
+                .IsRequired();
+            entity.Property(profile => profile.AvatarUrl)
+                .HasMaxLength(2000)
+                .IsRequired();
+            entity.Property(profile => profile.UpdatedAtUtc).IsRequired();
+        });
+
+        modelBuilder.Entity<UserBlockRelationReadModel>(entity =>
+        {
+            entity.ToTable("UserBlockRelationReadModel");
+            entity.HasKey(relation => new { relation.OwnerUserId, relation.BlockedUserId });
+
+            entity.Property(relation => relation.IsBlocked).IsRequired();
+            entity.Property(relation => relation.UpdatedAtUtc).IsRequired();
+
+            entity.HasIndex(relation => relation.OwnerUserId);
+            entity.HasIndex(relation => relation.BlockedUserId);
+            entity.HasIndex(relation => new { relation.OwnerUserId, relation.IsBlocked });
+        });
+
+        modelBuilder.Entity<UserContactReadModel>(entity =>
+        {
+            entity.ToTable("UserContactReadModel");
+            entity.HasKey(relation => new { relation.OwnerUserId, relation.ContactUserId });
+
+            entity.Property(relation => relation.IsActive).IsRequired();
+            entity.Property(relation => relation.UpdatedAtUtc).IsRequired();
+
+            entity.HasIndex(relation => relation.OwnerUserId);
+            entity.HasIndex(relation => relation.ContactUserId);
+            entity.HasIndex(relation => new { relation.OwnerUserId, relation.IsActive });
+        });
+
+        modelBuilder.Entity<UserReadModelSyncState>(entity =>
+        {
+            entity.ToTable("UserReadModelSyncState");
+            entity.HasKey(state => state.UserId);
+
+            entity.Property(state => state.UpdatedAtUtc).IsRequired();
         });
     }
 }

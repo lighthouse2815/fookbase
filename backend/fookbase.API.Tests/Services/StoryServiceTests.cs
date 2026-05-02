@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Stories;
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
@@ -15,16 +16,34 @@ public class StoryServiceTests
     private readonly Mock<IStoryRepository> _storyRepositoryMock = new();
     private readonly Mock<IStoryReactionRepository> _storyReactionRepositoryMock = new();
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
+    private readonly Mock<IUserReadModelService> _userReadModelServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
     private readonly Mock<ILogger<StoryService>> _loggerMock = new();
 
     private StoryService CreateService()
     {
+        _userReadModelServiceMock
+            .Setup(service => service.ResolveBlockedUserIdsAsync(
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<bool>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(new HashSet<Guid>());
+
+        _userReadModelServiceMock
+            .Setup(service => service.ResolveContactIdsAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<bool>()))
+            .ReturnsAsync(new HashSet<Guid>());
+
         return new StoryService(
             _storyRepositoryMock.Object,
             _storyReactionRepositoryMock.Object,
             _javaApiServiceMock.Object,
+            _userReadModelServiceMock.Object,
             _unitOfWorkMock.Object,
             _httpContextAccessorMock.Object,
             _loggerMock.Object);
@@ -58,13 +77,21 @@ public class StoryServiceTests
         _javaApiServiceMock
             .Setup(service => service.GetUserById(userId, It.IsAny<CancellationToken>(), null))
             .ReturnsAsync(new UserDto { Id = userId });
-        _javaApiServiceMock
-            .Setup(service => service.GetProfileSummaryByUserId(userId, It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync(new UserProfileSummaryDto
+        _userReadModelServiceMock
+            .Setup(service => service.ResolveAuthorsAsync(
+                It.IsAny<IEnumerable<Guid>>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<bool>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>()))
+            .ReturnsAsync(new Dictionary<Guid, AuthorSummaryDto>
             {
-                UserId = userId,
-                DisplayName = "Story Owner",
-                AvatarUrl = "https://cdn.example.com/avatar.jpg"
+                [userId] = new()
+                {
+                    Id = userId,
+                    DisplayName = "Story Owner",
+                    AvatarUrl = "https://cdn.example.com/avatar.jpg"
+                }
             });
 
         _storyRepositoryMock

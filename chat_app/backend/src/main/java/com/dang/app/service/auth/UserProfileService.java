@@ -17,6 +17,7 @@ import com.dang.app.dto.auth.response.UserSecurityPrivateResponse;
 import com.dang.app.entity.messenger.Friendship;
 import com.dang.app.repository.messenger.ContactRepository;
 import com.dang.app.repository.messenger.FriendshipRepository;
+import com.dang.app.service.integration.ReadModelEventPublisher;
 import com.dang.app.service.messenger.UserPresenceService;
 import com.dang.app.utils.enums.FriendshipStatus;
 import com.dang.app.utils.error.BusinessException;
@@ -59,6 +60,7 @@ public class UserProfileService {
     private final ContactRepository contactRepository;
     private final FriendshipRepository friendshipRepository;
     private final UserPresenceService userPresenceService;
+    private final ReadModelEventPublisher readModelEventPublisher;
 
     private final UserGuard userGuard;
     private final UserProfileGuard userProfileGuard;
@@ -124,7 +126,14 @@ public class UserProfileService {
 
         createdProfile.setAvatarUrl("https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg");
 
-        return userProfileRepository.save(createdProfile);
+        UserProfile savedProfile = userProfileRepository.save(createdProfile);
+        readModelEventPublisher.publishProfileUpdated(
+                user.getId(),
+                savedProfile.getDisplayName(),
+                savedProfile.getAvatarUrl()
+        );
+
+        return savedProfile;
     }
 
 
@@ -166,7 +175,12 @@ public class UserProfileService {
             userProfile.setGender(request.getGender());
         }
 
-        userProfileRepository.save(userProfile);
+        UserProfile savedProfile = userProfileRepository.save(userProfile);
+        readModelEventPublisher.publishProfileUpdated(
+                userId,
+                savedProfile.getDisplayName(),
+                savedProfile.getAvatarUrl()
+        );
     }
 
 
@@ -315,7 +329,12 @@ public class UserProfileService {
               Objects.equals(avatar, userProfile.getAvatarUrl())))
         {
             userProfile.setAvatarUrl(avatar);
-            userProfileRepository.save(userProfile);
+            UserProfile savedProfile = userProfileRepository.save(userProfile);
+            readModelEventPublisher.publishProfileUpdated(
+                    savedProfile.getUser().getId(),
+                    savedProfile.getDisplayName(),
+                    savedProfile.getAvatarUrl()
+            );
         }
     }
 
@@ -514,7 +533,12 @@ public class UserProfileService {
         userProfile.setGender(request.getGender());
         userProfile.setCompleted(true);
 
-        userProfileRepository.save(userProfile);
+        UserProfile savedProfile = userProfileRepository.save(userProfile);
+        readModelEventPublisher.publishProfileUpdated(
+                userId,
+                savedProfile.getDisplayName(),
+                savedProfile.getAvatarUrl()
+        );
     }
 
 

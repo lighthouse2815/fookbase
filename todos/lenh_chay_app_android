@@ -1,4 +1,0 @@
-cd d:\fookbase\chat_app\frontend
-adb devices
-.\gradlew.bat installDevDebug
-adb shell am start -n com.dangngulon.frontend/.feature.auth.presentation.ui.AuthActivity

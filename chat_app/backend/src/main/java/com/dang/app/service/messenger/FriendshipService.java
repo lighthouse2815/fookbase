@@ -11,6 +11,7 @@ import com.dang.app.entity.messenger.Friendship;
 import com.dang.app.repository.messenger.FriendshipRepository;
 import com.dang.app.service.auth.UserProfileService;
 import com.dang.app.service.auth.UserService;
+import com.dang.app.service.integration.ReadModelEventPublisher;
 import com.dang.app.utils.enums.FriendshipStatus;
 import com.dang.app.utils.error.BusinessException;
 import com.dang.app.utils.error.ErrorCode;
@@ -38,6 +39,7 @@ public class FriendshipService {
     private final UserProfileService userProfileService;
     private final FriendshipRepository friendshipRepository;
     private final FriendshipMapper friendshipMapper;
+    private final ReadModelEventPublisher readModelEventPublisher;
 
     @Transactional
     public FriendshipResponse sendFriendRequest(UUID userId, FriendshipRequest request) {
@@ -103,6 +105,7 @@ public class FriendshipService {
                 .get(friendId);
 
         contactService.createContact(userId, friendId);
+        readModelEventPublisher.publishFriendshipAccepted(userId, friendId);
 
         return friendshipMapper.toResponse(friendship, friendId, displayName);
     }
@@ -146,6 +149,8 @@ public class FriendshipService {
 
         // Block always implies unfriend in both directions.
         contactService.deleteContact(userId, targetUserId);
+        readModelEventPublisher.publishFriendshipRemoved(userId, targetUserId);
+        readModelEventPublisher.publishUserBlocked(userId, targetUserId);
     }
 
     @Transactional
@@ -162,6 +167,7 @@ public class FriendshipService {
         }
 
         friendshipRepository.delete(friendship);
+        readModelEventPublisher.publishUserUnblocked(userId, targetUserId);
     }
 
     @Transactional
@@ -179,6 +185,10 @@ public class FriendshipService {
         );
 
         friendshipRepository.delete(friendship);
+        readModelEventPublisher.publishFriendshipRemoved(
+                friendship.getRequester().getId(),
+                friendship.getAddressee().getId()
+        );
     }
 
     public boolean isBlockedBetween(UUID userId, UUID otherUserId) {

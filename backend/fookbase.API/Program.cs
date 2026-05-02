@@ -25,6 +25,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<CloudinaryOptions>(builder.Configuration.GetSection(CloudinaryOptions.SectionName));
+builder.Services.Configure<RabbitMqReadModelOptions>(builder.Configuration.GetSection(RabbitMqReadModelOptions.SectionName));
 
 var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 if (corsAllowedOrigins is null || corsAllowedOrigins.Length == 0)
@@ -45,7 +46,7 @@ var javaApiBaseUrl = builder.Configuration.GetValue<string>($"{JavaApiOptions.Se
     ?? throw new InvalidOperationException($"{JavaApiOptions.SectionName}:BaseUrl is missing.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(appDbConnectionString, sqlOptions => sqlOptions.EnableRetryOnFailure()));
+    options.UseNpgsql(appDbConnectionString, npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
 
 builder.Services.AddHttpClient<IJavaApiService, JavaApiService>(client =>
 {
@@ -93,7 +94,11 @@ builder.Services.AddScoped<ITokenRoleService, TokenRoleService>();
 builder.Services.AddScoped<IAuthCookieService, AuthCookieService>();
 builder.Services.AddScoped<ICloudinarySigningService, CloudinarySigningService>();
 builder.Services.AddScoped<INotificationRealtimeService, SignalRNotificationRealtimeService>();
+builder.Services.AddScoped<UserReadModelService>();
+builder.Services.AddScoped<IUserReadModelService>(serviceProvider => serviceProvider.GetRequiredService<UserReadModelService>());
+builder.Services.AddScoped<IUserReadModelProjector>(serviceProvider => serviceProvider.GetRequiredService<UserReadModelService>());
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHostedService<RabbitMqReadModelConsumerService>();
 
 builder.Services.AddSingleton<IGameRoomService, GameRoomService>();
 builder.Services.AddSingleton<IChessService, ChessService>();

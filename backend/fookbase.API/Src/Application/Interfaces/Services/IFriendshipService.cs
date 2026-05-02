@@ -10,6 +10,7 @@ public interface IFriendshipService
         CancellationToken cancellationToken);
 
     Task<JavaApiCallResult<List<ContactDto>>> GetContactsAsync(
+        Guid currentUserId,
         string? accessToken,
         CancellationToken cancellationToken);
 
