@@ -1,0 +1,165 @@
+name: fookbase-mvp
+
+services:
+  web:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_JAVA_API_BASE_URL: ${VITE_JAVA_API_BASE_URL}
+        VITE_GOOGLE_WEB_CLIENT_ID: ${VITE_GOOGLE_WEB_CLIENT_ID:-}
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      - csharp-api
+      - java-api
+    restart: unless-stopped
+
+  csharp-api:
+    build:
+      context: ../../backend
+      dockerfile: fookbase.API/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      java-api:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8081
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__AppDbConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      JavaApi__BaseUrl: "http://java-api:8080/api"
+      JWT_SECRET_KEY: "${C_SHARP_JWT_SECRET_KEY}"
+      Database__MigrateOnStartup: "true"
+      Database__FailFastOnMigrationError: "true"
+      RabbitMqReadModel__Enabled: "${READ_MODEL_CONSUMER_ENABLED:-true}"
+      RabbitMqReadModel__HostName: rabbitmq
+      RabbitMqReadModel__Port: "5672"
+      RabbitMqReadModel__VirtualHost: "/"
+      RabbitMqReadModel__UserName: "${RABBITMQ_DEFAULT_USER}"
+      RabbitMqReadModel__Password: "${RABBITMQ_DEFAULT_PASS}"
+      RabbitMqReadModel__ExchangeName: "${READ_MODEL_EXCHANGE:-fookbase.domain.events}"
+      RabbitMqReadModel__QueueName: "${READ_MODEL_QUEUE_NAME:-fookbase.read-model.csharp}"
+      RabbitMqReadModel__PrefetchCount: "${READ_MODEL_PREFETCH_COUNT:-32}"
+      Cors__AllowedOrigins__0: "${APP_ORIGIN}"
+      Cloudinary__CloudName: "${CLOUDINARY_CLOUD_NAME:-}"
+      Cloudinary__ApiKey: "${CLOUDINARY_API_KEY:-}"
+      Cloudinary__ApiSecret: "${CLOUDINARY_API_SECRET:-}"
+      Cloudinary__UploadPreset: "${CLOUDINARY_UPLOAD_PRESET:-}"
+      Cloudinary__UploadFolder: "${CLOUDINARY_UPLOAD_FOLDER:-fookbase/posts}"
+    expose:
+      - "8081"
+    restart: unless-stopped
+
+  java-api:
+    build:
+      context: ../../chat_app/backend
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    environment:
+      SERVER_PORT: "8080"
+      SPRING_SQL_INIT_MODE: never
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      DB_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh"
+      DB_USERNAME: "${MYSQL_USER}"
+      DB_PASSWORD: "${MYSQL_PASSWORD}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: "${RABBITMQ_DEFAULT_USER}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_DEFAULT_PASS}"
+      RABBITMQ_VIRTUAL_HOST: "/"
+      JWT_SIGNER_KEY: "${JAVA_JWT_SIGNER_KEY}"
+      RESET_TOKEN_SECRET: "${JAVA_RESET_TOKEN_SECRET}"
+      READ_MODEL_EVENTS_ENABLED: "${READ_MODEL_EVENTS_ENABLED:-true}"
+      READ_MODEL_EVENTS_EXCHANGE: "${READ_MODEL_EXCHANGE:-fookbase.domain.events}"
+      APP_CORS_ALLOWED_ORIGIN_PATTERNS: "${APP_ORIGIN}"
+      APP_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS: "${APP_ORIGIN}"
+      MAIL_USERNAME: "${MAIL_USERNAME:-}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD:-}"
+      GOOGLE_OAUTH_CLIENT_ID: "${GOOGLE_OAUTH_CLIENT_ID:-}"
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME:-}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY:-}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET:-}"
+      CLOUDINARY_UPLOAD_PRESET: "${CLOUDINARY_UPLOAD_PRESET:-}"
+      CLOUDINARY_UPLOAD_FOLDER: "${CLOUDINARY_UPLOAD_FOLDER:-chat_images}"
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 15s
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u${MYSQL_USER} -p${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  mysql_data:
+  redis_data:
+  rabbitmq_data:
