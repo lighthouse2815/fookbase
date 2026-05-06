@@ -7,6 +7,7 @@ import type {
 
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const GOOGLE_RESPONSE_TIMEOUT_MS = 45000;
+const GOOGLE_SCRIPT_READY_TIMEOUT_MS = 15000;
 
 declare global {
   interface Window {
@@ -16,17 +17,75 @@ declare global {
 
 let googleIdentityScriptPromise: Promise<void> | null = null;
 
+const isGoogleIdentityReady = (): boolean => {
+  return Boolean(window.google?.accounts?.id);
+};
+
 const loadGoogleIdentityScript = async (): Promise<void> => {
-  if (window.google?.accounts?.id) {
+  if (isGoogleIdentityReady()) {
     return;
   }
 
   if (!googleIdentityScriptPromise) {
     googleIdentityScriptPromise = new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const settleResolve = () => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        resolve();
+      };
+      const settleReject = (message: string) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        reject(new Error(message));
+      };
+
+      const clearGuards = (intervalId: number, timeoutId: number) => {
+        window.clearInterval(intervalId);
+        window.clearTimeout(timeoutId);
+      };
+
+      const readinessPollId = window.setInterval(() => {
+        if (isGoogleIdentityReady()) {
+          clearGuards(readinessPollId, failTimeoutId);
+          settleResolve();
+        }
+      }, 150);
+
+      const failTimeoutId = window.setTimeout(() => {
+        if (isGoogleIdentityReady()) {
+          settleResolve();
+          return;
+        }
+
+        settleReject('Google login is unavailable.');
+      }, GOOGLE_SCRIPT_READY_TIMEOUT_MS);
+
+      const cleanupAndResolve = () => {
+        clearGuards(readinessPollId, failTimeoutId);
+        settleResolve();
+      };
+
+      const cleanupAndReject = () => {
+        clearGuards(readinessPollId, failTimeoutId);
+        settleReject('Failed to load Google script.');
+      };
+
       const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${GOOGLE_IDENTITY_SCRIPT}"]`);
       if (existingScript) {
-        existingScript.addEventListener('load', () => resolve(), { once: true });
-        existingScript.addEventListener('error', () => reject(new Error('Failed to load Google script.')), {
+        if (isGoogleIdentityReady() || existingScript.dataset.loaded === 'true') {
+          cleanupAndResolve();
+          return;
+        }
+
+        existingScript.addEventListener('load', cleanupAndResolve, { once: true });
+        existingScript.addEventListener('error', cleanupAndReject, {
           once: true,
         });
         return;
@@ -36,8 +95,11 @@ const loadGoogleIdentityScript = async (): Promise<void> => {
       script.src = GOOGLE_IDENTITY_SCRIPT;
       script.async = true;
       script.defer = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Google script.'));
+      script.onload = () => {
+        script.dataset.loaded = 'true';
+        cleanupAndResolve();
+      };
+      script.onerror = cleanupAndReject;
       document.head.appendChild(script);
     });
   }

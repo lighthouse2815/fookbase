@@ -28,6 +28,8 @@ jobs:
   deploy-vm2:
     name: Deploy VM2 Java
     runs-on: ubuntu-latest
+    env:
+      SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20 -o ConnectionAttempts=3"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,7 +65,7 @@ jobs:
           VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
           VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "mkdir -p '${VM2_APP_DIR}'"
+          ssh $SSH_OPTS -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "mkdir -p '${VM2_APP_DIR}'"
 
       - name: Sync repository to VM2
         env:
@@ -73,7 +75,7 @@ jobs:
         run: |
           rsync -az --delete \
             --exclude ".git/" \
-            -e "ssh -i ~/.ssh/vm2_key" \
+            -e "ssh $SSH_OPTS -i ~/.ssh/vm2_key" \
             ./ "${VM2_USERNAME}@${VM2_HOST}:${VM2_APP_DIR}/"
 
       - name: Upload VM2 environment file
@@ -82,7 +84,7 @@ jobs:
           VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
           VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
-          scp -i ~/.ssh/vm2_key /tmp/.env.vm2 "${VM2_USERNAME}@${VM2_HOST}:${VM2_APP_DIR}/deploy/lightsail/.env.vm2"
+          scp $SSH_OPTS -i ~/.ssh/vm2_key /tmp/.env.vm2 "${VM2_USERNAME}@${VM2_HOST}:${VM2_APP_DIR}/deploy/lightsail/.env.vm2"
 
       - name: Decide VM2 rebuild mode
         id: vm2_rebuild
@@ -113,13 +115,15 @@ jobs:
           VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
           VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "cd '${VM2_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm2.sh && FORCE_REBUILD=${{ steps.vm2_rebuild.outputs.force_rebuild }} ./scripts/redeploy-vm2.sh"
+          ssh $SSH_OPTS -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "cd '${VM2_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm2.sh && FORCE_REBUILD=${{ steps.vm2_rebuild.outputs.force_rebuild }} ./scripts/redeploy-vm2.sh"
 
   deploy-vm1:
     name: Deploy VM1 Gateway and C#
     runs-on: ubuntu-latest
     needs:
       - deploy-vm2
+    env:
+      SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20 -o ConnectionAttempts=3"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -155,7 +159,7 @@ jobs:
           VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
           VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "mkdir -p '${VM1_APP_DIR}'"
+          ssh $SSH_OPTS -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "mkdir -p '${VM1_APP_DIR}'"
 
       - name: Sync repository to VM1
         env:
@@ -165,7 +169,7 @@ jobs:
         run: |
           rsync -az --delete \
             --exclude ".git/" \
-            -e "ssh -i ~/.ssh/vm1_key" \
+            -e "ssh $SSH_OPTS -i ~/.ssh/vm1_key" \
             ./ "${VM1_USERNAME}@${VM1_HOST}:${VM1_APP_DIR}/"
 
       - name: Upload VM1 environment file
@@ -174,7 +178,7 @@ jobs:
           VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
           VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
         run: |
-          scp -i ~/.ssh/vm1_key /tmp/.env.vm1 "${VM1_USERNAME}@${VM1_HOST}:${VM1_APP_DIR}/deploy/lightsail/.env.vm1"
+          scp $SSH_OPTS -i ~/.ssh/vm1_key /tmp/.env.vm1 "${VM1_USERNAME}@${VM1_HOST}:${VM1_APP_DIR}/deploy/lightsail/.env.vm1"
 
       - name: Decide VM1 rebuild mode
         id: vm1_rebuild
@@ -205,4 +209,4 @@ jobs:
           VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
           VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "cd '${VM1_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm1.sh && FORCE_REBUILD=${{ steps.vm1_rebuild.outputs.force_rebuild }} ./scripts/redeploy-vm1.sh"
+          ssh $SSH_OPTS -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "cd '${VM1_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm1.sh && FORCE_REBUILD=${{ steps.vm1_rebuild.outputs.force_rebuild }} ./scripts/redeploy-vm1.sh"
