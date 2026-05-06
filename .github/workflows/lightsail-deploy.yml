@@ -29,7 +29,7 @@ jobs:
     name: Deploy VM2 Java
     runs-on: ubuntu-latest
     env:
-      SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20 -o ConnectionAttempts=3"
+      SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/known_hosts"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,7 +64,9 @@ jobs:
           fi
           touch ~/.ssh/known_hosts
           for attempt in 1 2 3; do
-            if ssh-keyscan -T 15 -H "$VM2_HOST" >> ~/.ssh/known_hosts 2>/tmp/vm2_keyscan.err; then
+            KEYSCAN_OUTPUT="$(ssh-keyscan -T 15 -t rsa,ecdsa,ed25519 -H "$VM2_HOST" 2>/tmp/vm2_keyscan.err || true)"
+            if [ -n "$KEYSCAN_OUTPUT" ]; then
+              printf '%s\n' "$KEYSCAN_OUTPUT" >> ~/.ssh/known_hosts
               break
             fi
             if [ "$attempt" -eq 3 ]; then
@@ -146,7 +148,7 @@ jobs:
     needs:
       - deploy-vm2
     env:
-      SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20 -o ConnectionAttempts=3"
+      SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/known_hosts"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -181,7 +183,9 @@ jobs:
           fi
           touch ~/.ssh/known_hosts
           for attempt in 1 2 3; do
-            if ssh-keyscan -T 15 -H "$VM1_HOST" >> ~/.ssh/known_hosts 2>/tmp/vm1_keyscan.err; then
+            KEYSCAN_OUTPUT="$(ssh-keyscan -T 15 -t rsa,ecdsa,ed25519 -H "$VM1_HOST" 2>/tmp/vm1_keyscan.err || true)"
+            if [ -n "$KEYSCAN_OUTPUT" ]; then
+              printf '%s\n' "$KEYSCAN_OUTPUT" >> ~/.ssh/known_hosts
               break
             fi
             if [ "$attempt" -eq 3 ]; then
