@@ -100,38 +100,54 @@ cd deploy/lightsail
 docker compose --env-file .env up -d --build
 ```
 
-## 8) GitHub Actions auto-deploy from `deploy` branch
+## 8) GitHub Actions auto-deploy from `main`
 
-This repo also supports a separate GitHub Actions workflow for Lightsail:
+This repo supports a `main` branch CI/CD workflow:
 
 - Workflow file: `.github/workflows/lightsail-deploy.yml`
-- Trigger: push to branch `deploy`
-- It does not run on `main`
+- Trigger: push to branch `main`
 
 What it does:
 
 - Build frontend
 - Build and test C# backend
 - Build and test Java backend
-- Sync the repo to your Lightsail server over SSH
-- Upload `deploy/lightsail/.env` from GitHub Secrets
-- Run `deploy/lightsail/scripts/redeploy.sh`
+- Deploy VM2 first (`java-api`)
+- Deploy VM1 second (`edge` + `api-gateway` + `csharp-api`)
 
-Required GitHub Secrets:
+Frontend note:
 
-- `LIGHTSAIL_HOST`: public IP or hostname of the Lightsail server
-- `LIGHTSAIL_USERNAME`: SSH user, usually `ubuntu`
-- `LIGHTSAIL_SSH_KEY`: private SSH key used by GitHub Actions to connect to the server
-- `LIGHTSAIL_APP_DIR`: absolute directory on the server, for example `/home/ubuntu/fookbase`
-- `LIGHTSAIL_ENV_FILE`: full content of `deploy/lightsail/.env`
+- Frontend should stay connected to Cloudflare Pages on branch `main`.
+- Cloudflare Pages will auto-deploy the frontend separately after every push to `main`.
+
+Required GitHub Secrets for VM2:
+
+- `VM2_HOST`
+- `VM2_USERNAME`
+- `VM2_SSH_KEY`
+- `VM2_APP_DIR`
+- `VM2_ENV_FILE`
+
+Required GitHub Secrets for VM1:
+
+- `VM1_HOST`
+- `VM1_USERNAME`
+- `VM1_SSH_KEY`
+- `VM1_APP_DIR`
+- `VM1_ENV_FILE`
+
+Optional GitHub Secret for frontend CI validation:
+
+- `VITE_GOOGLE_WEB_CLIENT_ID`
 
 Server prerequisites:
 
-- Docker and Docker Compose v2 are installed
-- Ports `80` and `443` are open as needed
-- The parent directory of `LIGHTSAIL_APP_DIR` exists
+- Docker and Docker Compose v2 are installed on both VMs
+- VM2 exposes `8080`
+- VM1 exposes `80` and `443`
+- The parent directory of `VM1_APP_DIR` and `VM2_APP_DIR` exists
 
-After this is configured, pushing to `deploy` is enough to deploy the latest code to Lightsail.
+After this is configured, pushing to `main` is enough to redeploy both backend VMs automatically.
 
 ## 9) API-only deploy for small Lightsail instances
 

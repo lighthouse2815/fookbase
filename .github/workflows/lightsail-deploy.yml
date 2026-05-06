@@ -1,22 +1,21 @@
-name: Lightsail Deploy
+name: Main CI/CD
 
 on:
   push:
     branches:
-      - deploy
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: lightsail-deploy
+  group: main-cicd-deploy
   cancel-in-progress: true
 
 jobs:
   frontend-build:
     name: Frontend Build
-    if: github.ref == 'refs/heads/deploy'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,12 +38,11 @@ jobs:
         env:
           VITE_API_BASE_URL: https://example.com
           VITE_JAVA_API_BASE_URL: https://example.com
-          VITE_GOOGLE_WEB_CLIENT_ID: ""
+          VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID || '' }}
         run: npm run build
 
   backend-build-test:
-    name: Backend Build Test
-    if: github.ref == 'refs/heads/deploy'
+    name: C# Backend Build Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -71,7 +69,6 @@ jobs:
 
   java-backend-build-test:
     name: Java Backend Build Test
-    if: github.ref == 'refs/heads/deploy'
     runs-on: ubuntu-latest
     env:
       DB_URL: jdbc:mysql://127.0.0.1:3306/chat_app?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
@@ -79,6 +76,9 @@ jobs:
       DB_PASSWORD: 123456
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
+      REDIS_USERNAME: ""
+      REDIS_PASSWORD: ""
+      REDIS_SSL_ENABLED: "false"
       JWT_SIGNER_KEY: CI_TEST_ONLY_SIGNER_KEY_CHANGE_IN_PROD_123456
       RESET_TOKEN_SECRET: CI_TEST_ONLY_RESET_SECRET_CHANGE_IN_PROD_123456
     services:
@@ -126,9 +126,8 @@ jobs:
       - name: Package Java backend
         run: ./mvnw -B package -DskipTests
 
-  deploy-to-lightsail:
-    name: Deploy To Lightsail
-    if: github.ref == 'refs/heads/deploy'
+  deploy-vm2:
+    name: Deploy VM2 Java
     runs-on: ubuntu-latest
     needs:
       - frontend-build
@@ -143,55 +142,122 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rsync openssh-client
 
-      - name: Configure SSH
+      - name: Configure SSH for VM2
         env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          VM2_HOST: ${{ secrets.VM2_HOST }}
+          VM2_SSH_KEY: ${{ secrets.VM2_SSH_KEY }}
         run: |
           install -m 700 -d ~/.ssh
-          cat <<'EOF' > ~/.ssh/lightsail_key
-          ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          cat <<'EOF' > ~/.ssh/vm2_key
+          ${{ secrets.VM2_SSH_KEY }}
           EOF
-          chmod 600 ~/.ssh/lightsail_key
-          ssh-keyscan -H "$LIGHTSAIL_HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/vm2_key
+          ssh-keyscan -H "$VM2_HOST" >> ~/.ssh/known_hosts
 
-      - name: Write Lightsail environment file
+      - name: Write VM2 environment file
         run: |
-          cat <<'EOF' > /tmp/lightsail.env
-          ${{ secrets.LIGHTSAIL_ENV_FILE }}
+          cat <<'EOF' > /tmp/.env.vm2
+          ${{ secrets.VM2_ENV_FILE }}
           EOF
 
-      - name: Ensure remote app directory exists
+      - name: Ensure remote VM2 app directory exists
         env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_USERNAME: ${{ secrets.LIGHTSAIL_USERNAME }}
-          LIGHTSAIL_APP_DIR: ${{ secrets.LIGHTSAIL_APP_DIR }}
+          VM2_HOST: ${{ secrets.VM2_HOST }}
+          VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
+          VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/lightsail_key "${LIGHTSAIL_USERNAME}@${LIGHTSAIL_HOST}" "mkdir -p '${LIGHTSAIL_APP_DIR}'"
+          ssh -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "mkdir -p '${VM2_APP_DIR}'"
 
-      - name: Sync repository to Lightsail
+      - name: Sync repository to VM2
         env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_USERNAME: ${{ secrets.LIGHTSAIL_USERNAME }}
-          LIGHTSAIL_APP_DIR: ${{ secrets.LIGHTSAIL_APP_DIR }}
+          VM2_HOST: ${{ secrets.VM2_HOST }}
+          VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
+          VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
           rsync -az --delete \
             --exclude ".git/" \
-            -e "ssh -i ~/.ssh/lightsail_key" \
-            ./ "${LIGHTSAIL_USERNAME}@${LIGHTSAIL_HOST}:${LIGHTSAIL_APP_DIR}/"
+            -e "ssh -i ~/.ssh/vm2_key" \
+            ./ "${VM2_USERNAME}@${VM2_HOST}:${VM2_APP_DIR}/"
 
-      - name: Upload Lightsail environment file
+      - name: Upload VM2 environment file
         env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_USERNAME: ${{ secrets.LIGHTSAIL_USERNAME }}
-          LIGHTSAIL_APP_DIR: ${{ secrets.LIGHTSAIL_APP_DIR }}
+          VM2_HOST: ${{ secrets.VM2_HOST }}
+          VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
+          VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
-          scp -i ~/.ssh/lightsail_key /tmp/lightsail.env "${LIGHTSAIL_USERNAME}@${LIGHTSAIL_HOST}:${LIGHTSAIL_APP_DIR}/deploy/lightsail/.env"
+          scp -i ~/.ssh/vm2_key /tmp/.env.vm2 "${VM2_USERNAME}@${VM2_HOST}:${VM2_APP_DIR}/deploy/lightsail/.env.vm2"
 
-      - name: Deploy stack on Lightsail
+      - name: Deploy VM2 stack
         env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_USERNAME: ${{ secrets.LIGHTSAIL_USERNAME }}
-          LIGHTSAIL_APP_DIR: ${{ secrets.LIGHTSAIL_APP_DIR }}
+          VM2_HOST: ${{ secrets.VM2_HOST }}
+          VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
+          VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/lightsail_key "${LIGHTSAIL_USERNAME}@${LIGHTSAIL_HOST}" "cd '${LIGHTSAIL_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy.sh && ./scripts/redeploy.sh"
+          ssh -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "cd '${VM2_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm2.sh && ./scripts/redeploy-vm2.sh"
+
+  deploy-vm1:
+    name: Deploy VM1 Gateway and C#
+    runs-on: ubuntu-latest
+    needs:
+      - deploy-vm2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install rsync and OpenSSH client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync openssh-client
+
+      - name: Configure SSH for VM1
+        env:
+          VM1_HOST: ${{ secrets.VM1_HOST }}
+          VM1_SSH_KEY: ${{ secrets.VM1_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          cat <<'EOF' > ~/.ssh/vm1_key
+          ${{ secrets.VM1_SSH_KEY }}
+          EOF
+          chmod 600 ~/.ssh/vm1_key
+          ssh-keyscan -H "$VM1_HOST" >> ~/.ssh/known_hosts
+
+      - name: Write VM1 environment file
+        run: |
+          cat <<'EOF' > /tmp/.env.vm1
+          ${{ secrets.VM1_ENV_FILE }}
+          EOF
+
+      - name: Ensure remote VM1 app directory exists
+        env:
+          VM1_HOST: ${{ secrets.VM1_HOST }}
+          VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
+          VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
+        run: |
+          ssh -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "mkdir -p '${VM1_APP_DIR}'"
+
+      - name: Sync repository to VM1
+        env:
+          VM1_HOST: ${{ secrets.VM1_HOST }}
+          VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
+          VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
+        run: |
+          rsync -az --delete \
+            --exclude ".git/" \
+            -e "ssh -i ~/.ssh/vm1_key" \
+            ./ "${VM1_USERNAME}@${VM1_HOST}:${VM1_APP_DIR}/"
+
+      - name: Upload VM1 environment file
+        env:
+          VM1_HOST: ${{ secrets.VM1_HOST }}
+          VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
+          VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
+        run: |
+          scp -i ~/.ssh/vm1_key /tmp/.env.vm1 "${VM1_USERNAME}@${VM1_HOST}:${VM1_APP_DIR}/deploy/lightsail/.env.vm1"
+
+      - name: Deploy VM1 stack
+        env:
+          VM1_HOST: ${{ secrets.VM1_HOST }}
+          VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
+          VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
+        run: |
+          ssh -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "cd '${VM1_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm1.sh && ./scripts/redeploy-vm1.sh"
