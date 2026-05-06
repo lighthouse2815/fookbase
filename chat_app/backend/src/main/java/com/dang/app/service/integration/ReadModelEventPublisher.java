@@ -1,5 +1,6 @@
 package com.dang.app.service.integration;
 
+import com.dang.app.entity.readmodel.ReadModelEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -125,12 +126,5 @@ public class ReadModelEventPublisher {
         }
 
         return value.trim();
-    }
-
-    private record ReadModelEvent(
-            String eventType,
-            Instant occurredAt,
-            Map<String, Object> payload
-    ) {
     }
 }

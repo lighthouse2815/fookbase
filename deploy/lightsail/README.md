@@ -11,7 +11,8 @@ This stack runs everything on one Lightsail instance:
 
 ## 1) Create Lightsail instance
 
-- Recommended for this stack: Linux plan `2 GB RAM / $12`.
+- Recommended starting point for this stack: Linux/Ubuntu plan with at least `2 GB RAM`.
+- Check current Lightsail pricing before choosing a plan because AWS pricing changes over time.
 - Open firewall ports: `22`, `80` (and `443` later if you add TLS).
 
 ## 2) Install Docker on server (Ubuntu)
@@ -37,6 +38,8 @@ Edit `.env`:
   - No domain yet: `http://<LIGHTSAIL_PUBLIC_IP>`
   - With domain: `https://<your-domain>`
 - Set `VITE_API_BASE_URL` and `VITE_JAVA_API_BASE_URL` to the same value as `APP_ORIGIN`.
+- Keep `C_SHARP_ENABLE_HTTPS_REDIRECTION=false` for the included HTTP-only Lightsail setup.
+  - If you later add real HTTPS in front of the app and preserve `X-Forwarded-Proto`, switch it to `true`.
 - Set strong secrets for:
   - `C_SHARP_JWT_SECRET_KEY`
   - `JAVA_JWT_SIGNER_KEY`

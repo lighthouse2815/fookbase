@@ -273,6 +273,8 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+var enableHttpsRedirection = builder.Configuration.GetValue<bool?>("Security:EnableHttpsRedirection")
+    ?? !app.Environment.IsDevelopment();
 var migrateOnStartup = builder.Configuration.GetValue("Database:MigrateOnStartup", true);
 var migrationRetryCount = Math.Max(1, builder.Configuration.GetValue("Database:MigrationRetryCount", 5));
 var migrationRetryDelaySeconds = Math.Max(1, builder.Configuration.GetValue("Database:MigrationRetryDelaySeconds", 3));
@@ -336,7 +338,11 @@ if (migrateOnStartup)
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-app.UseHttpsRedirection();
+if (enableHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 app.UseCors("FrontendPolicy");
 app.UseRateLimiter();

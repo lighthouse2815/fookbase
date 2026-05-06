@@ -31,6 +31,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8081
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      Security__EnableHttpsRedirection: "${C_SHARP_ENABLE_HTTPS_REDIRECTION:-false}"
       ConnectionStrings__AppDbConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       JavaApi__BaseUrl: "http://java-api:8080/api"
       JWT_SECRET_KEY: "${C_SHARP_JWT_SECRET_KEY}"
