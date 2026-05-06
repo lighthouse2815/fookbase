@@ -46,12 +46,35 @@ jobs:
           VM2_HOST: ${{ secrets.VM2_HOST }}
           VM2_SSH_KEY: ${{ secrets.VM2_SSH_KEY }}
         run: |
+          set -euo pipefail
+          if [ -z "${VM2_HOST:-}" ]; then
+            echo "VM2_HOST secret is empty."
+            exit 1
+          fi
+          if [ -z "${VM2_SSH_KEY:-}" ]; then
+            echo "VM2_SSH_KEY secret is empty."
+            exit 1
+          fi
           install -m 700 -d ~/.ssh
-          cat <<'EOF' > ~/.ssh/vm2_key
-          ${{ secrets.VM2_SSH_KEY }}
-          EOF
+          printf '%s\n' "$VM2_SSH_KEY" | tr -d '\r' > ~/.ssh/vm2_key
           chmod 600 ~/.ssh/vm2_key
-          ssh-keyscan -H "$VM2_HOST" >> ~/.ssh/known_hosts
+          if ! grep -Eq 'BEGIN [A-Z0-9 ]*PRIVATE KEY' ~/.ssh/vm2_key; then
+            echo "VM2_SSH_KEY does not look like a valid private key."
+            exit 1
+          fi
+          touch ~/.ssh/known_hosts
+          for attempt in 1 2 3; do
+            if ssh-keyscan -T 15 -H "$VM2_HOST" >> ~/.ssh/known_hosts 2>/tmp/vm2_keyscan.err; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Failed to fetch SSH host key for VM2_HOST=$VM2_HOST after 3 attempts."
+              cat /tmp/vm2_keyscan.err || true
+              exit 1
+            fi
+            echo "ssh-keyscan attempt $attempt failed for VM2_HOST=$VM2_HOST. Retrying in 5s..."
+            sleep 5
+          done
 
       - name: Write VM2 environment file
         run: |
@@ -140,12 +163,35 @@ jobs:
           VM1_HOST: ${{ secrets.VM1_HOST }}
           VM1_SSH_KEY: ${{ secrets.VM1_SSH_KEY }}
         run: |
+          set -euo pipefail
+          if [ -z "${VM1_HOST:-}" ]; then
+            echo "VM1_HOST secret is empty."
+            exit 1
+          fi
+          if [ -z "${VM1_SSH_KEY:-}" ]; then
+            echo "VM1_SSH_KEY secret is empty."
+            exit 1
+          fi
           install -m 700 -d ~/.ssh
-          cat <<'EOF' > ~/.ssh/vm1_key
-          ${{ secrets.VM1_SSH_KEY }}
-          EOF
+          printf '%s\n' "$VM1_SSH_KEY" | tr -d '\r' > ~/.ssh/vm1_key
           chmod 600 ~/.ssh/vm1_key
-          ssh-keyscan -H "$VM1_HOST" >> ~/.ssh/known_hosts
+          if ! grep -Eq 'BEGIN [A-Z0-9 ]*PRIVATE KEY' ~/.ssh/vm1_key; then
+            echo "VM1_SSH_KEY does not look like a valid private key."
+            exit 1
+          fi
+          touch ~/.ssh/known_hosts
+          for attempt in 1 2 3; do
+            if ssh-keyscan -T 15 -H "$VM1_HOST" >> ~/.ssh/known_hosts 2>/tmp/vm1_keyscan.err; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Failed to fetch SSH host key for VM1_HOST=$VM1_HOST after 3 attempts."
+              cat /tmp/vm1_keyscan.err || true
+              exit 1
+            fi
+            echo "ssh-keyscan attempt $attempt failed for VM1_HOST=$VM1_HOST. Retrying in 5s..."
+            sleep 5
+          done
 
       - name: Write VM1 environment file
         run: |
