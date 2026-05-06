@@ -63,20 +63,22 @@ jobs:
             exit 1
           fi
           touch ~/.ssh/known_hosts
+          KEYSCAN_SUCCESS=false
           for attempt in 1 2 3; do
             KEYSCAN_OUTPUT="$(ssh-keyscan -T 15 -t rsa,ecdsa,ed25519 -H "$VM2_HOST" 2>/tmp/vm2_keyscan.err || true)"
             if [ -n "$KEYSCAN_OUTPUT" ]; then
               printf '%s\n' "$KEYSCAN_OUTPUT" >> ~/.ssh/known_hosts
+              KEYSCAN_SUCCESS=true
               break
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "Failed to fetch SSH host key for VM2_HOST=$VM2_HOST after 3 attempts."
-              cat /tmp/vm2_keyscan.err || true
-              exit 1
             fi
             echo "ssh-keyscan attempt $attempt failed for VM2_HOST=$VM2_HOST. Retrying in 5s..."
             sleep 5
           done
+          if [ "$KEYSCAN_SUCCESS" != "true" ]; then
+            echo "Warning: unable to prefetch SSH host key for VM2_HOST=$VM2_HOST."
+            echo "Continuing with StrictHostKeyChecking=accept-new."
+            cat /tmp/vm2_keyscan.err || true
+          fi
 
       - name: Write VM2 environment file
         run: |
@@ -182,20 +184,22 @@ jobs:
             exit 1
           fi
           touch ~/.ssh/known_hosts
+          KEYSCAN_SUCCESS=false
           for attempt in 1 2 3; do
             KEYSCAN_OUTPUT="$(ssh-keyscan -T 15 -t rsa,ecdsa,ed25519 -H "$VM1_HOST" 2>/tmp/vm1_keyscan.err || true)"
             if [ -n "$KEYSCAN_OUTPUT" ]; then
               printf '%s\n' "$KEYSCAN_OUTPUT" >> ~/.ssh/known_hosts
+              KEYSCAN_SUCCESS=true
               break
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "Failed to fetch SSH host key for VM1_HOST=$VM1_HOST after 3 attempts."
-              cat /tmp/vm1_keyscan.err || true
-              exit 1
             fi
             echo "ssh-keyscan attempt $attempt failed for VM1_HOST=$VM1_HOST. Retrying in 5s..."
             sleep 5
           done
+          if [ "$KEYSCAN_SUCCESS" != "true" ]; then
+            echo "Warning: unable to prefetch SSH host key for VM1_HOST=$VM1_HOST."
+            echo "Continuing with StrictHostKeyChecking=accept-new."
+            cat /tmp/vm1_keyscan.err || true
+          fi
 
       - name: Write VM1 environment file
         run: |
