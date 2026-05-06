@@ -1,18 +1,6 @@
 name: Azure Java Backend CI/CD
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "chat_app/backend/**"
-      - ".github/workflows/azure-java-backend.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "chat_app/backend/**"
-      - ".github/workflows/azure-java-backend.yml"
   workflow_dispatch:
 
 permissions:
