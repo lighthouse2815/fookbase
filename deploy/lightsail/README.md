@@ -165,6 +165,14 @@ Recommended external services for demos or hobby workloads:
 - Redis: Upstash
 - RabbitMQ: CloudAMQP
 
+Redis settings for managed providers such as Upstash:
+
+- `REDIS_HOST`
+- `REDIS_PORT`
+- `REDIS_USERNAME`
+- `REDIS_PASSWORD`
+- `REDIS_SSL_ENABLED=true`
+
 Important note about RabbitMQ:
 
 - The current C# read-model consumer only supports basic RabbitMQ host, port, user, password settings.
