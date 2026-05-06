@@ -22,7 +22,7 @@ services:
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       Security__EnableHttpsRedirection: "${C_SHARP_ENABLE_HTTPS_REDIRECTION:-false}"
       ConnectionStrings__AppDbConnection: "${C_SHARP_DB_CONNECTION}"
-      JavaApi__BaseUrl: "http://java-api:8080/api"
+      JavaApi__BaseUrl: "${JAVA_API_INTERNAL_BASE_URL:-http://java-api:8080/api}"
       JWT_SECRET_KEY: "${C_SHARP_JWT_SECRET_KEY}"
       Database__MigrateOnStartup: "true"
       Database__FailFastOnMigrationError: "true"

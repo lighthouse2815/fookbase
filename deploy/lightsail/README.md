@@ -178,3 +178,85 @@ Important note about RabbitMQ:
 - The current C# read-model consumer only supports basic RabbitMQ host, port, user, password settings.
 - If your managed RabbitMQ provider requires TLS-only connections, keep `READ_MODEL_CONSUMER_ENABLED=false` until TLS support is added to the C# consumer.
 - You can also keep `READ_MODEL_EVENTS_ENABLED=false` on the Java side for a simpler first deployment.
+
+## 10) Split deploy across two 1 GB Lightsail VMs
+
+If one small VM is too tight, split the APIs:
+
+- VM1: `api-gateway` + `csharp-api`
+- VM2: `java-api`
+- frontend stays on Cloudflare Pages or another static host
+- databases/cache stay external (`Neon`, `TiDB`, `Upstash`)
+
+Files:
+
+- `docker-compose.vm1.yml`
+- `docker-compose.vm2.yml`
+- `nginx.vm1.conf.template`
+- `.env.vm1.example`
+- `.env.vm2.example`
+- `scripts/redeploy-vm1.sh`
+- `scripts/redeploy-vm2.sh`
+
+How it works:
+
+- VM1 keeps a single gateway URL for the frontend.
+- VM1 proxies Java routes and `/ws*` to VM2.
+- C# on VM1 also calls Java on VM2 through `JAVA_API_INTERNAL_BASE_URL`.
+
+Prepare VM1:
+
+```bash
+cp .env.vm1.example .env.vm1
+chmod +x scripts/redeploy-vm1.sh
+```
+
+Set these important values in `.env.vm1`:
+
+- `APP_ORIGIN=https://<your-frontend>.pages.dev`
+- `JAVA_API_UPSTREAM=http://<VM2_IP>:8080`
+- `JAVA_API_INTERNAL_BASE_URL=http://<VM2_IP>:8080/api`
+- `C_SHARP_DB_CONNECTION=...`
+- `C_SHARP_JWT_SECRET_KEY=...`
+
+Prepare VM2:
+
+```bash
+cp .env.vm2.example .env.vm2
+chmod +x scripts/redeploy-vm2.sh
+```
+
+Set these important values in `.env.vm2`:
+
+- `APP_ORIGIN=https://<your-frontend>.pages.dev`
+- `JAVA_DB_URL=...`
+- `JAVA_DB_USERNAME=...`
+- `JAVA_DB_PASSWORD=...`
+- `REDIS_HOST=...`
+- `REDIS_PORT=...`
+- `REDIS_USERNAME=...`
+- `REDIS_PASSWORD=...`
+- `REDIS_SSL_ENABLED=true` for Upstash
+- `JAVA_JWT_SIGNER_KEY=...`
+- `JAVA_RESET_TOKEN_SECRET=...`
+
+Deploy order:
+
+1. Deploy VM2 first so Java is reachable on `http://<VM2_IP>:8080`
+2. Deploy VM1 second so the gateway and C# can reach VM2
+
+Commands:
+
+```bash
+# On VM2
+./scripts/redeploy-vm2.sh
+
+# On VM1
+./scripts/redeploy-vm1.sh
+```
+
+Networking note:
+
+- VM2 must expose port `8080`.
+- VM1 must expose port `80` (and later `443` if you add HTTPS).
+- If possible, point VM1 to the private IP of VM2. Otherwise use the public IP of VM2.
