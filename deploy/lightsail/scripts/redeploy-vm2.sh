@@ -29,5 +29,14 @@ fi
 
 cd "$STACK_DIR"
 
-docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
+FORCE_REBUILD="${FORCE_REBUILD:-false}"
+
+if [ "$FORCE_REBUILD" = "true" ]; then
+  echo "Deploy mode: force rebuild"
+  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
+else
+  echo "Deploy mode: no rebuild"
+  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
+fi
+
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps

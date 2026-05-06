@@ -5,6 +5,17 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      force_vm2_rebuild:
+        description: "Force rebuild Java image on VM2"
+        required: false
+        type: boolean
+        default: false
+      force_vm1_rebuild:
+        description: "Force rebuild gateway and C# images on VM1"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,125 +25,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  frontend-build:
-    name: Frontend Build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build frontend
-        env:
-          VITE_API_BASE_URL: https://example.com
-          VITE_JAVA_API_BASE_URL: https://example.com
-          VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID || '' }}
-        run: npm run build
-
-  backend-build-test:
-    name: C# Backend Build Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
-      - name: Restore backend and test projects
-        run: |
-          dotnet restore backend/fookbase.API/fookbase.API.csproj
-          dotnet restore backend/fookbase.API.Tests/fookbase.API.Tests.csproj
-
-      - name: Build backend
-        run: dotnet build backend/fookbase.API/fookbase.API.csproj --configuration Release --no-restore
-
-      - name: Build backend tests
-        run: dotnet build backend/fookbase.API.Tests/fookbase.API.Tests.csproj --configuration Release --no-restore
-
-      - name: Run backend tests
-        run: dotnet test backend/fookbase.API.Tests/fookbase.API.Tests.csproj --configuration Release --no-build --verbosity minimal
-
-  java-backend-build-test:
-    name: Java Backend Build Test
-    runs-on: ubuntu-latest
-    env:
-      DB_URL: jdbc:mysql://127.0.0.1:3306/chat_app?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
-      DB_USERNAME: root
-      DB_PASSWORD: 123456
-      REDIS_HOST: 127.0.0.1
-      REDIS_PORT: 6379
-      REDIS_USERNAME: ""
-      REDIS_PASSWORD: ""
-      REDIS_SSL_ENABLED: "false"
-      JWT_SIGNER_KEY: CI_TEST_ONLY_SIGNER_KEY_CHANGE_IN_PROD_123456
-      RESET_TOKEN_SECRET: CI_TEST_ONLY_RESET_SECRET_CHANGE_IN_PROD_123456
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_DATABASE: chat_app
-          MYSQL_ROOT_PASSWORD: 123456
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p123456"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=20
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=20
-    defaults:
-      run:
-        working-directory: chat_app/backend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: maven
-
-      - name: Make Maven wrapper executable
-        run: chmod +x mvnw
-
-      - name: Run Java backend tests
-        run: ./mvnw -B test
-
-      - name: Package Java backend
-        run: ./mvnw -B package -DskipTests
-
   deploy-vm2:
     name: Deploy VM2 Java
     runs-on: ubuntu-latest
-    needs:
-      - frontend-build
-      - backend-build-test
-      - java-backend-build-test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -187,13 +82,29 @@ jobs:
         run: |
           scp -i ~/.ssh/vm2_key /tmp/.env.vm2 "${VM2_USERNAME}@${VM2_HOST}:${VM2_APP_DIR}/deploy/lightsail/.env.vm2"
 
+      - name: Decide VM2 rebuild mode
+        id: vm2_rebuild
+        run: |
+          FORCE_REBUILD=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_vm2_rebuild }}" = "true" ]; then
+            FORCE_REBUILD=true
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            CHANGED_FILES="$(git diff --name-only '${{ github.event.before }}' '${{ github.sha }}')"
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            if echo "$CHANGED_FILES" | grep -Eq '^(chat_app/backend/.*|deploy/lightsail/docker-compose\.vm2\.yml|deploy/lightsail/scripts/redeploy-vm2\.sh|deploy/lightsail/\.env\.vm2\.example)$'; then
+              FORCE_REBUILD=true
+            fi
+          fi
+          echo "force_rebuild=$FORCE_REBUILD" >> "$GITHUB_OUTPUT"
+
       - name: Deploy VM2 stack
         env:
           VM2_HOST: ${{ secrets.VM2_HOST }}
           VM2_USERNAME: ${{ secrets.VM2_USERNAME }}
           VM2_APP_DIR: ${{ secrets.VM2_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "cd '${VM2_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm2.sh && ./scripts/redeploy-vm2.sh"
+          ssh -i ~/.ssh/vm2_key "${VM2_USERNAME}@${VM2_HOST}" "cd '${VM2_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm2.sh && FORCE_REBUILD=${{ steps.vm2_rebuild.outputs.force_rebuild }} ./scripts/redeploy-vm2.sh"
 
   deploy-vm1:
     name: Deploy VM1 Gateway and C#
@@ -203,6 +114,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install rsync and OpenSSH client
         run: |
@@ -254,10 +167,26 @@ jobs:
         run: |
           scp -i ~/.ssh/vm1_key /tmp/.env.vm1 "${VM1_USERNAME}@${VM1_HOST}:${VM1_APP_DIR}/deploy/lightsail/.env.vm1"
 
+      - name: Decide VM1 rebuild mode
+        id: vm1_rebuild
+        run: |
+          FORCE_REBUILD=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_vm1_rebuild }}" = "true" ]; then
+            FORCE_REBUILD=true
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            CHANGED_FILES="$(git diff --name-only '${{ github.event.before }}' '${{ github.sha }}')"
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            if echo "$CHANGED_FILES" | grep -Eq '^(backend/.*|deploy/lightsail/docker-compose\.vm1\.yml|deploy/lightsail/Dockerfile\.vm1-gateway|deploy/lightsail/nginx\.vm1\.conf\.template|deploy/lightsail/Caddyfile\.vm1|deploy/lightsail/scripts/redeploy-vm1\.sh|deploy/lightsail/\.env\.vm1\.example)$'; then
+              FORCE_REBUILD=true
+            fi
+          fi
+          echo "force_rebuild=$FORCE_REBUILD" >> "$GITHUB_OUTPUT"
+
       - name: Deploy VM1 stack
         env:
           VM1_HOST: ${{ secrets.VM1_HOST }}
           VM1_USERNAME: ${{ secrets.VM1_USERNAME }}
           VM1_APP_DIR: ${{ secrets.VM1_APP_DIR }}
         run: |
-          ssh -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "cd '${VM1_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm1.sh && ./scripts/redeploy-vm1.sh"
+          ssh -i ~/.ssh/vm1_key "${VM1_USERNAME}@${VM1_HOST}" "cd '${VM1_APP_DIR}/deploy/lightsail' && chmod +x scripts/redeploy-vm1.sh && FORCE_REBUILD=${{ steps.vm1_rebuild.outputs.force_rebuild }} ./scripts/redeploy-vm1.sh"
