@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install rsync and OpenSSH client
         run: |
@@ -89,7 +91,14 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_vm2_rebuild }}" = "true" ]; then
             FORCE_REBUILD=true
           elif [ "${{ github.event_name }}" = "push" ]; then
-            CHANGED_FILES="$(git diff --name-only '${{ github.event.before }}' '${{ github.sha }}')"
+            PREV_SHA='${{ github.event.before }}'
+            CURRENT_SHA='${{ github.sha }}'
+            if [ -z "$PREV_SHA" ] || [ "$PREV_SHA" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$PREV_SHA^{commit}" 2>/dev/null; then
+              echo "Previous commit is unavailable in local checkout; using single-commit fallback."
+              CHANGED_FILES="$(git diff-tree --no-commit-id --name-only -r "$CURRENT_SHA")"
+            else
+              CHANGED_FILES="$(git diff --name-only "$PREV_SHA" "$CURRENT_SHA")"
+            fi
             echo "Changed files:"
             echo "$CHANGED_FILES"
             if echo "$CHANGED_FILES" | grep -Eq '^(chat_app/backend/.*|deploy/lightsail/docker-compose\.vm2\.yml|deploy/lightsail/scripts/redeploy-vm2\.sh|deploy/lightsail/\.env\.vm2\.example)$'; then
@@ -174,7 +183,14 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_vm1_rebuild }}" = "true" ]; then
             FORCE_REBUILD=true
           elif [ "${{ github.event_name }}" = "push" ]; then
-            CHANGED_FILES="$(git diff --name-only '${{ github.event.before }}' '${{ github.sha }}')"
+            PREV_SHA='${{ github.event.before }}'
+            CURRENT_SHA='${{ github.sha }}'
+            if [ -z "$PREV_SHA" ] || [ "$PREV_SHA" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$PREV_SHA^{commit}" 2>/dev/null; then
+              echo "Previous commit is unavailable in local checkout; using single-commit fallback."
+              CHANGED_FILES="$(git diff-tree --no-commit-id --name-only -r "$CURRENT_SHA")"
+            else
+              CHANGED_FILES="$(git diff --name-only "$PREV_SHA" "$CURRENT_SHA")"
+            fi
             echo "Changed files:"
             echo "$CHANGED_FILES"
             if echo "$CHANGED_FILES" | grep -Eq '^(backend/.*|deploy/lightsail/docker-compose\.vm1\.yml|deploy/lightsail/Dockerfile\.vm1-gateway|deploy/lightsail/nginx\.vm1\.conf\.template|deploy/lightsail/Caddyfile\.vm1|deploy/lightsail/scripts/redeploy-vm1\.sh|deploy/lightsail/\.env\.vm1\.example)$'; then
