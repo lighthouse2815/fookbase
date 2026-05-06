@@ -132,3 +132,41 @@ Server prerequisites:
 - The parent directory of `LIGHTSAIL_APP_DIR` exists
 
 After this is configured, pushing to `deploy` is enough to deploy the latest code to Lightsail.
+
+## 9) API-only deploy for small Lightsail instances
+
+If you want to keep Lightsail light, use the API-only stack:
+
+- `api-gateway` (nginx reverse proxy only)
+- `csharp-api`
+- `java-api`
+- no local `postgres`, `mysql`, `redis`, or `rabbitmq`
+- frontend should be deployed separately, for example on Cloudflare Pages
+
+Files:
+
+- `docker-compose.api-only.yml`
+- `nginx.api-only.conf`
+- `.env.api-only.example`
+- `scripts/redeploy-api-only.sh`
+
+Quick start:
+
+```bash
+cp .env.api-only.example .env
+chmod +x scripts/redeploy-api-only.sh
+./scripts/redeploy-api-only.sh
+```
+
+Recommended external services for demos or hobby workloads:
+
+- C# PostgreSQL: Neon
+- Java MySQL-compatible database: TiDB Cloud Starter
+- Redis: Upstash
+- RabbitMQ: CloudAMQP
+
+Important note about RabbitMQ:
+
+- The current C# read-model consumer only supports basic RabbitMQ host, port, user, password settings.
+- If your managed RabbitMQ provider requires TLS-only connections, keep `READ_MODEL_CONSUMER_ENABLED=false` until TLS support is added to the C# consumer.
+- You can also keep `READ_MODEL_EVENTS_ENABLED=false` on the Java side for a simpler first deployment.
