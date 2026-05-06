@@ -2,11 +2,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY fookbase.API/fookbase.API.csproj fookbase.API/
-RUN dotnet restore fookbase.API/fookbase.API.csproj
+RUN dotnet restore fookbase.API/fookbase.API.csproj --nologo -v minimal
 
 COPY . .
 WORKDIR /src/fookbase.API
-RUN dotnet publish fookbase.API.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish fookbase.API.csproj -c Release -o /app/publish /p:UseAppHost=false --no-restore --nologo -v minimal
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
