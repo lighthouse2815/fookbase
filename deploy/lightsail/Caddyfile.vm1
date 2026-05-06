@@ -1,0 +1,4 @@
+{$TLS_DOMAIN} {
+    encode gzip zstd
+    reverse_proxy api-gateway:80
+}

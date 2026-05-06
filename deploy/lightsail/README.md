@@ -214,6 +214,7 @@ chmod +x scripts/redeploy-vm1.sh
 Set these important values in `.env.vm1`:
 
 - `APP_ORIGIN=https://<your-frontend>.pages.dev`
+- `TLS_DOMAIN=<your-vm1-domain>`
 - `JAVA_API_UPSTREAM=http://<VM2_IP>:8080`
 - `JAVA_API_INTERNAL_BASE_URL=http://<VM2_IP>:8080/api`
 - `C_SHARP_DB_CONNECTION=...`
@@ -258,5 +259,12 @@ Commands:
 Networking note:
 
 - VM2 must expose port `8080`.
-- VM1 must expose port `80` (and later `443` if you add HTTPS).
+- VM1 must expose ports `80` and `443`.
 - If possible, point VM1 to the private IP of VM2. Otherwise use the public IP of VM2.
+
+HTTPS note for split VM1:
+
+- `docker-compose.vm1.yml` includes a `caddy` edge proxy that automatically requests
+  and renews a Let's Encrypt certificate for `TLS_DOMAIN`.
+- Point your public DNS name (for example DuckDNS) at the VM1 public IP first.
+- Then set `TLS_DOMAIN` in `.env.vm1` and redeploy VM1.
