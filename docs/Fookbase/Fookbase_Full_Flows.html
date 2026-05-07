@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fookbase Full Flows</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .flow-page {
+      min-height: 190mm;
+      page-break-after: always;
+      break-after: page;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 4mm 0;
+    }
+
+    .flow-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 750;
+      color: #0f172a;
+      letter-spacing: 0;
+      border-left: 5px solid #2563eb;
+      padding-left: 10px;
+    }
+
+    .mermaid {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      max-height: 165mm;
+    }
+
+    .cluster rect {
+      rx: 6px;
+      ry: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<section class="flow-page">
+  <h1>01. Đăng ký tài khoản</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng mở trang đăng ký"] --> B["Frontend validate username, email, password"]
+  B --> C["POST /api/auth/register"]
+  C --> D["C# AuthController.Register"]
+  D --> E["JavaApiService.RegisterAsync"]
+  E --> F["Java AuthController.register"]
+  F --> G["AuthService kiểm tra username/email"]
+  G --> H{"Hợp lệ?"}
+  H -- Không --> I["409/400 trả lỗi về frontend"]
+  H -- Có --> J["Hash password, tạo USERS"]
+  J --> K["Tạo USER_PROFILES mặc định"]
+  K --> L["Tạo USER_PROFILE_INFO_VISIBILITY"]
+  L --> M["201 Created RegisterResponse"]
+  M --> N["Frontend chuyển sang bước OTP/hoàn thiện hồ sơ"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>02. Đăng nhập bằng tài khoản thường</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng nhập username/password"] --> B["Frontend gửi POST /api/auth/login"]
+  B --> C["C# AuthController.Login"]
+  C --> D["JavaApiService.LoginAsync"]
+  D --> E["Java AuthController.login"]
+  E --> F["AuthService xác thực mật khẩu và trạng thái user"]
+  F --> G{"Đăng nhập hợp lệ?"}
+  G -- Không --> H["401/403 trả lỗi"]
+  G -- Có --> I["Sinh access token JWT"]
+  I --> J["Sinh refresh token và lưu REFRESH_TOKENS"]
+  J --> K["Set cookie refresh_token"]
+  K --> L["C# normalize token, set login cookies"]
+  L --> M["Frontend lưu trạng thái đăng nhập"]
+  M --> N["Tải trang chủ / bảng tin"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>03. Đăng nhập bằng Google</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend nhận Google ID token"] --> B["POST /api/auth/google"]
+  B --> C["C# AuthController.AuthWithGoogle"]
+  C --> D["JavaApiService.AuthWithGoogleAsync"]
+  D --> E["Java AuthController.authWithGoogle"]
+  E --> F["GoogleTokenVerifier kiểm tra token"]
+  F --> G{"Email đã có user?"}
+  G -- Chưa có --> H["Tạo USERS, USER_PROFILES, USER_AUTH_PROVIDERS"]
+  G -- Đã có --> I["Liên kết/đọc user hiện có"]
+  H --> J["Sinh JWT và refresh token"]
+  I --> J
+  J --> K["Set refresh_token cookie"]
+  K --> L["Frontend nhận profileCompleted"]
+  L --> M{"Đã hoàn thiện hồ sơ?"}
+  M -- Chưa --> N["Đi tới complete profile"]
+  M -- Rồi --> O["Vào trang chủ"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>04. Làm mới access token</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Access token hết hạn"] --> B["Frontend gọi POST /api/auth/refresh-token"]
+  B --> C["C# đọc refresh token từ body/cookie"]
+  C --> D{"Có refresh token?"}
+  D -- Không --> E["401 Unauthorized"]
+  D -- Có --> F["JavaApiService.RefreshTokenAsync"]
+  F --> G["Java AuthService kiểm tra token hash/family/revoked/expires"]
+  G --> H{"Refresh token hợp lệ?"}
+  H -- Không --> I["401 INVALID_REFRESH_TOKEN"]
+  H -- Có --> J["Rotate refresh token"]
+  J --> K["Sinh access token mới"]
+  K --> L["Set cookie refresh_token mới"]
+  L --> M["Frontend retry request trước đó"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>05. Đăng xuất</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng bấm đăng xuất"] --> B["POST /api/auth/logout"]
+  B --> C["C# AuthController.Logout"]
+  C --> D["Đọc refresh token từ body/cookie"]
+  D --> E{"Có refresh token?"}
+  E -- Có --> F["JavaApiService.LogoutAsync"]
+  F --> G["Java AuthService revoke refresh token"]
+  E -- Không --> H["Bỏ qua revoke server"]
+  G --> I["C# ClearLoginCookies"]
+  H --> I
+  I --> J["204 No Content"]
+  J --> K["Frontend xóa session và về login"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>06. Gửi và xác thực OTP email</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng yêu cầu xác thực email"] --> B["POST /api/auth/otp/send/verify-email hoặc /me/otp/send/verify-email"]
+  B --> C["C# chuyển tiếp sang Java"]
+  C --> D["Java AuthService tạo OTP"]
+  D --> E["Lưu OTPS với type EMAIL_VERIFY và expired_at"]
+  E --> F["Email provider SMTP/Resend gửi mã"]
+  F --> G["Người dùng nhập OTP"]
+  G --> H["POST /api/auth/otp/verify/email hoặc /me/otp/verify/email"]
+  H --> I["Java kiểm tra mã, hạn dùng, used_at"]
+  I --> J{"OTP hợp lệ?"}
+  J -- Không --> K["400/404 lỗi OTP"]
+  J -- Có --> L["Đánh dấu used_at, cập nhật email verified"]
+  L --> M["Trả OtpVerifyResponse"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>07. Quên mật khẩu và đặt lại mật khẩu</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng nhập email/username"] --> B["POST /api/auth/otp/send/reset-password"]
+  B --> C["Java tạo OTP PASSWORD_RESET"]
+  C --> D["Gửi OTP qua email"]
+  D --> E["Người dùng nhập OTP"]
+  E --> F["POST /api/auth/otp/verify/password"]
+  F --> G{"OTP hợp lệ?"}
+  G -- Không --> H["Trả lỗi xác thực OTP"]
+  G -- Có --> I["Sinh reset token"]
+  I --> J["Frontend gửi mật khẩu mới"]
+  J --> K["POST /api/auth/reset-password kèm X-Reset-Token"]
+  K --> L["Java xác thực reset token"]
+  L --> M["Hash password mới, cập nhật USERS"]
+  M --> N["Thu hồi token cũ nếu cần"]
+  N --> O["Trả MessageResponse thành công"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>08. Hoàn thiện hồ sơ sau đăng ký</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["User đăng ký/Google login nhưng profileCompleted=false"] --> B["Frontend mở complete profile"]
+  B --> C["POST /api/profiles/me/complete-profile"]
+  C --> D["Java UserProfileController.completeProfile"]
+  D --> E["Lấy userId từ JWT"]
+  E --> F["Validate displayName, phoneNumber, avatar, birthDate"]
+  F --> G{"Dữ liệu hợp lệ?"}
+  G -- Không --> H["400 validation error"]
+  G -- Có --> I["Cập nhật USER_PROFILES"]
+  I --> J["Đánh dấu profileCompleted"]
+  J --> K["Trả profile response"]
+  K --> L["Frontend vào trang chủ"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>09. Xem hồ sơ cá nhân và hồ sơ công khai</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend mở trang profile"] --> B{"Xem của mình hay người khác?"}
+  B -- Của mình --> C["GET /api/profiles/me hoặc /api/profiles/me/overview"]
+  B -- Người khác --> D["GET /api/profiles/{userId} hoặc /api/profiles/public?userId="]
+  C --> E["C# ProfilesController hoặc Java UserProfileController"]
+  D --> E
+  E --> F["Lấy user profile từ Java API/database"]
+  F --> G["Áp dụng visibility + friendship status"]
+  G --> H["Ghép số bạn bè, avatar, displayName, bài viết"]
+  H --> I["Trả dữ liệu hồ sơ"]
+  I --> J["Frontend render trang cá nhân"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>10. Cập nhật hồ sơ và quyền riêng tư</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng chỉnh sửa thông tin"] --> B{"Loại thông tin"}
+  B -- Hồ sơ cơ bản --> C["PATCH /api/profiles/me"]
+  B -- Visibility --> D["PATCH /api/profiles/me/profile-info-settings/visibility"]
+  B -- Security private --> E["PATCH /api/profiles/me/security-private"]
+  B -- Security account --> F["PATCH /api/users/me/security-account"]
+  C --> G["Controller lấy userId từ JWT"]
+  D --> G
+  E --> G
+  F --> G
+  G --> H["Service validate dữ liệu và quyền sở hữu"]
+  H --> I["Cập nhật USERS/USER_PROFILES/USER_PROFILE_INFO_VISIBILITY"]
+  I --> J["Trả dữ liệu mới"]
+  J --> K["Frontend cập nhật setting/profile UI"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>11. Tải bảng tin</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend mở Home"] --> B["GET /api/posts?page=&pageSize="]
+  B --> C["C# PostsController.GetPosts"]
+  C --> D["PostService.GetPagedAsync"]
+  D --> E["Query POST chưa deleted"]
+  E --> F["Join media, hashtag, like/reaction, comment count"]
+  F --> G["Nếu có token: tính myReaction/isLiked"]
+  G --> H["Lấy user summary/profile từ read model hoặc Java API"]
+  H --> I["Trả PagedResult<PostResponseDto>"]
+  I --> J["Frontend render news feed"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>12. Tạo bài viết mới</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng nhập nội dung/chọn ảnh"] --> B{"Có media?"}
+  B -- Có --> C["GET /api/media/cloudinary-signature"]
+  C --> D["Upload file lên Cloudinary"]
+  D --> E["Nhận media_url/media_type"]
+  B -- Không --> F["Dùng nội dung text"]
+  E --> G["POST /api/posts"]
+  F --> G
+  G --> H["C# PostsController.CreatePost"]
+  H --> I["PostService validate user, content, media"]
+  I --> J["Lưu POST và POST_MEDIA"]
+  J --> K["Tách hashtag, lưu HASHTAG/POST_HASHTAG"]
+  K --> L["Trả 201 Created + PostResponseDto"]
+  L --> M["Frontend thêm bài viết vào feed"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>13. Chỉnh sửa hoặc xóa bài viết</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng chọn sửa/xóa bài viết"] --> B{"Thao tác"}
+  B -- Sửa --> C["PUT /api/posts/{postId}"]
+  B -- Xóa --> D["DELETE /api/posts/{postId}"]
+  C --> E["C# kiểm tra JWT"]
+  D --> E
+  E --> F["PostService kiểm tra bài viết tồn tại"]
+  F --> G{"Là chủ bài hoặc admin?"}
+  G -- Không --> H["403 Forbidden"]
+  G -- Có và sửa --> I["Cập nhật content/media/hashtag"]
+  G -- Có và xóa --> J["Soft delete post"]
+  I --> K["Trả PostResponseDto mới"]
+  J --> L["Trả message Post deleted"]
+  K --> M["Frontend cập nhật feed"]
+  L --> M
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>14. Thả cảm xúc hoặc bỏ cảm xúc bài viết</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng bấm reaction"] --> B{"Có reaction mới?"}
+  B -- Có --> C["PUT /api/posts/{postId}/reactions"]
+  B -- Bỏ --> D["DELETE /api/posts/{postId}/reactions"]
+  C --> E["C# LikeService kiểm tra post tồn tại"]
+  D --> E
+  E --> F["Upsert hoặc xóa LIKE"]
+  F --> G["Tính lại counters theo type"]
+  G --> H["Tạo notification cho chủ bài nếu phù hợp"]
+  H --> I["SignalR /hubs/notifications gửi realtime"]
+  I --> J["Trả PostReactionStateResponseDto"]
+  J --> K["Frontend cập nhật icon/counter"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>15. Xem, tạo, sửa, xóa bình luận</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend mở comment panel"] --> B["GET /api/comments/post/{postId}"]
+  B --> C["C# CommentService lấy danh sách theo post"]
+  C --> D["Trả PagedResult<CommentResponseDto>"]
+  D --> E["Người dùng gửi bình luận/reply"]
+  E --> F["POST /api/comments"]
+  F --> G["Validate postId, parentCommentId, content"]
+  G --> H["Lưu COMMENT"]
+  H --> I["Tạo notification cho chủ bài/cha comment"]
+  I --> J["Trả 201 Created"]
+  J --> K{"Sửa hoặc xóa?"}
+  K -- Sửa --> L["PUT /api/comments/{commentId}"]
+  K -- Xóa --> M["DELETE /api/comments/{commentId}"]
+  L --> N["Kiểm tra owner/admin, cập nhật content"]
+  M --> O["Kiểm tra owner/admin, soft delete"]
+  N --> P["Frontend cập nhật danh sách"]
+  O --> P
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>16. Thả cảm xúc bình luận</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng bấm reaction bình luận"] --> B{"Set hay remove?"}
+  B -- Set --> C["PUT /api/comments/{commentId}/reactions"]
+  B -- Remove --> D["DELETE /api/comments/{commentId}/reactions"]
+  C --> E["CommentReactionService kiểm tra comment"]
+  D --> E
+  E --> F["Upsert/xóa COMMENT_REACTION"]
+  F --> G["Tính lại reaction state"]
+  G --> H["Tạo notification cho chủ comment nếu phù hợp"]
+  H --> I["Trả CommentReactionStateResponseDto"]
+  I --> J["Frontend cập nhật reaction UI"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>17. Story: tải, tạo, xem, reaction, xóa</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend tải story"] --> B["GET /api/stories"]
+  B --> C["C# StoryService lấy story chưa hết hạn/chưa xóa"]
+  C --> D["Trả danh sách story"]
+  D --> E["Người dùng tạo story"]
+  E --> F["Upload media nếu cần"]
+  F --> G["POST /api/stories"]
+  G --> H["Lưu STORY với expired_at"]
+  H --> I["Người khác xem story"]
+  I --> J["POST /api/stories/{storyId}/view"]
+  J --> K["Lưu STORY_VIEW nếu lần đầu"]
+  K --> L["PUT/DELETE /api/stories/{storyId}/reactions"]
+  L --> M["Lưu/xóa STORY_REACTION"]
+  M --> N["DELETE /api/stories/{storyId} nếu chủ story xóa"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>18. Lưu và bỏ lưu bài viết</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng bấm lưu bài viết"] --> B["POST /api/saved-posts"]
+  B --> C["C# SavedPostService kiểm tra post tồn tại"]
+  C --> D["Upsert SAVED_POST theo userId/postId"]
+  D --> E["Trả trạng thái đã lưu"]
+  E --> F["Người dùng mở mục bài đã lưu"]
+  F --> G["GET /api/saved-posts/my"]
+  G --> H["Trả danh sách post đã lưu"]
+  H --> I["Người dùng bỏ lưu"]
+  I --> J["DELETE /api/saved-posts/{postId}"]
+  J --> K["Xóa SAVED_POST"]
+  K --> L["Frontend cập nhật icon lưu"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>19. Hashtag: tách từ bài viết và tìm kiếm</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng tạo/sửa bài có #hashtag"] --> B["PostService parse hashtag từ content"]
+  B --> C["Normalize tên hashtag"]
+  C --> D{"Hashtag đã tồn tại?"}
+  D -- Chưa --> E["Tạo HASHTAG"]
+  D -- Rồi --> F["Dùng hashtag hiện có"]
+  E --> G["Lưu POST_HASHTAG"]
+  F --> G
+  G --> H["Người dùng tìm hashtag"]
+  H --> I["GET /api/hashtags/search"]
+  I --> J["HashtagService query normalized_name"]
+  J --> K["Trả danh sách hashtag/post liên quan"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>20. Gửi lời mời kết bạn</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng bấm kết bạn"] --> B["POST /api/friendships/request hoặc /api/messenger/friendships"]
+  B --> C["Controller lấy requesterId từ JWT"]
+  C --> D["FriendshipService kiểm tra targetUserId"]
+  D --> E{"Đã block/đã là bạn/đã có request?"}
+  E -- Có --> F["Trả lỗi nghiệp vụ"]
+  E -- Không --> G["Tạo FRIENDSHIPS status PENDING"]
+  G --> H["Tạo notification cho addressee"]
+  H --> I["SignalR/WebSocket cập nhật realtime"]
+  I --> J["Frontend chuyển nút sang Đã gửi"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>21. Chấp nhận hoặc từ chối lời mời kết bạn</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng mở danh sách lời mời"] --> B["GET /api/friendships/pending-requesters"]
+  B --> C["FriendshipService trả danh sách requester"]
+  C --> D{"Người dùng chọn"}
+  D -- Chấp nhận --> E["POST /api/friendships/accept"]
+  D -- Từ chối --> F["POST /api/friendships/reject"]
+  E --> G["Cập nhật FRIENDSHIPS status ACCEPTED"]
+  G --> H["Tạo CONTACTS hai chiều nếu cần"]
+  H --> I["Tạo notification accepted"]
+  F --> J["Cập nhật/xóa request pending"]
+  I --> K["Frontend cập nhật danh sách bạn bè"]
+  J --> K
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>22. Hủy kết bạn, chặn và bỏ chặn</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng thao tác với một user"] --> B{"Loại thao tác"}
+  B -- Hủy bạn --> C["POST /api/friendships/unfriend hoặc DELETE /api/messenger/friendships"]
+  B -- Chặn --> D["POST /api/friendships/block hoặc /api/messenger/friendships/block/{targetUserId}"]
+  B -- Bỏ chặn --> E["DELETE /api/friendships/block/{targetUserId}"]
+  C --> F["Xóa/cập nhật FRIENDSHIPS"]
+  F --> G["Cập nhật CONTACTS"]
+  D --> H["Đánh dấu blocked hoặc tạo block record"]
+  H --> I["Ẩn quan hệ, conversation/contact tương ứng"]
+  E --> J["Gỡ trạng thái blocked"]
+  G --> K["Frontend cập nhật trạng thái nút"]
+  I --> K
+  J --> K
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>23. Gợi ý bạn bè, danh bạ và trạng thái online</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend mở danh bạ/bạn bè"] --> B{"Dữ liệu cần tải"}
+  B -- Gợi ý --> C["GET /api/friendships/suggestions hoặc /api/users/suggestions"]
+  B -- Danh bạ --> D["GET /api/friendships/contacts hoặc /api/messenger/contacts/getByUser"]
+  B -- Online --> E["GET /api/friendships/presence hoặc /api/profiles/me/friends/presence"]
+  C --> F["Service lọc user chưa kết bạn/chưa block"]
+  D --> G["Service lấy CONTACTS/FRIENDSHIPS ACCEPTED"]
+  E --> H["Service ghép presence/lastSeen"]
+  F --> I["Trả danh sách user summary"]
+  G --> I
+  H --> I
+  I --> J["Frontend render sidebar/danh bạ"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>24. Tạo cuộc trò chuyện cá nhân hoặc nhóm</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng chọn người để nhắn tin"] --> B["POST /api/messenger/conversations/create"]
+  B --> C["Java ConversationController.create"]
+  C --> D["ConversationService kiểm tra thành viên"]
+  D --> E{"Direct đã tồn tại?"}
+  E -- Có --> F["Trả conversation hiện có"]
+  E -- Không --> G["Tạo CONVERSATIONS"]
+  G --> H["Tạo CONVERSATION_MEMBERS"]
+  H --> I["Set role admin/member cho nhóm"]
+  I --> J["Trả ConversationResponse"]
+  F --> J
+  J --> K["Frontend mở khung chat"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>25. Tải danh sách cuộc trò chuyện</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend mở messenger"] --> B["GET /api/messenger/conversations/getByUser"]
+  B --> C["Java ConversationController.getByUser"]
+  C --> D["Service lấy CONVERSATION_MEMBERS theo userId"]
+  D --> E["Join CONVERSATIONS + last_message_id"]
+  E --> F["Lấy last sender, unread count, member count"]
+  F --> G["Sắp xếp theo last_message_at"]
+  G --> H["Trả danh sách conversation"]
+  H --> I["Frontend render sidebar chat"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>26. Gửi tin nhắn văn bản hoặc tệp đính kèm</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng nhập tin nhắn/chọn file"] --> B{"Có file?"}
+  B -- Có --> C["Upload media lên Cloudinary"]
+  C --> D["Tạo attachment request"]
+  B -- Không --> E["Chỉ gửi content"]
+  D --> F["POST /api/messenger/messages/send"]
+  E --> F
+  F --> G["Java MessageController.send"]
+  G --> H["MessageService kiểm tra user thuộc conversation"]
+  H --> I["Lưu MESSAGES"]
+  I --> J["Lưu ATTACHMENTS nếu có"]
+  J --> K["Cập nhật CONVERSATIONS last_message"]
+  K --> L["STOMP/WebSocket đẩy message realtime"]
+  L --> M["Frontend append message"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>27. Tải lịch sử tin nhắn</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend mở một conversation"] --> B["GET /api/messenger/messages/conversation/{conversationId}"]
+  B --> C["Java MessageController.getByConversation"]
+  C --> D["MessageService kiểm tra membership"]
+  D --> E["Query MESSAGES chưa deleted"]
+  E --> F["Join ATTACHMENTS và sender profile"]
+  F --> G["Cập nhật MESSAGE_STATUS/last read nếu có"]
+  G --> H["Trả danh sách message"]
+  H --> I["Frontend render thread chat"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>28. Quản lý nhóm chat</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Admin nhóm thao tác"] --> B{"Thao tác nhóm"}
+  B -- Đổi thông tin --> C["PATCH /api/messenger/conversations/{conversationId}"]
+  B -- Thêm thành viên --> D["POST /api/messenger/conversations/{conversationId}/members/{targetUserId}"]
+  B -- Xóa thành viên --> E["DELETE /api/messenger/conversations/{conversationId}/members/{targetUserId}"]
+  B -- Thêm admin --> F["POST /api/messenger/conversations/{conversationId}/admins/{targetUserId}"]
+  B -- Tự hạ admin --> G["POST /api/messenger/conversations/{conversationId}/admins/me/demote"]
+  C --> H["ConversationService kiểm tra role"]
+  D --> H
+  E --> H
+  F --> H
+  G --> H
+  H --> I["Cập nhật CONVERSATIONS/CONVERSATION_MEMBERS"]
+  I --> J["Trả conversation mới"]
+  J --> K["Frontend cập nhật nhóm chat"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>29. Thông báo và realtime notification</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Sự kiện: like/comment/friend/report/story"] --> B["NotificationService tạo NOTIFICATION"]
+  B --> C["Lưu notification theo user_id"]
+  C --> D["SignalR NotificationsHub /hubs/notifications"]
+  D --> E["Frontend đang online nhận realtime"]
+  E --> F["Cập nhật badge/toast"]
+  F --> G["Người dùng mở thông báo"]
+  G --> H["GET /api/notifications"]
+  H --> I["Trả danh sách notification"]
+  I --> J["PATCH /api/notifications/{id}/read hoặc /read-all"]
+  J --> K["Đánh dấu is_read=true"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>30. Báo cáo bài viết, bình luận, story, người dùng</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng bấm báo cáo nội dung"] --> B{"Loại báo cáo"}
+  B -- Post --> C["POST /api/post-reports"]
+  B -- Comment --> D["POST /api/comment-reports"]
+  B -- Story --> E["POST /api/story-reports"]
+  B -- User --> F["POST /api/user-reports"]
+  C --> G["ReportService kiểm tra target tồn tại"]
+  D --> G
+  E --> G
+  F --> G
+  G --> H["Lưu REPORT status Pending"]
+  H --> I["Admin xem danh sách report"]
+  I --> J["GET /api/*-reports hoặc pending-count"]
+  J --> K["Admin resolve/delete report"]
+  K --> L["PATCH /resolve hoặc DELETE"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>31. Quản trị người dùng</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Admin đăng nhập"] --> B["POST /api/auth/admin/login"]
+  B --> C["C# kiểm tra role ADMIN trong token"]
+  C --> D{"Có quyền admin?"}
+  D -- Không --> E["403 Forbidden"]
+  D -- Có --> F["GET /api/admin/dashboard"]
+  F --> G["AdminConsoleService tổng hợp thống kê"]
+  G --> H["GET /api/admin/users/search"]
+  H --> I["Tìm user qua Java Admin API/read model"]
+  I --> J["PATCH /api/admin/users/{userId}/status"]
+  J --> K["Cập nhật trạng thái user"]
+  K --> L["Ghi ADMIN_AUDIT_LOG"]
+  L --> M["GET /api/admin/audit-logs"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>32. Đánh giá ứng dụng</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng mở prompt đánh giá"] --> B["GET /api/app-reviews/me"]
+  B --> C{"Đã từng đánh giá?"}
+  C -- Chưa --> D["POST /api/app-reviews"]
+  C -- Rồi --> E["PUT /api/app-reviews/me"]
+  D --> F["AppReviewService validate rating/content"]
+  E --> F
+  F --> G["Lưu APP_REVIEW"]
+  G --> H["GET /api/app-reviews/public hoặc /summary"]
+  H --> I["Frontend hiển thị điểm trung bình/public reviews"]
+  I --> J["Admin hide/unhide/delete nếu cần"]
+  J --> K["PATCH /api/admin/app-reviews/{id}/hide hoặc DELETE"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>33. Game: tạo phòng và tham gia phòng</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Người dùng mở trang game"] --> B["GET /api/games"]
+  B --> C["C# GamesController trả danh sách game"]
+  C --> D["POST /api/games/rooms"]
+  D --> E["GameRoomService tạo roomCode, hostUserId"]
+  E --> F["Trả roomId/roomCode"]
+  F --> G["Người khác nhập code"]
+  G --> H["POST /api/games/rooms/join-by-code"]
+  H --> I["Kiểm tra room còn chỗ/trạng thái"]
+  I --> J["Thêm player vào room"]
+  J --> K["SignalR GamesHub thông báo room updated"]
+  K --> L["Frontend chuyển vào màn chơi"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>34. Game realtime: gửi nước đi và rời phòng</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Player thực hiện nước đi"] --> B["SignalR /hubs/games gửi event"]
+  B --> C["GamesHub nhận move"]
+  C --> D["Game service tương ứng: Chess/Caro/Snake/Flappy"]
+  D --> E["Validate lượt chơi, trạng thái, luật game"]
+  E --> F{"Move hợp lệ?"}
+  F -- Không --> G["Trả lỗi cho client"]
+  F -- Có --> H["Cập nhật trạng thái room/game"]
+  H --> I["Broadcast state cho các player"]
+  I --> J["Player rời phòng"]
+  J --> K["POST /api/games/rooms/leave hoặc disconnect hub"]
+  K --> L["GameRoomService xử lý leave/disconnect"]
+  L --> M["Broadcast room/game ended nếu cần"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>35. Upload media qua Cloudinary</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend cần upload ảnh/video"] --> B["GET /api/media/cloudinary-signature"]
+  B --> C["C# MediaController kiểm tra JWT"]
+  C --> D["CloudinarySigningService kiểm tra cấu hình"]
+  D --> E["Sinh signature, timestamp, folder, apiKey"]
+  E --> F["Frontend upload trực tiếp lên Cloudinary"]
+  F --> G{"Upload thành công?"}
+  G -- Không --> H["Hiển thị lỗi upload"]
+  G -- Có --> I["Nhận secure_url/resource_type"]
+  I --> J["Gửi media_url vào post/story/message API"]
+  </pre>
+</section>
+
+<section class="flow-page">
+  <h1>36. Luồng gateway giữa frontend, C# API và Java API</h1>
+  <pre class="mermaid">
+flowchart LR
+  A["Frontend web Cloudflare Pages"] --> B{"Endpoint được gọi"}
+  B -- Post/Comment/Story/Notification/Game/Report --> C["C# API Render"]
+  B -- Auth/Profile/Friend/Messenger --> D["Java API Render"]
+  C --> E{"C# cần dữ liệu user/profile?"}
+  E -- Có --> F["JavaApiService gọi Java API"]
+  E -- Không --> G["PostgreSQL/Redis/SignalR"]
+  F --> H["Java API xử lý user/profile/friend"]
+  H --> I["MySQL/Redis/WebSocket"]
+  D --> I
+  G --> J["Trả response về frontend"]
+  I --> J
+  J --> K["Frontend cập nhật UI"]
+  </pre>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "base",
+    securityLevel: "loose",
+    flowchart: {
+      curve: "basis",
+      htmlLabels: true,
+      nodeSpacing: 35,
+      rankSpacing: 45
+    },
+    themeVariables: {
+      fontFamily: "Segoe UI, Arial, sans-serif",
+      primaryColor: "#e0f2fe",
+      primaryBorderColor: "#0284c7",
+      primaryTextColor: "#0f172a",
+      secondaryColor: "#fef3c7",
+      tertiaryColor: "#f8fafc",
+      lineColor: "#334155",
+      textColor: "#0f172a",
+      edgeLabelBackground: "#ffffff",
+      clusterBkg: "#f8fafc",
+      clusterBorder: "#94a3b8"
+    }
+  });
+
+  window.addEventListener("load", async () => {
+    const blocks = Array.from(document.querySelectorAll(".mermaid"));
+    setTimeout(() => document.body.classList.add("rendered"), 25000);
+    for (const block of blocks) {
+      try {
+        await mermaid.run({ nodes: [block] });
+      } catch (error) {
+        block.dataset.renderError = "true";
+        console.error(error);
+      }
+    }
+    document.body.classList.add("rendered");
+  });
+</script>
+</body>
+</html>
