@@ -18,6 +18,7 @@ export interface ContactResponseDto {
   userId?: string;
   id?: string;
   username?: string;
+  displayName?: string;
   nickName?: string;
   fullName?: string;
   avatarUrl?: string;

@@ -9,6 +9,30 @@ export const parseFriendsTab = (value: string | null): FriendsTab => {
   return 'home';
 };
 
+const readOptionalString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized || undefined;
+};
+
+const readField = (record: Record<string, unknown>, key: string): string | undefined => {
+  return readOptionalString(record[key]);
+};
+
+const resolveDisplayNameFromRecord = (record: Record<string, unknown>, fallback: string): string => {
+  return (
+    readField(record, 'displayName') ??
+    readField(record, 'nickName') ??
+    readField(record, 'username') ??
+    readField(record, 'fullName') ??
+    readField(record, 'phoneNumber') ??
+    fallback
+  );
+};
+
 const resolveRequestTimestamp = (request: Partial<FriendRequest>): string | undefined => {
   const candidates = [
     request.updatedAt,
@@ -75,12 +99,15 @@ export const sanitizeSuggestions = (value: unknown, fallback: FriendSuggestion[]
 
   return value.map((item, index) => {
     const typed = item as Partial<FriendSuggestion>;
+    const raw = item as Record<string, unknown>;
     const safeId = typed.id ?? `suggestion-${index}`;
+    const fullName = resolveDisplayNameFromRecord(raw, 'User');
+    const username = readField(raw, 'username') ?? `user_${safeId}`;
 
     return {
       id: safeId,
-      username: typed.username ?? `user_${safeId}`,
-      fullName: typed.fullName ?? 'User',
+      username,
+      fullName,
       avatarUrl: typed.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
       mutualFriends: typeof typed.mutualFriends === 'number' ? typed.mutualFriends : 0,
       faculty: typed.faculty,
@@ -101,6 +128,7 @@ export const sanitizeRequests = (
 
   return value.map((item, index) => {
     const typed = item as Partial<FriendRequest>;
+    const raw = item as Record<string, unknown>;
     const safeId = typed.id ?? `request-user-${index}`;
     const requesterId = mode === 'received' ? typed.requesterId ?? safeId : typed.requesterId ?? currentUserId;
     const addresseeId = mode === 'received' ? typed.addresseeId ?? currentUserId : typed.addresseeId ?? safeId;
@@ -118,13 +146,16 @@ export const sanitizeRequests = (
           ? typed.createAt
           : undefined;
 
+    const fullName = resolveDisplayNameFromRecord(raw, 'User');
+    const username = readField(raw, 'username') ?? `user_${safeId}`;
+
     return {
       id: safeId,
       requestId: typed.requestId ?? `request-${safeId}-${index}`,
       requesterId,
       addresseeId,
-      username: typed.username ?? `user_${safeId}`,
-      fullName: typed.fullName ?? 'User',
+      username,
+      fullName,
       avatarUrl: typed.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
       mutualFriends: typeof typed.mutualFriends === 'number' ? typed.mutualFriends : 0,
       requestedAt,
@@ -143,13 +174,16 @@ export const sanitizeFriends = (value: unknown, fallback: FriendUser[]) => {
 
   return value.map((item, index) => {
     const typed = item as Partial<FriendUser>;
+    const raw = item as Record<string, unknown>;
     const safeId = typed.id ?? `friend-${index}`;
+    const fullName = resolveDisplayNameFromRecord(raw, 'User');
+    const username = readField(raw, 'username') ?? `friend_${safeId}`;
 
     return {
       id: safeId,
       friendshipId: typed.friendshipId,
-      username: typed.username ?? `friend_${safeId}`,
-      fullName: typed.fullName ?? 'User',
+      username,
+      fullName,
       avatarUrl: typed.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
       mutualFriends: typeof typed.mutualFriends === 'number' ? typed.mutualFriends : 0,
       friendsCount: typed.friendsCount,

@@ -106,10 +106,7 @@ export const mapPendingRequesterResponseDtoToFriendRequest = (
   mode: 'received' | 'sent',
 ): FriendRequest => {
   const userId = toSafeId(payload.userId ?? payload.id, `friend-request-${index}`);
-  const fullName = toDisplayName(
-    payload.displayName ?? payload.fullName ?? payload.username,
-    `User ${index + 1}`,
-  );
+  const fullName = toDisplayName(payload.displayName ?? payload.username ?? payload.fullName, `User ${index + 1}`);
   const requestedAt = resolveFriendRequestTimestamp(payload);
   const updatedAt = firstNonEmptyString(payload.updatedAt, payload.updateAt);
   const createdAt = firstNonEmptyString(payload.createdAt, payload.createAt);
@@ -132,14 +129,17 @@ export const mapPendingRequesterResponseDtoToFriendRequest = (
 export const mapContactResponseDtoToFriendUser = (payload: ContactResponseDto, index: number): FriendUser => {
   const userId = toSafeId(payload.userId ?? payload.id, `friend-${index}`);
   const displayName = toDisplayName(
-    payload.fullName ?? payload.nickName ?? payload.username ?? payload.phoneNumber,
+    payload.displayName ?? payload.nickName ?? payload.username ?? payload.fullName ?? payload.phoneNumber,
     `Friend ${index + 1}`,
   );
 
   return {
     id: userId,
     friendshipId: typeof payload.contactId === 'string' ? payload.contactId : undefined,
-    username: toDisplayName(payload.username ?? payload.nickName ?? payload.phoneNumber, `friend_${userId}`),
+    username: toDisplayName(
+      payload.username ?? payload.displayName ?? payload.nickName ?? payload.phoneNumber,
+      `friend_${userId}`,
+    ),
     fullName: displayName,
     avatarUrl: toAvatarUrl(payload.avatarUrl),
     mutualFriends: typeof payload.mutualFriends === 'number' ? payload.mutualFriends : 0,
@@ -203,7 +203,7 @@ export const mapBlockedUserResponseDtoToBlockedUser = (
   index: number,
 ): BlockedUser => {
   const userId = toSafeId(payload.userId ?? payload.id, `blocked-user-${index}`);
-  const fullName = toDisplayName(payload.displayName ?? payload.fullName ?? payload.username, `User ${index + 1}`);
+  const fullName = toDisplayName(payload.displayName ?? payload.username ?? payload.fullName, `User ${index + 1}`);
   const username = toDisplayName(payload.username ?? payload.displayName, `user_${userId}`);
 
   return {

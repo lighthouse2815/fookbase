@@ -7,7 +7,7 @@ import type {
   UserProfilePresenceResponseDto,
   UserResponseDto,
 } from '@/features/user/api/dtos/response.dto';
-import { mapPresenceToUser } from '@/features/user/api/mapper/mapper';
+import { mapPresenceToUser, mapUserResponseDtoToUser } from '@/features/user/api/mapper/mapper';
 import type {
   FriendPresenceResult,
   SecurityAccountInfo,
@@ -26,10 +26,7 @@ export const userService = {
       throw new Error(response.data.errors?.[0] ?? 'Failed to load current user');
     }
 
-    return {
-      ...currentUser,
-      avatarUrl: currentUser.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
-    };
+    return mapUserResponseDtoToUser(currentUser);
   },
 
   async getSecurityAccountInfo(): Promise<SecurityAccountInfo> {
@@ -60,7 +57,7 @@ export const userService = {
 
   async getOnlineUsers(): Promise<User[]> {
     const response = await javaApiClient.get<UserResponseDto[]>(USERS.ONLINE);
-    return response.data;
+    return response.data.map(mapUserResponseDtoToUser);
   },
 
   async getFriendPresence(): Promise<FriendPresenceResult> {

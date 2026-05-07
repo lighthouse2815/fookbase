@@ -1,6 +1,7 @@
 export interface UserResponseDto {
   id: string;
   username: string;
+  displayName?: string;
   fullName: string;
   email?: string;
   avatarUrl: string;
