@@ -20,6 +20,8 @@ frontend/.vite/
 # Local environment
 frontend/.env
 frontend/.env.local
+chat_app/backend/.env
+backend/.env
 backend/fookbase.API/appsettings.Local.json
 
 # Local tooling / temp

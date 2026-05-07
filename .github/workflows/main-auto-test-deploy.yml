@@ -1,0 +1,85 @@
+name: Main Auto Test and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-auto-test-deploy
+  cancel-in-progress: true
+
+jobs:
+  test-dotnet:
+    name: Test C# Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run .NET tests
+        run: dotnet test backend/fookbase.slnx --configuration Release --nologo
+
+  test-java:
+    name: Test Java Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Run Maven tests
+        run: mvn -B test -f chat_app/backend/pom.xml
+
+  deploy-render:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs:
+      - test-dotnet
+      - test-java
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Validate deploy hook secrets
+        env:
+          RENDER_DEPLOY_HOOK_JAVA: ${{ secrets.RENDER_DEPLOY_HOOK_JAVA }}
+          RENDER_DEPLOY_HOOK_CSHARP: ${{ secrets.RENDER_DEPLOY_HOOK_CSHARP }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_DEPLOY_HOOK_JAVA:-}" ]; then
+            echo "Missing secret: RENDER_DEPLOY_HOOK_JAVA"
+            exit 1
+          fi
+          if [ -z "${RENDER_DEPLOY_HOOK_CSHARP:-}" ]; then
+            echo "Missing secret: RENDER_DEPLOY_HOOK_CSHARP"
+            exit 1
+          fi
+
+      - name: Trigger Java deploy first
+        env:
+          RENDER_DEPLOY_HOOK_JAVA: ${{ secrets.RENDER_DEPLOY_HOOK_JAVA }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --request POST "${RENDER_DEPLOY_HOOK_JAVA}"
+
+      - name: Trigger C# deploy second
+        env:
+          RENDER_DEPLOY_HOOK_CSHARP: ${{ secrets.RENDER_DEPLOY_HOOK_CSHARP }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --request POST "${RENDER_DEPLOY_HOOK_CSHARP}"
+
