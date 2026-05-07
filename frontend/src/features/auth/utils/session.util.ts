@@ -3,12 +3,25 @@ import axios from 'axios';
 import type { AuthSession } from '@/features/auth/types/contracts';
 import type { User } from '@/features/user/types/contracts';
 
+const firstNonEmptyTrimmed = (...values: Array<string | undefined | null>): string | undefined => {
+  for (const value of values) {
+    const normalized = value?.trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return undefined;
+};
+
 export const mapAuthUserToUser = (payload: AuthSession['user']): User => ({
   id: payload.id,
-  username: payload.username,
-  fullName: payload.username,
+  username: firstNonEmptyTrimmed(payload.username, payload.displayName) ?? 'user',
+  fullName: firstNonEmptyTrimmed(payload.displayName, payload.username) ?? 'user',
   email: payload.email,
-  avatarUrl: payload.avatarUrl ?? 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
+  avatarUrl:
+    firstNonEmptyTrimmed(payload.avatarUrl) ??
+    'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
 });
 
 const decodeJwtPayload = (token: string): Record<string, unknown> | null => {

@@ -33,7 +33,7 @@ public class CurrentUserService : ICurrentUserService
             var profileLookup = await _userReadModelService.ResolveProfileLookupAsync(
                 [userId],
                 cancellationToken,
-                requireFresh: false,
+                requireFresh: true,
                 accessToken: accessToken);
 
             if (!profileLookup.TryGetValue(userId, out var profile) || profile is null)

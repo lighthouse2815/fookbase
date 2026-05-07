@@ -110,6 +110,7 @@ export const mapRawAuthPayloadDtoToAuthSession = (payload: RawAuthPayloadDto): A
       payload.user ?? {
         id: payload.userId ?? 'unknown',
         username: payload.username ?? payload.displayName ?? 'user',
+        displayName: payload.displayName,
         email: payload.email ?? '',
         avatarUrl: payload.avatarUrl,
       },

@@ -26,6 +26,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<CloudinaryOptions>(builder.Configuration.GetSection(CloudinaryOptions.SectionName));
 builder.Services.Configure<RabbitMqReadModelOptions>(builder.Configuration.GetSection(RabbitMqReadModelOptions.SectionName));
+builder.Services.Configure<UserReadModelOptions>(builder.Configuration.GetSection(UserReadModelOptions.SectionName));
 
 var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 if (corsAllowedOrigins is null || corsAllowedOrigins.Length == 0)

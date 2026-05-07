@@ -2,10 +2,12 @@ using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Extensions;
+using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 using InteractHub.Api.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace InteractHub.Api.Infrastructure.Services;
 
@@ -14,14 +16,17 @@ public class UserReadModelService : IUserReadModelService, IUserReadModelProject
     private readonly AppDbContext _dbContext;
     private readonly IJavaApiService _javaApiService;
     private readonly ILogger<UserReadModelService> _logger;
+    private readonly UserReadModelOptions _options;
 
     public UserReadModelService(
         AppDbContext dbContext,
         IJavaApiService javaApiService,
+        IOptions<UserReadModelOptions> optionsAccessor,
         ILogger<UserReadModelService> logger)
     {
         _dbContext = dbContext;
         _javaApiService = javaApiService;
+        _options = optionsAccessor.Value;
         _logger = logger;
     }
 
@@ -98,9 +103,12 @@ public class UserReadModelService : IUserReadModelService, IUserReadModelProject
             item => item.Key,
             item => (UserProfileSummaryDto?)ToProfileSummary(item.Value));
 
+        var profileCacheTtl = ResolveProfileCacheTtl(_options.ProfileCacheTtlSeconds);
         var idsToRefresh = requireFresh
             ? distinctUserIds
-            : distinctUserIds.Where(userId => !cachedEntities.ContainsKey(userId)).ToList();
+            : distinctUserIds.Where(userId =>
+                !cachedEntities.TryGetValue(userId, out var cachedEntity)
+                || IsProfileEntryStale(cachedEntity, profileCacheTtl)).ToList();
 
         if (idsToRefresh.Count == 0)
         {
@@ -579,5 +587,25 @@ public class UserReadModelService : IUserReadModelService, IUserReadModelProject
         return observedAtUtc.Value.Kind == DateTimeKind.Utc
             ? observedAtUtc.Value
             : observedAtUtc.Value.ToUniversalTime();
+    }
+
+    private static TimeSpan ResolveProfileCacheTtl(int ttlSeconds)
+    {
+        if (ttlSeconds <= 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+        return TimeSpan.FromSeconds(Math.Min(ttlSeconds, 86400));
+    }
+
+    private static bool IsProfileEntryStale(UserProfileReadModel profile, TimeSpan profileCacheTtl)
+    {
+        if (profileCacheTtl == TimeSpan.Zero)
+        {
+            return true;
+        }
+
+        return DateTime.UtcNow - profile.UpdatedAtUtc >= profileCacheTtl;
     }
 }
