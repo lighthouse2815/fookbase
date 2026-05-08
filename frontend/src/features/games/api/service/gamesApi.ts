@@ -4,7 +4,7 @@ import type { GameDefinition, GameRoom, GameType } from '@/features/games/types/
 
 const extractData = <T>(response: ApiEnvelope<T>, fallbackError: string): T => {
   if (response.data === undefined) {
-    throw new Error(response.errors?.[0] ?? fallbackError);
+    throw new Error(response.error?.message ?? fallbackError);
   }
 
   return response.data;

@@ -21,8 +21,6 @@ public class SavedPostsController : ApiControllerBase
     }
 
     [HttpGet("my")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PagedResult<PostResponseDto>>>> GetMine(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
@@ -33,10 +31,6 @@ public class SavedPostsController : ApiControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<SavedPostStateResponseDto>>> SavePost(
         [FromBody] SavePostRequestDto request,
         CancellationToken cancellationToken)
@@ -47,8 +41,6 @@ public class SavedPostsController : ApiControllerBase
     }
 
     [HttpDelete("{postId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<SavedPostStateResponseDto>>> RemoveSavedPost(
         Guid postId,
         CancellationToken cancellationToken)

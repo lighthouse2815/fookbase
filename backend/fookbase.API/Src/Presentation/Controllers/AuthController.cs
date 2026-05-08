@@ -1,6 +1,7 @@
 using InteractHub.Api.Application.DTOs.Auth;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -28,10 +29,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<RegisterResponseDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiResponse<RegisterResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<RegisterResponseDto>), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ApiResponse<RegisterResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<RegisterResponseDto>>> Register(
         [FromBody] RegisterRequestDto request,
         CancellationToken cancellationToken)
@@ -47,11 +44,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Login(
         [FromBody] LoginRequestDto request,
         CancellationToken cancellationToken)
@@ -76,11 +68,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("google")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<GoogleAuthResponseDto>>> AuthWithGoogle(
         [FromBody] GoogleTokenRequestDto request,
         CancellationToken cancellationToken)
@@ -105,11 +92,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("admin/login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<LoginResponseDto>>> AdminLogin(
         [FromBody] LoginRequestDto request,
         CancellationToken cancellationToken)
@@ -126,16 +108,18 @@ public class AuthController : ApiControllerBase
 
         if (string.IsNullOrWhiteSpace(normalizedToken))
         {
-            return StatusCode(
+            return ErrorResponse<LoginResponseDto>(
+                ErrorCode.ADMIN_LOGIN_FAILED,
                 StatusCodes.Status403Forbidden,
-                ApiResponse<LoginResponseDto>.Fail("Admin login failed."));
+                "Admin login failed.");
         }
 
         if (!_tokenRoleService.IsAdmin(result.Data.Role, normalizedToken))
         {
-            return StatusCode(
+            return ErrorResponse<LoginResponseDto>(
+                ErrorCode.ADMIN_PERMISSION_REQUIRED,
                 StatusCodes.Status403Forbidden,
-                ApiResponse<LoginResponseDto>.Fail("This account does not have admin permission."));
+                "This account does not have admin permission.");
         }
 
         _authCookieService.SetLoginCookies(HttpContext, normalizedToken, result.Data.RefreshToken);
@@ -144,9 +128,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<TokenResponseDto>>> RefreshToken(
         [FromBody] RefreshTokenRequestDto? request,
         CancellationToken cancellationToken)
@@ -181,10 +162,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("otp/send/verify-email")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendVerifyEmailOtpWhenNotLogin(
         [FromBody] OtpRequestDto request,
         CancellationToken cancellationToken)
@@ -200,9 +177,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/send/verify-email")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendVerifyEmailOtpWhenLogin(
         CancellationToken cancellationToken)
     {
@@ -222,9 +196,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/send/change-username")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendChangeUsernameOtpWhenLogin(
         CancellationToken cancellationToken)
     {
@@ -244,9 +215,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/send/change-phone-number")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendChangePhoneNumberOtpWhenLogin(
         CancellationToken cancellationToken)
     {
@@ -266,10 +234,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/verify/change-username")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyChangeUsernameOtpWhenLogin(
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
@@ -290,10 +254,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/verify/change-phone-number")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyChangePhoneNumberOtpWhenLogin(
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
@@ -314,10 +274,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("otp/send/reset-password")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendResetPasswordOtpWhenNotLogin(
         [FromBody] OtpRequestDto request,
         CancellationToken cancellationToken)
@@ -333,9 +289,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/send/reset-password")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> SendResetPasswordOtpWhenLogin(
         CancellationToken cancellationToken)
     {
@@ -355,10 +308,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("otp/verify/email")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyEmailOtpWhenNotLogin(
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
@@ -374,9 +323,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/verify/email")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyEmailOtpWhenLogin(
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
@@ -397,10 +343,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("otp/verify/password")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyResetPasswordOtpWhenNotLogin(
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
@@ -416,9 +358,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("me/otp/verify/password")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<OtpVerifyResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<OtpVerifyResponseDto>>> VerifyResetPasswordOtpWhenLogin(
         [FromBody] VerifyOtpRequestDto request,
         CancellationToken cancellationToken)
@@ -439,9 +378,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("reset-password")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<MessageResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<MessageResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<MessageResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<MessageResponseDto>>> ResetPassword(
         [FromHeader(Name = "X-Reset-Token")] string? resetToken,
         [FromBody] ResetPasswordRequestDto request,
@@ -449,7 +385,10 @@ public class AuthController : ApiControllerBase
     {
         if (string.IsNullOrWhiteSpace(resetToken))
         {
-            return BadRequest(ApiResponse<MessageResponseDto>.Fail("X-Reset-Token header is required."));
+            return ErrorResponse<MessageResponseDto>(
+                ErrorCode.RESET_TOKEN_HEADER_REQUIRED,
+                StatusCodes.Status400BadRequest,
+                "X-Reset-Token header is required.");
         }
 
         var result = await _javaApiService.ResetPasswordAsync(resetToken, request, cancellationToken);
@@ -463,7 +402,6 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("logout")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult> Logout(
         [FromBody] LogoutRequestDto? request,
         CancellationToken cancellationToken)

@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Domain.Entities;
 
 public class AdminAuditLog
@@ -6,16 +8,15 @@ public class AdminAuditLog
 
     public Guid AdminUserId { get; set; }
 
-    public string ActionType { get; set; } = string.Empty;// đổi thành enum tốt hơn
+    public AdminAuditActionType ActionType { get; set; }
 
-    public string EntityType { get; set; } = string.Empty;  // đổi thành enum tốt hơn
+    public AdminAuditEntityType EntityType { get; set; }
 
-    public Guid? EntityId { get; set; }
+    public Guid EntityId { get; set; }
 
-    public Guid? TargetUserId { get; set; }
+    public Guid TargetUserId { get; set; }
 
-    public string? Details { get; set; }
+    public string Details { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
 }
-

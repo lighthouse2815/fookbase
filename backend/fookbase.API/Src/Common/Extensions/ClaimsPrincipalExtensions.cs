@@ -1,3 +1,5 @@
+using InteractHub.Api.Common.Enums;
+using InteractHub.Api.Common.Exceptions;
 using System.Security.Claims;
 using InteractHub.Api.Common.Constants;
 
@@ -9,11 +11,11 @@ public static class ClaimsPrincipalExtensions
     {
         var rawUserId = principal.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? principal.FindFirstValue("sub")
-            ?? throw new UnauthorizedAccessException("Missing user id claim.");
+            ?? throw new BusinessException(ErrorCode.UNAUTHORIZED, "Missing user id claim.");
 
         if (!Guid.TryParse(rawUserId, out var userId))
         {
-            throw new UnauthorizedAccessException("Invalid user id claim.");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Invalid user id claim.");
         }
 
         return userId;

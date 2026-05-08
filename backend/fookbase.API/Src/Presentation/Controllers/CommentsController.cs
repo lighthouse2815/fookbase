@@ -25,8 +25,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpGet("post/{postId:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PagedResult<CommentResponseDto>>>> GetByPostId(
         Guid postId,
         [FromQuery] PaginationQuery query,
@@ -39,8 +37,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpGet("{commentId:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CommentResponseDto>>> GetById(
         Guid commentId,
         CancellationToken cancellationToken)
@@ -52,10 +48,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpPost]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CommentResponseDto>>> Create(
         [FromBody] CreateCommentRequestDto request,
         CancellationToken cancellationToken)
@@ -71,11 +63,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpPut("{commentId:guid}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CommentResponseDto>>> Update(
         Guid commentId,
         [FromBody] UpdateCommentRequestDto request,
@@ -88,10 +75,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpDelete("{commentId:guid}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid commentId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -101,10 +84,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpPut("{commentId:guid}/reactions")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CommentReactionStateResponseDto>>> SetReaction(
         Guid commentId,
         [FromBody] SetCommentReactionRequestDto request,
@@ -117,9 +96,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpDelete("{commentId:guid}/reactions")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CommentReactionStateResponseDto>>> RemoveReaction(
         Guid commentId,
         CancellationToken cancellationToken)
@@ -131,9 +107,6 @@ public class CommentsController : ApiControllerBase
 
     [HttpGet("{commentId:guid}/reactions")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CommentReactionUsersResponseDto>>> GetReactionUsers(
         Guid commentId,
         CancellationToken cancellationToken)

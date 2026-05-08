@@ -1,3 +1,6 @@
+using InteractHub.Api.Common.Enums;
+using System.Text.Json.Serialization;
+
 namespace InteractHub.Api.Common.Models;
 
 public class ApiResponse<T>
@@ -6,7 +9,8 @@ public class ApiResponse<T>
 
     public T? Data { get; init; }
 
-    public IReadOnlyList<string> Errors { get; init; } = Array.Empty<string>();
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ApiError? Error { get; init; }
 
     public static ApiResponse<T> Ok(T data)
     {
@@ -14,22 +18,26 @@ public class ApiResponse<T>
         {
             Success = true,
             Data = data,
-            Errors = Array.Empty<string>()
-        };
-    }
-
-    public static ApiResponse<T> Fail(IEnumerable<string> errors)
-    {
-        return new ApiResponse<T>
-        {
-            Success = false,
-            Data = default,
-            Errors = errors.Where(error => !string.IsNullOrWhiteSpace(error)).ToList()
+            Error = null
         };
     }
 
     public static ApiResponse<T> Fail(string error)
     {
-        return Fail(new[] { error });
+        return Fail(ApiError.Create(
+            ErrorCode.REQUEST_FAILED,
+            StatusCodes.Status400BadRequest,
+            error,
+            string.Empty));
+    }
+
+    public static ApiResponse<T> Fail(ApiError error)
+    {
+        return new ApiResponse<T>
+        {
+            Success = false,
+            Data = default,
+            Error = error
+        };
     }
 }

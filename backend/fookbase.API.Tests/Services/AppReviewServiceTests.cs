@@ -3,6 +3,7 @@ using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -134,8 +135,10 @@ public class AppReviewServiceTests
             Comment = "Great"
         };
 
-        await Assert.ThrowsAsync<ArgumentException>(
+        var exception = await Assert.ThrowsAsync<BusinessException>(
             () => service.CreateOrUpdateMyReviewAsync(userId, request, CancellationToken.None));
+
+        Assert.Equal(ErrorCode.APP_REVIEW_RATING_INVALID, exception.ErrorCode);
     }
 
     [Fact]
@@ -170,7 +173,9 @@ public class AppReviewServiceTests
             .Setup(repository => repository.GetByUserIdForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Domain.Entities.AppReview?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteMyReviewAsync(userId, CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteMyReviewAsync(userId, CancellationToken.None));
+
+        Assert.Equal(ErrorCode.APP_REVIEW_NOT_FOUND, exception.ErrorCode);
     }
 
     [Fact]

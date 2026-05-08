@@ -21,7 +21,6 @@ public class AppReviewsController : ApiControllerBase
 
     [HttpGet("public")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PagedResult<PublicAppReviewResponseDto>>>> GetPublic(
         [FromQuery] PaginationQuery query,
         [FromQuery]
@@ -35,7 +34,6 @@ public class AppReviewsController : ApiControllerBase
 
     [HttpGet("summary")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<AppReviewSummaryResponseDto>>> GetSummary(CancellationToken cancellationToken)
     {
         var summary = await _appReviewService.GetSummaryAsync(cancellationToken);
@@ -44,8 +42,6 @@ public class AppReviewsController : ApiControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<AppReviewResponseDto?>>> GetMyReview(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -55,9 +51,6 @@ public class AppReviewsController : ApiControllerBase
 
     [HttpPost]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<AppReviewResponseDto>>> CreateOrUpdate(
         [FromBody] CreateOrUpdateAppReviewRequestDto request,
         CancellationToken cancellationToken)
@@ -69,9 +62,6 @@ public class AppReviewsController : ApiControllerBase
 
     [HttpPut("me")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<AppReviewResponseDto>>> UpdateMine(
         [FromBody] CreateOrUpdateAppReviewRequestDto request,
         CancellationToken cancellationToken)
@@ -83,9 +73,6 @@ public class AppReviewsController : ApiControllerBase
 
     [HttpDelete("me")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteMine(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();

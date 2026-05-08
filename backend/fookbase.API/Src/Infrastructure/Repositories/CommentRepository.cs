@@ -24,6 +24,7 @@ public class CommentRepository : ICommentRepository
         var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
         var query = _context.Comments
             .AsNoTracking()
+            .Include(comment => comment.MediaItems)
             .Where(comment => comment.PostId == postId && comment.ParentCommentId == null);
 
         if (excludedIds.Count > 0)
@@ -51,6 +52,7 @@ public class CommentRepository : ICommentRepository
         var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
         var query = _context.Comments
             .AsNoTracking()
+            .Include(comment => comment.MediaItems)
             .Where(comment => comment.PostId == postId);
 
         if (excludedIds.Count > 0)
@@ -66,6 +68,7 @@ public class CommentRepository : ICommentRepository
     public async Task<IReadOnlyList<Comment>> GetByPostIdForUpdateAsync(Guid postId, CancellationToken cancellationToken)
     {
         return await _context.Comments
+            .Include(comment => comment.MediaItems)
             .Where(comment => comment.PostId == postId)
             .OrderBy(comment => comment.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -80,7 +83,9 @@ public class CommentRepository : ICommentRepository
 
     public Task<Comment?> GetByIdAsync(Guid commentId, CancellationToken cancellationToken)
     {
-        return _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId, cancellationToken);
+        return _context.Comments
+            .Include(comment => comment.MediaItems)
+            .FirstOrDefaultAsync(comment => comment.Id == commentId, cancellationToken);
     }
 
     public async Task<IReadOnlyDictionary<Guid, Guid>> GetOwnerUserIdsByCommentIdsAsync(

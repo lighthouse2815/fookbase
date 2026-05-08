@@ -16,6 +16,8 @@ public record CommentResponseDto
 
     public string Content { get; init; } = string.Empty;
 
+    public IReadOnlyList<string> MediaUrls { get; init; } = Array.Empty<string>();
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }

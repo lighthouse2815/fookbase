@@ -2,7 +2,7 @@ import type { ApiEnvelope, DataEnvelope, PagedResult, PaginatedResult } from '@/
 
 export const extractData = <T>(response: ApiEnvelope<T>, fallbackError: string): T => {
   if (!('data' in response) || response.data === undefined) {
-    throw new Error(response.errors?.[0] ?? fallbackError);
+    throw new Error(response.error?.message ?? fallbackError);
   }
 
   return response.data;

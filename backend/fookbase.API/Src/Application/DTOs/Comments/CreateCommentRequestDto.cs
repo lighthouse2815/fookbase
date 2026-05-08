@@ -9,7 +9,8 @@ public class CreateCommentRequestDto
 
     public Guid? ParentCommentId { get; set; }
 
-    [Required]
-    [StringLength(1000, MinimumLength = 1)]
-    public string Content { get; set; } = string.Empty;
+    [StringLength(1000)]
+    public string? Content { get; set; }
+
+    public IReadOnlyList<string>? MediaUrls { get; set; }
 }

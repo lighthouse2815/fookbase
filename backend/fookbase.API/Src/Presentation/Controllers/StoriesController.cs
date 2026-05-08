@@ -23,8 +23,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PagedResult<StoryResponseDto>>>> GetFeedStories(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
@@ -35,9 +33,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpGet("user/{userId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PagedResult<StoryResponseDto>>>> GetStoriesByUser(
         Guid userId,
         [FromQuery] PaginationQuery query,
@@ -49,9 +44,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpGet("{storyId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StoryResponseDto>>> GetStoryById(
         Guid storyId,
         CancellationToken cancellationToken)
@@ -62,9 +54,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<StoryResponseDto>>> CreateStory(
         [FromBody] CreateStoryRequestDto request,
         CancellationToken cancellationToken)
@@ -79,9 +68,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpPost("{storyId:guid}/view")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> MarkStoryAsViewed(Guid storyId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -90,10 +76,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpDelete("{storyId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteStory(Guid storyId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -102,10 +84,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpPut("{storyId:guid}/reactions")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StoryReactionStateResponseDto>>> SetReaction(
         Guid storyId,
         [FromBody] SetStoryReactionRequestDto request,
@@ -117,9 +95,6 @@ public class StoriesController : ApiControllerBase
     }
 
     [HttpDelete("{storyId:guid}/reactions")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StoryReactionStateResponseDto>>> RemoveReaction(
         Guid storyId,
         CancellationToken cancellationToken)

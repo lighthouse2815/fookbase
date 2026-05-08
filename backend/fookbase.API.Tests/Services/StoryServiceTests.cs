@@ -4,7 +4,10 @@ using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
+using InteractHub.Api.Common.Enums;
+using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -65,7 +68,10 @@ public class StoryServiceTests
             Content = "hello"
         };
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(userId, request, CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.CreateAsync(userId, request, CancellationToken.None));
+
+        Assert.Equal(ErrorCode.INVALID_STORY_MEDIA_TYPE, exception.ErrorCode);
     }
 
     [Fact]
@@ -115,7 +121,7 @@ public class StoryServiceTests
 
         Assert.NotNull(addedStory);
         Assert.Equal(userId, addedStory!.UserId);
-        Assert.Equal("IMAGE", addedStory.MediaType);
+        Assert.Equal(MediaType.IMAGE, addedStory.MediaType);
         Assert.Equal("https://cdn.example.com/story.jpg", addedStory.MediaUrl);
 
         Assert.Equal("Story Owner", result.Author.DisplayName);
@@ -135,7 +141,7 @@ public class StoryServiceTests
                 Id = storyId,
                 UserId = viewerId,
                 MediaUrl = "https://cdn.example.com/story.jpg",
-                MediaType = "IMAGE",
+                MediaType = MediaType.IMAGE,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-5),
                 ExpiredAt = DateTime.UtcNow.AddHours(1),
                 IsDeleted = false
@@ -163,7 +169,7 @@ public class StoryServiceTests
                 Id = storyId,
                 UserId = ownerId,
                 MediaUrl = "https://cdn.example.com/story.jpg",
-                MediaType = "IMAGE",
+                MediaType = MediaType.IMAGE,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 ExpiredAt = DateTime.UtcNow.AddHours(1),
                 IsDeleted = false

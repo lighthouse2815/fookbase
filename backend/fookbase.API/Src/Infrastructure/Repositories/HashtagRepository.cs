@@ -18,7 +18,7 @@ public class HashtagRepository : IHashtagRepository
     {
         var query = _context.Hashtags
             .AsNoTracking()
-            .OrderBy(hashtag => hashtag.NormalizedName);
+            .OrderBy(hashtag => hashtag.Name);
 
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
@@ -35,8 +35,8 @@ public class HashtagRepository : IHashtagRepository
 
         var query = _context.Hashtags
             .AsNoTracking()
-            .Where(hashtag => hashtag.NormalizedName.Contains(normalizedKeyword))
-            .OrderBy(hashtag => hashtag.NormalizedName);
+            .Where(hashtag => hashtag.Name.Contains(normalizedKeyword))
+            .OrderBy(hashtag => hashtag.Name);
 
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
@@ -59,9 +59,9 @@ public class HashtagRepository : IHashtagRepository
         return _context.Hashtags.FirstOrDefaultAsync(hashtag => hashtag.Id == hashtagId, cancellationToken);
     }
 
-    public Task<Hashtag?> GetByNormalizedNameAsync(string normalizedName, CancellationToken cancellationToken)
+    public Task<Hashtag?> GetByNameAsync(string name, CancellationToken cancellationToken)
     {
-        return _context.Hashtags.FirstOrDefaultAsync(hashtag => hashtag.NormalizedName == normalizedName, cancellationToken);
+        return _context.Hashtags.FirstOrDefaultAsync(hashtag => hashtag.Name == name, cancellationToken);
     }
 
     public Task<int> CountPostUsageAsync(Guid hashtagId, CancellationToken cancellationToken)
@@ -69,12 +69,12 @@ public class HashtagRepository : IHashtagRepository
         return _context.PostHashtags.CountAsync(postHashtag => postHashtag.HashtagId == hashtagId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Hashtag>> GetByNormalizedNamesAsync(IEnumerable<string> normalizedNames, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Hashtag>> GetByNamesAsync(IEnumerable<string> names, CancellationToken cancellationToken)
     {
-        var normalizedNameList = normalizedNames.ToList();
+        var nameList = names.ToList();
 
         return await _context.Hashtags
-            .Where(hashtag => normalizedNameList.Contains(hashtag.NormalizedName))
+            .Where(hashtag => nameList.Contains(hashtag.Name))
             .ToListAsync(cancellationToken);
     }
 

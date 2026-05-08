@@ -10,5 +10,5 @@ public class StoryView
 
     public DateTime ViewedAt { get; set; }
 
-    public Story Story { get; set; } = null!;
+    public Story? Story { get; set; }
 }

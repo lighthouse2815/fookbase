@@ -1,3 +1,4 @@
+using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 using InteractHub.Api.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,8 @@ public class AppDbContext : DbContext
     public DbSet<Comment> Comments => Set<Comment>();
 
     public DbSet<CommentReaction> CommentReactions => Set<CommentReaction>();
+
+    public DbSet<CommentMedia> CommentMedias => Set<CommentMedia>();
 
     public DbSet<Like> Likes => Set<Like>();
 
@@ -85,6 +88,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(2000)
                 .IsRequired();
             entity.Property(media => media.MediaType)
+                .HasConversion<string>()
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(media => media.SortOrder).IsRequired();
@@ -123,6 +127,30 @@ public class AppDbContext : DbContext
             entity.HasIndex(comment => comment.UserId);
         });
 
+        modelBuilder.Entity<CommentMedia>(entity =>
+        {
+            entity.ToTable("CommentMedia");
+            entity.HasKey(media => media.Id);
+
+            entity.Property(media => media.MediaUrl)
+                .HasMaxLength(2000)
+                .IsRequired();
+            entity.Property(media => media.MediaType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
+            entity.Property(media => media.SortOrder).IsRequired();
+            entity.Property(media => media.CreatedAt).IsRequired();
+
+            entity.HasOne(media => media.Comment)
+                .WithMany(comment => comment.MediaItems)
+                .HasForeignKey(media => media.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(media => media.CommentId);
+            entity.HasIndex(media => new { media.CommentId, media.SortOrder }).IsUnique();
+        });
+
         modelBuilder.Entity<CommentReaction>(entity =>
         {
             entity.ToTable("CommentReaction");
@@ -155,6 +183,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(like => like.CreatedAt).IsRequired();
+            entity.Property(like => like.UpdatedAt).IsRequired();
 
             entity.HasOne(like => like.Post)
                 .WithMany(post => post.Likes)
@@ -172,7 +201,10 @@ public class AppDbContext : DbContext
             entity.HasKey(story => story.Id);
 
             entity.Property(story => story.MediaUrl).HasMaxLength(500).IsRequired();
-            entity.Property(story => story.MediaType).HasMaxLength(20).IsRequired();
+            entity.Property(story => story.MediaType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
             entity.Property(story => story.Content).HasMaxLength(500);
 
             entity.HasQueryFilter(story => !story.IsDeleted);
@@ -225,8 +257,14 @@ public class AppDbContext : DbContext
             entity.ToTable("Notification");
             entity.HasKey(notification => notification.Id);
 
-            entity.Property(notification => notification.Type).HasMaxLength(30).IsRequired();
+            entity.Property(notification => notification.Type)
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseNotificationType(value))
+                .HasMaxLength(30)
+                .IsRequired();
             entity.Property(notification => notification.Message).HasMaxLength(500).IsRequired();
+            entity.Property(notification => notification.UpdatedAt).IsRequired();
 
             entity.HasOne<Post>()
                 .WithMany()
@@ -238,9 +276,15 @@ public class AppDbContext : DbContext
                 .HasForeignKey(notification => notification.CommentId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            entity.HasOne<Story>()
+                .WithMany()
+                .HasForeignKey(notification => notification.StoryId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             entity.HasIndex(notification => notification.UserId);
             entity.HasIndex(notification => notification.IsRead);
             entity.HasIndex(notification => notification.CreatedAt);
+            entity.HasIndex(notification => notification.StoryId);
         });
 
         modelBuilder.Entity<Hashtag>(entity =>
@@ -249,9 +293,9 @@ public class AppDbContext : DbContext
             entity.HasKey(hashtag => hashtag.Id);
 
             entity.Property(hashtag => hashtag.Name).HasMaxLength(60).IsRequired();
-            entity.Property(hashtag => hashtag.NormalizedName).HasMaxLength(60).IsRequired();
+            entity.Property(hashtag => hashtag.UpdatedAt).IsRequired();
 
-            entity.HasIndex(hashtag => hashtag.NormalizedName).IsUnique();
+            entity.HasIndex(hashtag => hashtag.Name).IsUnique();
 
             entity.HasQueryFilter(hashtag => hashtag.DeletedAt == null);
         });
@@ -260,6 +304,8 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("PostHashtag");
             entity.HasKey(postHashtag => new { postHashtag.PostId, postHashtag.HashtagId });
+            entity.Property(postHashtag => postHashtag.CreatedAt).IsRequired();
+            entity.Property(postHashtag => postHashtag.UpdatedAt).IsRequired();
 
             entity.HasOne(postHashtag => postHashtag.Post)
                 .WithMany(post => post.PostHashtags)
@@ -364,13 +410,18 @@ public class AppDbContext : DbContext
             entity.HasKey(log => log.Id);
 
             entity.Property(log => log.ActionType)
+                .HasConversion<string>()
                 .HasMaxLength(60)
                 .IsRequired();
             entity.Property(log => log.EntityType)
+                .HasConversion<string>()
                 .HasMaxLength(40)
                 .IsRequired();
+            entity.Property(log => log.EntityId).IsRequired();
+            entity.Property(log => log.TargetUserId).IsRequired();
             entity.Property(log => log.Details)
-                .HasMaxLength(1000);
+                .HasMaxLength(1000)
+                .IsRequired();
             entity.Property(log => log.CreatedAt).IsRequired();
 
             entity.HasIndex(log => log.AdminUserId);
@@ -469,5 +520,12 @@ public class AppDbContext : DbContext
 
             entity.Property(state => state.UpdatedAtUtc).IsRequired();
         });
+    }
+
+    private static NotificationType ParseNotificationType(string? value)
+    {
+        return EnumParser.TryParseNotificationType(value, out var parsedType)
+            ? parsedType
+            : NotificationType.GENERAL;
     }
 }

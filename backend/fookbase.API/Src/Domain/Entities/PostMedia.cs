@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Domain.Entities;
 
 public class PostMedia
@@ -6,11 +8,11 @@ public class PostMedia
 
     public Guid PostId { get; set; }
 
-    public Post Post { get; set; } = null!;
+    public Post? Post { get; set; }
 
     public string MediaUrl { get; set; } = string.Empty;
 
-    public string MediaType { get; set; } = "IMAGE";
+    public MediaType MediaType { get; set; } = MediaType.IMAGE;
 
     public int SortOrder { get; set; }
 

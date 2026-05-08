@@ -20,8 +20,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpGet("pending-requesters")]
-    [ProducesResponseType(typeof(ApiResponse<List<PendingFriendRequesterDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<PendingFriendRequesterDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<PendingFriendRequesterDto>>>> GetPendingRequesters(
         CancellationToken cancellationToken)
     {
@@ -35,8 +33,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpGet("contacts")]
-    [ProducesResponseType(typeof(ApiResponse<List<ContactDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<ContactDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<ContactDto>>>> GetContacts(CancellationToken cancellationToken)
     {
         var result = await _friendshipService.GetContactsAsync(GetCurrentUserId(), ExtractAccessToken(), cancellationToken);
@@ -49,8 +45,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpGet("presence")]
-    [ProducesResponseType(typeof(ApiResponse<List<UserProfilePresenceDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<UserProfilePresenceDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<UserProfilePresenceDto>>>> GetFriendPresence(
         CancellationToken cancellationToken)
     {
@@ -64,8 +58,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpGet("suggestions")]
-    [ProducesResponseType(typeof(ApiResponse<List<FriendSuggestionResponseDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<FriendSuggestionResponseDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<FriendSuggestionResponseDto>>>> GetSuggestions(
         [FromQuery] int page = 0,
         [FromQuery] int pageSize = 20,
@@ -81,9 +73,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpPost("request")]
-    [ProducesResponseType(typeof(ApiResponse<FriendshipResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<FriendshipResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<FriendshipResponseDto>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<FriendshipResponseDto>>> SendFriendRequest(
         [FromBody] SendFriendRequestDto request,
         CancellationToken cancellationToken)
@@ -98,9 +87,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpPost("accept")]
-    [ProducesResponseType(typeof(ApiResponse<FriendshipResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<FriendshipResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<FriendshipResponseDto>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<FriendshipResponseDto>>> AcceptFriendRequest(
         [FromBody] FriendRequestActionDto request,
         CancellationToken cancellationToken)
@@ -115,9 +101,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpPost("reject")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object?>>> RejectFriendRequest(
         [FromBody] FriendRequestActionDto request,
         CancellationToken cancellationToken)
@@ -132,9 +115,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpPost("unfriend")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object?>>> Unfriend(
         [FromBody] UnfriendActionDto request,
         CancellationToken cancellationToken)
@@ -149,9 +129,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpPost("block")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object?>>> BlockUser(
         [FromBody] BlockUserActionDto request,
         CancellationToken cancellationToken)
@@ -166,9 +143,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpDelete("block/{targetUserId}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object?>>> UnblockUser(
         string targetUserId,
         CancellationToken cancellationToken)
@@ -183,8 +157,6 @@ public class FriendshipsController : ApiControllerBase
     }
 
     [HttpGet("blocked-users")]
-    [ProducesResponseType(typeof(ApiResponse<List<BlockedUserResponseDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<BlockedUserResponseDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<BlockedUserResponseDto>>>> GetBlockedUsers(
         CancellationToken cancellationToken)
     {

@@ -25,9 +25,6 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpGet("users/search")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<IReadOnlyList<AdminUserSearchResponseDto>>>> SearchUsers(
         [FromQuery] string? keyword,
         CancellationToken cancellationToken)
@@ -37,10 +34,6 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpPatch("users/{userId:guid}/status")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<AdminUserSearchResponseDto>>> UpdateUserStatus(
         Guid userId,
         [FromBody] UpdateAdminUserStatusRequestDto request,
@@ -58,9 +51,6 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpGet("dashboard")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<AdminDashboardResponseDto>>> GetDashboard(CancellationToken cancellationToken)
     {
         var dashboard = await _adminConsoleService.GetDashboardAsync(ExtractAccessToken(), cancellationToken);
@@ -68,9 +58,6 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpGet("audit-logs")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<AdminAuditLogResponseDto>>>> GetAuditLogs(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)

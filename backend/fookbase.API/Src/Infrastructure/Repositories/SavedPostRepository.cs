@@ -26,17 +26,20 @@ public class SavedPostRepository : ISavedPostRepository
             .AsNoTracking()
             .Where(savedPost => savedPost.UserId == userId);
 
+        // Exclude rows whose related post is filtered out by Post's query filter.
+        query = query.Where(savedPost => savedPost.Post != null);
+
         if (excludedIds.Count > 0)
         {
-            query = query.Where(savedPost => !excludedIds.Contains(savedPost.Post.UserId));
+            query = query.Where(savedPost => !excludedIds.Contains(savedPost.Post!.UserId));
         }
 
         query = query
-            .Include(savedPost => savedPost.Post)
+            .Include(savedPost => savedPost.Post!)
                 .ThenInclude(post => post.Likes)
-            .Include(savedPost => savedPost.Post)
+            .Include(savedPost => savedPost.Post!)
                 .ThenInclude(post => post.Comments)
-            .Include(savedPost => savedPost.Post)
+            .Include(savedPost => savedPost.Post!)
                 .ThenInclude(post => post.PostHashtags)
                     .ThenInclude(postHashtag => postHashtag.Hashtag)
             .OrderByDescending(savedPost => savedPost.CreatedAt);

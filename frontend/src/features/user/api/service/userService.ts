@@ -23,7 +23,7 @@ export const userService = {
     const currentUser = response.data.data;
 
     if (!currentUser) {
-      throw new Error(response.data.errors?.[0] ?? 'Failed to load current user');
+      throw new Error(response.data.error?.message ?? 'Failed to load current user');
     }
 
     return mapUserResponseDtoToUser(currentUser);
@@ -34,7 +34,7 @@ export const userService = {
     const accountInfo = response.data.data;
 
     if (!accountInfo) {
-      throw new Error(response.data.errors?.[0] ?? 'Failed to load account security information');
+      throw new Error(response.data.error?.message ?? 'Failed to load account security information');
     }
 
     return {
@@ -64,7 +64,7 @@ export const userService = {
     const response = await apiClient.get<ApiEnvelope<UserProfilePresenceResponseDto[]>>(FRIENDSHIPS.PRESENCE);
     const payload = response.data.data;
     if (!payload) {
-      throw new Error(response.data.errors?.[0] ?? 'Failed to load friend presence list.');
+      throw new Error(response.data.error?.message ?? 'Failed to load friend presence list.');
     }
 
     const users = payload.map(mapPresenceToUser);

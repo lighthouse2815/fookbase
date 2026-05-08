@@ -36,6 +36,7 @@ public static class EntityToDtoMapper
                 AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(comment.UserId)
             },
             Content = comment.Content,
+            MediaUrls = ResolveCommentMediaUrls(comment),
             CreatedAt = comment.CreatedAt,
             UpdatedAt = comment.UpdatedAt
         };
@@ -97,7 +98,7 @@ public static class EntityToDtoMapper
                 AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(story.UserId)
             },
             MediaUrl = story.MediaUrl,
-            MediaType = story.MediaType,
+            MediaType = story.MediaType.ToString(),
             Content = story.Content,
             CreatedAt = story.CreatedAt,
             ExpiredAt = story.ExpiredAt,
@@ -135,7 +136,8 @@ public static class EntityToDtoMapper
             ActorAvatarUrl = normalizedActorAvatarUrl,
             PostId = notification.PostId,
             CommentId = notification.CommentId,
-            Type = notification.Type,
+            StoryId = notification.StoryId,
+            Type = notification.Type.ToString(),
             Message = notification.Message,
             IsRead = notification.IsRead,
             CreatedAt = notification.CreatedAt
@@ -241,23 +243,6 @@ public static class EntityToDtoMapper
         };
     }
 
-    public static AdminAuditLogResponseDto ToResponseDto(this AdminAuditLog log)
-    {
-        ArgumentNullException.ThrowIfNull(log);
-
-        return new AdminAuditLogResponseDto
-        {
-            Id = log.Id,
-            AdminUserId = log.AdminUserId,
-            ActionType = log.ActionType,
-            EntityType = log.EntityType,
-            EntityId = log.EntityId,
-            TargetUserId = log.TargetUserId,
-            Details = log.Details,
-            CreatedAt = log.CreatedAt
-        };
-    }
-
     public static AppReviewResponseDto ToResponseDto(this AppReview review)
     {
         ArgumentNullException.ThrowIfNull(review);
@@ -319,7 +304,6 @@ public static class EntityToDtoMapper
         {
             Id = hashtag.Id,
             Name = hashtag.Name,
-            NormalizedName = hashtag.NormalizedName,
             UsageCount = usageCount,
             CreatedAt = hashtag.CreatedAt
         };
@@ -333,6 +317,16 @@ public static class EntityToDtoMapper
     private static IReadOnlyList<string> ResolvePostMediaUrls(Post post)
     {
         var orderedMediaUrls = post.MediaItems
+            .OrderBy(media => media.SortOrder)
+            .Select(media => media.MediaUrl)
+            .ToList();
+
+        return PostMediaSerializer.Normalize(orderedMediaUrls);
+    }
+
+    private static IReadOnlyList<string> ResolveCommentMediaUrls(Comment comment)
+    {
+        var orderedMediaUrls = comment.MediaItems
             .OrderBy(media => media.SortOrder)
             .Select(media => media.MediaUrl)
             .ToList();

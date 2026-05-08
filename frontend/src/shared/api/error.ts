@@ -5,11 +5,16 @@ export const getApiErrorMessage = (error: unknown, fallbackMessage: string): str
     const payload = error.response?.data as
       | {
           message?: string;
-          error?: string;
-          errors?: string[];
+          error?:
+            | string
+            | {
+                message?: string;
+                code?: string;
+              };
         }
       | undefined;
-    const message = payload?.message ?? payload?.error ?? payload?.errors?.find(Boolean);
+    const apiErrorMessage = typeof payload?.error === 'string' ? payload.error : payload?.error?.message;
+    const message = payload?.message ?? apiErrorMessage;
 
     return message ?? fallbackMessage;
   }

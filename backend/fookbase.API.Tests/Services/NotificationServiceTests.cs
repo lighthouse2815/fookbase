@@ -3,9 +3,11 @@ using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -53,9 +55,10 @@ public class NotificationServiceTests
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ActorUserId = Guid.NewGuid(),
-                Type = "LIKE",
+                Type = NotificationType.LIKE,
                 Message = "Someone liked your post.",
                 CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
                 IsRead = false
             }
         };
@@ -84,8 +87,10 @@ public class NotificationServiceTests
 
         var service = CreateService();
 
-        await Assert.ThrowsAsync<NotFoundException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             service.GetByIdAsync(Guid.NewGuid(), Guid.NewGuid(), isAdmin: false, CancellationToken.None));
+
+        Assert.Equal(ErrorCode.NOTIFICATION_NOT_FOUND, exception.ErrorCode);
     }
 
     [Fact]
@@ -136,6 +141,24 @@ public class NotificationServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_ThrowsArgumentException_WhenNotificationTypeIsInvalid()
+    {
+        var request = new CreateNotificationRequestDto
+        {
+            UserId = Guid.NewGuid(),
+            ActorUserId = Guid.NewGuid(),
+            Type = "not_a_supported_type",
+            Message = "x"
+        };
+
+        var service = CreateService();
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(request, CancellationToken.None));
+
+        Assert.Equal(ErrorCode.INVALID_NOTIFICATION_TYPE, exception.ErrorCode);
+    }
+
+    [Fact]
     public async Task MarkAsReadAsync_ThrowsForbidden_WhenCallerIsNotOwner()
     {
         _notificationRepositoryMock
@@ -145,15 +168,18 @@ public class NotificationServiceTests
                 Id = Guid.NewGuid(),
                 UserId = Guid.NewGuid(),
                 ActorUserId = Guid.NewGuid(),
-                Type = "LIKE",
+                Type = NotificationType.LIKE,
                 Message = "x",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             });
 
         var service = CreateService();
 
-        await Assert.ThrowsAsync<ForbiddenException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             service.MarkAsReadAsync(Guid.NewGuid(), Guid.NewGuid(), isAdmin: false, CancellationToken.None));
+
+        Assert.Equal(ErrorCode.FORBIDDEN, exception.ErrorCode);
     }
 
     [Fact]
@@ -167,20 +193,22 @@ public class NotificationServiceTests
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ActorUserId = Guid.NewGuid(),
-                Type = "COMMENT",
+                Type = NotificationType.COMMENT,
                 Message = "A",
                 IsRead = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             },
             new()
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ActorUserId = Guid.NewGuid(),
-                Type = "LIKE",
+                Type = NotificationType.LIKE,
                 Message = "B",
                 IsRead = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             }
         };
 
@@ -215,9 +243,10 @@ public class NotificationServiceTests
             Id = notificationId,
             UserId = userId,
             ActorUserId = Guid.NewGuid(),
-            Type = "LIKE",
+            Type = NotificationType.LIKE,
             Message = "x",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         _notificationRepositoryMock

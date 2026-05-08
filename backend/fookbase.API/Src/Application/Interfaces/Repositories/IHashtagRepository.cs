@@ -12,11 +12,11 @@ public interface IHashtagRepository
 
     Task<Hashtag?> GetByIdForUpdateAsync(Guid hashtagId, CancellationToken cancellationToken);
 
-    Task<Hashtag?> GetByNormalizedNameAsync(string normalizedName, CancellationToken cancellationToken);
+    Task<Hashtag?> GetByNameAsync(string name, CancellationToken cancellationToken);
 
     Task<int> CountPostUsageAsync(Guid hashtagId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Hashtag>> GetByNormalizedNamesAsync(IEnumerable<string> normalizedNames, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Hashtag>> GetByNamesAsync(IEnumerable<string> names, CancellationToken cancellationToken);
 
     Task AddAsync(Hashtag hashtag, CancellationToken cancellationToken);
 

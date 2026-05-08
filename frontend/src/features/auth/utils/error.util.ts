@@ -2,8 +2,12 @@ import axios from 'axios';
 
 type ApiErrorPayload = {
   message?: string;
-  error?: string;
-  errors?: string[];
+  error?:
+    | string
+    | {
+        message?: string;
+        code?: string;
+      };
 };
 
 export interface AuthApiErrorInfo {
@@ -17,7 +21,8 @@ export const extractAuthApiErrorInfo = (error: unknown): AuthApiErrorInfo => {
   }
 
   const payload = error.response?.data as ApiErrorPayload | undefined;
-  const message = payload?.errors?.find(Boolean) ?? payload?.message ?? payload?.error;
+  const apiErrorMessage = typeof payload?.error === 'string' ? payload.error : payload?.error?.message;
+  const message = payload?.message ?? apiErrorMessage;
 
   return {
     status: error.response?.status,

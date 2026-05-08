@@ -40,10 +40,11 @@ namespace fookbase.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Details")
+                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<Guid?>("EntityId")
+                    b.Property<Guid>("EntityId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("EntityType")
@@ -51,7 +52,7 @@ namespace fookbase.API.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
 
-                    b.Property<Guid?>("TargetUserId")
+                    b.Property<Guid>("TargetUserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -153,6 +154,41 @@ namespace fookbase.API.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Comment", (string)null);
+                });
+
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.CommentMedia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("MediaUrl")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("CommentId", "SortOrder")
+                        .IsUnique();
+
+                    b.ToTable("CommentMedia", (string)null);
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.CommentReaction", b =>
@@ -260,17 +296,12 @@ namespace fookbase.API.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
-                    b.Property<string>("NormalizedName")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NormalizedName")
+                    b.HasIndex("Name")
                         .IsUnique();
 
                     b.ToTable("Hashtag", (string)null);
@@ -296,7 +327,7 @@ namespace fookbase.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
@@ -343,12 +374,15 @@ namespace fookbase.API.Migrations
                     b.Property<Guid?>("PostId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("StoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
@@ -363,6 +397,8 @@ namespace fookbase.API.Migrations
                     b.HasIndex("IsRead");
 
                     b.HasIndex("PostId");
+
+                    b.HasIndex("StoryId");
 
                     b.HasIndex("UserId");
 
@@ -415,7 +451,7 @@ namespace fookbase.API.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("PostId", "HashtagId");
@@ -848,6 +884,17 @@ namespace fookbase.API.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.CommentMedia", b =>
+                {
+                    b.HasOne("InteractHub.Api.Domain.Entities.Comment", "Comment")
+                        .WithMany("MediaItems")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+                });
+
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.CommentReaction", b =>
                 {
                     b.HasOne("InteractHub.Api.Domain.Entities.Comment", "Comment")
@@ -891,6 +938,11 @@ namespace fookbase.API.Migrations
                     b.HasOne("InteractHub.Api.Domain.Entities.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("InteractHub.Api.Domain.Entities.Story", null)
+                        .WithMany()
+                        .HasForeignKey("StoryId")
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
@@ -981,6 +1033,8 @@ namespace fookbase.API.Migrations
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.Comment", b =>
                 {
+                    b.Navigation("MediaItems");
+
                     b.Navigation("Reactions");
 
                     b.Navigation("Replies");

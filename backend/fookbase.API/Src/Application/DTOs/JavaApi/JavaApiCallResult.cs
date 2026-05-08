@@ -10,6 +10,8 @@ public class JavaApiCallResult<T>
 
     public string? ErrorMessage { get; init; }
 
+    public string? ErrorCode { get; init; }
+
     public static JavaApiCallResult<T> Success(T? data, int statusCode)
     {
         return new JavaApiCallResult<T>
@@ -17,18 +19,20 @@ public class JavaApiCallResult<T>
             IsSuccess = true,
             StatusCode = statusCode,
             Data = data,
-            ErrorMessage = null
+            ErrorMessage = null,
+            ErrorCode = null
         };
     }
 
-    public static JavaApiCallResult<T> Failure(int statusCode, string errorMessage)
+    public static JavaApiCallResult<T> Failure(int statusCode, string errorMessage, string? errorCode = null)
     {
         return new JavaApiCallResult<T>
         {
             IsSuccess = false,
             StatusCode = statusCode,
             Data = default,
-            ErrorMessage = errorMessage
+            ErrorMessage = errorMessage,
+            ErrorCode = errorCode
         };
     }
 }

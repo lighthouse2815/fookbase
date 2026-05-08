@@ -24,7 +24,7 @@ public class LikeRepository : ILikeRepository
         return await _context.Likes
             .AsNoTracking()
             .Where(like => like.PostId == postId)
-            .OrderByDescending(like => like.UpdatedAt ?? like.CreatedAt)
+            .OrderByDescending(like => like.UpdatedAt)
             .ToListAsync(cancellationToken);
     }
 

@@ -22,8 +22,6 @@ public class NotificationsController : ApiControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PagedResult<NotificationResponseDto>>>> GetMine(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
@@ -34,10 +32,6 @@ public class NotificationsController : ApiControllerBase
     }
 
     [HttpGet("{notificationId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<NotificationResponseDto>>> GetById(Guid notificationId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -47,10 +41,6 @@ public class NotificationsController : ApiControllerBase
 
     [HttpPost]
     [Authorize(Roles = AppRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<NotificationResponseDto>>> Create(
         [FromBody] CreateNotificationRequestDto request,
         CancellationToken cancellationToken)
@@ -64,10 +54,6 @@ public class NotificationsController : ApiControllerBase
     }
 
     [HttpPatch("{notificationId:guid}/read")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<NotificationResponseDto>>> MarkAsRead(Guid notificationId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -76,8 +62,6 @@ public class NotificationsController : ApiControllerBase
     }
 
     [HttpPatch("read-all")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object>>> MarkAllAsRead(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -87,10 +71,6 @@ public class NotificationsController : ApiControllerBase
     }
 
     [HttpDelete("{notificationId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid notificationId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();

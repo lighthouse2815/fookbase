@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Domain.Entities;
 
 public class Notification
@@ -12,7 +14,9 @@ public class Notification
 
     public Guid? CommentId { get; set; }
 
-    public string Type { get; set; } = string.Empty;
+    public Guid? StoryId { get; set; }
+
+    public NotificationType Type { get; set; }
 
     public string Message { get; set; } = string.Empty;
 
@@ -20,7 +24,7 @@ public class Notification
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public DateTime? DeletedAt { get; set; }
 }

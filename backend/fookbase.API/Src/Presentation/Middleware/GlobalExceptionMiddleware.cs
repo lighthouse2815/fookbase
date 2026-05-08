@@ -22,24 +22,27 @@ public sealed class GlobalExceptionMiddleware
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unhandled exception occurred.");
+            if (exception is BusinessException businessException)
+            {
+                _logger.LogWarning(
+                    "Business exception occurred. Code={ErrorCode}, Message={Message}",
+                    businessException.ErrorCode,
+                    businessException.Message);
+            }
+            else
+            {
+                _logger.LogError(exception, "Unhandled exception occurred.");
+            }
+
             await WriteErrorResponseAsync(context, exception);
         }
     }
 
     private static Task WriteErrorResponseAsync(HttpContext context, Exception exception)
     {
-        var (statusCode, error) = exception switch
-        {
-            NotFoundException => (StatusCodes.Status404NotFound, exception.Message),
-            ForbiddenException => (StatusCodes.Status403Forbidden, exception.Message),
-            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, exception.Message),
-            ArgumentException => (StatusCodes.Status400BadRequest, exception.Message),
-            ServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, exception.Message),
-            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
-        };
+        var error = ApiErrorFactory.FromException(context, exception);
 
-        context.Response.StatusCode = statusCode;
+        context.Response.StatusCode = error.Status;
         context.Response.ContentType = "application/json";
 
         return context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(error));

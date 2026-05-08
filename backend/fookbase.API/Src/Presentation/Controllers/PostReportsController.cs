@@ -22,8 +22,6 @@ public class PostReportsController : ApiControllerBase
     }
 
     [HttpGet("my")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PagedResult<PostReportResponseDto>>>> GetMine(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
@@ -35,9 +33,6 @@ public class PostReportsController : ApiControllerBase
 
     [HttpGet]
     [Authorize(Roles = AppRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<PostReportResponseDto>>>> GetAll(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
@@ -48,9 +43,6 @@ public class PostReportsController : ApiControllerBase
 
     [HttpGet("pending-count")]
     [Authorize(Roles = AppRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<object>>> GetPendingCount(CancellationToken cancellationToken)
     {
         var pendingCount = await _postReportService.GetPendingCountAsync(cancellationToken);
@@ -58,10 +50,6 @@ public class PostReportsController : ApiControllerBase
     }
 
     [HttpGet("{reportId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostReportResponseDto>>> GetById(Guid reportId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -70,10 +58,6 @@ public class PostReportsController : ApiControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostReportResponseDto>>> Create(
         [FromBody] CreatePostReportRequestDto request,
         CancellationToken cancellationToken)
@@ -89,11 +73,6 @@ public class PostReportsController : ApiControllerBase
 
     [HttpPatch("{reportId:guid}/resolve")]
     [Authorize(Roles = AppRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostReportResponseDto>>> Resolve(
         Guid reportId,
         [FromBody] ResolvePostReportRequestDto request,
@@ -106,10 +85,6 @@ public class PostReportsController : ApiControllerBase
     }
 
     [HttpDelete("{reportId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid reportId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();

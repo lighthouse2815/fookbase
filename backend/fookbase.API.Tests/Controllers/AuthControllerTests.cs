@@ -93,7 +93,8 @@ public class AuthControllerTests
 
         var response = Assert.IsType<ApiResponse<LoginResponseDto>>(objectResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Invalid username or password.", response.Errors);
+        Assert.NotNull(response.Error);
+        Assert.Equal("Invalid username or password.", response.Error!.Message);
 
         _authCookieServiceMock.Verify(
             service => service.SetLoginCookies(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<string?>()),

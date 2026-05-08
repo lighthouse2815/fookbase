@@ -1,5 +1,7 @@
 using InteractHub.Api.Application.DTOs.Games;
 using InteractHub.Api.Application.Services.Games;
+using InteractHub.Api.Common.Enums;
+using InteractHub.Api.Common.Exceptions;
 
 namespace InteractHub.Api.Tests.Services;
 
@@ -56,7 +58,7 @@ public class GameRoomServiceTests
                 AvatarUrl = "https://example.com/b.png"
             });
 
-        Assert.Throws<InvalidOperationException>(() =>
+        var exception = Assert.Throws<BusinessException>(() =>
             service.JoinRoom(
                 room.RoomId,
                 new GamePlayerIdentityDto
@@ -65,6 +67,8 @@ public class GameRoomServiceTests
                     DisplayName = "C",
                     AvatarUrl = "https://example.com/c.png"
                 }));
+
+        Assert.Equal(ErrorCode.BUSINESS_RULE_VIOLATION, exception.ErrorCode);
     }
 
     [Fact]

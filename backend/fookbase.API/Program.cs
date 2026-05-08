@@ -4,6 +4,7 @@ using InteractHub.Api.Application.Interfaces.Services.Games;
 using InteractHub.Api.Application.Services;
 using InteractHub.Api.Application.Services.Games;
 using InteractHub.Api.Common.Constants;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Middleware;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Extensions;
@@ -14,6 +15,7 @@ using InteractHub.Api.Presentation.Hubs;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -108,7 +110,12 @@ builder.Services.AddSingleton<ISnakeGameService, SnakeGameService>();
 builder.Services.AddSingleton<IFlappyGameService, FlappyGameService>();
 builder.Services.AddSingleton<IGameRealtimeService, SignalRGameRealtimeService>();
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddSignalR();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -121,7 +128,17 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .Distinct()
             .ToList();
 
-        return new BadRequestObjectResult(ApiResponse<object>.Fail(errors));
+        var error = ApiError.Create(
+            ErrorCode.VALIDATION_ERROR,
+            StatusCodes.Status400BadRequest,
+            errors.FirstOrDefault() ?? "Invalid request.",
+            context.HttpContext.Request.Path.Value,
+            new Dictionary<string, object?>
+            {
+                ["errors"] = errors
+            });
+
+        return new BadRequestObjectResult(ApiResponse<object>.Fail(error));
     };
 });
 
@@ -198,13 +215,27 @@ builder.Services
                 context.HandleResponse();
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail("Unauthorized."));
+
+                var error = ApiError.Create(
+                    ErrorCode.UNAUTHORIZED,
+                    StatusCodes.Status401Unauthorized,
+                    "Unauthorized.",
+                    context.HttpContext.Request.Path.Value);
+
+                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(error));
             },
             OnForbidden = async context =>
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail("Forbidden."));
+
+                var error = ApiError.Create(
+                    ErrorCode.FORBIDDEN,
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden.",
+                    context.HttpContext.Request.Path.Value);
+
+                await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(error));
             }
         };
     });

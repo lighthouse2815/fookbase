@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using InteractHub.Api.Application.DTOs.JavaApi;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +13,14 @@ public abstract class ApiControllerBase : ControllerBase
         JavaApiCallResult<T> result,
         string fallbackError)
     {
-        return BuildErrorResponse<T>(result.StatusCode, result.ErrorMessage, fallbackError);
+        return BuildErrorResponse<T>(result.StatusCode, result.ErrorMessage, fallbackError, result.ErrorCode);
     }
 
     protected ActionResult<ApiResponse<T>> BuildErrorResponse<T>(
         int statusCode,
         string? errorMessage,
-        string fallbackError)
+        string fallbackError,
+        string? errorCode = null)
     {
         var resolvedStatusCode = statusCode > 0
             ? statusCode
@@ -28,7 +30,11 @@ public abstract class ApiControllerBase : ControllerBase
             ? fallbackError
             : errorMessage;
 
-        return StatusCode(resolvedStatusCode, ApiResponse<T>.Fail(resolvedError));
+        var resolvedErrorCode = string.IsNullOrWhiteSpace(errorCode)
+            ? ErrorCode.UPSTREAM_SERVICE_ERROR.ToString()
+            : errorCode;
+
+        return ErrorResponse<T>(resolvedErrorCode, resolvedStatusCode, resolvedError);
     }
 
     protected static int ResolveSuccessStatusCode(int statusCode)
@@ -51,7 +57,26 @@ public abstract class ApiControllerBase : ControllerBase
 
     protected ActionResult<ApiResponse<T>> UnauthorizedApiResponse<T>(string message = "Unauthorized.")
     {
-        return Unauthorized(ApiResponse<T>.Fail(message));
+        return ErrorResponse<T>(ErrorCode.UNAUTHORIZED, StatusCodes.Status401Unauthorized, message);
+    }
+
+    protected ActionResult<ApiResponse<T>> ErrorResponse<T>(
+        ErrorCode errorCode,
+        int statusCode,
+        string message,
+        IReadOnlyDictionary<string, object?>? data = null)
+    {
+        return ErrorResponse<T>(errorCode.ToString(), statusCode, message, data);
+    }
+
+    protected ActionResult<ApiResponse<T>> ErrorResponse<T>(
+        string errorCode,
+        int statusCode,
+        string message,
+        IReadOnlyDictionary<string, object?>? data = null)
+    {
+        var error = ApiError.Create(errorCode, statusCode, message, Request.Path.Value, data);
+        return StatusCode(statusCode, ApiResponse<T>.Fail(error));
     }
 
     protected Guid GetCurrentUserId()

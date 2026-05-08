@@ -24,7 +24,6 @@ public class PostsController : ApiControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PagedResult<PostResponseDto>>>> GetPosts(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
@@ -35,8 +34,6 @@ public class PostsController : ApiControllerBase
 
     [HttpGet("{postId:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostResponseDto>>> GetPostById(
         Guid postId,
         CancellationToken cancellationToken)
@@ -47,9 +44,6 @@ public class PostsController : ApiControllerBase
 
     [HttpPost]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PostResponseDto>>> CreatePost(
         [FromBody] CreatePostRequestDto request,
         CancellationToken cancellationToken)
@@ -65,11 +59,6 @@ public class PostsController : ApiControllerBase
 
     [HttpPut("{postId:guid}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostResponseDto>>> UpdatePost(
         Guid postId,
         [FromBody] UpdatePostRequestDto request,
@@ -81,10 +70,6 @@ public class PostsController : ApiControllerBase
 
     [HttpDelete("{postId:guid}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> DeletePost(
         Guid postId,
         CancellationToken cancellationToken)
@@ -96,9 +81,6 @@ public class PostsController : ApiControllerBase
 
     [HttpPost("{postId:guid}/likes")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> LikePost(Guid postId, CancellationToken cancellationToken)
     {
         var state = await _likeService.LikeAsync(postId, GetCurrentUserId(), cancellationToken);
@@ -107,9 +89,6 @@ public class PostsController : ApiControllerBase
 
     [HttpDelete("{postId:guid}/likes")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> UnlikePost(Guid postId, CancellationToken cancellationToken)
     {
         var state = await _likeService.UnlikeAsync(postId, GetCurrentUserId(), cancellationToken);
@@ -118,10 +97,6 @@ public class PostsController : ApiControllerBase
 
     [HttpPut("{postId:guid}/reactions")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostReactionStateResponseDto>>> SetReaction(
         Guid postId,
         [FromBody] SetPostReactionRequestDto request,
@@ -133,9 +108,6 @@ public class PostsController : ApiControllerBase
 
     [HttpDelete("{postId:guid}/reactions")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostReactionStateResponseDto>>> RemoveReaction(
         Guid postId,
         CancellationToken cancellationToken)
@@ -146,9 +118,6 @@ public class PostsController : ApiControllerBase
 
     [HttpGet("{postId:guid}/reactions")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PostReactionUsersResponseDto>>> GetReactionUsers(
         Guid postId,
         CancellationToken cancellationToken)

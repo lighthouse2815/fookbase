@@ -1,6 +1,7 @@
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -22,9 +23,6 @@ public class ProfilesController : ApiControllerBase
 
     [HttpGet("{userId:guid}")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<ProfileResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProfileResponseDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<ProfileResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<ProfileResponseDto>>> GetByUserId(
         Guid userId,
         CancellationToken cancellationToken)
@@ -43,8 +41,6 @@ public class ProfilesController : ApiControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<MyProfileSettingsResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<MyProfileSettingsResponseDto>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<MyProfileSettingsResponseDto>>> GetMyProfileSettings(
         CancellationToken cancellationToken)
     {
@@ -63,8 +59,6 @@ public class ProfilesController : ApiControllerBase
 
     [HttpGet("me/page-info")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<ProfilePageInfoSettingsResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProfilePageInfoSettingsResponseDto>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<ProfilePageInfoSettingsResponseDto>>> GetMyProfilePageInfoSettings(
         CancellationToken cancellationToken)
     {
@@ -82,8 +76,6 @@ public class ProfilesController : ApiControllerBase
 
     [HttpGet("me/page-info/visibility")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<ProfileInfoVisibilityResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProfileInfoVisibilityResponseDto>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<ProfileInfoVisibilityResponseDto>>> GetMyProfilePageInfoVisibility(
         CancellationToken cancellationToken)
     {
@@ -101,9 +93,6 @@ public class ProfilesController : ApiControllerBase
 
     [HttpPatch("me/page-info/visibility")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<object?>>> UpdateMyProfilePageInfoVisibility(
         [FromBody] UpdateProfileInfoVisibilityRequestDto request,
         CancellationToken cancellationToken)
@@ -126,9 +115,6 @@ public class ProfilesController : ApiControllerBase
 
     [HttpPatch("me")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<object?>>> UpdateMyProfile(
         [FromBody] UpdateMyProfileRequestDto request,
         CancellationToken cancellationToken)
@@ -147,9 +133,6 @@ public class ProfilesController : ApiControllerBase
 
     [HttpGet("search")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<List<UserProfileSearchDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<UserProfileSearchDto>>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<List<UserProfileSearchDto>>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<List<UserProfileSearchDto>>>> SearchProfiles(
         [FromQuery] string? keyword,
         [FromQuery] string? phoneNumber,
@@ -177,7 +160,10 @@ public class ProfilesController : ApiControllerBase
 
             if (string.IsNullOrWhiteSpace(resolvedDisplayName))
             {
-                return BadRequest(ApiResponse<List<UserProfileSearchDto>>.Fail("keyword, phoneNumber, or displayName is required."));
+                return ErrorResponse<List<UserProfileSearchDto>>(
+                    ErrorCode.VALIDATION_ERROR,
+                    StatusCodes.Status400BadRequest,
+                    "keyword, phoneNumber, or displayName is required.");
             }
 
             if (Regex.IsMatch(resolvedDisplayName, "^0\\d{9}$"))

@@ -21,7 +21,6 @@ public class HashtagsController : ApiControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PagedResult<HashtagResponseDto>>>> GetPaged(
         [FromQuery] PaginationQuery query,
         CancellationToken cancellationToken)
@@ -32,8 +31,6 @@ public class HashtagsController : ApiControllerBase
 
     [HttpGet("search")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<PagedResult<HashtagResponseDto>>>> Search(
         [FromQuery] string keyword,
         [FromQuery] PaginationQuery query,
@@ -45,8 +42,6 @@ public class HashtagsController : ApiControllerBase
 
     [HttpGet("{hashtagId:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<HashtagResponseDto>>> GetById(Guid hashtagId, CancellationToken cancellationToken)
     {
         var hashtag = await _hashtagService.GetByIdAsync(hashtagId, cancellationToken);
@@ -55,10 +50,6 @@ public class HashtagsController : ApiControllerBase
 
     [HttpPost]
     [Authorize(Roles = AppRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<HashtagResponseDto>>> Create(
         [FromBody] CreateHashtagRequestDto request,
         CancellationToken cancellationToken)
@@ -73,11 +64,6 @@ public class HashtagsController : ApiControllerBase
 
     [HttpPut("{hashtagId:guid}")]
     [Authorize(Roles = AppRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<HashtagResponseDto>>> Update(
         Guid hashtagId,
         [FromBody] UpdateHashtagRequestDto request,
@@ -89,11 +75,6 @@ public class HashtagsController : ApiControllerBase
 
     [HttpDelete("{hashtagId:guid}")]
     [Authorize(Roles = AppRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid hashtagId, CancellationToken cancellationToken)
     {
         await _hashtagService.DeleteAsync(hashtagId, cancellationToken);

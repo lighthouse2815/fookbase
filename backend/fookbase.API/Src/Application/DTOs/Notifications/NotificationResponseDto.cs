@@ -16,6 +16,8 @@ public class NotificationResponseDto
 
     public Guid? CommentId { get; init; }
 
+    public Guid? StoryId { get; init; }
+
     public string Type { get; init; } = string.Empty;
 
     public string Message { get; init; } = string.Empty;

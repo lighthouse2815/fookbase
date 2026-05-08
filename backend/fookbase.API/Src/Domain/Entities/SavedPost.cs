@@ -10,5 +10,5 @@ public class SavedPost
 
     public DateTime CreatedAt { get; set; }
 
-    public Post Post { get; set; } = null!;
+    public Post? Post { get; set; }
 }

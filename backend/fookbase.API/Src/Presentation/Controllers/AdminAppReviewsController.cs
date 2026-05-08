@@ -21,9 +21,6 @@ public class AdminAppReviewsController : ApiControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<AppReviewResponseDto>>>> GetAll(
         [FromQuery] PaginationQuery query,
         [FromQuery] AdminAppReviewFilterRequestDto filter,
@@ -38,10 +35,6 @@ public class AdminAppReviewsController : ApiControllerBase
     }
 
     [HttpPatch("{reviewId:guid}/hide")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<AppReviewResponseDto>>> Hide(Guid reviewId, CancellationToken cancellationToken)
     {
         var adminUserId = GetCurrentUserId();
@@ -50,10 +43,6 @@ public class AdminAppReviewsController : ApiControllerBase
     }
 
     [HttpPatch("{reviewId:guid}/unhide")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<AppReviewResponseDto>>> Unhide(Guid reviewId, CancellationToken cancellationToken)
     {
         var adminUserId = GetCurrentUserId();
@@ -62,10 +51,6 @@ public class AdminAppReviewsController : ApiControllerBase
     }
 
     [HttpDelete("{reviewId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid reviewId, CancellationToken cancellationToken)
     {
         var adminUserId = GetCurrentUserId();

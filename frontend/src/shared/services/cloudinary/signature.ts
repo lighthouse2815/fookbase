@@ -10,7 +10,7 @@ export const getCloudinarySignature = async (): Promise<CloudinarySignaturePaylo
   const payload = response.data.data;
 
   if (!payload) {
-    throw new Error(response.data.errors?.[0] ?? 'Unable to generate Cloudinary signature.');
+    throw new Error(response.data.error?.message ?? 'Unable to generate Cloudinary signature.');
   }
 
   return payload;

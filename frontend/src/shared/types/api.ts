@@ -1,7 +1,15 @@
+export interface ApiError {
+  code: string;
+  status: number;
+  message: string;
+  path: string;
+  data?: Record<string, unknown>;
+}
+
 export interface ApiEnvelope<T> {
   success: boolean;
   data?: T;
-  errors?: string[];
+  error?: ApiError;
 }
 
 export type DataEnvelope<T> = {

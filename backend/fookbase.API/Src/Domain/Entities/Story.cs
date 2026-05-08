@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Domain.Entities;
 
 public class Story
@@ -8,7 +10,7 @@ public class Story
 
     public string MediaUrl { get; set; } = string.Empty;
 
-    public string MediaType { get; set; } = "IMAGE";
+    public MediaType MediaType { get; set; } = MediaType.IMAGE;
 
     public string? Content { get; set; }
 

@@ -32,9 +32,10 @@ public class AdminAuditLogRepository : IAdminAuditLogRepository
         return (items, totalCount);
     }
 
-    public Task AddAsync(AdminAuditLog log, CancellationToken cancellationToken)
+    public async Task AddAsync(AdminAuditLog log, CancellationToken cancellationToken)
     {
-        return _context.AdminAuditLogs.AddAsync(log, cancellationToken).AsTask();
+        await _context.AdminAuditLogs.AddAsync(log, cancellationToken);
     }
 }
 
+ 

@@ -20,10 +20,6 @@ public class UsersController : ApiControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<CurrentUserResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<CurrentUserResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<CurrentUserResponseDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<CurrentUserResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<CurrentUserResponseDto>>> GetCurrentUser(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -41,9 +37,6 @@ public class UsersController : ApiControllerBase
 
     [HttpGet("me/security-account")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<SecurityAccountInfoResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<SecurityAccountInfoResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<SecurityAccountInfoResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<SecurityAccountInfoResponseDto>>> GetMySecurityAccountInfo(
         CancellationToken cancellationToken)
     {
@@ -68,10 +61,6 @@ public class UsersController : ApiControllerBase
 
     [HttpPatch("me/security-account")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResponse<object?>>> UpdateMySecurityAccountInfo(
         [FromHeader(Name = "X-Reset-Token")] string? resetToken,
         [FromBody] UpdateSecurityAccountRequestDto request,

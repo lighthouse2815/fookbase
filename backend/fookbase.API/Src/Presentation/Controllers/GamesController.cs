@@ -1,6 +1,7 @@
 using InteractHub.Api.Application.DTOs.Games;
 using InteractHub.Api.Application.Interfaces.Services.Games;
 using InteractHub.Api.Application.Services.Games;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Utilities;
@@ -26,49 +27,48 @@ public sealed class GamesController : ApiControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<ApiResponse<IReadOnlyList<GameDefinitionDto>>> GetGames()
     {
         return Ok(ApiResponse<IReadOnlyList<GameDefinitionDto>>.Ok(_gameRoomService.GetGameDefinitions()));
     }
 
     [HttpGet("rooms")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<ApiResponse<IReadOnlyList<GameRoomDto>>> GetRooms([FromQuery] string? gameType = null)
     {
         return Ok(ApiResponse<IReadOnlyList<GameRoomDto>>.Ok(_gameRoomService.GetRooms(gameType)));
     }
 
     [HttpGet("rooms/{roomId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<ApiResponse<GameRoomDto>> GetRoom(Guid roomId)
     {
         var room = _gameRoomService.GetRoom(roomId);
         if (room is null)
         {
-            return NotFound(ApiResponse<GameRoomDto>.Fail("Room not found."));
+            return ErrorResponse<GameRoomDto>(
+                ErrorCode.ROOM_NOT_FOUND,
+                StatusCodes.Status404NotFound,
+                "Room not found.");
         }
 
         return Ok(ApiResponse<GameRoomDto>.Ok(room));
     }
 
     [HttpGet("rooms/by-code/{roomCode}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<ApiResponse<GameRoomDto>> GetRoomByCode(string roomCode)
     {
         var room = _gameRoomService.GetRoomByCode(roomCode);
         if (room is null)
         {
-            return NotFound(ApiResponse<GameRoomDto>.Fail("Room not found."));
+            return ErrorResponse<GameRoomDto>(
+                ErrorCode.ROOM_NOT_FOUND,
+                StatusCodes.Status404NotFound,
+                "Room not found.");
         }
 
         return Ok(ApiResponse<GameRoomDto>.Ok(room));
     }
 
     [HttpGet("rooms/active")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<ApiResponse<GameRoomDto?>> GetActiveRoom([FromQuery] string gameType)
     {
         var room = _gameRoomService.GetActiveRoomForUser(GetCurrentUserId(), gameType);
@@ -76,8 +76,6 @@ public sealed class GamesController : ApiControllerBase
     }
 
     [HttpPost("rooms")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<GameRoomDto>>> CreateRoom(
         [FromBody] CreateRoomRequestDto request,
         CancellationToken cancellationToken)
@@ -96,13 +94,14 @@ public sealed class GamesController : ApiControllerBase
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            return BadRequest(ApiResponse<GameRoomDto>.Fail(exception.Message));
+            return ErrorResponse<GameRoomDto>(
+                ErrorCode.BUSINESS_RULE_VIOLATION,
+                StatusCodes.Status400BadRequest,
+                exception.Message);
         }
     }
 
     [HttpPost("rooms/join-by-code")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<GameRoomDto>>> JoinRoomByCode(
         [FromBody] JoinRoomByCodeRequestDto request,
         CancellationToken cancellationToken)
@@ -131,13 +130,14 @@ public sealed class GamesController : ApiControllerBase
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            return BadRequest(ApiResponse<GameRoomDto>.Fail(exception.Message));
+            return ErrorResponse<GameRoomDto>(
+                ErrorCode.BUSINESS_RULE_VIOLATION,
+                StatusCodes.Status400BadRequest,
+                exception.Message);
         }
     }
 
     [HttpPost("rooms/join")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<GameRoomDto>>> JoinRoom(
         [FromBody] JoinRoomRequestDto request,
         CancellationToken cancellationToken)
@@ -166,13 +166,14 @@ public sealed class GamesController : ApiControllerBase
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            return BadRequest(ApiResponse<GameRoomDto>.Fail(exception.Message));
+            return ErrorResponse<GameRoomDto>(
+                ErrorCode.BUSINESS_RULE_VIOLATION,
+                StatusCodes.Status400BadRequest,
+                exception.Message);
         }
     }
 
     [HttpPost("rooms/leave")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<GameRoomDto>>> LeaveRoom(
         [FromBody] LeaveRoomRequestDto request,
         CancellationToken cancellationToken)
@@ -201,7 +202,10 @@ public sealed class GamesController : ApiControllerBase
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            return BadRequest(ApiResponse<GameRoomDto>.Fail(exception.Message));
+            return ErrorResponse<GameRoomDto>(
+                ErrorCode.BUSINESS_RULE_VIOLATION,
+                StatusCodes.Status400BadRequest,
+                exception.Message);
         }
     }
 

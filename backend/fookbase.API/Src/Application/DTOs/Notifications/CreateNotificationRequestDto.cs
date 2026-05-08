@@ -14,6 +14,8 @@ public class CreateNotificationRequestDto
 
     public Guid? CommentId { get; set; }
 
+    public Guid? StoryId { get; set; }
+
     [Required]
     [StringLength(30, MinimumLength = 2)]
     public string Type { get; set; } = string.Empty;

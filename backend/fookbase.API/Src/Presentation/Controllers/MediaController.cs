@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.DTOs.Media;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,15 +22,14 @@ public class MediaController : ApiControllerBase
     [HttpGet("cloudinary-signature")]
     [Authorize]
     [EnableRateLimiting("CloudinarySignaturePolicy")]
-    [ProducesResponseType(typeof(ApiResponse<CloudinaryUploadSignatureResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<CloudinaryUploadSignatureResponseDto>), StatusCodes.Status503ServiceUnavailable)]
     public ActionResult<ApiResponse<CloudinaryUploadSignatureResponseDto>> GetCloudinaryUploadSignature()
     {
         if (!_cloudinarySigningService.IsConfigured())
         {
-            return StatusCode(
+            return ErrorResponse<CloudinaryUploadSignatureResponseDto>(
+                ErrorCode.CLOUDINARY_SIGNING_NOT_CONFIGURED,
                 StatusCodes.Status503ServiceUnavailable,
-                ApiResponse<CloudinaryUploadSignatureResponseDto>.Fail("Cloudinary signing is not configured."));
+                "Cloudinary signing is not configured.");
         }
 
         var userId = GetCurrentUserId();
