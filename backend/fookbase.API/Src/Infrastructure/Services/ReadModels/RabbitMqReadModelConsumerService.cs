@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
+using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Models;
 using Microsoft.Extensions.Options;
@@ -213,6 +215,46 @@ public class RabbitMqReadModelConsumerService : BackgroundService
                 friendshipEvent.IsActive,
                 observedAtUtc,
                 cancellationToken);
+
+            return true;
+        }
+
+        if (RabbitMqReadModelEventMapper.IsPresenceEvent(eventType, payload)
+            && RabbitMqReadModelEventMapper.TryResolvePresenceEvent(payload, observedAtUtc, out var presenceEvent))
+        {
+            var friendshipRepository = scope.ServiceProvider.GetRequiredService<IFriendshipReadModelRepository>();
+            var audienceUserIds = new HashSet<Guid>(presenceEvent.AudienceUserIds.Where(userId => userId != Guid.Empty));
+            if (audienceUserIds.Count <= 1)
+            {
+                var friendAudienceUserIds = await friendshipRepository.GetActiveContactOwnerIdsByContactAsync(
+                    presenceEvent.UserId,
+                    cancellationToken);
+
+                foreach (var friendAudienceUserId in friendAudienceUserIds)
+                {
+                    if (friendAudienceUserId != Guid.Empty)
+                    {
+                        audienceUserIds.Add(friendAudienceUserId);
+                    }
+                }
+            }
+
+            if (audienceUserIds.Count > 0)
+            {
+                var presenceRealtimeService = scope.ServiceProvider.GetRequiredService<IPresenceRealtimeService>();
+                var realtimePayload = new UserPresenceChangedDto
+                {
+                    UserId = presenceEvent.UserId,
+                    IsOnline = presenceEvent.IsOnline,
+                    LastSeenAtUtc = presenceEvent.LastSeenAtUtc,
+                    ObservedAtUtc = observedAtUtc
+                };
+
+                await presenceRealtimeService.NotifyPresenceChangedAsync(
+                    realtimePayload,
+                    audienceUserIds.ToArray(),
+                    cancellationToken);
+            }
 
             return true;
         }

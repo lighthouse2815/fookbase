@@ -59,6 +59,18 @@ public class FriendshipReadModelRepository : IFriendshipReadModelRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Guid>> GetActiveContactOwnerIdsByContactAsync(
+        Guid contactUserId,
+        CancellationToken cancellationToken)
+    {
+        return await _context.FriendshipReadModels
+            .Where(relation =>
+                relation.OtherUserId == contactUserId
+                && relation.Status == Domain.Enums.FriendshipStatus.ACCEPTED)
+            .Select(relation => relation.OwnerUserId)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<FriendshipReadModelSyncState?> GetSyncStateAsync(Guid userId, CancellationToken cancellationToken)
     {
         return _context.FriendshipReadModelSyncStates

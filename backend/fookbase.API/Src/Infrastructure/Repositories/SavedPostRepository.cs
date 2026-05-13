@@ -36,6 +36,8 @@ public class SavedPostRepository : ISavedPostRepository
 
         query = query
             .Include(savedPost => savedPost.Post!)
+                .ThenInclude(post => post.MediaItems)
+            .Include(savedPost => savedPost.Post!)
                 .ThenInclude(post => post.Likes)
             .Include(savedPost => savedPost.Post!)
                 .ThenInclude(post => post.Comments)

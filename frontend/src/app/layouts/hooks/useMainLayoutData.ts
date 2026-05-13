@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,11 @@ import {
 } from '@/features/notification/api/realtime/notificationRealtime';
 import { notificationService } from '@/features/notification/api/service/notificationService';
 import type { NotificationItem } from '@/features/notification/types/contracts';
+import {
+  createPresenceRealtimeConnection,
+  startPresenceRealtimeConnection,
+} from '@/features/user/api/realtime/presenceRealtime';
+import type { PresenceChangedEventPayload } from '@/features/user/types/realtime';
 import { userService } from '@/features/user/api/service/userService';
 import type { User } from '@/features/user/types/contracts';
 import {
@@ -39,6 +44,8 @@ export const useMainLayoutData = (): MainLayoutData => {
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [offlineUsers, setOfflineUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const onlineUsersRef = useRef<User[]>([]);
+  const offlineUsersRef = useRef<User[]>([]);
 
   const mapReceivedRequestToNotification = useCallback(
     (request: FriendRequest): NotificationItem => {
@@ -96,9 +103,46 @@ export const useMainLayoutData = (): MainLayoutData => {
       (user) => !onlineUserIds.has(user.id),
     );
 
+    onlineUsersRef.current = normalizedOnlineUsers;
+    offlineUsersRef.current = normalizedOfflineUsers;
     setOnlineUsers(normalizedOnlineUsers);
     setOfflineUsers(normalizedOfflineUsers);
   }, []);
+
+  const applyPresenceChanged = useCallback(
+    (payload: PresenceChangedEventPayload) => {
+      const userId = payload.userId?.trim();
+      if (!userId || typeof payload.isOnline !== 'boolean') {
+        return;
+      }
+
+      const currentOnlineUsers = onlineUsersRef.current;
+      const currentOfflineUsers = offlineUsersRef.current;
+      const knownUser =
+        currentOnlineUsers.find((user) => user.id === userId) ??
+        currentOfflineUsers.find((user) => user.id === userId);
+
+      if (!knownUser) {
+        return;
+      }
+
+      const nextOnlineUsers = currentOnlineUsers.filter((user) => user.id !== userId);
+      const nextOfflineUsers = currentOfflineUsers.filter((user) => user.id !== userId);
+      const updatedUser: User = {
+        ...knownUser,
+        isOnline: payload.isOnline,
+        lastSeenAt: payload.lastSeenAtUtc ?? knownUser.lastSeenAt,
+      };
+
+      if (payload.isOnline) {
+        applyPresenceUsers([updatedUser, ...nextOnlineUsers], nextOfflineUsers);
+        return;
+      }
+
+      applyPresenceUsers(nextOnlineUsers, [updatedUser, ...nextOfflineUsers]);
+    },
+    [applyPresenceUsers],
+  );
 
   const loadFriendPresence = useCallback(async () => {
     try {
@@ -153,7 +197,7 @@ export const useMainLayoutData = (): MainLayoutData => {
       void loadFriendPresence();
     };
 
-    const intervalId = window.setInterval(refreshPresence, 30000);
+    const intervalId = window.setInterval(refreshPresence, 180000);
     window.addEventListener('focus', refreshPresence);
 
     return () => {
@@ -161,6 +205,24 @@ export const useMainLayoutData = (): MainLayoutData => {
       window.removeEventListener('focus', refreshPresence);
     };
   }, [loadFriendPresence]);
+
+  useEffect(() => {
+    const connection = createPresenceRealtimeConnection({
+      onPresenceChanged: applyPresenceChanged,
+    });
+
+    connection.onreconnected(() => {
+      void loadFriendPresence();
+    });
+
+    void startPresenceRealtimeConnection(connection).catch(() => {
+      void loadFriendPresence();
+    });
+
+    return () => {
+      void connection.stop();
+    };
+  }, [applyPresenceChanged, loadFriendPresence]);
 
   useEffect(() => {
     const initialSyncId = window.setTimeout(() => {
@@ -329,4 +391,5 @@ export const useMainLayoutData = (): MainLayoutData => {
     onMarkAllNotificationsAsRead,
   };
 };
+
 

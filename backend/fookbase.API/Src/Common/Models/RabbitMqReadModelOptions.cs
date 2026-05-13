@@ -27,7 +27,10 @@ public class RabbitMqReadModelOptions
         "user.unblocked",
         "friendship.created",
         "friendship.accepted",
-        "friendship.removed"
+        "friendship.removed",
+        "presence.#",
+        "user.presence.#",
+        "friend.presence.#"
     ];
 
     public ushort PrefetchCount { get; set; } = 32;

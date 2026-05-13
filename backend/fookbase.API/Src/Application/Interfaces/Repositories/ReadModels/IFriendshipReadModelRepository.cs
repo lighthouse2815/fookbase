@@ -20,6 +20,10 @@ public interface IFriendshipReadModelRepository
     Task<IReadOnlyList<Guid>> GetActiveContactIdsAsync(
         Guid ownerUserId,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Guid>> GetActiveContactOwnerIdsByContactAsync(
+        Guid contactUserId,
+        CancellationToken cancellationToken);
     
     void AddFriendshipRelation(FriendshipReadModel relation);
 

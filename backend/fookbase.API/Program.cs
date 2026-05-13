@@ -147,6 +147,7 @@ builder.Services.AddScoped<IAccessTokenProvider, HttpContextAccessTokenProvider>
 builder.Services.AddScoped<IAuthCookieService, AuthCookieService>();
 builder.Services.AddScoped<ICloudinarySigningService, CloudinarySigningService>();
 builder.Services.AddScoped<INotificationRealtimeService, SignalRNotificationRealtimeService>();
+builder.Services.AddScoped<IPresenceRealtimeService, SignalRPresenceRealtimeService>();
 builder.Services.AddScoped<UserProfileSummaryReadModelService>();
 builder.Services.AddScoped<IUserProfileSummaryReadModelService>(serviceProvider => serviceProvider.GetRequiredService<UserProfileSummaryReadModelService>());
 builder.Services.AddScoped<IUserProfilePublicReadModelService, UserProfilePublicReadModelService>();
@@ -442,6 +443,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationsHub>("/hubs/notifications");
+app.MapHub<PresenceHub>("/hubs/presence");
 app.MapHub<GamesHub>("/hubs/games");
 
 app.Run();

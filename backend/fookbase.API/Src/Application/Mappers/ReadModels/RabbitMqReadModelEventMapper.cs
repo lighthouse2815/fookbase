@@ -41,6 +41,18 @@ public static class RabbitMqReadModelEventMapper
         "friendship_inactive"
     };
 
+    private static readonly HashSet<string> PresenceEventTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "presence.changed",
+        "presence_changed",
+        "user.presence.changed",
+        "user_presence_changed",
+        "friend.presence.changed",
+        "friend_presence_changed",
+        "user.online",
+        "user.offline"
+    };
+
     public static JsonElement ResolvePayload(JsonElement root)
     {
         if (root.ValueKind == JsonValueKind.Object
@@ -195,6 +207,65 @@ public static class RabbitMqReadModelEventMapper
         return true;
     }
 
+    public static bool IsPresenceEvent(string eventType, JsonElement payload)
+    {
+        if (PresenceEventTypes.Contains(eventType))
+        {
+            return true;
+        }
+
+        return HasAnyProperty(payload, "isOnline", "online", "connected", "status")
+            && HasAnyProperty(payload, "userId", "profileUserId", "targetUserId", "id");
+    }
+
+    public static bool TryResolvePresenceEvent(
+        JsonElement payload,
+        DateTime? observedAtUtc,
+        out (Guid UserId, bool IsOnline, DateTime? LastSeenAtUtc, IReadOnlyCollection<Guid> AudienceUserIds) presenceEvent)
+    {
+        presenceEvent = default;
+
+        if (!TryReadGuid(payload, out var userId, "userId", "profileUserId", "targetUserId", "id"))
+        {
+            return false;
+        }
+
+        var isOnline = GetBoolean(payload, "isOnline", "online", "connected");
+        if (!isOnline.HasValue)
+        {
+            var status = GetString(payload, "status")?.Trim();
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                if (status.Equals("online", StringComparison.OrdinalIgnoreCase)
+                    || status.Equals("active", StringComparison.OrdinalIgnoreCase)
+                    || status.Equals("connected", StringComparison.OrdinalIgnoreCase))
+                {
+                    isOnline = true;
+                }
+                else if (status.Equals("offline", StringComparison.OrdinalIgnoreCase)
+                    || status.Equals("inactive", StringComparison.OrdinalIgnoreCase)
+                    || status.Equals("disconnected", StringComparison.OrdinalIgnoreCase))
+                {
+                    isOnline = false;
+                }
+            }
+        }
+
+        if (!isOnline.HasValue)
+        {
+            return false;
+        }
+
+        var lastSeenAtUtc =
+            GetDateTime(payload, "lastSeenAt")
+            ?? GetDateTime(payload, "updatedAt")
+            ?? observedAtUtc;
+
+        var audienceUserIds = ResolveAudienceUserIds(payload, userId);
+        presenceEvent = (userId, isOnline.Value, lastSeenAtUtc, audienceUserIds);
+        return true;
+    }
+
     private static bool TryReadFriendshipUsers(JsonElement payload, out Guid firstUserId, out Guid secondUserId)
     {
         firstUserId = Guid.Empty;
@@ -303,5 +374,49 @@ public static class RabbitMqReadModelEventMapper
         }
 
         return false;
+    }
+
+    private static IReadOnlyCollection<Guid> ResolveAudienceUserIds(JsonElement payload, Guid userId)
+    {
+        var audienceUserIds = new HashSet<Guid>();
+        TryAppendGuidCollection(payload, audienceUserIds, "audienceUserIds", "subscriberUserIds", "watcherUserIds", "recipientUserIds", "friendUserIds");
+
+        if (audienceUserIds.Count == 0 && TryReadGuid(payload, out var singleAudienceUserId, "audienceUserId", "subscriberUserId", "watcherUserId", "recipientUserId"))
+        {
+            audienceUserIds.Add(singleAudienceUserId);
+        }
+
+        audienceUserIds.Add(userId);
+        return audienceUserIds.ToArray();
+    }
+
+    private static void TryAppendGuidCollection(JsonElement source, HashSet<Guid> output, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            if (!source.TryGetProperty(propertyName, out var property)
+                || property.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var item in property.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.String
+                    && Guid.TryParse(item.GetString(), out var parsedGuid))
+                {
+                    output.Add(parsedGuid);
+                    continue;
+                }
+
+                if (item.ValueKind == JsonValueKind.Object
+                    && item.TryGetProperty("id", out var idElement)
+                    && idElement.ValueKind == JsonValueKind.String
+                    && Guid.TryParse(idElement.GetString(), out parsedGuid))
+                {
+                    output.Add(parsedGuid);
+                }
+            }
+        }
     }
 }
