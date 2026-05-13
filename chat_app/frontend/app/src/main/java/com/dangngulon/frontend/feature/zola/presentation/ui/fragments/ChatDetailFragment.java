@@ -78,6 +78,9 @@ public class ChatDetailFragment extends Fragment {
     private static final String ARG_NICKNAME = "nickname";
     private static final String ARG_CONVERSATION_ID = "conversationId";
     private static final long MAX_UPLOAD_BYTES = 20L * 1024L * 1024L;
+    private static final int MAX_RENDERED_MESSAGES = 300;
+    private static final int AUTO_SCROLL_THRESHOLD = 3;
+    private static final int LOAD_MORE_TRIGGER_POSITION = 2;
     private static final int MENU_ID_SAVE_IMAGE = 1;
     private static final String[] QUICK_EMOJIS = {
             "\uD83D\uDE03", // smiling face
@@ -95,6 +98,7 @@ public class ChatDetailFragment extends Fragment {
     private FragmentChatDetailBinding binding;
     private ChatDetailViewModel viewModel;
     private MessageAdapter messageAdapter;
+    private LinearLayoutManager messageLayoutManager;
     private RecyclerView.ItemDecoration dayHeaderDecoration;
     private Integer previousSoftInputMode;
     private ActivityResultLauncher<String> imagePickerLauncher;
@@ -105,6 +109,8 @@ public class ChatDetailFragment extends Fragment {
     private File activeVoiceFile;
     private boolean isVoiceRecording;
     private boolean pendingStartVoiceRecording;
+    private boolean isLoadingMoreMessages;
+    private boolean hasMoreMessages = true;
     private final List<PendingImageAttachment> pendingImageAttachments = new ArrayList<>();
 
     @Override
@@ -203,6 +209,7 @@ public class ChatDetailFragment extends Fragment {
             messageAdapter = new MessageAdapter();
         }
 
+        messageAdapter.setMaxMessageCount(MAX_RENDERED_MESSAGES);
         messageAdapter.setCurrentUserId(viewModel.getCurrentUserId());
         messageAdapter.setOnMessageClickListener(new MessageAdapter.OnMessageClickListener() {
             @Override
@@ -223,11 +230,22 @@ public class ChatDetailFragment extends Fragment {
             }
         });
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
-        layoutManager.setStackFromEnd(true);
+        messageLayoutManager = new LinearLayoutManager(requireContext());
+        messageLayoutManager.setStackFromEnd(true);
 
-        binding.rvMessages.setLayoutManager(layoutManager);
+        binding.rvMessages.setLayoutManager(messageLayoutManager);
+        binding.rvMessages.setHasFixedSize(true);
         binding.rvMessages.setAdapter(messageAdapter);
+        binding.rvMessages.clearOnScrollListeners();
+        binding.rvMessages.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy < 0) {
+                    maybeLoadMoreMessages();
+                }
+            }
+        });
 
         if (dayHeaderDecoration == null) {
             dayHeaderDecoration = new ChatDayHeaderDecoration(requireContext());
@@ -309,11 +327,14 @@ public class ChatDetailFragment extends Fragment {
                         Collections.reverse(messages);
                         messageAdapter.submitMessages(messages, this::scrollToBottom);
                         viewModel.setCurrentMessages(data);
+                        updateHasMoreMessages(data);
                     }
+                    isLoadingMoreMessages = false;
                     break;
 
                 case ERROR:
                     showLoading(false);
+                    isLoadingMoreMessages = false;
                     UiHelper.showToast(requireContext(), result.getMessage());
                     showError(result.getMessage());
                     break;
@@ -323,7 +344,8 @@ public class ChatDetailFragment extends Fragment {
 
     private void observeSendMessage() {
         viewModel.getMessages().observe(getViewLifecycleOwner(), message -> {
-            messageAdapter.add(message, this::scrollToBottom);
+            boolean shouldAutoScroll = isNearBottom(AUTO_SCROLL_THRESHOLD);
+            messageAdapter.add(message, shouldAutoScroll ? this::scrollToBottom : null);
         });
 
         viewModel.getSendMessageResult().observe(getViewLifecycleOwner(), result -> {
@@ -356,25 +378,51 @@ public class ChatDetailFragment extends Fragment {
 
             switch (result.getStatus()) {
                 case LOADING:
+                    isLoadingMoreMessages = true;
                     break;
 
                 case SUCCESS:
+                    isLoadingMoreMessages = false;
                     MessageCursorPageUiModel data = result.getData();
                     if (data != null && data.getMessages() != null) {
+                        updateHasMoreMessages(data);
+
                         List<MessageUiModel> newMessages = new ArrayList<>(data.getMessages());
                         Collections.reverse(newMessages);
+                        if (newMessages.isEmpty()) {
+                            viewModel.setCurrentMessages(data);
+                            break;
+                        }
 
                         List<MessageUiModel> currentMessages = messageAdapter.getCurrentList();
+                        int firstVisiblePosition = RecyclerView.NO_POSITION;
+                        int firstVisibleTopOffset = 0;
+                        if (messageLayoutManager != null) {
+                            firstVisiblePosition = messageLayoutManager.findFirstVisibleItemPosition();
+                            View firstVisibleView = messageLayoutManager.findViewByPosition(firstVisiblePosition);
+                            if (firstVisibleView != null) {
+                                firstVisibleTopOffset = firstVisibleView.getTop();
+                            }
+                        }
+
                         List<MessageUiModel> allMessages = new ArrayList<>();
                         allMessages.addAll(newMessages);
                         allMessages.addAll(currentMessages);
 
-                        messageAdapter.submitMessages(allMessages);
+                        int insertedCount = newMessages.size();
+                        int restoredPosition = firstVisiblePosition;
+                        int restoredOffset = firstVisibleTopOffset;
+                        messageAdapter.submitMessages(allMessages, () -> restorePrependScrollPosition(
+                                restoredPosition,
+                                restoredOffset,
+                                insertedCount
+                        ));
                         viewModel.setCurrentMessages(data);
                     }
                     break;
 
                 case ERROR:
+                    isLoadingMoreMessages = false;
                     showError(result.getMessage());
                     break;
             }
@@ -382,6 +430,8 @@ public class ChatDetailFragment extends Fragment {
     }
 
     private void requestMessages() {
+        isLoadingMoreMessages = false;
+        hasMoreMessages = true;
         viewModel.loadInitialMessages();
     }
 
@@ -1506,6 +1556,71 @@ public class ChatDetailFragment extends Fragment {
         if (count > 0) {
             binding.rvMessages.scrollToPosition(count - 1);
         }
+    }
+
+    private void maybeLoadMoreMessages() {
+        if (!isUiReady() || messageLayoutManager == null) {
+            return;
+        }
+
+        if (isLoadingMoreMessages || !hasMoreMessages) {
+            return;
+        }
+
+        int firstVisiblePosition = messageLayoutManager.findFirstVisibleItemPosition();
+        if (firstVisiblePosition == RecyclerView.NO_POSITION) {
+            return;
+        }
+
+        if (firstVisiblePosition > LOAD_MORE_TRIGGER_POSITION) {
+            return;
+        }
+
+        isLoadingMoreMessages = true;
+        viewModel.loadMoreMessages();
+    }
+
+    private void restorePrependScrollPosition(
+            int previousFirstVisiblePosition,
+            int previousFirstVisibleTopOffset,
+            int insertedCount
+    ) {
+        if (!isUiReady() || messageLayoutManager == null) {
+            return;
+        }
+
+        if (previousFirstVisiblePosition == RecyclerView.NO_POSITION || insertedCount <= 0) {
+            return;
+        }
+
+        int restoredPosition = previousFirstVisiblePosition + insertedCount;
+        if (restoredPosition >= messageAdapter.getItemCount()) {
+            restoredPosition = messageAdapter.getItemCount() - 1;
+        }
+        if (restoredPosition < 0) {
+            restoredPosition = 0;
+        }
+
+        messageLayoutManager.scrollToPositionWithOffset(restoredPosition, previousFirstVisibleTopOffset);
+    }
+
+    private void updateHasMoreMessages(@Nullable MessageCursorPageUiModel data) {
+        hasMoreMessages = data != null && data.getNextCursor() != null;
+    }
+
+    private boolean isNearBottom(int threshold) {
+        RecyclerView.LayoutManager recyclerLayoutManager = binding.rvMessages.getLayoutManager();
+        if (!(recyclerLayoutManager instanceof LinearLayoutManager linearLayoutManager)) {
+            return true;
+        }
+
+        int lastVisiblePosition = linearLayoutManager.findLastVisibleItemPosition();
+        if (lastVisiblePosition == RecyclerView.NO_POSITION) {
+            return true;
+        }
+
+        int lastIndex = Math.max(0, messageAdapter.getItemCount() - 1);
+        return lastVisiblePosition >= (lastIndex - Math.max(threshold, 0));
     }
 
     private void navigateBack() {

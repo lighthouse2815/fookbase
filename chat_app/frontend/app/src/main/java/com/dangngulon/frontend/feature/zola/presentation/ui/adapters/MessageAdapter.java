@@ -28,9 +28,11 @@ import java.util.Objects;
 public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.ViewHolder> {
     private static final int VIEW_TYPE_SENT = 1;
     private static final int VIEW_TYPE_RECEIVED = 2;
+    private static final int DEFAULT_MAX_MESSAGE_COUNT = 300;
 
     private String currentUserId;
     private OnMessageClickListener listener;
+    private int maxMessageCount = DEFAULT_MAX_MESSAGE_COUNT;
 
     public MessageAdapter() {
         super(new DiffUtil.ItemCallback<MessageUiModel>() {
@@ -63,17 +65,16 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
         this.currentUserId = currentUserId;
     }
 
+    public void setMaxMessageCount(int maxMessageCount) {
+        this.maxMessageCount = sanitizeMaxMessageCount(maxMessageCount);
+    }
+
     public void submitMessages(List<MessageUiModel> messages) {
         submitMessages(messages, null);
     }
 
     public void submitMessages(List<MessageUiModel> messages, Runnable onCommitted) {
-        submitList(messages, () -> {
-            notifyDataSetChanged();
-            if (onCommitted != null) {
-                onCommitted.run();
-            }
-        });
+        submitList(copyOf(messages), onCommitted);
     }
 
     public void add(MessageUiModel message) {
@@ -85,22 +86,16 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
             return;
         }
 
-        List<MessageUiModel> newList = new ArrayList<>(getCurrentList());
+        List<MessageUiModel> currentList = getCurrentList();
         String newMessageId = message.getMessageId();
-        if (newMessageId != null) {
-            for (MessageUiModel existing : newList) {
-                if (existing == null) {
-                    continue;
-                }
-                if (newMessageId.equals(existing.getMessageId())) {
-                    if (onCommitted != null) {
-                        onCommitted.run();
-                    }
-                    return;
-                }
+        if (newMessageId != null && containsMessageId(currentList, newMessageId)) {
+            if (onCommitted != null) {
+                onCommitted.run();
             }
+            return;
         }
 
+        List<MessageUiModel> newList = buildListWithNewMessage(currentList);
         newList.add(message);
         int previousLastIndex = newList.size() - 2;
         submitList(newList, () -> {
@@ -121,6 +116,51 @@ public class MessageAdapter extends ListAdapter<MessageUiModel, MessageAdapter.V
         }
 
         return getCurrentList().get(position);
+    }
+
+    private boolean containsMessageId(@NonNull List<MessageUiModel> messages, @NonNull String messageId) {
+        int size = messages.size();
+        int safeMax = sanitizeMaxMessageCount(maxMessageCount);
+        int startIndex = Math.max(0, size - safeMax);
+        for (int index = size - 1; index >= startIndex; index--) {
+            MessageUiModel existing = messages.get(index);
+            if (existing == null) {
+                continue;
+            }
+            if (messageId.equals(existing.getMessageId())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @NonNull
+    private List<MessageUiModel> buildListWithNewMessage(@NonNull List<MessageUiModel> currentList) {
+        int safeMax = sanitizeMaxMessageCount(maxMessageCount);
+        int size = currentList.size();
+        int startIndex = 0;
+        if (size >= safeMax) {
+            startIndex = size - (safeMax - 1);
+        }
+
+        List<MessageUiModel> newList = new ArrayList<>(Math.min(size - startIndex + 1, safeMax));
+        for (int index = startIndex; index < size; index++) {
+            newList.add(currentList.get(index));
+        }
+        return newList;
+    }
+
+    private int sanitizeMaxMessageCount(int value) {
+        return value <= 0 ? 1 : value;
+    }
+
+    @NonNull
+    private List<MessageUiModel> copyOf(List<MessageUiModel> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(messages);
     }
 
     @Override

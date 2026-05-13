@@ -26,8 +26,8 @@ const resolveDisplayNameFromRecord = (record: Record<string, unknown>, fallback:
   return (
     readField(record, 'displayName') ??
     readField(record, 'nickName') ??
-    readField(record, 'username') ??
     readField(record, 'fullName') ??
+    readField(record, 'username') ??
     readField(record, 'phoneNumber') ??
     fallback
   );
@@ -129,7 +129,7 @@ export const sanitizeRequests = (
   return value.map((item, index) => {
     const typed = item as Partial<FriendRequest>;
     const raw = item as Record<string, unknown>;
-    const safeId = typed.id ?? `request-user-${index}`;
+    const safeId = typed.id ?? readField(raw, 'userId') ?? `request-user-${index}`;
     const requesterId = mode === 'received' ? typed.requesterId ?? safeId : typed.requesterId ?? currentUserId;
     const addresseeId = mode === 'received' ? typed.addresseeId ?? currentUserId : typed.addresseeId ?? safeId;
     const requestedAt = resolveRequestTimestamp(typed);
@@ -147,7 +147,11 @@ export const sanitizeRequests = (
           : undefined;
 
     const fullName = resolveDisplayNameFromRecord(raw, 'User');
-    const username = readField(raw, 'displayName') ?? `user_${safeId}`;
+    const username =
+      readField(raw, 'username') ??
+      readField(raw, 'displayName') ??
+      readField(raw, 'fullName') ??
+      `user_${safeId}`;
 
     return {
       id: safeId,

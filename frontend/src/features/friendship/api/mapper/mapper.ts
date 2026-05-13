@@ -106,7 +106,7 @@ export const mapPendingRequesterResponseDtoToFriendRequest = (
   mode: 'received' | 'sent',
 ): FriendRequest => {
   const userId = toSafeId(payload.userId ?? payload.id, `friend-request-${index}`);
-  const fullName = toDisplayName(payload.displayName ?? payload.username ?? payload.fullName, `User ${index + 1}`);
+  const fullName = toDisplayName(payload.displayName ?? payload.fullName ?? payload.username, `User ${index + 1}`);
   const requestedAt = resolveFriendRequestTimestamp(payload);
   const updatedAt = firstNonEmptyString(payload.updatedAt, payload.updateAt);
   const createdAt = firstNonEmptyString(payload.createdAt, payload.createAt);
@@ -116,7 +116,7 @@ export const mapPendingRequesterResponseDtoToFriendRequest = (
     requestId: userId,
     requesterId: mode === 'sent' ? 'me' : userId,
     addresseeId: mode === 'sent' ? userId : 'me',
-    username: toDisplayName(payload.username, `user_${userId}`),
+    username: toDisplayName(payload.username ?? payload.displayName, `user_${userId}`),
     fullName,
     avatarUrl: toAvatarUrl(payload.avatarUrl),
     mutualFriends: 0,
@@ -129,7 +129,7 @@ export const mapPendingRequesterResponseDtoToFriendRequest = (
 export const mapContactResponseDtoToFriendUser = (payload: ContactResponseDto, index: number): FriendUser => {
   const userId = toSafeId(payload.userId ?? payload.id, `friend-${index}`);
   const displayName = toDisplayName(
-    payload.displayName ?? payload.nickName ?? payload.username ?? payload.fullName ?? payload.phoneNumber,
+    payload.displayName ?? payload.nickName ?? payload.fullName ?? payload.username ?? payload.phoneNumber,
     `Friend ${index + 1}`,
   );
 
@@ -203,7 +203,7 @@ export const mapBlockedUserResponseDtoToBlockedUser = (
   index: number,
 ): BlockedUser => {
   const userId = toSafeId(payload.userId ?? payload.id, `blocked-user-${index}`);
-  const fullName = toDisplayName(payload.displayName ?? payload.username ?? payload.fullName, `User ${index + 1}`);
+  const fullName = toDisplayName(payload.displayName ?? payload.fullName ?? payload.username, `User ${index + 1}`);
   const username = toDisplayName(payload.username ?? payload.displayName, `user_${userId}`);
 
   return {
