@@ -86,7 +86,9 @@ public class AppDbContext : DbContext
                 .HasMaxLength(2000)
                 .IsRequired();
             entity.Property(media => media.MediaType)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseMediaType(value))
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(media => media.SortOrder).IsRequired();
@@ -134,7 +136,9 @@ public class AppDbContext : DbContext
                 .HasMaxLength(2000)
                 .IsRequired();
             entity.Property(media => media.MediaType)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseMediaType(value))
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(media => media.SortOrder).IsRequired();
@@ -155,7 +159,9 @@ public class AppDbContext : DbContext
             entity.HasKey(commentReaction => commentReaction.Id);
 
             entity.Property(commentReaction => commentReaction.Type)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseReactionType(value))
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(commentReaction => commentReaction.CreatedAt).IsRequired();
@@ -177,7 +183,9 @@ public class AppDbContext : DbContext
             entity.HasKey(like => like.Id);
 
             entity.Property(like => like.Type)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseReactionType(value))
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(like => like.CreatedAt).IsRequired();
@@ -200,7 +208,9 @@ public class AppDbContext : DbContext
 
             entity.Property(story => story.MediaUrl).HasMaxLength(500).IsRequired();
             entity.Property(story => story.MediaType)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseMediaType(value))
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(story => story.Content).HasMaxLength(500);
@@ -217,7 +227,9 @@ public class AppDbContext : DbContext
             entity.HasKey(storyReaction => storyReaction.Id);
 
             entity.Property(storyReaction => storyReaction.Type)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseReactionType(value))
                 .HasMaxLength(20)
                 .IsRequired();
             entity.Property(storyReaction => storyReaction.CreatedAt).IsRequired();
@@ -325,7 +337,9 @@ public class AppDbContext : DbContext
 
             entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
             entity.Property(report => report.Status)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseReportStatus(value))
                 .HasMaxLength(30)
                 .IsRequired();
             entity.Property(report => report.UpdatedAt).IsRequired();
@@ -347,7 +361,9 @@ public class AppDbContext : DbContext
 
             entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
             entity.Property(report => report.Status)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseReportStatus(value))
                 .HasMaxLength(30)
                 .IsRequired();
             entity.Property(report => report.UpdatedAt).IsRequired();
@@ -370,7 +386,9 @@ public class AppDbContext : DbContext
 
             entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
             entity.Property(report => report.Status)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseReportStatus(value))
                 .HasMaxLength(30)
                 .IsRequired();
             entity.Property(report => report.UpdatedAt).IsRequired();
@@ -387,7 +405,9 @@ public class AppDbContext : DbContext
 
             entity.Property(report => report.Reason).HasMaxLength(500).IsRequired();
             entity.Property(report => report.Status)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseReportStatus(value))
                 .HasMaxLength(30)
                 .IsRequired();
             entity.Property(report => report.UpdatedAt).IsRequired();
@@ -408,11 +428,15 @@ public class AppDbContext : DbContext
             entity.HasKey(log => log.Id);
 
             entity.Property(log => log.ActionType)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseAdminAuditActionType(value))
                 .HasMaxLength(60)
                 .IsRequired();
             entity.Property(log => log.EntityType)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseAdminAuditEntityType(value))
                 .HasMaxLength(40)
                 .IsRequired();
             entity.Property(log => log.EntityId).IsRequired();
@@ -491,7 +515,9 @@ public class AppDbContext : DbContext
             entity.HasKey(relation => new { relation.OwnerUserId, relation.OtherUserId });
 
             entity.Property(relation => relation.Status)
-                .HasConversion<string>()
+                .HasConversion(
+                    type => type.ToString(),
+                    value => ParseFriendshipStatus(value))
                 .HasMaxLength(30)
                 .IsRequired();
             entity.Property(relation => relation.UpdatedAtUtc).IsRequired();
@@ -516,6 +542,51 @@ public class AppDbContext : DbContext
         return EnumParser.TryParseNotificationType(value, out var parsedType)
             ? parsedType
             : NotificationType.GENERAL;
+    }
+
+    private static MediaType ParseMediaType(string? value)
+    {
+        return EnumParser.TryParseMediaType(value, out var parsedType)
+            ? parsedType
+            : MediaType.IMAGE;
+    }
+
+    private static ReactionType ParseReactionType(string? value)
+    {
+        return EnumParser.TryParseReactionType(value, out var parsedType)
+            ? parsedType
+            : ReactionType.LIKE;
+    }
+
+    private static ReportStatus ParseReportStatus(string? value)
+    {
+        return EnumParser.TryParseReportStatus(value, out var parsedType)
+            ? parsedType
+            : ReportStatus.PENDING;
+    }
+
+    private static FriendshipStatus ParseFriendshipStatus(string? value)
+    {
+        return Enum.TryParse(value?.Trim(), ignoreCase: true, out FriendshipStatus parsedStatus)
+            && Enum.IsDefined(parsedStatus)
+            ? parsedStatus
+            : FriendshipStatus.REMOVED;
+    }
+
+    private static AdminAuditActionType ParseAdminAuditActionType(string? value)
+    {
+        return Enum.TryParse(value?.Trim(), ignoreCase: true, out AdminAuditActionType parsedType)
+            && Enum.IsDefined(parsedType)
+            ? parsedType
+            : AdminAuditActionType.USER_STATUS_UPDATED;
+    }
+
+    private static AdminAuditEntityType ParseAdminAuditEntityType(string? value)
+    {
+        return Enum.TryParse(value?.Trim(), ignoreCase: true, out AdminAuditEntityType parsedType)
+            && Enum.IsDefined(parsedType)
+            ? parsedType
+            : AdminAuditEntityType.USER;
     }
 }
 
