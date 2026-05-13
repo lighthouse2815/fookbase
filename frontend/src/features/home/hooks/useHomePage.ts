@@ -29,11 +29,15 @@ export const useHomePage = (): UseHomePageReturn => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [isSentinelVisible, setIsSentinelVisible] = useState(false);
   const loadingRef = useRef(false);
+  const failedLoadMorePageRef = useRef<number | null>(null);
   const loadMoreSentinelRef: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
   const { toast, showToast } = useCornerToast();
 
   const loadPosts = useCallback(async (targetPage: number, replace = false) => {
     if (loadingRef.current) {
+      return;
+    }
+    if (!replace && failedLoadMorePageRef.current === targetPage) {
       return;
     }
 
@@ -46,8 +50,12 @@ export const useHomePage = (): UseHomePageReturn => {
       setHasMore(response.hasMore);
       setPage(targetPage);
       setLoadError(null);
+      failedLoadMorePageRef.current = null;
     } catch (error) {
       setLoadError(getApiErrorMessage(error, 'Unable to load posts.'));
+      if (!replace) {
+        failedLoadMorePageRef.current = targetPage;
+      }
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
@@ -90,6 +98,14 @@ export const useHomePage = (): UseHomePageReturn => {
 
     void loadPosts(page + 1);
   }, [hasMore, isSentinelVisible, isLoading, loadPosts, page]);
+
+  useEffect(() => {
+    if (isSentinelVisible) {
+      return;
+    }
+
+    failedLoadMorePageRef.current = null;
+  }, [isSentinelVisible]);
 
   const handleCreatePost = async (draft: CreatePostDraft) => {
     setIsSubmitting(true);
