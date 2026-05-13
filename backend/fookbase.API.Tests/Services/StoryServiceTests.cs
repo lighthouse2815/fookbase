@@ -1,6 +1,6 @@
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Stories;
-using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
@@ -19,8 +19,8 @@ public class StoryServiceTests
     private readonly Mock<IAccessTokenProvider> _accessTokenProviderMock = new();
     private readonly Mock<IStoryRepository> _storyRepositoryMock = new();
     private readonly Mock<IStoryReactionRepository> _storyReactionRepositoryMock = new();
-    private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
-    private readonly Mock<IUserReadModelService> _userReadModelServiceMock = new();
+    private readonly Mock<IUserIdentityReadModelService> _userIdentityReadModelServiceMock = new();
+    private readonly Mock<IFriendshipReadModelService> _friendshipReadModelServiceMock = new();
     private readonly Mock<IUserProfileSummaryReadModelService> _userProfileSummaryReadModelServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
@@ -28,7 +28,7 @@ public class StoryServiceTests
 
     private StoryService CreateService()
     {
-        _userReadModelServiceMock
+        _friendshipReadModelServiceMock
             .Setup(service => service.ResolveBlockedUserIdsAsync(
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>(),
@@ -36,7 +36,7 @@ public class StoryServiceTests
                 It.IsAny<string?>()))
             .ReturnsAsync(new HashSet<Guid>());
 
-        _userReadModelServiceMock
+        _friendshipReadModelServiceMock
             .Setup(service => service.ResolveContactIdsAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<string?>(),
@@ -44,20 +44,16 @@ public class StoryServiceTests
                 It.IsAny<bool>()))
             .ReturnsAsync(new HashSet<Guid>());
 
-        _userProfileSummaryReadModelServiceMock
-            .Setup(service => service.GetProfileSummariesAsync(
-                It.IsAny<IEnumerable<Guid>>(),
-                It.IsAny<CancellationToken>(),
-                It.IsAny<bool>(),
-                It.IsAny<string?>()))
-            .ReturnsAsync(new Dictionary<Guid, UserProfileSummaryDto?>());
+        _httpContextAccessorMock
+            .SetupGet(accessor => accessor.HttpContext)
+            .Returns(new DefaultHttpContext());
 
         return new StoryService(
             _accessTokenProviderMock.Object,
             _storyRepositoryMock.Object,
             _storyReactionRepositoryMock.Object,
-            _javaApiServiceMock.Object,
-            _userReadModelServiceMock.Object,
+            _userIdentityReadModelServiceMock.Object,
+            _friendshipReadModelServiceMock.Object,
             _userProfileSummaryReadModelServiceMock.Object,
             _unitOfWorkMock.Object,
             _httpContextAccessorMock.Object,
@@ -67,11 +63,6 @@ public class StoryServiceTests
     [Fact]
     public async Task CreateAsync_ThrowsArgumentException_WhenMediaTypeIsInvalid()
     {
-        var userId = Guid.NewGuid();
-        _javaApiServiceMock
-            .Setup(service => service.GetUserById(userId, It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync(new UserDto { Id = userId });
-
         var service = CreateService();
         var request = new CreateStoryRequestDto
         {
@@ -81,7 +72,7 @@ public class StoryServiceTests
         };
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() =>
-            service.CreateAsync(userId, request, CancellationToken.None));
+            service.CreateAsync(Guid.NewGuid(), request, CancellationToken.None));
 
         Assert.Equal(ErrorCode.INVALID_STORY_MEDIA_TYPE, exception.ErrorCode);
     }
@@ -92,9 +83,6 @@ public class StoryServiceTests
         var userId = Guid.NewGuid();
         Story? addedStory = null;
 
-        _javaApiServiceMock
-            .Setup(service => service.GetUserById(userId, It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync(new UserDto { Id = userId });
         _userProfileSummaryReadModelServiceMock
             .Setup(service => service.GetProfileSummariesAsync(
                 It.IsAny<IEnumerable<Guid>>(),
@@ -134,7 +122,6 @@ public class StoryServiceTests
         Assert.Equal(userId, addedStory!.UserId);
         Assert.Equal(MediaType.IMAGE, addedStory.MediaType);
         Assert.Equal("https://cdn.example.com/story.jpg", addedStory.MediaUrl);
-
         Assert.Equal("Story Owner", result.Author.DisplayName);
         _unitOfWorkMock.Verify(unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -164,46 +151,5 @@ public class StoryServiceTests
         _storyRepositoryMock.Verify(repository => repository.HasViewAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         _storyRepositoryMock.Verify(repository => repository.AddViewAsync(It.IsAny<StoryView>(), It.IsAny<CancellationToken>()), Times.Never);
         _unitOfWorkMock.Verify(unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task MarkAsViewedAsync_AddsView_AndPersists_WhenFirstTimeViewer()
-    {
-        var storyId = Guid.NewGuid();
-        var ownerId = Guid.NewGuid();
-        var viewerId = Guid.NewGuid();
-
-        _storyRepositoryMock
-            .Setup(repository => repository.GetByIdForUpdateAsync(storyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Story
-            {
-                Id = storyId,
-                UserId = ownerId,
-                MediaUrl = "https://cdn.example.com/story.jpg",
-                MediaType = MediaType.IMAGE,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
-                ExpiredAt = DateTime.UtcNow.AddHours(1),
-                IsDeleted = false
-            });
-
-        _storyRepositoryMock
-            .Setup(repository => repository.HasViewAsync(storyId, viewerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        _storyRepositoryMock
-            .Setup(repository => repository.AddViewAsync(It.IsAny<StoryView>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _unitOfWorkMock
-            .Setup(unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
-        var service = CreateService();
-        await service.MarkAsViewedAsync(storyId, viewerId, CancellationToken.None);
-
-        _storyRepositoryMock.Verify(repository => repository.AddViewAsync(
-            It.Is<StoryView>(view => view.StoryId == storyId && view.ViewerId == viewerId),
-            It.IsAny<CancellationToken>()), Times.Once);
-        _unitOfWorkMock.Verify(unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

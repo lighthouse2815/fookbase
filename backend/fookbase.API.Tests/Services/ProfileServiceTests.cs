@@ -1,10 +1,10 @@
-using System.Net;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Services;
+using InteractHub.Api.Common.Enums;
+using InteractHub.Api.Common.Exceptions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace InteractHub.Api.Tests.Services;
@@ -12,9 +12,10 @@ namespace InteractHub.Api.Tests.Services;
 public class ProfileServiceTests
 {
     private readonly Mock<IAccessTokenProvider> _accessTokenProviderMock = new();
-    private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
+    private readonly Mock<IUserProfilePublicReadModelService> _userProfilePublicReadModelServiceMock = new();
+    private readonly Mock<IJavaUserProfileApiService> _javaUserProfileApiServiceMock = new();
     private readonly Mock<IPostRepository> _postRepositoryMock = new();
-    private readonly Mock<ILogger<ProfileService>> _loggerMock = new();
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
 
     private ProfileService CreateService()
     {
@@ -22,46 +23,40 @@ public class ProfileServiceTests
             .Setup(provider => provider.GetAccessTokenOrNull())
             .Returns("token");
 
+        _httpContextAccessorMock
+            .SetupGet(accessor => accessor.HttpContext)
+            .Returns(new DefaultHttpContext());
+
         return new ProfileService(
             _accessTokenProviderMock.Object,
-            _javaApiServiceMock.Object,
+            _userProfilePublicReadModelServiceMock.Object,
+            _javaUserProfileApiServiceMock.Object,
             _postRepositoryMock.Object,
-            _loggerMock.Object);
+            _httpContextAccessorMock.Object);
     }
 
     [Fact]
-    public async Task GetByUserIdAsync_ReturnsNotFound_WhenJavaProfileIsMissing()
+    public async Task GetByUserIdAsync_MapsProfile_AndNormalizesCounts()
     {
         var userId = Guid.NewGuid();
-        _javaApiServiceMock
-            .Setup(service => service.GetProfileByUserId(userId, It.IsAny<CancellationToken>(), "token"))
-            .ReturnsAsync((UserProfileDto?)null);
-
-        var service = CreateService();
-        var result = await service.GetByUserIdAsync(userId, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetByUserIdAsync_MapsJavaProfile_AndNormalizesCounts()
-    {
-        var userId = Guid.NewGuid();
-        _javaApiServiceMock
-            .Setup(service => service.GetProfileByUserId(userId, It.IsAny<CancellationToken>(), "token"))
-            .ReturnsAsync(new UserProfileDto
+        _userProfilePublicReadModelServiceMock
+            .Setup(service => service.GetByUserIdAsync(
+                Guid.Empty,
+                userId,
+                "token",
+                It.IsAny<CancellationToken>(),
+                false))
+            .ReturnsAsync(JavaApiCallResult<UserProfileDto>.Success(new UserProfileDto
             {
                 UserId = Guid.Empty,
                 DisplayName = "  Test User  ",
-                AvatarUrl = null,
                 FriendsCount = -10,
                 PhoneNumber = " 0900 ",
                 Gender = " FEMALE ",
                 BirthDate = " 2000-01-01 ",
                 Status = " ACCEPTED ",
                 Nickname = "  tester "
-            });
+            }, StatusCodes.Status200OK));
 
         _postRepositoryMock
             .Setup(repository => repository.CountByUserIdAsync(userId, It.IsAny<CancellationToken>()))
@@ -70,46 +65,53 @@ public class ProfileServiceTests
         var service = CreateService();
         var result = await service.GetByUserIdAsync(userId, CancellationToken.None);
 
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Data);
-        Assert.Equal(userId, result.Data!.UserId);
-        Assert.Equal("Test User", result.Data.DisplayName);
-        Assert.Equal(0, result.Data.FriendsCount);
-        Assert.Equal(0, result.Data.PostsCount);
-        Assert.Equal("0900", result.Data.PhoneNumber);
-        Assert.Equal("FEMALE", result.Data.Gender);
-        Assert.Equal("2000-01-01", result.Data.BirthDate);
-        Assert.Equal("ACCEPTED", result.Data.Status);
-        Assert.Equal("tester", result.Data.Nickname);
+        Assert.Equal(userId, result.UserId);
+        Assert.Equal("Test User", result.DisplayName);
+        Assert.Equal(0, result.FriendsCount);
+        Assert.Equal(0, result.PostsCount);
+        Assert.Equal("0900", result.PhoneNumber);
+        Assert.Equal("FEMALE", result.Gender);
+        Assert.Equal("2000-01-01", result.BirthDate);
+        Assert.Equal("ACCEPTED", result.Status);
+        Assert.Equal("tester", result.Nickname);
     }
 
     [Fact]
-    public async Task GetByUserIdAsync_ReturnsUnauthorized_WhenJavaApiRejectsToken()
+    public async Task GetByUserIdAsync_ThrowsNotFound_WhenReadModelReturns404()
     {
         var userId = Guid.NewGuid();
-        _javaApiServiceMock
-            .Setup(service => service.GetProfileByUserId(userId, It.IsAny<CancellationToken>(), "token"))
-            .ThrowsAsync(new HttpRequestException("forbidden", null, HttpStatusCode.Unauthorized));
+        _userProfilePublicReadModelServiceMock
+            .Setup(service => service.GetByUserIdAsync(
+                Guid.Empty,
+                userId,
+                "token",
+                It.IsAny<CancellationToken>(),
+                false))
+            .ReturnsAsync(JavaApiCallResult<UserProfileDto>.Failure(
+                StatusCodes.Status404NotFound,
+                "not found"));
 
         var service = CreateService();
-        var result = await service.GetByUserIdAsync(userId, CancellationToken.None);
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal(StatusCodes.Status401Unauthorized, result.StatusCode);
+        var exception = await Assert.ThrowsAsync<BusinessException>(
+            () => service.GetByUserIdAsync(userId, CancellationToken.None));
+
+        Assert.Equal(ErrorCode.NOT_FOUND, exception.ErrorCode);
     }
 
     [Fact]
-    public async Task GetMyProfileSettingsAsync_ReturnsUnauthorized_WhenAccessTokenIsMissing()
+    public async Task GetMyProfileSettingsAsync_ThrowsUnauthorized_WhenAccessTokenIsMissing()
     {
         var service = CreateService();
+
         _accessTokenProviderMock
             .Setup(provider => provider.GetAccessTokenOrNull())
-            .Returns("  ");
+            .Returns(" ");
 
-        var result = await service.GetMyProfileSettingsAsync(Guid.NewGuid(), CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<BusinessException>(
+            () => service.GetMyProfileSettingsAsync(Guid.NewGuid(), CancellationToken.None));
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal(StatusCodes.Status401Unauthorized, result.StatusCode);
+        Assert.Equal(ErrorCode.UNAUTHORIZED, exception.ErrorCode);
     }
 
     [Fact]
@@ -122,16 +124,14 @@ public class ProfileServiceTests
             PhoneNumber = "0909"
         };
 
-        _javaApiServiceMock
+        _javaUserProfileApiServiceMock
             .Setup(service => service.SearchProfileByPhoneNumberAsync("0909", "token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(JavaApiCallResult<UserProfileSearchDto>.Success(expectedProfile, StatusCodes.Status200OK));
 
         var service = CreateService();
         var result = await service.SearchByPhoneNumberAsync("0909", CancellationToken.None);
 
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Data);
-        Assert.Single(result.Data!);
-        Assert.Equal(expectedProfile.UserId, result.Data[0].UserId);
+        Assert.Single(result);
+        Assert.Equal(expectedProfile.UserId, result[0].UserId);
     }
 }

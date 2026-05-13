@@ -1,5 +1,4 @@
 using InteractHub.Api.Application.DTOs.Auth;
-using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Models;
 using InteractHub.Api.Controllers;
@@ -11,26 +10,15 @@ namespace InteractHub.Api.Tests.Controllers;
 
 public class AuthControllerTests
 {
-    private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
-    private readonly Mock<ITokenRoleService> _tokenRoleServiceMock = new();
-    private readonly Mock<IAuthCookieService> _authCookieServiceMock = new();
+    private readonly Mock<IAuthService> _authServiceMock = new();
 
-    private AuthController CreateController(HttpContext? httpContext = null)
+    private AuthController CreateController()
     {
-        return new AuthController(
-            _javaApiServiceMock.Object,
-            _tokenRoleServiceMock.Object,
-            _authCookieServiceMock.Object)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = httpContext ?? new DefaultHttpContext()
-            }
-        };
+        return new AuthController(_authServiceMock.Object);
     }
 
     [Fact]
-    public async Task Login_ReturnsOk_NormalizesToken_AndSetsCookies()
+    public async Task Login_ReturnsOk_WithServiceResponse()
     {
         var request = new LoginRequestDto
         {
@@ -46,31 +34,26 @@ public class AuthControllerTests
             DisplayName = "Tester"
         };
 
-        _javaApiServiceMock
+        _authServiceMock
             .Setup(service => service.LoginAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(JavaApiCallResult<LoginResponseDto>.Success(payload, StatusCodes.Status200OK));
+            .ReturnsAsync(payload);
 
-        var httpContext = new DefaultHttpContext();
-        var controller = CreateController(httpContext);
+        var controller = CreateController();
 
         var result = await controller.Login(request, CancellationToken.None);
 
-        var objectResult = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(StatusCodes.Status200OK, objectResult.StatusCode);
+        var objectResult = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status200OK, objectResult.StatusCode ?? StatusCodes.Status200OK);
 
         var response = Assert.IsType<ApiResponse<LoginResponseDto>>(objectResult.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
-        Assert.Equal("access-token", response.Data!.Token);
-        Assert.Equal("access-token", response.Data.AccessToken);
-
-        _authCookieServiceMock.Verify(
-            service => service.SetLoginCookies(httpContext, "access-token", "refresh-token"),
-            Times.Once);
+        Assert.Equal(payload.Token, response.Data!.Token);
+        Assert.Equal(payload.AccessToken, response.Data.AccessToken);
     }
 
     [Fact]
-    public async Task Login_ReturnsUnauthorized_AndDoesNotSetCookies_WhenJavaApiRejectsCredentials()
+    public async Task Login_PropagatesException_FromAuthService()
     {
         var request = new LoginRequestDto
         {
@@ -78,26 +61,13 @@ public class AuthControllerTests
             Password = "wrong-password"
         };
 
-        _javaApiServiceMock
+        _authServiceMock
             .Setup(service => service.LoginAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(JavaApiCallResult<LoginResponseDto>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Invalid username or password."));
+            .ThrowsAsync(new InvalidOperationException("boom"));
 
         var controller = CreateController();
 
-        var result = await controller.Login(request, CancellationToken.None);
-
-        var objectResult = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(StatusCodes.Status401Unauthorized, objectResult.StatusCode);
-
-        var response = Assert.IsType<ApiResponse<LoginResponseDto>>(objectResult.Value);
-        Assert.False(response.Success);
-        Assert.NotNull(response.Error);
-        Assert.Equal("Invalid username or password.", response.Error!.Message);
-
-        _authCookieServiceMock.Verify(
-            service => service.SetLoginCookies(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<string?>()),
-            Times.Never);
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => controller.Login(request, CancellationToken.None));
     }
 }
