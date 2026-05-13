@@ -53,6 +53,10 @@ export const storyReportService = {
     return mapStoryReportResponseDto(extractData(response.data, 'Failed to resolve story report'));
   },
 
+  async remove(reportId: string): Promise<void> {
+    await apiClient.delete(STORY_REPORTS.BY_ID(reportId));
+  },
+
   async getPendingCount(): Promise<number> {
     const response = await apiClient.get<ApiEnvelope<PendingCountResponseDto>>(STORY_REPORTS.PENDING_COUNT);
     const payload = extractData(response.data, 'Failed to load pending story report count');

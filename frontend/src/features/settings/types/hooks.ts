@@ -73,8 +73,10 @@ export interface UseReportedPostsPageReturn {
   page: number;
   hasMore: boolean;
   isLoading: boolean;
+  deletingReportId: string | null;
   loadError: string | null;
   loadReports: (targetPage: number, replace?: boolean) => Promise<void>;
+  deleteReport: (reportId: string) => Promise<void>;
 }
 
 export interface UseSecuritySettingsReturn {

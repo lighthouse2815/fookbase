@@ -55,6 +55,10 @@ export const userReportService = {
     return mapUserReportResponseDto(extractData(response.data, 'Failed to resolve user report'));
   },
 
+  async remove(reportId: string): Promise<void> {
+    await apiClient.delete(USER_REPORTS.BY_ID(reportId));
+  },
+
   async getPendingCount(): Promise<number> {
     const response = await apiClient.get<ApiEnvelope<PendingCountOptionalResponseDto>>(USER_REPORTS.PENDING_COUNT);
     const payload = extractData(response.data, 'Failed to load pending user report count');

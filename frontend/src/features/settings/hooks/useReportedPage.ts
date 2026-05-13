@@ -63,6 +63,7 @@ export const useReportedPage = (): UseReportedPostsPageReturn => {
   const [isLoadingByTab, setIsLoadingByTab] = useState<TabBooleanMap>(INITIAL_LOADING_BY_TAB);
   const [loadedByTab, setLoadedByTab] = useState<TabBooleanMap>(INITIAL_LOADED_BY_TAB);
   const [loadErrorByTab, setLoadErrorByTab] = useState<TabErrorMap>(INITIAL_ERROR_BY_TAB);
+  const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
 
   const loadingRef = useRef<TabBooleanMap>({
     post: false,
@@ -152,6 +153,41 @@ export const useReportedPage = (): UseReportedPostsPageReturn => {
     await loadReportsByTab(activeTab, targetPage, replace);
   }, [activeTab, loadReportsByTab]);
 
+  const deleteReport = useCallback(async (reportId: string) => {
+    const trimmedReportId = reportId.trim();
+    if (!trimmedReportId || deletingReportId === trimmedReportId) {
+      return;
+    }
+
+    setDeletingReportId(trimmedReportId);
+    setLoadErrorByTab((previous) => ({
+      ...previous,
+      [activeTab]: null,
+    }));
+
+    try {
+      if (activeTab === 'post') {
+        await postReportService.remove(trimmedReportId);
+      } else if (activeTab === 'story') {
+        await storyReportService.remove(trimmedReportId);
+      } else {
+        await userReportService.remove(trimmedReportId);
+      }
+
+      setReportsByTab((previous) => ({
+        ...previous,
+        [activeTab]: previous[activeTab].filter((report) => report.id !== trimmedReportId),
+      }));
+    } catch (error) {
+      setLoadErrorByTab((previous) => ({
+        ...previous,
+        [activeTab]: getApiErrorMessage(error, t('reportedPosts.deleteError')),
+      }));
+    } finally {
+      setDeletingReportId((current) => (current === trimmedReportId ? null : current));
+    }
+  }, [activeTab, deletingReportId, t]);
+
   useEffect(() => {
     if (loadedByTab[activeTab]) {
       return;
@@ -173,7 +209,9 @@ export const useReportedPage = (): UseReportedPostsPageReturn => {
     page: pageByTab[activeTab],
     hasMore: hasMoreByTab[activeTab],
     isLoading: isLoadingByTab[activeTab],
+    deletingReportId,
     loadError: loadErrorByTab[activeTab],
     loadReports,
+    deleteReport,
   };
 };

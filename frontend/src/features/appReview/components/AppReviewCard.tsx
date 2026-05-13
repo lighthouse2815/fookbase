@@ -2,7 +2,7 @@ import { MessageSquareText } from 'lucide-react';
 
 import { StarRatingDisplay } from '@/features/appReview/components/StarRatingDisplay';
 import type { PublicAppReview } from '@/features/appReview/types/contracts';
-import { formatRelativeTime } from '@/shared/lib/date';
+import { formatDdMmYyyy } from '@/shared/lib/date';
 
 interface AppReviewCardProps {
   review: PublicAppReview;
@@ -14,7 +14,7 @@ export const AppReviewCard = ({ review }: AppReviewCardProps) => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{review.displayName}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{formatRelativeTime(review.updatedAt)}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{formatDdMmYyyy(review.updatedAt)}</p>
         </div>
         <StarRatingDisplay rating={review.rating} />
       </div>

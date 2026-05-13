@@ -2,7 +2,7 @@ import { EyeOff, ShieldCheck, Trash2 } from 'lucide-react';
 
 import { StarRatingDisplay } from '@/features/appReview/components/StarRatingDisplay';
 import type { AppReview } from '@/features/appReview/types/contracts';
-import { formatRelativeTime } from '@/shared/lib/date';
+import { formatDdMmYyyy } from '@/shared/lib/date';
 import { useLocaleText } from '@/shared/i18n/useLocaleText';
 
 interface AdminAppReviewTableProps {
@@ -84,7 +84,7 @@ export const AdminAppReviewTable = ({
                     </span>
                   </td>
                   <td className="px-4 py-3 align-top text-xs text-slate-500 dark:text-slate-400">
-                    {formatRelativeTime(review.updatedAt)}
+                    {formatDdMmYyyy(review.updatedAt)}
                   </td>
                   <td className="px-4 py-3 align-top">
                     <div className="flex justify-end gap-2">

@@ -8,13 +8,26 @@ import type {
   StoryReportItem,
   UserReportItem,
 } from '@/features/admin/types/report';
-import { formatRelativeTime } from '@/shared/lib/date';
+import { parseApiDate } from '@/shared/lib/date';
 
 import { useReportedPage } from '@/features/settings/hooks/useReportedPage';
 import type { ReportedPostsTabId } from '@/features/settings/types/hooks';
 import { getReportStatusBadgeClass } from '@/features/settings/utils/page.util';
 
 const DEFAULT_AVATAR_URL = 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg';
+
+const formatDdMmYyyy = (isoDate: string): string => {
+  const parsedDate = parseApiDate(isoDate);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return '--/--/----';
+  }
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(parsedDate);
+};
 
 export const ReportedPostsPage = () => {
   const {
@@ -25,8 +38,10 @@ export const ReportedPostsPage = () => {
     page,
     hasMore,
     isLoading,
+    deletingReportId,
     loadError,
     loadReports,
+    deleteReport,
   } = useReportedPage();
 
   const tabItems: Array<{ id: ReportedPostsTabId; label: string }> = [
@@ -43,7 +58,7 @@ export const ReportedPostsPage = () => {
       ? storyReports
       : userReports;
 
-  const renderReportedUserCard = (reportedUser?: ReportUserSummary | null, fallbackUserId?: string | null) => (
+  const renderReportedUserCard = (reportedUser?: ReportUserSummary | null) => (
     <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70">
       <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('reportedPosts.reportedUser')}</p>
       {reportedUser ? (
@@ -55,13 +70,11 @@ export const ReportedPostsPage = () => {
           />
           <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{reportedUser.displayName}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{fallbackUserId ?? reportedUser.id}</p>
           </div>
         </Link>
       ) : (
-        <div className="mt-2 space-y-1">
+        <div className="mt-2">
           <p className="text-sm text-slate-500 dark:text-slate-400">{t('reportedPosts.unknownUser')}</p>
-          {fallbackUserId ? <p className="text-xs text-slate-500 dark:text-slate-400">{fallbackUserId}</p> : null}
         </div>
       )}
     </div>
@@ -128,21 +141,31 @@ export const ReportedPostsPage = () => {
                 </span>
               </div>
 
-              {renderReportedUserCard(report.postOwner, report.postOwnerUserId)}
+              {renderReportedUserCard(report.postOwner)}
 
               <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
                 <span className="font-semibold">{t('reportedPosts.reasonLabel')}</span> {report.reason}
               </p>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                <span className="font-semibold">{t('reportedPosts.reportedAtLabel')}</span> {formatRelativeTime(report.createdAt)}
+                <span className="font-semibold">{t('reportedPosts.reportedAtLabel')}</span> {formatDdMmYyyy(report.createdAt)}
               </p>
 
-              <Link
-                to={`/posts/${report.postId}`}
-                className="mt-3 inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                {t('reportedPosts.viewPost')}
-              </Link>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Link
+                  to={`/posts/${report.postId}`}
+                  className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  {t('reportedPosts.viewPost')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void deleteReport(report.id)}
+                  disabled={deletingReportId === report.id}
+                  className="inline-flex rounded-xl border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                >
+                  {deletingReportId === report.id ? t('reportedPosts.deletingButton') : t('reportedPosts.deleteButton')}
+                </button>
+              </div>
             </article>
           ))
           : null}
@@ -162,17 +185,25 @@ export const ReportedPostsPage = () => {
                 </span>
               </div>
 
-              {renderReportedUserCard(report.storyOwner, report.storyOwnerUserId)}
+              {renderReportedUserCard(report.storyOwner)}
 
               <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
                 <span className="font-semibold">{t('reportedPosts.reasonLabel')}</span> {report.reason}
               </p>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                <span className="font-semibold">{t('reportedPosts.reportedAtLabel')}</span> {formatRelativeTime(report.createdAt)}
+                <span className="font-semibold">{t('reportedPosts.reportedAtLabel')}</span> {formatDdMmYyyy(report.createdAt)}
               </p>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 {t('reportedPosts.storyIdLabel', { id: report.storyId })}
               </p>
+              <button
+                type="button"
+                onClick={() => void deleteReport(report.id)}
+                disabled={deletingReportId === report.id}
+                className="mt-3 inline-flex rounded-xl border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-500/10"
+              >
+                {deletingReportId === report.id ? t('reportedPosts.deletingButton') : t('reportedPosts.deleteButton')}
+              </button>
             </article>
           ))
           : null}
@@ -194,23 +225,34 @@ export const ReportedPostsPage = () => {
                   </span>
                 </div>
 
-                {renderReportedUserCard(report.targetUser, report.targetUserId)}
+                {renderReportedUserCard(report.targetUser)}
 
                 <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
                   <span className="font-semibold">{t('reportedPosts.reasonLabel')}</span> {report.reason}
                 </p>
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold">{t('reportedPosts.reportedAtLabel')}</span> {formatRelativeTime(report.createdAt)}
+                  <span className="font-semibold">{t('reportedPosts.reportedAtLabel')}</span> {formatDdMmYyyy(report.createdAt)}
                 </p>
 
-                {targetUserId ? (
-                  <Link
-                    to={`/profile/${targetUserId}`}
-                    className="mt-3 inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {targetUserId ? (
+                    <Link
+                      to={`/profile/${targetUserId}`}
+                      className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      {t('reportedPosts.viewProfile')}
+                    </Link>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={() => void deleteReport(report.id)}
+                    disabled={deletingReportId === report.id}
+                    className="inline-flex rounded-xl border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-500/10"
                   >
-                    {t('reportedPosts.viewProfile')}
-                  </Link>
-                ) : null}
+                    {deletingReportId === report.id ? t('reportedPosts.deletingButton') : t('reportedPosts.deleteButton')}
+                  </button>
+                </div>
               </article>
             );
           })

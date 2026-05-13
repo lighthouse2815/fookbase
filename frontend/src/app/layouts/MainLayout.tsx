@@ -25,6 +25,8 @@ export const MainLayout = () => {
     onlineUsers,
     offlineUsers,
     notifications,
+    hasUnreadMessages,
+    hasPendingFriendRequests,
     onAddFriend,
     onOpenNotification,
     onAcceptFriendRequest,
@@ -55,6 +57,8 @@ export const MainLayout = () => {
         <Navbar
           currentUser={currentUser}
           notifications={notifications}
+          hasUnreadMessages={hasUnreadMessages}
+          hasPendingFriendRequests={hasPendingFriendRequests}
           onOpenNotification={(item) => {
             void onOpenNotification(item);
           }}
@@ -75,7 +79,11 @@ export const MainLayout = () => {
         >
           {hideLeftSidebar ? null : (
             <div className="sticky top-20 hidden max-h-[calc(100dvh-5.75rem)] overflow-y-auto md:block">
-              <SidebarLeft currentUser={currentUser} />
+              <SidebarLeft
+                currentUser={currentUser}
+                hasUnreadMessages={hasUnreadMessages}
+                hasPendingFriendRequests={hasPendingFriendRequests}
+              />
             </div>
           )}
 

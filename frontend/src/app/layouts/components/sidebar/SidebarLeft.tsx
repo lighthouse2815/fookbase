@@ -8,9 +8,15 @@ import { useLocaleText } from '@/shared/i18n/useLocaleText';
 
 interface SidebarLeftProps {
   currentUser: User;
+  hasUnreadMessages: boolean;
+  hasPendingFriendRequests: boolean;
 }
 
-export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
+export const SidebarLeft = ({
+  currentUser,
+  hasUnreadMessages,
+  hasPendingFriendRequests,
+}: SidebarLeftProps) => {
   const { t } = useTranslation();
   const tx = useLocaleText();
 
@@ -45,7 +51,12 @@ export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
               }`
             }
           >
-            <Icon size={17} />
+            <span className="relative inline-flex">
+              <Icon size={17} />
+              {(key === 'messages' && hasUnreadMessages) || (key === 'friends' && hasPendingFriendRequests) ? (
+                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500" />
+              ) : null}
+            </span>
             {t(`nav.${key}`)}
           </NavLink>
         ))}

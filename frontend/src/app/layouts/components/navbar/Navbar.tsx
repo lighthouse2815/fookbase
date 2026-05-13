@@ -18,7 +18,7 @@ import { NAV_ITEMS } from './util';
 import { useNavBar } from './useNavBar';
 
 export const Navbar = (props: NavbarProps) => {
-  const { currentUser } = props;
+  const { currentUser, hasUnreadMessages, hasPendingFriendRequests } = props;
   const tx = useLocaleText();
   const {
     t,
@@ -85,7 +85,12 @@ export const Navbar = (props: NavbarProps) => {
                 }
                 title={t(`nav.${key}`)}
               >
-                <Icon size={20} />
+                <span className="relative inline-flex">
+                  <Icon size={20} />
+                  {(key === 'messages' && hasUnreadMessages) || (key === 'friends' && hasPendingFriendRequests) ? (
+                    <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500" />
+                  ) : null}
+                </span>
               </NavLink>
             ))}
           </nav>

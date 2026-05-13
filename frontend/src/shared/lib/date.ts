@@ -45,3 +45,16 @@ export const formatRelativeTime = (isoDate: string): string => {
   return `${days}d`;
 };
 
+export const formatDdMmYyyy = (isoDate: string): string => {
+  const parsedDate = parseApiDate(isoDate);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return '--/--/----';
+  }
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(parsedDate);
+};
+

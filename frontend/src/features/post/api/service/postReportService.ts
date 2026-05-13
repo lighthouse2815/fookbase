@@ -63,6 +63,10 @@ export const postReportService = {
     return mapPostReportResponseDto(extractData(response.data, 'Failed to resolve report'));
   },
 
+  async remove(reportId: string): Promise<void> {
+    await apiClient.delete(POST_REPORTS.BY_ID(reportId));
+  },
+
   async getPendingCount(): Promise<number> {
     const response = await apiClient.get<ApiEnvelope<PendingCountResponseDto>>(POST_REPORTS.PENDING_COUNT);
     const payload = extractData(response.data, 'Failed to load pending report count');

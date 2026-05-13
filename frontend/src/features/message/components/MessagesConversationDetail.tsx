@@ -44,6 +44,16 @@ const formatMessageDate = (timestamp: number): string => {
   return `${day}/${month}/${year}`;
 };
 
+const READ_STATUS_SET = new Set(['READ', 'SEEN']);
+
+const isReadByPeerStatus = (status?: string): boolean => {
+  if (!status) {
+    return false;
+  }
+
+  return READ_STATUS_SET.has(status.trim().toUpperCase());
+};
+
 export const MessagesConversationDetail = ({
   t,
   showConversationDetail,
@@ -64,6 +74,46 @@ export const MessagesConversationDetail = ({
   onSendMessage,
 }: MessagesConversationDetailProps) => {
   const knownUserAvatarById = new Map(knownUsers.map((user) => [user.id, user.avatarUrl]));
+
+  const resolveLastReadMessageId = (): string | null => {
+    if (!selectedConversation || selectedConversation.type !== 'PRIVATE' || selectedMessages.length === 0) {
+      return null;
+    }
+
+    // Prefer explicit delivery status from backend when available.
+    for (let index = selectedMessages.length - 1; index >= 0; index -= 1) {
+      const message = selectedMessages[index];
+      if (message.senderId === currentUserId && isReadByPeerStatus(message.status)) {
+        return message.messageId;
+      }
+    }
+
+    // Fallback: if peer already replied, assume they read up to the latest outgoing message before that reply.
+    let latestIncomingIndex = -1;
+    for (let index = selectedMessages.length - 1; index >= 0; index -= 1) {
+      if (selectedMessages[index].senderId !== currentUserId) {
+        latestIncomingIndex = index;
+        break;
+      }
+    }
+
+    if (latestIncomingIndex <= 0) {
+      return null;
+    }
+
+    for (let index = latestIncomingIndex - 1; index >= 0; index -= 1) {
+      if (selectedMessages[index].senderId === currentUserId) {
+        return selectedMessages[index].messageId;
+      }
+    }
+
+    return null;
+  };
+
+  const lastReadMessageId = resolveLastReadMessageId();
+  const readReceiptAvatar =
+    selectedConversation?.displayAvatar ||
+    (selectedConversation ? buildFallbackAvatar(selectedConversation.conversationId) : buildFallbackAvatar(currentUserId));
 
   const resolveSenderAvatar = (senderId: string) => {
     if (senderId === currentUserId) {
@@ -189,6 +239,10 @@ export const MessagesConversationDetail = ({
                 const shouldShowSenderName = selectedConversation.type === 'GROUP' && !isMine && shouldShowAvatar;
                 const shouldShowDateDivider = !previousMessage || !isSameCalendarDay(previousTime, messageTime);
                 const senderAvatar = resolveSenderAvatar(message.senderId);
+                const shouldShowReadReceipt =
+                  selectedConversation.type === 'PRIVATE' &&
+                  isMine &&
+                  message.messageId === lastReadMessageId;
 
                 return (
                   <div key={message.messageId} className="space-y-1.5">
@@ -247,6 +301,14 @@ export const MessagesConversationDetail = ({
                             >
                               {formatMessageTime(messageTime)}
                             </p>
+                          ) : null}
+
+                          {shouldShowReadReceipt ? (
+                            <img
+                              src={readReceiptAvatar}
+                              alt={t('messagesPage.readReceiptAvatarAlt', { defaultValue: 'Read receipt' })}
+                              className="ml-auto mt-1 h-4 w-4 rounded-full object-cover ring-1 ring-white/85 dark:ring-slate-700"
+                            />
                           ) : null}
                         </div>
                       </div>

@@ -42,12 +42,14 @@ public class UserService {
             String password,
             Set<AuthProvider> authProviders
     ) {
-        if (userRepository.existsByUsername(username)) {
-            throw new BusinessException(ErrorCode.PHONENUMBER_EXISTS);
+        String normalizedUsername = normalize(username);
+
+        if (normalizedUsername != null && userRepository.existsByUsername(normalizedUsername)) {
+            throw new BusinessException(ErrorCode.USERNAME_EXISTS);
         }
 
         User user = User.builder()
-                .username(username)
+                .username(normalizedUsername)
                 .password(password)
                 .build();
 
@@ -58,6 +60,15 @@ public class UserService {
         }
 
         return userRepository.save(user);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
 

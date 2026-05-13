@@ -15,6 +15,7 @@ import {
   startPresenceRealtimeConnection,
 } from '@/features/user/api/realtime/presenceRealtime';
 import { createJavaPresenceSocketConnection } from '@/features/user/api/realtime/javaPresenceSocket';
+import { messageService } from '@/features/message/api/service/messageService';
 import type { PresenceChangedEventPayload } from '@/features/user/types/realtime';
 import { userService } from '@/features/user/api/service/userService';
 import type { User } from '@/features/user/types/contracts';
@@ -33,6 +34,8 @@ interface MainLayoutData {
   onlineUsers: User[];
   offlineUsers: User[];
   notifications: NotificationItem[];
+  hasUnreadMessages: boolean;
+  hasPendingFriendRequests: boolean;
   onAddFriend: (friendId: string) => Promise<void>;
   onOpenNotification: (notification: NotificationItem) => Promise<void>;
   onAcceptFriendRequest: (notification: NotificationItem) => Promise<void>;
@@ -48,6 +51,7 @@ export const useMainLayoutData = (): MainLayoutData => {
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [offlineUsers, setOfflineUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const onlineUsersRef = useRef<User[]>([]);
   const offlineUsersRef = useRef<User[]>([]);
   const lastUnknownPresenceRefreshAtRef = useRef(0);
@@ -100,6 +104,43 @@ export const useMainLayoutData = (): MainLayoutData => {
 
     setNotifications(sortNotifications(Array.from(merged.values())));
   }, [mapReceivedRequestToNotification]);
+
+  const syncUnreadMessageIndicator = useCallback(async () => {
+    const [allResult, groupResult] = await Promise.allSettled([
+      messageService.getConversationsByUser(),
+      messageService.getGroupsByUser(),
+    ]);
+
+    if (allResult.status === 'rejected' && groupResult.status === 'rejected') {
+      setHasUnreadMessages(false);
+      return;
+    }
+
+    const mergedById = new Map<string, { hasUnread: boolean; unreadCount: number }>();
+
+    if (allResult.status === 'fulfilled') {
+      allResult.value.forEach((conversation) => {
+        mergedById.set(conversation.conversationId, {
+          hasUnread: conversation.hasUnread,
+          unreadCount: conversation.unreadCount,
+        });
+      });
+    }
+
+    if (groupResult.status === 'fulfilled') {
+      groupResult.value.forEach((conversation) => {
+        mergedById.set(conversation.conversationId, {
+          hasUnread: conversation.hasUnread,
+          unreadCount: conversation.unreadCount,
+        });
+      });
+    }
+
+    const hasUnread = Array.from(mergedById.values()).some(
+      (conversation) => conversation.hasUnread || conversation.unreadCount > 0,
+    );
+    setHasUnreadMessages(hasUnread);
+  }, []);
 
   const applyPresenceUsers = useCallback((nextOnlineUsers: User[], nextOfflineUsers: User[]) => {
     const normalizedOnlineUsers = normalizePresenceUsers(nextOnlineUsers, true);
@@ -319,6 +360,28 @@ export const useMainLayoutData = (): MainLayoutData => {
   }, [loadRealtimeNotifications]);
 
   useEffect(() => {
+    const initialSyncId = window.setTimeout(() => {
+      void syncUnreadMessageIndicator();
+    }, 0);
+
+    const syncIntervalId = window.setInterval(() => {
+      void syncUnreadMessageIndicator();
+    }, 30000);
+
+    const handleFocus = () => {
+      void syncUnreadMessageIndicator();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.clearTimeout(initialSyncId);
+      window.clearInterval(syncIntervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [syncUnreadMessageIndicator]);
+
+  useEffect(() => {
     const syncId = window.setTimeout(() => {
       void loadRealtimeNotifications();
     }, 0);
@@ -415,11 +478,17 @@ export const useMainLayoutData = (): MainLayoutData => {
     setSuggestions((existing) => existing.filter((item) => item.id !== friendId));
   }, []);
 
+  const hasPendingFriendRequests = notifications.some(
+    (notification) => normalizeNotificationType(notification.type) === 'FRIEND_REQUEST',
+  );
+
   return {
     suggestions,
     onlineUsers,
     offlineUsers,
     notifications,
+    hasUnreadMessages,
+    hasPendingFriendRequests,
     onAddFriend,
     onOpenNotification,
     onAcceptFriendRequest,
