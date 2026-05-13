@@ -8,7 +8,14 @@ export interface JavaPresenceSocketConnection {
   disconnect: () => void;
 }
 
-export const createJavaPresenceSocketConnection = (): JavaPresenceSocketConnection => {
+export interface JavaPresenceSocketHandlers {
+  onConnected?: () => void;
+  onDisconnected?: () => void;
+}
+
+export const createJavaPresenceSocketConnection = (
+  handlers?: JavaPresenceSocketHandlers,
+): JavaPresenceSocketConnection => {
   const client = new Client({
     brokerURL: toWebSocketUrl(getJavaApiBaseUrl()),
     beforeConnect: () => {
@@ -23,13 +30,16 @@ export const createJavaPresenceSocketConnection = (): JavaPresenceSocketConnecti
     },
   });
 
+  client.onConnect = () => {
+    handlers?.onConnected?.();
+  };
+
+  client.onWebSocketClose = () => {
+    handlers?.onDisconnected?.();
+  };
+
   return {
     connect: () => {
-      const token = storage.getToken();
-      if (!token) {
-        return;
-      }
-
       if (!client.active) {
         client.activate();
       }
@@ -41,4 +51,3 @@ export const createJavaPresenceSocketConnection = (): JavaPresenceSocketConnecti
     },
   };
 };
-

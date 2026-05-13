@@ -34,12 +34,24 @@ export const AdminAppReviewTable = ({
         <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-700">
           <thead className="bg-slate-50 dark:bg-slate-800/60">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Display</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Rating</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Comment</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Status</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Time</th>
-              <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-200">Actions</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                {tx('Tên hiển thị', 'Display')}
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                {tx('Điểm', 'Rating')}
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                {tx('Nhận xét', 'Comment')}
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                {tx('Trạng thái', 'Status')}
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                {tx('Thời gian', 'Time')}
+              </th>
+              <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-200">
+                {tx('Thao tác', 'Actions')}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

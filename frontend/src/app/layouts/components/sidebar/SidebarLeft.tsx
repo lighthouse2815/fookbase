@@ -61,7 +61,7 @@ export const SidebarLeft = ({ currentUser }: SidebarLeftProps) => {
           }
         >
           <Star size={17} />
-          {tx('Danh gia', 'Reviews')}
+          {tx('Đánh giá', 'Reviews')}
         </NavLink>
       </section>
     </aside>

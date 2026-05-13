@@ -91,7 +91,7 @@ export const useAdminPostReportsPage = () => {
             post: null,
             error: getApiErrorMessage(
               result.reason,
-              tx('Khong the tai noi dung bai viet bi bao cao.', 'Unable to load reported post content.'),
+              tx('Không thể tải nội dung bài viết bị báo cáo.', 'Unable to load reported post content.'),
             ),
           };
         });
@@ -120,7 +120,7 @@ export const useAdminPostReportsPage = () => {
         setLoadError(null);
         await loadPostPreviews(items);
       } catch (error) {
-        setLoadError(getApiErrorMessage(error, tx('Khong the tai danh sach bao cao bai dang.', 'Could not load post reports.')));
+        setLoadError(getApiErrorMessage(error, tx('Không thể tải danh sách báo cáo bài đăng.', 'Could not load post reports.')));
       } finally {
         loadingRef.current = false;
         setIsLoading(false);
@@ -151,19 +151,19 @@ export const useAdminPostReportsPage = () => {
           [targetPostId]: {
             isLoading: false,
             post: null,
-            error: tx('Bai viet da duoc xoa sau khi duyet bao cao.', 'The post was removed after report approval.'),
+            error: tx('Bài viết đã được xóa sau khi duyệt báo cáo.', 'The post was removed after report approval.'),
           },
         }));
       }
 
       showToast(
         status === 'RESOLVED'
-          ? tx('Da duyet bao cao bai dang.', 'Post report approved.')
-          : tx('Da tu choi bao cao bai dang.', 'Post report rejected.'),
+          ? tx('Đã duyệt báo cáo bài đăng.', 'Post report approved.')
+          : tx('Đã từ chối báo cáo bài đăng.', 'Post report rejected.'),
         'success',
       );
     } catch (error) {
-      showToast(getApiErrorMessage(error, tx('Xu ly bao cao bai dang that bai.', 'Failed to process post report.')), 'error');
+      showToast(getApiErrorMessage(error, tx('Xử lý báo cáo bài đăng thất bại.', 'Failed to process post report.')), 'error');
     } finally {
       setPendingActionReportId(null);
     }

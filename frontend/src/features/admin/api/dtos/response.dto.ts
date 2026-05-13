@@ -110,6 +110,8 @@ export interface AdminAuditLogResponseDto {
   targetUserId?: string | null;
   details?: string | null;
   createdAt: string;
+  admin?: ReportUserSummaryResponseDto | null;
+  targetUser?: ReportUserSummaryResponseDto | null;
 }
 
 export type PostReportPayload = PostReportResponseDto;

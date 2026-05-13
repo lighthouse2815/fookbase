@@ -1,8 +1,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
+import { Link } from 'react-router-dom';
 
 import { detectMediaKind } from '@/features/post/utils/media';
 import type { Post } from '@/features/post/types/contracts';
+import { formatRelativeTime } from '@/shared/lib/date';
 
 const POST_CONTENT_PREVIEW_LIMIT = 180;
 
@@ -14,6 +16,7 @@ interface PostCardContentProps {
   isContentExpanded: boolean;
   setIsContentExpanded: Dispatch<SetStateAction<boolean>>;
   onOpenMediaAt: (index: number) => void;
+  onOpenOriginalMediaAt: (index: number, mediaUrls: string[], authorName: string) => void;
 }
 
 export const PostCardContent = ({
@@ -24,6 +27,7 @@ export const PostCardContent = ({
   isContentExpanded,
   setIsContentExpanded,
   onOpenMediaAt,
+  onOpenOriginalMediaAt,
 }: PostCardContentProps) => {
   const mediaKind = detectMediaKind(mediaUrls[0]);
   const normalizedPostContent = post.content?.trimEnd() ?? '';
@@ -35,9 +39,10 @@ export const PostCardContent = ({
   const allMediaAreImages = mediaUrls.length > 0 && mediaUrls.every((mediaUrl) => detectMediaKind(mediaUrl) === 'image');
   const hiddenMediaCount = mediaUrls.length > 4 ? mediaUrls.length - 4 : 0;
   const originalPost = post.originalPost ?? null;
-  const originalPreviewMediaUrl = originalPost?.imageUrls?.[0];
+  const originalMediaUrls = originalPost?.imageUrls ?? [];
+  const originalPreviewMediaUrl = originalMediaUrls[0];
   const originalPreviewMediaKind = detectMediaKind(originalPreviewMediaUrl);
-  const hasOriginalMoreMedia = (originalPost?.imageUrls?.length ?? 0) > 1;
+  const hasOriginalMoreMedia = originalMediaUrls.length > 1;
 
   const renderMediaTile = (index: number, className: string, overlayCount = 0) => {
     const mediaUrl = mediaUrls[index];
@@ -102,34 +107,78 @@ export const PostCardContent = ({
       ) : null}
 
       {originalPost ? (
-        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-900/30">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Shared from {originalPost.author.fullName}</p>
-          {originalPost.content ? (
-            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-300">
-              {originalPost.content}
-            </p>
-          ) : null}
-          {originalPreviewMediaUrl ? (
-            <div className="relative mt-2 overflow-hidden rounded-lg">
-              {originalPreviewMediaKind === 'video' ? (
-                <video
-                  src={originalPreviewMediaUrl}
-                  controls
-                  className="max-h-80 w-full bg-black object-cover"
-                />
-              ) : (
+        <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/30">
+          <div className="p-3">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Shared from</p>
+            <div className="mt-2 flex items-start gap-2.5">
+              <Link
+                to={`/profile/${originalPost.author.id}`}
+                aria-label={originalPost.author.fullName}
+                className="inline-flex"
+              >
                 <img
-                  src={originalPreviewMediaUrl}
+                  src={originalPost.author.avatarUrl}
                   alt={originalPost.author.fullName}
-                  className="max-h-80 w-full bg-slate-100 object-cover dark:bg-slate-900"
+                  className="h-8 w-8 rounded-full sm:h-9 sm:w-9"
                 />
-              )}
-              {hasOriginalMoreMedia ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-sm font-semibold text-white">
-                  +{(originalPost.imageUrls?.length ?? 1) - 1}
-                </div>
-              ) : null}
+              </Link>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {originalPost.author.fullName}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {formatRelativeTime(originalPost.createdAt)}
+                </p>
+              </div>
             </div>
+            {originalPost.content ? (
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-300">
+                {originalPost.content}
+              </p>
+            ) : null}
+          </div>
+
+          {originalPreviewMediaUrl ? (
+            enableMediaViewer ? (
+              <button
+                type="button"
+                onClick={() => onOpenOriginalMediaAt(0, originalMediaUrls, originalPost.author.fullName)}
+                className="relative block w-full cursor-zoom-in overflow-hidden border-t border-slate-200 dark:border-slate-700"
+                aria-label={originalPreviewMediaKind === 'video' ? 'Xem video bai goc o che do lon' : 'Xem anh bai goc o che do lon'}
+              >
+                {originalPreviewMediaKind === 'video' ? (
+                  <video src={originalPreviewMediaUrl} className="max-h-[560px] w-full bg-black object-contain" />
+                ) : (
+                  <img
+                    src={originalPreviewMediaUrl}
+                    alt={originalPost.author.fullName}
+                    className="max-h-[560px] w-full bg-slate-100 object-contain dark:bg-slate-900"
+                  />
+                )}
+                {hasOriginalMoreMedia ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/35 text-sm font-semibold text-white">
+                    +{originalMediaUrls.length - 1}
+                  </div>
+                ) : null}
+              </button>
+            ) : (
+              <div className="relative overflow-hidden border-t border-slate-200 dark:border-slate-700">
+                {originalPreviewMediaKind === 'video' ? (
+                  <video src={originalPreviewMediaUrl} controls className="max-h-[560px] w-full bg-black object-contain" />
+                ) : (
+                  <img
+                    src={originalPreviewMediaUrl}
+                    alt={originalPost.author.fullName}
+                    className="max-h-[560px] w-full bg-slate-100 object-contain dark:bg-slate-900"
+                  />
+                )}
+                {hasOriginalMoreMedia ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/35 text-sm font-semibold text-white">
+                    +{originalMediaUrls.length - 1}
+                  </div>
+                ) : null}
+              </div>
+            )
           ) : null}
         </div>
       ) : null}

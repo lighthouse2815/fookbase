@@ -25,6 +25,9 @@ import {
   sortNotifications,
 } from '@/app/layouts/utils/mainLayout.util';
 
+const PRESENCE_POLL_INTERVAL_MS = 45000;
+const UNKNOWN_PRESENCE_REFRESH_COOLDOWN_MS = 15000;
+
 interface MainLayoutData {
   suggestions: FriendSuggestion[];
   onlineUsers: User[];
@@ -47,6 +50,7 @@ export const useMainLayoutData = (): MainLayoutData => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const onlineUsersRef = useRef<User[]>([]);
   const offlineUsersRef = useRef<User[]>([]);
+  const lastUnknownPresenceRefreshAtRef = useRef(0);
 
   const mapReceivedRequestToNotification = useCallback(
     (request: FriendRequest): NotificationItem => {
@@ -110,41 +114,6 @@ export const useMainLayoutData = (): MainLayoutData => {
     setOfflineUsers(normalizedOfflineUsers);
   }, []);
 
-  const applyPresenceChanged = useCallback(
-    (payload: PresenceChangedEventPayload) => {
-      const userId = payload.userId?.trim();
-      if (!userId || typeof payload.isOnline !== 'boolean') {
-        return;
-      }
-
-      const currentOnlineUsers = onlineUsersRef.current;
-      const currentOfflineUsers = offlineUsersRef.current;
-      const knownUser =
-        currentOnlineUsers.find((user) => user.id === userId) ??
-        currentOfflineUsers.find((user) => user.id === userId);
-
-      if (!knownUser) {
-        return;
-      }
-
-      const nextOnlineUsers = currentOnlineUsers.filter((user) => user.id !== userId);
-      const nextOfflineUsers = currentOfflineUsers.filter((user) => user.id !== userId);
-      const updatedUser: User = {
-        ...knownUser,
-        isOnline: payload.isOnline,
-        lastSeenAt: payload.lastSeenAtUtc ?? knownUser.lastSeenAt,
-      };
-
-      if (payload.isOnline) {
-        applyPresenceUsers([updatedUser, ...nextOnlineUsers], nextOfflineUsers);
-        return;
-      }
-
-      applyPresenceUsers(nextOnlineUsers, [updatedUser, ...nextOfflineUsers]);
-    },
-    [applyPresenceUsers],
-  );
-
   const loadFriendPresence = useCallback(async () => {
     try {
       const friendPresence = await userService.getFriendPresence();
@@ -178,14 +147,59 @@ export const useMainLayoutData = (): MainLayoutData => {
     applyPresenceUsers(resolvedOnlineUsers, resolvedOfflineUsers);
   }, [applyPresenceUsers]);
 
+  const applyPresenceChanged = useCallback(
+    (payload: PresenceChangedEventPayload) => {
+      const userId = payload.userId?.trim();
+      if (!userId || typeof payload.isOnline !== 'boolean') {
+        return;
+      }
+
+      const currentOnlineUsers = onlineUsersRef.current;
+      const currentOfflineUsers = offlineUsersRef.current;
+      const knownUser =
+        currentOnlineUsers.find((user) => user.id === userId) ??
+        currentOfflineUsers.find((user) => user.id === userId);
+
+      if (!knownUser) {
+        const now = Date.now();
+        if (now - lastUnknownPresenceRefreshAtRef.current >= UNKNOWN_PRESENCE_REFRESH_COOLDOWN_MS) {
+          lastUnknownPresenceRefreshAtRef.current = now;
+          void loadFriendPresence();
+        }
+
+        return;
+      }
+
+      const nextOnlineUsers = currentOnlineUsers.filter((user) => user.id !== userId);
+      const nextOfflineUsers = currentOfflineUsers.filter((user) => user.id !== userId);
+      const updatedUser: User = {
+        ...knownUser,
+        isOnline: payload.isOnline,
+        lastSeenAt: payload.lastSeenAtUtc ?? knownUser.lastSeenAt,
+      };
+
+      if (payload.isOnline) {
+        applyPresenceUsers([updatedUser, ...nextOnlineUsers], nextOfflineUsers);
+        return;
+      }
+
+      applyPresenceUsers(nextOnlineUsers, [updatedUser, ...nextOfflineUsers]);
+    },
+    [applyPresenceUsers, loadFriendPresence],
+  );
+
   useEffect(() => {
-    const connection = createJavaPresenceSocketConnection();
+    const connection = createJavaPresenceSocketConnection({
+      onConnected: () => {
+        void loadFriendPresence();
+      },
+    });
     connection.connect();
 
     return () => {
       connection.disconnect();
     };
-  }, []);
+  }, [loadFriendPresence]);
 
   useEffect(() => {
     const loadSidebarData = async () => {
@@ -204,15 +218,27 @@ export const useMainLayoutData = (): MainLayoutData => {
 
   useEffect(() => {
     const refreshPresence = () => {
+      if (document.hidden) {
+        return;
+      }
+
       void loadFriendPresence();
     };
 
-    const intervalId = window.setInterval(refreshPresence, 180000);
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshPresence();
+      }
+    };
+
+    const intervalId = window.setInterval(refreshPresence, PRESENCE_POLL_INTERVAL_MS);
     window.addEventListener('focus', refreshPresence);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', refreshPresence);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [loadFriendPresence]);
 

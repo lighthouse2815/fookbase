@@ -13,7 +13,7 @@ import type {
   UpdateProfileInfoVisibilityRequest,
   UserProfileSearchResult,
 } from '@/features/profile/types/contracts';
-import type { SearchProfilesByPhoneNumberQueryDto } from '@/features/profile/api/dtos/request.dto';
+import type { SearchProfilesByKeywordQueryDto, SearchProfilesByPhoneNumberQueryDto } from '@/features/profile/api/dtos/request.dto';
 import type {
   MyProfileSettingsResponseDto,
   ProfileInfoVisibilityResponseDto,
@@ -44,6 +44,16 @@ export const profileService = {
 
   async searchProfilesByPhoneNumber(phoneNumber: string): Promise<UserProfileSearchResult[]> {
     const params: SearchProfilesByPhoneNumberQueryDto = { phoneNumber };
+    const response = await apiClient.get<ApiEnvelope<UserProfileSearchResultResponseDto[]>>(PROFILES.SEARCH, {
+      params,
+    });
+
+    const resultDtos = response.data.data ?? [];
+    return resultDtos.map(mapUserProfileSearchResultResponseDtoToUserProfileSearchResult);
+  },
+
+  async searchProfilesByKeyword(keyword: string): Promise<UserProfileSearchResult[]> {
+    const params: SearchProfilesByKeywordQueryDto = { keyword };
     const response = await apiClient.get<ApiEnvelope<UserProfileSearchResultResponseDto[]>>(PROFILES.SEARCH, {
       params,
     });

@@ -12,6 +12,14 @@ export type FriendSearchFetchState = 'idle' | 'loading' | 'success' | 'error';
 
 export type FriendSearchActionKind = 'send' | 'cancel' | 'accept' | 'reject' | null;
 
+export type FriendSearchMode = 'users' | 'hashtags';
+
+export interface HashtagSearchResult {
+  id: string;
+  name: string;
+  usageCount: number;
+}
+
 export interface FriendSearchStatusMeta {
   label: string;
   action: 'send' | 'cancel' | 'respond' | 'none';

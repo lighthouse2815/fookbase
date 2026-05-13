@@ -35,7 +35,7 @@ export const useAdminStoryReportsPage = () => {
         setPage(targetPage);
         setLoadError(null);
       } catch (error) {
-        setLoadError(getApiErrorMessage(error, tx('Khong the tai danh sach bao cao story.', 'Could not load story reports.')));
+        setLoadError(getApiErrorMessage(error, tx('Không thể tải danh sách báo cáo story.', 'Could not load story reports.')));
       } finally {
         loadingRef.current = false;
         setIsLoading(false);
@@ -59,12 +59,12 @@ export const useAdminStoryReportsPage = () => {
       setReports((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
       showToast(
         status === 'RESOLVED'
-          ? tx('Da duyet bao cao story va xoa story vi pham.', 'Story report approved and story removed.')
-          : tx('Da tu choi bao cao story.', 'Story report rejected.'),
+          ? tx('Đã duyệt báo cáo story và xóa story vi phạm.', 'Story report approved and story removed.')
+          : tx('Đã từ chối báo cáo story.', 'Story report rejected.'),
         'success',
       );
     } catch (error) {
-      showToast(getApiErrorMessage(error, tx('Xu ly bao cao story that bai.', 'Failed to process story report.')), 'error');
+      showToast(getApiErrorMessage(error, tx('Xử lý báo cáo story thất bại.', 'Failed to process story report.')), 'error');
     } finally {
       setPendingActionReportId(null);
     }

@@ -58,7 +58,7 @@ export const AdminHeader = ({
             <Shield size={18} />
           </div>
           <div>
-            <p className="text-sm font-semibold leading-5">{tx('Bang dieu khien admin', 'Admin Console')}</p>
+            <p className="text-sm font-semibold leading-5">{tx('Bảng điều khiển admin', 'Admin Console')}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{user?.username ?? 'admin'}</p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export const AdminHeader = ({
                   onClick={onClosePopover}
                 >
                   <UserCircle2 size={16} />
-                  {tx('Ho so admin', 'Admin profile')}
+                  {tx('Hồ sơ admin', 'Admin profile')}
                 </Link>
                 <button
                   type="button"
@@ -145,7 +145,7 @@ export const AdminHeader = ({
                   }}
                 >
                   <LogOut size={16} />
-                  {tx('Dang xuat', 'Logout')}
+                  {tx('Đăng xuất', 'Logout')}
                 </button>
               </div>
             ) : null}

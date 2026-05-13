@@ -1,4 +1,5 @@
 using InteractHub.Api.Domain.Enums;
+using InteractHub.Api.Application.DTOs.Common;
 
 namespace InteractHub.Api.Application.DTOs.Admin;
 
@@ -19,6 +20,10 @@ public class AdminAuditLogResponseDto
     public string Details { get; init; } = string.Empty;
 
     public DateTime CreatedAt { get; init; }
+
+    public AuthorSummaryDto? Admin { get; init; }
+
+    public AuthorSummaryDto? TargetUser { get; init; }
 }
 
 

@@ -1,11 +1,15 @@
 using InteractHub.Api.Application.DTOs.Admin;
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Domain.Entities;
 
 namespace InteractHub.Api.Application.Mappers;
 
 public static class AdminAuditLogMapper
 {
-    public static AdminAuditLogResponseDto ToResponseDto(this AdminAuditLog log)
+    public static AdminAuditLogResponseDto ToResponseDto(
+        this AdminAuditLog log,
+        AuthorSummaryDto? admin = null,
+        AuthorSummaryDto? targetUser = null)
     {
         ArgumentNullException.ThrowIfNull(log);
 
@@ -18,7 +22,9 @@ public static class AdminAuditLogMapper
             EntityId = log.EntityId,
             TargetUserId = log.TargetUserId,
             Details = log.Details,
-            CreatedAt = log.CreatedAt
+            CreatedAt = log.CreatedAt,
+            Admin = admin,
+            TargetUser = targetUser
         };
     }
 }

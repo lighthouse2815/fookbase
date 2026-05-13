@@ -14,10 +14,15 @@ export function countUnreadNotifications(items: NotificationItem[]): number {
   return items.filter((item) => !item.isRead).length;
 }
 
-export function parsePhoneNumberFromSearch(search: string): string {
-  return new URLSearchParams(search).get('phoneNumber') ?? '';
+export function parseSearchKeywordFromSearch(search: string): string {
+  const searchParams = new URLSearchParams(search);
+  return searchParams.get('keyword') ?? searchParams.get('phoneNumber') ?? '';
 }
 
-export function buildFriendsSearchPath(phoneNumber: string): string {
-  return `/friends/search?phoneNumber=${encodeURIComponent(phoneNumber)}`;
+export function parsePhoneNumberFromSearch(search: string): string {
+  return parseSearchKeywordFromSearch(search);
+}
+
+export function buildFriendsSearchPath(keyword: string): string {
+  return `/friends/search?keyword=${encodeURIComponent(keyword)}`;
 }

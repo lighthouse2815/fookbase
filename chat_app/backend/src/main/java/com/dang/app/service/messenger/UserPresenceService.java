@@ -2,11 +2,13 @@ package com.dang.app.service.messenger;
 
 import com.dang.app.service.integration.ReadModelEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.messaging.simp.user.SimpUser;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.security.Principal;
@@ -48,29 +50,12 @@ public class UserPresenceService {
 
     @EventListener
     public void onSessionConnect(SessionConnectEvent event) {
-        UUID userId = extractUserId(event.getUser());
-        if (userId == null) {
-            return;
-        }
+        registerSession(event.getUser(), event.getMessage());
+    }
 
-        boolean wasOnline = isOnline(userId);
-
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        String sessionId = accessor.getSessionId();
-        if (sessionId == null) {
-            return;
-        }
-
-        UUID existingOwner = sessionOwners.putIfAbsent(sessionId, userId);
-        if (existingOwner == null) {
-            activeSessionCounts.merge(userId, 1, Integer::sum);
-        }
-
-        lastSeenAtByUserId.remove(userId);
-
-        if (!wasOnline) {
-            readModelEventPublisher.publishPresenceChanged(userId, true, null);
-        }
+    @EventListener
+    public void onSessionConnected(SessionConnectedEvent event) {
+        registerSession(event.getUser(), event.getMessage());
     }
 
     @EventListener
@@ -107,6 +92,31 @@ public class UserPresenceService {
             return UUID.fromString(principal.getName());
         } catch (IllegalArgumentException ex) {
             return null;
+        }
+    }
+
+    private void registerSession(Principal principal, Message<?> message) {
+        UUID userId = extractUserId(principal);
+        if (userId == null) {
+            return;
+        }
+
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+        String sessionId = accessor.getSessionId();
+        if (sessionId == null) {
+            return;
+        }
+
+        UUID existingOwner = sessionOwners.putIfAbsent(sessionId, userId);
+        if (existingOwner != null) {
+            return;
+        }
+
+        int nextCount = activeSessionCounts.merge(userId, 1, Integer::sum);
+        lastSeenAtByUserId.remove(userId);
+
+        if (nextCount == 1) {
+            readModelEventPublisher.publishPresenceChanged(userId, true, null);
         }
     }
 }

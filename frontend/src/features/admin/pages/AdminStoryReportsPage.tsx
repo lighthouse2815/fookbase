@@ -27,10 +27,10 @@ export const AdminStoryReportsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyet bao cao story', 'Moderate story reports')}</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyệt báo cáo story', 'Moderate story reports')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {tx(
-            'Neu chap nhan report, story bi bao cao se bi xoa khoi he thong.',
+            'Nếu chấp nhận report, story bị báo cáo sẽ bị xóa khỏi hệ thống.',
             'If approved, the reported story will be removed from the system.',
           )}
         </p>
@@ -45,12 +45,12 @@ export const AdminStoryReportsPage = () => {
       {reports.length === 0 && !isLoading ? (
         <EmptyStateCard
           icon={BellRing}
-          title={tx('Chua co bao cao story', 'No story reports')}
+          title={tx('Chưa có báo cáo story', 'No story reports')}
           description={tx(
-            'Danh sach dang trong. Bao cao story moi se hien thi tai day.',
+            'Danh sách đang trống. Báo cáo story mới sẽ hiển thị tại đây.',
             'The list is empty. New story reports will appear here.',
           )}
-          actionLabel={tx('Lam moi', 'Refresh')}
+          actionLabel={tx('Làm mới', 'Refresh')}
           onAction={() => {
             void loadReports(1, true);
           }}
@@ -82,7 +82,7 @@ export const AdminStoryReportsPage = () => {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Nguoi bao cao', 'Reporter')}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người báo cáo', 'Reporter')}</p>
                   {reporter ? (
                     <Link to={`/profile/${reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -101,7 +101,7 @@ export const AdminStoryReportsPage = () => {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Nguoi dang story', 'Story owner')}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người đăng story', 'Story owner')}</p>
                   {owner ? (
                     <Link to={`/profile/${owner.id}`} className="mt-2 flex items-center gap-2">
                       <img src={owner.avatarUrl || DEFAULT_ADMIN_AVATAR_URL} alt={owner.displayName} className="h-9 w-9 rounded-full object-cover" />
@@ -126,7 +126,7 @@ export const AdminStoryReportsPage = () => {
                     disabled={isActing}
                     className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isActing ? tx('Dang xu ly...', 'Processing...') : tx('Chap nhan va xoa story', 'Approve and remove story')}
+                    {isActing ? tx('Đang xử lý...', 'Processing...') : tx('Chấp nhận và xóa story', 'Approve and remove story')}
                   </button>
                   <button
                     type="button"
@@ -134,7 +134,7 @@ export const AdminStoryReportsPage = () => {
                     disabled={isActing}
                     className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {tx('Tu choi', 'Reject')}
+                    {tx('Từ chối', 'Reject')}
                   </button>
                 </div>
               ) : null}
@@ -151,10 +151,10 @@ export const AdminStoryReportsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? tx('Dang tai...', 'Loading...') : tx('Xem them', 'Load more')}
+            {isLoading ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
           </button>
         ) : reports.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Da hien thi het bao cao.', 'All reports are shown.')}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Đã hiển thị hết báo cáo.', 'All reports are shown.')}</p>
         ) : null}
       </div>
 
@@ -167,10 +167,10 @@ export const AdminStoryReportsPage = () => {
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xac nhan duyet bao cao story', 'Confirm story report approval')}</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xác nhận duyệt báo cáo story', 'Confirm story report approval')}</h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   {tx(
-                    'Chap nhan se xoa story bi bao cao va gui thong bao den cac ben lien quan. Ban chac chan tiep tuc?',
+                    'Chấp nhận sẽ xóa story bị báo cáo và gửi thông báo đến các bên liên quan. Bạn chắc chắn tiếp tục?',
                     'Approving will remove the reported story and notify related users. Continue?',
                   )}
                 </p>
@@ -183,7 +183,7 @@ export const AdminStoryReportsPage = () => {
                 onClick={() => setApproveConfirmReport(null)}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                {tx('Huy', 'Cancel')}
+                {tx('Hủy', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -193,7 +193,7 @@ export const AdminStoryReportsPage = () => {
                 }}
                 className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
-                {tx('Xac nhan duyet', 'Confirm')}
+                {tx('Xác nhận duyệt', 'Confirm')}
               </button>
             </div>
           </div>

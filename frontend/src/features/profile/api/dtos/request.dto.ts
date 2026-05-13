@@ -2,6 +2,10 @@ export interface SearchProfilesByPhoneNumberQueryDto {
   phoneNumber: string;
 }
 
+export interface SearchProfilesByKeywordQueryDto {
+  keyword: string;
+}
+
 export interface UpdateMyProfileRequestDto {
   firstName?: string;
   lastName?: string;

@@ -39,6 +39,16 @@ export interface AdminAuditLogItem {
   targetUserId?: string | null;
   details?: string | null;
   createdAt: string;
+  admin?: {
+    id: string;
+    displayName: string;
+    avatarUrl?: string | null;
+  } | null;
+  targetUser?: {
+    id: string;
+    displayName: string;
+    avatarUrl?: string | null;
+  } | null;
 }
 
 export interface PaginatedAdminAuditLogs {

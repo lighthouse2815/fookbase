@@ -6,6 +6,7 @@ using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Enums;
+using System.Globalization;
 
 namespace InteractHub.Api.Application.Services;
 
@@ -117,7 +118,7 @@ public class AdminConsoleService : IAdminConsoleService
 
         var months = userStats.ResolveDashboardMonths(DateTime.UtcNow);
 
-        var firstMonthUtc = DateTime.ParseExact($"{months[0]}-01", "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.AssumeUniversal);
+        var firstMonthUtc = ResolveFirstMonthUtc(months[0]);
         var postCreatedDates = await _postRepository.GetCreatedDatesSinceAsync(firstMonthUtc, cancellationToken);
         var postsByMonth = postCreatedDates
             .GroupBy(createdAt => createdAt.ToString("yyyy-MM"))
@@ -134,6 +135,22 @@ public class AdminConsoleService : IAdminConsoleService
             monthlyMetrics);
     }
 
+    private static DateTime ResolveFirstMonthUtc(string monthValue)
+    {
+        if (!DateTime.TryParseExact(
+            monthValue,
+            "yyyy-MM",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsedMonth))
+        {
+            throw new BusinessException(
+                ErrorCode.VALIDATION_ERROR,
+                $"Invalid dashboard month format: '{monthValue}'. Expected yyyy-MM.");
+        }
+
+        return new DateTime(parsedMonth.Year, parsedMonth.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+    }
 }
 
 

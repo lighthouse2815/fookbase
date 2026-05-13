@@ -13,13 +13,16 @@ namespace InteractHub.Api.Application.Services;
 public class AdminAuditLogService : IAdminAuditLogService
 {
     private readonly IAdminAuditLogRepository _adminAuditLogRepository;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly IUnitOfWork _unitOfWork;
 
     public AdminAuditLogService(
         IAdminAuditLogRepository adminAuditLogRepository,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         IUnitOfWork unitOfWork)
     {
         _adminAuditLogRepository = adminAuditLogRepository;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _unitOfWork = unitOfWork;
     }
 
@@ -33,8 +36,38 @@ public class AdminAuditLogService : IAdminAuditLogService
             cancellationToken
         );
 
+        var userIds = adminAuditLogList
+            .Select(log => log.AdminUserId)
+            .Concat(adminAuditLogList.Select(log => log.TargetUserId))
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            userIds,
+            cancellationToken,
+            requireFresh: false);
+
         var responseList = adminAuditLogList.Select(
-            static adminAuditLog => adminAuditLog.ToResponseDto()
+            adminAuditLog =>
+            {
+                var adminProfile = profileLookup.TryGetValue(adminAuditLog.AdminUserId, out var adminValue)
+                    ? adminValue
+                    : null;
+                var targetProfile = profileLookup.TryGetValue(adminAuditLog.TargetUserId, out var targetValue)
+                    ? targetValue
+                    : null;
+
+                return adminAuditLog.ToResponseDto(
+                    admin: UserProfileSummaryMapper.ToAuthorSummary(
+                        adminAuditLog.AdminUserId,
+                        adminProfile,
+                        fallbackDisplayName: "admin"),
+                    targetUser: UserProfileSummaryMapper.ToAuthorSummary(
+                        adminAuditLog.TargetUserId,
+                        targetProfile,
+                        fallbackDisplayName: "user"));
+            }
         ).ToList();
 
         return PagedResult<AdminAuditLogResponseDto>.Create(responseList, query.Page, query.PageSize, totalCount);

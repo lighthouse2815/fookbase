@@ -35,6 +35,9 @@ export const API_ENDPOINTS = {
     ME_PAGE_INFO: '/api/profiles/me/page-info',
     ME_PAGE_INFO_VISIBILITY: '/api/profiles/me/page-info/visibility',
   },
+  HASHTAGS: {
+    SEARCH: '/api/hashtags/search',
+  },
   POSTS: {
     LIST: '/api/posts',
     CREATE: '/api/posts',

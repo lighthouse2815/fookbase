@@ -96,6 +96,8 @@ export const mapAdminAuditLogResponseDto = (payload: AdminAuditLogResponseDto): 
     targetUserId: payload.targetUserId ?? null,
     details: payload.details ?? null,
     createdAt: payload.createdAt,
+    admin: mapReportUserSummaryResponseDto(payload.admin),
+    targetUser: mapReportUserSummaryResponseDto(payload.targetUser),
   };
 };
 

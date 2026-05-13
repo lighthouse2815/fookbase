@@ -2,9 +2,25 @@ import { ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { EmptyStateCard } from '@/shared/ui/feedback/EmptyStateCard';
-import { formatRelativeTime } from '@/shared/lib/date';
+import { parseApiDate } from '@/shared/lib/date';
+import { DEFAULT_ADMIN_AVATAR_URL } from '@/features/admin/utils/user.util';
 
 import { useAdminAuditLogsPage } from '@/features/admin/hooks/useAdminAuditLogsPage';
+
+const auditDateFormatter = new Intl.DateTimeFormat('vi-VN', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
+const formatAuditDate = (isoDate: string): string => {
+  const parsedDate = parseApiDate(isoDate);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return '--/--/----';
+  }
+
+  return auditDateFormatter.format(parsedDate);
+};
 
 export const AdminAuditLogsPage = () => {
   const { tx, logs, page, hasMore, isLoading, errorMessage, loadLogs } = useAdminAuditLogsPage();
@@ -55,26 +71,47 @@ export const AdminAuditLogsPage = () => {
               <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
                 {item.entityType}
               </span>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{formatRelativeTime(item.createdAt)}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{formatAuditDate(item.createdAt)}</p>
             </div>
 
-            <div className="mt-3 grid gap-2 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
-              <p>
-                {tx('Admin', 'Admin')}:{' '}
-                <Link to={`/profile/${item.adminUserId}`} className="font-semibold text-brand-600 hover:text-brand-700">
-                  {item.adminUserId}
+            <div className="mt-3 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Admin', 'Admin')}</p>
+                <Link to={`/profile/${item.adminUserId}`} className="mt-2 flex items-center gap-2">
+                  <img
+                    src={item.admin?.avatarUrl || DEFAULT_ADMIN_AVATAR_URL}
+                    alt={item.admin?.displayName || item.adminUserId}
+                    className="h-9 w-9 rounded-full object-cover"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                      {item.admin?.displayName || tx('Người dùng', 'User')}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{item.adminUserId}</p>
+                  </div>
                 </Link>
-              </p>
-              <p>
-                {tx('Target', 'Target')}:{' '}
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Target', 'Target')}</p>
                 {item.targetUserId ? (
-                  <Link to={`/profile/${item.targetUserId}`} className="font-semibold text-brand-600 hover:text-brand-700">
-                    {item.targetUserId}
+                  <Link to={`/profile/${item.targetUserId}`} className="mt-2 flex items-center gap-2">
+                    <img
+                      src={item.targetUser?.avatarUrl || DEFAULT_ADMIN_AVATAR_URL}
+                      alt={item.targetUser?.displayName || item.targetUserId}
+                      className="h-9 w-9 rounded-full object-cover"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        {item.targetUser?.displayName || tx('Người dùng', 'User')}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{item.targetUserId}</p>
+                    </div>
                   </Link>
                 ) : (
-                  tx('Không có', 'N/A')
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{tx('Không có', 'N/A')}</p>
                 )}
-              </p>
+              </div>
             </div>
 
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -102,5 +139,3 @@ export const AdminAuditLogsPage = () => {
     </div>
   );
 };
-
-

@@ -30,30 +30,36 @@ export const PostCard = ({
   const { t } = useTranslation();
   const mediaUrls = post.imageUrls ?? [];
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
-  const [mediaViewerCursor, setMediaViewerCursor] = useState<{ postId: string; index: number }>({
-    postId: post.id,
+  const [mediaViewerSource, setMediaViewerSource] = useState<{
+    authorName: string;
+    mediaUrls: string[];
+    index: number;
+  }>({
+    authorName: post.author.fullName,
+    mediaUrls,
     index: 0,
   });
   const [imageViewerScale, setImageViewerScale] = useState(DEFAULT_IMAGE_VIEWER_SCALE);
   const [isContentExpanded, setIsContentExpanded] = useState(false);
-  const activeMediaIndex = mediaViewerCursor.postId === post.id ? mediaViewerCursor.index : 0;
-  const activeMediaUrl = mediaUrls[activeMediaIndex] ?? mediaUrls[0];
+  const activeMediaIndex = mediaViewerSource.index;
+  const viewerMediaUrls = mediaViewerSource.mediaUrls;
+  const activeMediaUrl = viewerMediaUrls[activeMediaIndex] ?? viewerMediaUrls[0];
   const activeMediaKind = detectMediaKind(activeMediaUrl);
 
   const setActiveMediaIndex = useCallback((nextIndex: SetStateAction<number>) => {
-    setMediaViewerCursor((previousCursor) => {
-      const previousIndex = previousCursor.postId === post.id ? previousCursor.index : 0;
+    setMediaViewerSource((previousSource) => {
+      const previousIndex = previousSource.index;
       const resolvedIndex = typeof nextIndex === 'function'
         ? (nextIndex as (value: number) => number)(previousIndex)
         : nextIndex;
 
       return {
-        postId: post.id,
+        ...previousSource,
         index: resolvedIndex,
       };
     });
     setImageViewerScale(DEFAULT_IMAGE_VIEWER_SCALE);
-  }, [post.id]);
+  }, []);
 
   const {
     authorProfilePath,
@@ -115,17 +121,17 @@ export const PostCard = ({
         return;
       }
 
-      if (mediaUrls.length <= 1) {
+      if (viewerMediaUrls.length <= 1) {
         return;
       }
 
       if (event.key === 'ArrowRight') {
-        setActiveMediaIndex((previous) => (previous + 1) % mediaUrls.length);
+        setActiveMediaIndex((previous) => (previous + 1) % viewerMediaUrls.length);
         return;
       }
 
       if (event.key === 'ArrowLeft') {
-        setActiveMediaIndex((previous) => (previous - 1 + mediaUrls.length) % mediaUrls.length);
+        setActiveMediaIndex((previous) => (previous - 1 + viewerMediaUrls.length) % viewerMediaUrls.length);
       }
     };
 
@@ -137,7 +143,7 @@ export const PostCard = ({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMediaViewerOpen, mediaUrls.length, setActiveMediaIndex]);
+  }, [isMediaViewerOpen, setActiveMediaIndex, viewerMediaUrls.length]);
 
   const handleImageViewerWheel = (event: WheelEvent<HTMLDivElement>) => {
     if (!isMediaViewerOpen || activeMediaKind !== 'image') {
@@ -155,7 +161,28 @@ export const PostCard = ({
   };
 
   const openMediaAt = (index: number) => {
-    setActiveMediaIndex(index);
+    if (mediaUrls.length === 0) {
+      return;
+    }
+    setMediaViewerSource({
+      authorName: post.author.fullName,
+      mediaUrls,
+      index,
+    });
+    setImageViewerScale(DEFAULT_IMAGE_VIEWER_SCALE);
+    setIsMediaViewerOpen(true);
+  };
+
+  const openOriginalMediaAt = (index: number, originalMediaUrls: string[], authorName: string) => {
+    if (originalMediaUrls.length === 0) {
+      return;
+    }
+    setMediaViewerSource({
+      authorName,
+      mediaUrls: originalMediaUrls,
+      index,
+    });
+    setImageViewerScale(DEFAULT_IMAGE_VIEWER_SCALE);
     setIsMediaViewerOpen(true);
   };
 
@@ -187,6 +214,7 @@ export const PostCard = ({
         isContentExpanded={isContentExpanded}
         setIsContentExpanded={setIsContentExpanded}
         onOpenMediaAt={openMediaAt}
+        onOpenOriginalMediaAt={openOriginalMediaAt}
       />
 
       {showEngagementActions ? (
@@ -276,16 +304,16 @@ export const PostCard = ({
         isOpen={isMediaViewerOpen}
         activeMediaUrl={activeMediaUrl ?? null}
         activeMediaKind={activeMediaKind}
-        authorName={post.author.fullName}
-        mediaUrls={mediaUrls}
+        authorName={mediaViewerSource.authorName}
+        mediaUrls={viewerMediaUrls}
         activeMediaIndex={activeMediaIndex}
         imageViewerScale={imageViewerScale}
         onClose={() => setIsMediaViewerOpen(false)}
         onPrev={() =>
-          setActiveMediaIndex((previous) => (previous - 1 + mediaUrls.length) % mediaUrls.length)
+          setActiveMediaIndex((previous) => (previous - 1 + viewerMediaUrls.length) % viewerMediaUrls.length)
         }
         onNext={() =>
-          setActiveMediaIndex((previous) => (previous + 1) % mediaUrls.length)
+          setActiveMediaIndex((previous) => (previous + 1) % viewerMediaUrls.length)
         }
         onWheel={handleImageViewerWheel}
       />

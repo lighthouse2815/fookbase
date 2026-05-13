@@ -99,9 +99,17 @@ public class PostRepository : IPostRepository
 
     public async Task<IReadOnlyList<DateTime>> GetCreatedDatesSinceAsync(DateTime sinceUtc, CancellationToken cancellationToken)
     {
+        var normalizedSinceUtc = sinceUtc.Kind switch
+        {
+            DateTimeKind.Utc => sinceUtc,
+            DateTimeKind.Local => sinceUtc.ToUniversalTime(),
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc),
+            _ => sinceUtc
+        };
+
         return await _context.Posts
             .AsNoTracking()
-            .Where(post => post.CreatedAt >= sinceUtc)
+            .Where(post => post.CreatedAt >= normalizedSinceUtc)
             .Select(post => post.CreatedAt)
             .ToListAsync(cancellationToken);
     }

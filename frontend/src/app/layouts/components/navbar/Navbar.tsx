@@ -150,7 +150,7 @@ export const Navbar = (props: NavbarProps) => {
                   onClick={() => setOpenPopover(null)}
                 >
                   <Star size={16} />
-                  {tx('Danh gia ung dung', 'App reviews')}
+                  {tx('Đánh giá ứng dụng', 'App reviews')}
                 </Link>
                 <Link
                   to="/settings"

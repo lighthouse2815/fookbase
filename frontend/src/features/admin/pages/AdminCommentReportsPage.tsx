@@ -27,9 +27,9 @@ export const AdminCommentReportsPage = () => {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/75">
-        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyet bao cao binh luan', 'Moderate comment reports')}</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Duyệt báo cáo bình luận', 'Moderate comment reports')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {tx('Quan ly cac report lien quan den binh luan.', 'Review reports related to comments.')}
+          {tx('Quản lý các report liên quan đến bình luận.', 'Review reports related to comments.')}
         </p>
       </section>
 
@@ -42,12 +42,12 @@ export const AdminCommentReportsPage = () => {
       {reports.length === 0 && !isLoading ? (
         <EmptyStateCard
           icon={MessageSquareWarning}
-          title={tx('Chua co bao cao binh luan', 'No comment reports')}
+          title={tx('Chưa có báo cáo bình luận', 'No comment reports')}
           description={tx(
-            'Danh sach dang trong. Bao cao moi se hien thi o day.',
+            'Danh sách đang trống. Báo cáo mới sẽ hiển thị ở đây.',
             'The list is empty. New reports will appear here.',
           )}
-          actionLabel={tx('Lam moi', 'Refresh')}
+          actionLabel={tx('Làm mới', 'Refresh')}
           onAction={() => {
             void loadReports(1, true);
           }}
@@ -78,7 +78,7 @@ export const AdminCommentReportsPage = () => {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Nguoi bao cao', 'Reporter')}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người báo cáo', 'Reporter')}</p>
                   {report.reporter ? (
                     <Link to={`/profile/${report.reporter.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -97,7 +97,7 @@ export const AdminCommentReportsPage = () => {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Nguoi bi bao cao', 'Reported user')}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{tx('Người bị báo cáo', 'Reported user')}</p>
                   {report.commentOwner ? (
                     <Link to={`/profile/${report.commentOwner.id}`} className="mt-2 flex items-center gap-2">
                       <img
@@ -117,7 +117,7 @@ export const AdminCommentReportsPage = () => {
               </div>
 
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                {tx('Binh luan', 'Comment')}: {report.commentId} - {formatRelativeTime(report.createdAt)}
+                {tx('Bình luận', 'Comment')}: {report.commentId} - {formatRelativeTime(report.createdAt)}
               </p>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -125,7 +125,7 @@ export const AdminCommentReportsPage = () => {
                   to={`/posts/${report.postId}`}
                   className="inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  {tx('Xem post goc', 'View parent post')}
+                  {tx('Xem post gốc', 'View parent post')}
                 </Link>
 
                 {isPending ? (
@@ -136,7 +136,7 @@ export const AdminCommentReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {isActing ? tx('Dang xu ly...', 'Processing...') : tx('Chap nhan', 'Approve')}
+                      {isActing ? tx('Đang xử lý...', 'Processing...') : tx('Chấp nhận', 'Approve')}
                     </button>
                     <button
                       type="button"
@@ -144,7 +144,7 @@ export const AdminCommentReportsPage = () => {
                       disabled={isActing}
                       className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {tx('Tu choi', 'Reject')}
+                      {tx('Từ chối', 'Reject')}
                     </button>
                   </>
                 ) : null}
@@ -162,10 +162,10 @@ export const AdminCommentReportsPage = () => {
             disabled={isLoading}
             className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {isLoading ? tx('Dang tai...', 'Loading...') : tx('Xem them', 'Load more')}
+            {isLoading ? tx('Đang tải...', 'Loading...') : tx('Xem thêm', 'Load more')}
           </button>
         ) : reports.length > 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Da hien thi het bao cao.', 'All reports are shown.')}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{tx('Đã hiển thị hết báo cáo.', 'All reports are shown.')}</p>
         ) : null}
       </div>
 
@@ -180,10 +180,10 @@ export const AdminCommentReportsPage = () => {
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xac nhan duyet bao cao', 'Confirm approval')}</h3>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{tx('Xác nhận duyệt báo cáo', 'Confirm approval')}</h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   {tx(
-                    'Chap nhan report nghia la binh luan bi bao cao se bi xoa. Ban chac chan tiep tuc?',
+                    'Chấp nhận report nghĩa là bình luận bị báo cáo sẽ bị xóa. Bạn chắc chắn tiếp tục?',
                     'Approving this report means the reported comment will be deleted. Continue?',
                   )}
                 </p>
@@ -195,7 +195,7 @@ export const AdminCommentReportsPage = () => {
                 onClick={() => setApproveConfirmReportId(null)}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                {tx('Huy', 'Cancel')}
+                {tx('Hủy', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -205,7 +205,7 @@ export const AdminCommentReportsPage = () => {
                 }}
                 className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
-                {tx('Xac nhan duyet', 'Confirm')}
+                {tx('Xác nhận duyệt', 'Confirm')}
               </button>
             </div>
           </div>

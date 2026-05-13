@@ -7,7 +7,7 @@ import type { NavbarPopover, NavbarPopoverOpen } from './type';
 import {
   buildFriendsSearchPath,
   countUnreadNotifications,
-  parsePhoneNumberFromSearch,
+  parseSearchKeywordFromSearch,
 } from './util';
 
 export function useNavBar({
@@ -24,7 +24,7 @@ export function useNavBar({
   const popoverRootRef = useRef<HTMLDivElement | null>(null);
   const routeKey = `${location.pathname}?${location.search}`;
   const isFriendsSearchPage = location.pathname.startsWith('/friends/search');
-  const defaultSearchKeyword = isFriendsSearchPage ? parsePhoneNumberFromSearch(location.search) : '';
+  const defaultSearchKeyword = isFriendsSearchPage ? parseSearchKeywordFromSearch(location.search) : '';
   const [popoverState, setPopoverState] = useState<{ routeKey: string; value: NavbarPopover }>(() => ({
     routeKey,
     value: null,
