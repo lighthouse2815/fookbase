@@ -1,9 +1,11 @@
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Models;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 using InteractHub.Api.Domain.Enums;
+using Microsoft.Extensions.Options;
 
 namespace InteractHub.Api.Infrastructure.Services.ReadModels;
 
@@ -12,17 +14,20 @@ public class FriendshipReadModelService : IFriendshipReadModelService
     private readonly IFriendshipReadModelRepository _friendshipReadModelRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJavaFriendshipApiService _javaFriendshipApiService;
+    private readonly UserReadModelOptions _options;
     private readonly ILogger<FriendshipReadModelService> _logger;
 
     public FriendshipReadModelService(
         IFriendshipReadModelRepository friendshipReadModelRepository,
         IUnitOfWork unitOfWork,
         IJavaFriendshipApiService javaFriendshipApiService,
+        IOptions<UserReadModelOptions> optionsAccessor,
         ILogger<FriendshipReadModelService> logger)
     {
         _friendshipReadModelRepository = friendshipReadModelRepository;
         _unitOfWork = unitOfWork;
         _javaFriendshipApiService = javaFriendshipApiService;
+        _options = optionsAccessor.Value;
         _logger = logger;
     }
 
@@ -41,8 +46,9 @@ public class FriendshipReadModelService : IFriendshipReadModelService
         var localBlockedUserIds = await _friendshipReadModelRepository.GetBlockedUserIdsAsync(ownerId, cancellationToken);
 
         var syncState = await _friendshipReadModelRepository.GetSyncStateAsync(ownerId, cancellationToken);
+        var blockedSnapshotTtl = ResolveSnapshotTtl(_options.FriendshipBlockedSnapshotTtlSeconds);
 
-        if (!requireFresh && syncState?.LastBlockedSnapshotAtUtc is not null)
+        if (!requireFresh && IsSnapshotFresh(syncState?.LastBlockedSnapshotAtUtc, blockedSnapshotTtl))
         {
             return localBlockedUserIds.ToHashSet();
         }
@@ -92,8 +98,9 @@ public class FriendshipReadModelService : IFriendshipReadModelService
         var localContactIds = await _friendshipReadModelRepository.GetActiveContactIdsAsync(ownerUserId, cancellationToken);
 
         var syncState = await _friendshipReadModelRepository.GetSyncStateAsync(ownerUserId, cancellationToken);
+        var contactSnapshotTtl = ResolveSnapshotTtl(_options.FriendshipContactSnapshotTtlSeconds);
 
-        if (!requireFresh && syncState?.LastContactSnapshotAtUtc is not null)
+        if (!requireFresh && IsSnapshotFresh(syncState?.LastContactSnapshotAtUtc, contactSnapshotTtl))
         {
             return localContactIds.ToHashSet();
         }
@@ -372,6 +379,26 @@ public class FriendshipReadModelService : IFriendshipReadModelService
                 ownerUserId);
             return null;
         }
+    }
+
+    private static TimeSpan ResolveSnapshotTtl(int ttlSeconds)
+    {
+        if (ttlSeconds <= 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+        return TimeSpan.FromSeconds(Math.Min(ttlSeconds, 86400));
+    }
+
+    private static bool IsSnapshotFresh(DateTime? snapshotAtUtc, TimeSpan snapshotTtl)
+    {
+        if (!snapshotAtUtc.HasValue || snapshotTtl == TimeSpan.Zero)
+        {
+            return false;
+        }
+
+        return DateTime.UtcNow - snapshotAtUtc.Value < snapshotTtl;
     }
 }
 
