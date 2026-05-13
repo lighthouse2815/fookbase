@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Common;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.DTOs.Stories;
 
@@ -12,7 +13,7 @@ public class StoryResponseDto
 
     public string MediaUrl { get; init; } = string.Empty;
 
-    public string MediaType { get; init; } = string.Empty;
+    public MediaType MediaType { get; init; }
 
     public string? Content { get; init; }
 
@@ -22,7 +23,10 @@ public class StoryResponseDto
 
     public bool IsViewedByCurrentUser { get; init; }
 
-    public string? CurrentUserReactionType { get; init; }
+    public ReactionType? CurrentUserReactionType { get; init; }
 
     public int ViewCount { get; init; }
 }
+
+
+

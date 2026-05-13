@@ -18,3 +18,6 @@ public class CloudinaryUploadSignatureResponseDto
 
     public string Signature { get; init; } = string.Empty;
 }
+
+
+

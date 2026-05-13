@@ -16,3 +16,6 @@ public interface ICloudinarySigningService
 
     string GenerateSignature(SortedDictionary<string, string> parametersToSign);
 }
+
+
+

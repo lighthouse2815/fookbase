@@ -7,10 +7,12 @@ using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Middleware;
 using InteractHub.Api.Common.Models;
+using InteractHub.Api.Common.Options;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Infrastructure.Data;
 using InteractHub.Api.Infrastructure.Repositories;
 using InteractHub.Api.Infrastructure.Services;
+using InteractHub.Api.Infrastructure.Services.ReadModels;
 using InteractHub.Api.Presentation.Hubs;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
@@ -43,15 +45,59 @@ if (corsAllowedOrigins is null || corsAllowedOrigins.Length == 0)
 var appDbConnectionString = builder.Configuration.GetConnectionString("AppDbConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:AppDbConnection is missing.");
 
-builder.Services.Configure<JavaApiOptions>(builder.Configuration.GetSection(JavaApiOptions.SectionName));
+builder.Services.Configure<JavaApiAuthOptions>(builder.Configuration.GetSection(JavaApiAuthOptions.SectionName));
+builder.Services.Configure<JavaApiAdminOptions>(builder.Configuration.GetSection(JavaApiAdminOptions.SectionName));
+builder.Services.Configure<JavaApiUserProfileOptions>(builder.Configuration.GetSection(JavaApiUserProfileOptions.SectionName));
+builder.Services.Configure<JavaApiCurrentUserOptions>(builder.Configuration.GetSection(JavaApiCurrentUserOptions.SectionName));
+builder.Services.Configure<JavaApiFriendshipOptions>(builder.Configuration.GetSection(JavaApiFriendshipOptions.SectionName));
 
-var javaApiBaseUrl = builder.Configuration.GetValue<string>($"{JavaApiOptions.SectionName}:BaseUrl")
-    ?? throw new InvalidOperationException($"{JavaApiOptions.SectionName}:BaseUrl is missing.");
+var javaApiBaseUrl = builder.Configuration.GetValue<string>("JavaApi:BaseUrl")
+    ?? throw new InvalidOperationException("JavaApi:BaseUrl is missing.");
+var javaAuthApiBaseUrl = builder.Configuration.GetValue<string>($"{JavaApiAuthOptions.SectionName}:BaseUrl")
+    ?? javaApiBaseUrl;
+var javaUserProfileApiBaseUrl = builder.Configuration.GetValue<string>($"{JavaApiUserProfileOptions.SectionName}:BaseUrl")
+    ?? javaApiBaseUrl;
+var javaCurrentUserApiBaseUrl = builder.Configuration.GetValue<string>($"{JavaApiCurrentUserOptions.SectionName}:BaseUrl")
+    ?? javaApiBaseUrl;
+var javaFriendshipApiBaseUrl = builder.Configuration.GetValue<string>($"{JavaApiFriendshipOptions.SectionName}:BaseUrl")
+    ?? javaApiBaseUrl;
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(appDbConnectionString, npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
 
-builder.Services.AddHttpClient<IJavaApiService, JavaApiService>(client =>
+builder.Services.AddHttpClient<IJavaAuthApiService, JavaAuthApiService>(client =>
+{
+    var normalizedBaseUrl = javaAuthApiBaseUrl.EndsWith('/')
+        ? javaAuthApiBaseUrl
+        : $"{javaAuthApiBaseUrl}/";
+    client.BaseAddress = new Uri(normalizedBaseUrl, UriKind.Absolute);
+});
+
+builder.Services.AddHttpClient<IJavaUserProfileApiService, JavaUserProfileApiService>(client =>
+{
+    var normalizedBaseUrl = javaUserProfileApiBaseUrl.EndsWith('/')
+        ? javaUserProfileApiBaseUrl
+        : $"{javaUserProfileApiBaseUrl}/";
+    client.BaseAddress = new Uri(normalizedBaseUrl, UriKind.Absolute);
+});
+
+builder.Services.AddHttpClient<IJavaCurrentUserApiService, JavaCurrentUserApiService>(client =>
+{
+    var normalizedBaseUrl = javaCurrentUserApiBaseUrl.EndsWith('/')
+        ? javaCurrentUserApiBaseUrl
+        : $"{javaCurrentUserApiBaseUrl}/";
+    client.BaseAddress = new Uri(normalizedBaseUrl, UriKind.Absolute);
+});
+
+builder.Services.AddHttpClient<IJavaFriendshipApiService, JavaFriendshipApiService>(client =>
+{
+    var normalizedBaseUrl = javaFriendshipApiBaseUrl.EndsWith('/')
+        ? javaFriendshipApiBaseUrl
+        : $"{javaFriendshipApiBaseUrl}/";
+    client.BaseAddress = new Uri(normalizedBaseUrl, UriKind.Absolute);
+});
+
+builder.Services.AddHttpClient<IJavaAdminApiService, JavaAdminApiService>(client =>
 {
     var normalizedBaseUrl = javaApiBaseUrl.EndsWith('/') ? javaApiBaseUrl : $"{javaApiBaseUrl}/";
     client.BaseAddress = new Uri(normalizedBaseUrl, UriKind.Absolute);
@@ -73,8 +119,11 @@ builder.Services.AddScoped<IUserReportRepository, UserReportRepository>();
 builder.Services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
 builder.Services.AddScoped<ISavedPostRepository, SavedPostRepository>();
 builder.Services.AddScoped<IAppReviewRepository, AppReviewRepository>();
+builder.Services.AddScoped<IUserProfileSummaryReadModelRepository, UserProfileSummaryReadModelRepository>();
+builder.Services.AddScoped<IFriendshipReadModelRepository, FriendshipReadModelRepository>();
 
 builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<ICommentReportService, CommentReportService>();
 builder.Services.AddScoped<ICommentReactionService, CommentReactionService>();
@@ -94,12 +143,17 @@ builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<IAppReviewService, AppReviewService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITokenRoleService, TokenRoleService>();
+builder.Services.AddScoped<IAccessTokenProvider, HttpContextAccessTokenProvider>();
 builder.Services.AddScoped<IAuthCookieService, AuthCookieService>();
 builder.Services.AddScoped<ICloudinarySigningService, CloudinarySigningService>();
 builder.Services.AddScoped<INotificationRealtimeService, SignalRNotificationRealtimeService>();
-builder.Services.AddScoped<UserReadModelService>();
-builder.Services.AddScoped<IUserReadModelService>(serviceProvider => serviceProvider.GetRequiredService<UserReadModelService>());
-builder.Services.AddScoped<IUserReadModelProjector>(serviceProvider => serviceProvider.GetRequiredService<UserReadModelService>());
+builder.Services.AddScoped<UserProfileSummaryReadModelService>();
+builder.Services.AddScoped<IUserProfileSummaryReadModelService>(serviceProvider => serviceProvider.GetRequiredService<UserProfileSummaryReadModelService>());
+builder.Services.AddScoped<IUserProfilePublicReadModelService, UserProfilePublicReadModelService>();
+builder.Services.AddScoped<UserIdentityReadModelService>();
+builder.Services.AddScoped<IUserIdentityReadModelService>(serviceProvider => serviceProvider.GetRequiredService<UserIdentityReadModelService>());
+builder.Services.AddScoped<FriendshipReadModelService>();
+builder.Services.AddScoped<IFriendshipReadModelService>(serviceProvider => serviceProvider.GetRequiredService<FriendshipReadModelService>());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<RabbitMqReadModelConsumerService>();
 
@@ -116,7 +170,12 @@ builder.Services
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
-builder.Services.AddSignalR();
+builder.Services
+    .AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
@@ -176,7 +235,7 @@ builder.Services
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
             NameClaimType = "sub",
-            RoleClaimType = "role",
+            RoleClaimType = AuthClaimTypes.Role,
             ClockSkew = TimeSpan.FromSeconds(30)
         };
 
@@ -399,3 +458,5 @@ static string GetRateLimiterPartitionKey(HttpContext context)
 
     return $"ip:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
 }
+
+

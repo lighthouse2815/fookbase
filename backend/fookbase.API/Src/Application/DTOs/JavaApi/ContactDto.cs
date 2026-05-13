@@ -19,3 +19,6 @@ public class ContactDto
     [JsonPropertyName("phoneNumber")]
     public string? PhoneNumber { get; set; }
 }
+
+
+

@@ -17,3 +17,5 @@ public interface IHashtagService
 
     Task DeleteAsync(Guid hashtagId, CancellationToken cancellationToken);
 }
+
+

@@ -24,3 +24,6 @@ public class CreateNotificationRequestDto
     [StringLength(500, MinimumLength = 2)]
     public string Message { get; set; } = string.Empty;
 }
+
+
+

@@ -15,3 +15,6 @@ public sealed class ChessMoveOutcomeDto
     public GameOverDto? GameOver { get; init; }
 }
 
+
+
+

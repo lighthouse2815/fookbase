@@ -4,7 +4,10 @@ import { API_ENDPOINTS } from '@/shared/api/endpoints';
 import { apiClient } from '@/shared/api/apiClient';
 import { extractData, mapPaged } from '@/shared/api/httpResponse';
 import type { ApiEnvelope, PagedResult, PaginatedResult } from '@/shared/types/api';
-import type { CreateOrUpdateAppReviewRequestDto } from '@/features/appReview/api/dtos/request.dto';
+import type {
+  CreateOrUpdateAppReviewRequestDto,
+  UpdateAppReviewVisibilityRequestDto,
+} from '@/features/appReview/api/dtos/request.dto';
 import type {
   AppReviewResponseDto,
   AppReviewSummaryResponseDto,
@@ -31,6 +34,10 @@ const mapCreateOrUpdatePayload = (
   rating: payload.rating,
   displayName: payload.displayName,
   comment: payload.comment,
+});
+
+const mapUpdateVisibilityPayload = (isHidden: boolean): UpdateAppReviewVisibilityRequestDto => ({
+  isHidden,
 });
 
 export const appReviewService = {
@@ -119,14 +126,12 @@ export const appReviewService = {
     };
   },
 
-  async hideAdminReview(reviewId: string): Promise<AppReview> {
-    const response = await apiClient.patch<ApiEnvelope<AppReviewResponseDto>>(APP_REVIEWS.ADMIN_HIDE(reviewId));
-    return mapAppReviewResponseDto(extractData(response.data, 'Failed to hide app review'));
-  },
-
-  async unhideAdminReview(reviewId: string): Promise<AppReview> {
-    const response = await apiClient.patch<ApiEnvelope<AppReviewResponseDto>>(APP_REVIEWS.ADMIN_UNHIDE(reviewId));
-    return mapAppReviewResponseDto(extractData(response.data, 'Failed to unhide app review'));
+  async updateAdminReviewVisibility(reviewId: string, isHidden: boolean): Promise<AppReview> {
+    const response = await apiClient.patch<ApiEnvelope<AppReviewResponseDto>>(
+      APP_REVIEWS.ADMIN_VISIBILITY(reviewId),
+      mapUpdateVisibilityPayload(isHidden),
+    );
+    return mapAppReviewResponseDto(extractData(response.data, 'Failed to update app review visibility'));
   },
 
   async deleteAdminReview(reviewId: string): Promise<void> {

@@ -18,7 +18,6 @@ import type {
   CreatePostRequestDto,
 } from '@/features/post/api/dtos/request.dto';
 import type {
-  LikeStateResponseDto,
   PostReactionStateResponseDto,
   PostReactionUsersResponseDto,
   PostResponseDto,
@@ -59,16 +58,6 @@ export const postService = {
     const response = await apiClient.get<ApiEnvelope<PostResponseDto>>(POSTS.BY_ID(postId));
     const post = extractData(response.data, 'Failed to load post');
     return mapPost(post);
-  },
-
-  async likePost(postId: string): Promise<LikeStateResponseDto> {
-    const response = await apiClient.post<ApiEnvelope<LikeStateResponseDto>>(POSTS.LIKES(postId));
-    return extractData(response.data, 'Failed to like post');
-  },
-
-  async unlikePost(postId: string): Promise<LikeStateResponseDto> {
-    const response = await apiClient.delete<ApiEnvelope<LikeStateResponseDto>>(POSTS.LIKES(postId));
-    return extractData(response.data, 'Failed to unlike post');
   },
 
   async setReaction(postId: string, type: PostReactionType): Promise<{

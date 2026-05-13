@@ -61,3 +61,6 @@ public class ProfileResponseDto
     [JsonPropertyName("nickname")]
     public string? Nickname { get; set; }
 }
+
+
+

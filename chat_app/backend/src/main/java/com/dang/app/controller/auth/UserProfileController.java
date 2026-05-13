@@ -5,6 +5,7 @@ import com.dang.app.dto.auth.request.UpdateProfileInfoVisibilityRequest;
 import com.dang.app.dto.auth.request.UpdateSecurityPrivateRequest;
 import com.dang.app.dto.auth.request.UpdateProfileRequest;
 import com.dang.app.dto.auth.request.UserProfileRequest;
+import com.dang.app.dto.auth.request.UserProfileSummaryBatchRequest;
 import com.dang.app.dto.auth.request.UserProfileSearchRequest;
 import com.dang.app.dto.auth.response.ProfileInfoSettingsResponse;
 import com.dang.app.dto.auth.response.ProfileInfoVisibilityResponse;
@@ -142,6 +143,15 @@ public class UserProfileController {
     ) {
         return ResponseEntity.ok(
                 userProfileService.getUserProfileSummary(userId)
+        );
+    }
+
+    @PostMapping("/summaries")
+    public ResponseEntity<List<UserProfileSummaryResponse>> getUserProfileSummaries(
+            @Valid @RequestBody UserProfileSummaryBatchRequest request
+    ) {
+        return ResponseEntity.ok(
+                userProfileService.getUserProfileSummaries(request.getUserIds())
         );
     }
 

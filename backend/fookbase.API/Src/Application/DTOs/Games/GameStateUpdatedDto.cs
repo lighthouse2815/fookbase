@@ -9,3 +9,6 @@ public sealed class GameStateUpdatedDto
     public required object State { get; init; }
 }
 
+
+
+

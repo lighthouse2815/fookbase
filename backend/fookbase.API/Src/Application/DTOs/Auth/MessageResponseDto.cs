@@ -7,3 +7,6 @@ public class MessageResponseDto
     [JsonPropertyName("message")]
     public string Message { get; set; } = string.Empty;
 }
+
+
+

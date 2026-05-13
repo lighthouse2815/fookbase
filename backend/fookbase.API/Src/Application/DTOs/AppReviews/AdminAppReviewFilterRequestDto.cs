@@ -9,3 +9,6 @@ public class AdminAppReviewFilterRequestDto
 
     public bool? IsHidden { get; set; }
 }
+
+
+

@@ -52,3 +52,6 @@ public class GoogleAuthResponseDto
     [JsonPropertyName("isNew")]
     public bool IsNew { get; set; }
 }
+
+
+

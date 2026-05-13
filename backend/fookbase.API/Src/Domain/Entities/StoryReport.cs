@@ -27,3 +27,6 @@ public class StoryReport
     public Story? Story { get; set; }
 }
 
+
+
+

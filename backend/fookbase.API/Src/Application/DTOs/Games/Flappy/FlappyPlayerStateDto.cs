@@ -19,3 +19,6 @@ public sealed class FlappyPlayerStateDto
     public bool IsAlive { get; init; }
 }
 
+
+
+

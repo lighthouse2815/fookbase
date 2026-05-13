@@ -49,13 +49,11 @@ public class AppDbContext : DbContext
 
     public DbSet<AppReview> AppReviews => Set<AppReview>();
 
-    public DbSet<UserProfileReadModel> UserProfileReadModels => Set<UserProfileReadModel>();
+    public DbSet<UserProfileSummaryReadModel> UserProfileSummaryReadModels => Set<UserProfileSummaryReadModel>();
 
-    public DbSet<UserBlockRelationReadModel> UserBlockRelationReadModels => Set<UserBlockRelationReadModel>();
+    public DbSet<FriendshipReadModel> FriendshipReadModels => Set<FriendshipReadModel>();
 
-    public DbSet<UserContactReadModel> UserContactReadModels => Set<UserContactReadModel>();
-
-    public DbSet<UserReadModelSyncState> UserReadModelSyncStates => Set<UserReadModelSyncState>();
+    public DbSet<FriendshipReadModelSyncState> FriendshipReadModelSyncStates => Set<FriendshipReadModelSyncState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -473,9 +471,9 @@ public class AppDbContext : DbContext
             entity.HasIndex(review => review.CreatedAt);
         });
 
-        modelBuilder.Entity<UserProfileReadModel>(entity =>
+        modelBuilder.Entity<UserProfileSummaryReadModel>(entity =>
         {
-            entity.ToTable("UserProfileReadModel");
+            entity.ToTable("UserProfileSummaryReadModel");
             entity.HasKey(profile => profile.UserId);
 
             entity.Property(profile => profile.DisplayName)
@@ -487,34 +485,25 @@ public class AppDbContext : DbContext
             entity.Property(profile => profile.UpdatedAtUtc).IsRequired();
         });
 
-        modelBuilder.Entity<UserBlockRelationReadModel>(entity =>
+        modelBuilder.Entity<FriendshipReadModel>(entity =>
         {
-            entity.ToTable("UserBlockRelationReadModel");
-            entity.HasKey(relation => new { relation.OwnerUserId, relation.BlockedUserId });
+            entity.ToTable("FriendshipReadModel");
+            entity.HasKey(relation => new { relation.OwnerUserId, relation.OtherUserId });
 
-            entity.Property(relation => relation.IsBlocked).IsRequired();
+            entity.Property(relation => relation.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
             entity.Property(relation => relation.UpdatedAtUtc).IsRequired();
 
             entity.HasIndex(relation => relation.OwnerUserId);
-            entity.HasIndex(relation => relation.BlockedUserId);
-            entity.HasIndex(relation => new { relation.OwnerUserId, relation.IsBlocked });
+            entity.HasIndex(relation => relation.OtherUserId);
+            entity.HasIndex(relation => new { relation.OwnerUserId, relation.Status });
         });
 
-        modelBuilder.Entity<UserContactReadModel>(entity =>
+        modelBuilder.Entity<FriendshipReadModelSyncState>(entity =>
         {
-            entity.ToTable("UserContactReadModel");
-            entity.HasKey(relation => new { relation.OwnerUserId, relation.ContactUserId });
-
-            entity.Property(relation => relation.IsActive).IsRequired();
-            entity.Property(relation => relation.UpdatedAtUtc).IsRequired();
-
-            entity.HasIndex(relation => relation.OwnerUserId);
-            entity.HasIndex(relation => relation.ContactUserId);
-            entity.HasIndex(relation => new { relation.OwnerUserId, relation.IsActive });
-        });
-
-        modelBuilder.Entity<UserReadModelSyncState>(entity =>
-        {
+            // Keep table name to avoid a breaking rename migration at this step.
             entity.ToTable("UserReadModelSyncState");
             entity.HasKey(state => state.UserId);
 
@@ -529,3 +518,6 @@ public class AppDbContext : DbContext
             : NotificationType.GENERAL;
     }
 }
+
+
+

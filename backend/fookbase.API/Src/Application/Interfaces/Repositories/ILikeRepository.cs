@@ -14,3 +14,6 @@ public interface ILikeRepository
 
     void Remove(Like like);
 }
+
+
+

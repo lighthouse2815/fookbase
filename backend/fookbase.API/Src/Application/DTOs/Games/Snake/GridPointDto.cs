@@ -7,3 +7,6 @@ public sealed class GridPointDto
     public int Y { get; init; }
 }
 
+
+
+

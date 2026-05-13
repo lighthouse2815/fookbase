@@ -340,3 +340,6 @@ public sealed class CaroService : ICaroService
         public string? EndReason { get; set; }
     }
 }
+
+
+

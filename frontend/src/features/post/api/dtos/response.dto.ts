@@ -35,12 +35,6 @@ export interface CommentReactionUserResponseDto {
   reactedAt?: string;
 }
 
-export interface LikeStateResponseDto {
-  postId: string;
-  liked: boolean;
-  likeCount: number;
-}
-
 export interface SavedPostStateResponseDto {
   postId: string;
   saved: boolean;
@@ -72,7 +66,6 @@ export type PostAuthorPayload = PostAuthorResponseDto;
 export type PostPayload = PostResponseDto;
 export type CommentReactionStatePayload = CommentReactionStateResponseDto;
 export type CommentReactionUserPayload = CommentReactionUserResponseDto;
-export type LikeStatePayload = LikeStateResponseDto;
 export type SavedPostStatePayload = SavedPostStateResponseDto;
 export type PostReactionUserPayload = PostReactionUserResponseDto;
 export type PostReactionUsersPayload = PostReactionUsersResponseDto;

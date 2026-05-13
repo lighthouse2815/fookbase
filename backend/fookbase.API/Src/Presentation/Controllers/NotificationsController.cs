@@ -35,7 +35,7 @@ public class NotificationsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<NotificationResponseDto>>> GetById(Guid notificationId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var notification = await _notificationService.GetByIdAsync(notificationId, userId, User.IsAdmin(), cancellationToken);
+        var notification = await _notificationService.GetByIdAsync(notificationId, userId, cancellationToken);
         return Ok(ApiResponse<NotificationResponseDto>.Ok(notification));
     }
 
@@ -57,7 +57,7 @@ public class NotificationsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<NotificationResponseDto>>> MarkAsRead(Guid notificationId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var updated = await _notificationService.MarkAsReadAsync(notificationId, userId, User.IsAdmin(), cancellationToken);
+        var updated = await _notificationService.MarkAsReadAsync(notificationId, userId, cancellationToken);
         return Ok(ApiResponse<NotificationResponseDto>.Ok(updated));
     }
 
@@ -74,8 +74,11 @@ public class NotificationsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid notificationId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        await _notificationService.DeleteAsync(notificationId, userId, User.IsAdmin(), cancellationToken);
+        await _notificationService.DeleteAsync(notificationId, userId, cancellationToken);
 
         return Ok(ApiResponse<object>.Ok(new { message = "Notification deleted." }));
     }
 }
+
+
+

@@ -14,3 +14,6 @@ public sealed class JoinRoomRequestDto
     public string? AvatarUrl { get; init; }
 }
 
+
+
+

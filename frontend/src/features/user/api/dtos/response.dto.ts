@@ -10,6 +10,12 @@ export interface UserResponseDto {
   faculty?: string;
 }
 
+export interface CurrentUserResponseDto {
+  userId: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
+
 export interface SecurityAccountInfoResponseDto {
   username?: string;
   email?: string | null;

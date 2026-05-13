@@ -9,3 +9,6 @@ public class UpdateCommentRequestDto
 
     public IReadOnlyList<string>? MediaUrls { get; set; }
 }
+
+
+

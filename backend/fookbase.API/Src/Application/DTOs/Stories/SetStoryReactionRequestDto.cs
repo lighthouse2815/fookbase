@@ -8,3 +8,6 @@ public class SetStoryReactionRequestDto
     [StringLength(20, MinimumLength = 2)]
     public string Type { get; set; } = string.Empty;
 }
+
+
+

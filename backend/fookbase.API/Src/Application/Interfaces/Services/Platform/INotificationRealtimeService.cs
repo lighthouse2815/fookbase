@@ -12,3 +12,6 @@ public interface INotificationRealtimeService
 
     Task NotifyMarkedAllReadAsync(Guid userId, CancellationToken cancellationToken);
 }
+
+
+

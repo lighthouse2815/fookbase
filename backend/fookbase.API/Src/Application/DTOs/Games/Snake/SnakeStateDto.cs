@@ -27,3 +27,6 @@ public sealed class SnakeStateDto
     public string? EndReason { get; init; }
 }
 
+
+
+

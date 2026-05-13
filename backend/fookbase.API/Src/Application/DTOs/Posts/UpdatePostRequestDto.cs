@@ -9,3 +9,6 @@ public class UpdatePostRequestDto
 
     public IReadOnlyList<string>? ImageUrls { get; set; }
 }
+
+
+

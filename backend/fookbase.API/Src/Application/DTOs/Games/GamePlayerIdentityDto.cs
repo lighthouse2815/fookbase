@@ -8,3 +8,6 @@ public sealed class GamePlayerIdentityDto
 
     public required string AvatarUrl { get; init; }
 }
+
+
+

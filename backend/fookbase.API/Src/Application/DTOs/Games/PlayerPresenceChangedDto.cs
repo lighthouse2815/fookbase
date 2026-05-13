@@ -12,3 +12,6 @@ public sealed class PlayerPresenceChangedDto
 
     public bool IsDisconnectedEvent { get; init; }
 }
+
+
+

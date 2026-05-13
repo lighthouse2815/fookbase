@@ -14,33 +14,7 @@ public class AppReviewRepository : IAppReviewRepository
         _context = context;
     }
 
-    public async Task<(IReadOnlyList<AppReview> Items, int TotalCount)> GetPublicPagedAsync(
-        int page,
-        int pageSize,
-        int? rating,
-        CancellationToken cancellationToken)
-    {
-        var query = _context.AppReviews
-            .AsNoTracking()
-            .Where(review => !review.IsHidden);
-
-        if (rating.HasValue)
-        {
-            query = query.Where(review => review.Rating == rating.Value);
-        }
-
-        query = query.OrderByDescending(review => review.CreatedAt);
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return (items, totalCount);
-    }
-
-    public async Task<(IReadOnlyList<AppReview> Items, int TotalCount)> GetAdminPagedAsync(
+    public async Task<(IReadOnlyList<AppReview> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,
         int? rating,
@@ -49,14 +23,14 @@ public class AppReviewRepository : IAppReviewRepository
     {
         var query = _context.AppReviews.AsNoTracking().AsQueryable();
 
-        if (rating.HasValue)
-        {
-            query = query.Where(review => review.Rating == rating.Value);
-        }
-
         if (isHidden.HasValue)
         {
             query = query.Where(review => review.IsHidden == isHidden.Value);
+        }
+
+        if (rating.HasValue)
+        {
+            query = query.Where(review => review.Rating == rating.Value);
         }
 
         query = query.OrderByDescending(review => review.CreatedAt);
@@ -140,3 +114,6 @@ public class AppReviewRepository : IAppReviewRepository
         _context.AppReviews.Remove(appReview);
     }
 }
+
+
+

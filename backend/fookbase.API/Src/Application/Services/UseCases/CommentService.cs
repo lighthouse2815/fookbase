@@ -16,36 +16,37 @@ namespace InteractHub.Api.Application.Services;
 
 public class CommentService : ICommentService
 {
-    private sealed record CommentReactionSummary(int Count, IReadOnlyList<string> TopTypes);
-
+    private readonly IAccessTokenProvider _accessTokenProvider;
     private readonly ICommentRepository _commentRepository;
     private readonly ICommentReactionRepository _commentReactionRepository;
     private readonly IPostRepository _postRepository;
-    private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IFriendshipReadModelService _friendshipReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CommentService> _logger;
 
     public CommentService(
+        IAccessTokenProvider accessTokenProvider,
         ICommentRepository commentRepository,
         ICommentReactionRepository commentReactionRepository,
         IPostRepository postRepository,
-        IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
-        IUserReadModelService userReadModelService,
+        IFriendshipReadModelService friendshipReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         IUnitOfWork unitOfWork,
         ILogger<CommentService> logger)
     {
+        _accessTokenProvider = accessTokenProvider;
         _commentRepository = commentRepository;
         _commentReactionRepository = commentReactionRepository;
         _postRepository = postRepository;
-        _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
-        _userReadModelService = userReadModelService;
+        _friendshipReadModelService = friendshipReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -56,18 +57,22 @@ public class CommentService : ICommentService
         Guid? currentUserId,
         CancellationToken cancellationToken)
     {
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
         query.Normalize();
 
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            accessToken: accessToken);
         if (blockedUserIds.Contains(post.UserId))
         {
             throw new BusinessException(ErrorCode.POST_NOT_FOUND);
         }
 
-        var (topLevelComments, _) = await _commentRepository.GetPagedByPostIdAsync(
+        var (topLevelComments, totalCount) = await _commentRepository.GetPagedByPostIdAsync(
             post.Id,
             query.Page,
             query.PageSize,
@@ -79,10 +84,9 @@ public class CommentService : ICommentService
             cancellationToken,
             blockedUserIds);
 
-        var totalCount = allCommentsInPost.Count;
-        var childrenByParentId = BuildChildrenLookup(allCommentsInPost);
+        var childrenByParentId = allCommentsInPost.BuildChildrenLookup();
 
-        var scopedCommentIds = CollectSubtreeIds(topLevelComments.Select(comment => comment.Id), childrenByParentId);
+        var scopedCommentIds = CommentMapper.CollectSubtreeIds(topLevelComments.Select(comment => comment.Id), childrenByParentId);
         var scopedComments = allCommentsInPost
             .Where(comment => scopedCommentIds.Contains(comment.Id))
             .ToList();
@@ -96,10 +100,10 @@ public class CommentService : ICommentService
 
         var mappedById = scopedComments.ToDictionary(
             comment => comment.Id,
-            comment => MapCommentDto(comment, authors, currentUserReactions, reactionSummaries));
+            comment => comment.ToEnrichedResponseDto(authors, currentUserReactions, reactionSummaries));
 
         var mappedItems = topLevelComments
-            .Select(comment => BuildCommentTree(comment.Id, mappedById, childrenByParentId, scopedCommentIds))
+            .Select(comment => CommentMapper.BuildCommentTree(comment.Id, mappedById, childrenByParentId, scopedCommentIds))
             .ToList();
 
         return PagedResult<CommentResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
@@ -110,10 +114,14 @@ public class CommentService : ICommentService
         Guid? currentUserId,
         CancellationToken cancellationToken)
     {
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
         var comment = await _commentRepository.GetByIdAsync(commentId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            accessToken: accessToken);
         if (blockedUserIds.Contains(comment.UserId))
         {
             throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
@@ -124,8 +132,8 @@ public class CommentService : ICommentService
             cancellationToken,
             blockedUserIds);
 
-        var childrenByParentId = BuildChildrenLookup(allCommentsInPost);
-        var scopedCommentIds = CollectSubtreeIds([comment.Id], childrenByParentId);
+        var childrenByParentId = allCommentsInPost.BuildChildrenLookup();
+        var scopedCommentIds = CommentMapper.CollectSubtreeIds([comment.Id], childrenByParentId);
         var scopedComments = allCommentsInPost
             .Where(item => scopedCommentIds.Contains(item.Id))
             .ToList();
@@ -143,23 +151,22 @@ public class CommentService : ICommentService
         var reactionSummaries = await ResolveReactionSummariesAsync(scopedComments.Select(item => item.Id), cancellationToken);
         var mappedById = scopedComments.ToDictionary(
             item => item.Id,
-            item => MapCommentDto(item, authors, currentUserReactions, reactionSummaries));
+            item => item.ToEnrichedResponseDto(authors, currentUserReactions, reactionSummaries));
 
-        return BuildCommentTree(comment.Id, mappedById, childrenByParentId, scopedCommentIds);
+        return CommentMapper.BuildCommentTree(comment.Id, mappedById, childrenByParentId, scopedCommentIds);
     }
 
     public async Task<CommentResponseDto> CreateAsync(Guid userId, CreateCommentRequestDto request, CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
         var post = await _postRepository.GetByIdForUpdateAsync(request.PostId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
         var blockedUserIds = await ResolveBlockedUserIdsAsync(
             userId,
             cancellationToken,
-            requireFresh: true);
+            requireFresh: true,
+            accessToken: accessToken);
         if (blockedUserIds.Contains(post.UserId))
         {
             throw new BusinessException(ErrorCode.FORBIDDEN, "You are not allowed to comment on this post.");
@@ -182,7 +189,7 @@ public class CommentService : ICommentService
             }
         }
 
-        var author = await ResolveAuthorAsync(user.Id, cancellationToken);
+        var author = await ResolveAuthorAsync(userId, cancellationToken);
         var now = DateTime.UtcNow;
         var actorName = ResolveActorName(author.DisplayName);
         var normalizedContent = NormalizeCommentContent(request.Content);
@@ -194,7 +201,7 @@ public class CommentService : ICommentService
             Id = Guid.NewGuid(),
             PostId = post.Id,
             ParentCommentId = parentComment?.Id,
-            UserId = user.Id,
+            UserId = userId,
             Content = normalizedContent,
             CreatedAt = now,
             UpdatedAt = now
@@ -207,13 +214,13 @@ public class CommentService : ICommentService
         await _commentRepository.AddAsync(comment, cancellationToken);
         Notification? createdNotification = null;
 
-        if (parentComment is not null && parentComment.UserId != user.Id)
+        if (parentComment is not null && parentComment.UserId != userId)
         {
             createdNotification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = parentComment.UserId,
-                ActorUserId = user.Id,
+                ActorUserId = userId,
                 PostId = post.Id,
                 CommentId = comment.Id,
                 Type = NotificationType.COMMENT_REPLY,
@@ -225,13 +232,13 @@ public class CommentService : ICommentService
 
             await _notificationRepository.AddAsync(createdNotification, cancellationToken);
         }
-        else if (parentComment is null && post.UserId != user.Id)
+        else if (parentComment is null && post.UserId != userId)
         {
             createdNotification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = post.UserId,
-                ActorUserId = user.Id,
+                ActorUserId = userId,
                 PostId = post.Id,
                 CommentId = comment.Id,
                 Type = NotificationType.COMMENT,
@@ -292,8 +299,8 @@ public class CommentService : ICommentService
 
         var now = DateTime.UtcNow;
         var commentsInPost = await _commentRepository.GetByPostIdForUpdateAsync(comment.PostId, cancellationToken);
-        var childrenByParentId = BuildChildrenLookup(commentsInPost);
-        var affectedIds = CollectSubtreeIds([comment.Id], childrenByParentId);
+        var childrenByParentId = commentsInPost.BuildChildrenLookup();
+        var affectedIds = CommentMapper.CollectSubtreeIds([comment.Id], childrenByParentId);
 
         foreach (var item in commentsInPost.Where(item => affectedIds.Contains(item.Id)))
         {
@@ -312,120 +319,40 @@ public class CommentService : ICommentService
         }
     }
 
-    private CommentResponseDto MapCommentDto(
-        Comment comment,
-        IReadOnlyDictionary<Guid, AuthorSummaryDto> authors,
-        IReadOnlyDictionary<Guid, string> currentUserReactions,
-        IReadOnlyDictionary<Guid, CommentReactionSummary> reactionSummaries)
-    {
-        var dto = comment.ToResponseDto();
-        var reactionSummary = reactionSummaries.TryGetValue(comment.Id, out var resolvedReactionSummary)
-            ? resolvedReactionSummary
-            : EmptyReactionSummary();
-
-        return dto with
-        {
-            Author = authors.TryGetValue(comment.UserId, out var author)
-                ? author
-                : CreateFallbackAuthor(comment.UserId),
-            CurrentUserReactionType = currentUserReactions.TryGetValue(comment.Id, out var reactionType)
-                ? reactionType
-                : null,
-            ReactionCount = reactionSummary.Count,
-            TopReactionTypes = reactionSummary.TopTypes
-        };
-    }
-
-    private static Dictionary<Guid, List<Comment>> BuildChildrenLookup(IEnumerable<Comment> comments)
-    {
-        return comments
-            .Where(comment => comment.ParentCommentId.HasValue)
-            .GroupBy(comment => comment.ParentCommentId!.Value)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderBy(comment => comment.CreatedAt)
-                    .ToList());
-    }
-
-    private static HashSet<Guid> CollectSubtreeIds(
-        IEnumerable<Guid> rootIds,
-        IReadOnlyDictionary<Guid, List<Comment>> childrenByParentId)
-    {
-        var collectedIds = new HashSet<Guid>();
-        var queue = new Queue<Guid>(rootIds);
-
-        while (queue.Count > 0)
-        {
-            var currentId = queue.Dequeue();
-            if (!collectedIds.Add(currentId))
-            {
-                continue;
-            }
-
-            if (!childrenByParentId.TryGetValue(currentId, out var children))
-            {
-                continue;
-            }
-
-            foreach (var child in children)
-            {
-                queue.Enqueue(child.Id);
-            }
-        }
-
-        return collectedIds;
-    }
-
-    private static CommentResponseDto BuildCommentTree(
-        Guid commentId,
-        IReadOnlyDictionary<Guid, CommentResponseDto> mappedById,
-        IReadOnlyDictionary<Guid, List<Comment>> childrenByParentId,
-        IReadOnlySet<Guid> includedIds)
-    {
-        var dto = mappedById[commentId];
-        var childDtos = childrenByParentId.TryGetValue(commentId, out var children)
-            ? children
-                .Where(child => includedIds.Contains(child.Id) && mappedById.ContainsKey(child.Id))
-                .Select(child => BuildCommentTree(child.Id, mappedById, childrenByParentId, includedIds))
-                .ToList()
-            : [];
-
-        return dto with
-        {
-            ReplyCount = childDtos.Count,
-            Replies = childDtos
-        };
-    }
-
     private async Task<Dictionary<Guid, AuthorSummaryDto>> ResolveAuthorsAsync(
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        return await _userReadModelService.ResolveAuthorsAsync(
-            userIds,
+        var distinctUserIds = userIds
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (distinctUserIds.Count == 0)
+        {
+            return [];
+        }
+
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            distinctUserIds,
             cancellationToken,
-            requireFresh: false,
+            requireFresh: false);
+
+        return UserProfileSummaryMapper.ToAuthorSummaries(
+            distinctUserIds,
+            profileLookup,
             fallbackDisplayName: "user");
     }
 
     private async Task<AuthorSummaryDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
     {
-        return await _userReadModelService.ResolveAuthorAsync(
-            userId,
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            [userId],
             cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "user");
-    }
+            requireFresh: false);
 
-    private static AuthorSummaryDto CreateFallbackAuthor(Guid userId)
-    {
-        return new AuthorSummaryDto
-        {
-            Id = userId,
-            DisplayName = "user",
-            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-        };
+        var profile = profileLookup.TryGetValue(userId, out var value) ? value : null;
+        return UserProfileSummaryMapper.ToAuthorSummary(userId, profile, fallbackDisplayName: "user");
     }
 
     private static string ResolveActorName(string? displayName)
@@ -500,20 +427,20 @@ public class CommentService : ICommentService
         return MediaType.IMAGE;
     }
 
-    private async Task<Dictionary<Guid, string>> ResolveCurrentUserReactionsAsync(
+    private async Task<Dictionary<Guid, ReactionType>> ResolveCurrentUserReactionsAsync(
         IEnumerable<Guid> commentIds,
         Guid? currentUserId,
         CancellationToken cancellationToken)
     {
         if (!currentUserId.HasValue)
         {
-            return new Dictionary<Guid, string>();
+            return new Dictionary<Guid, ReactionType>();
         }
 
         var distinctCommentIds = commentIds.Distinct().ToList();
         if (distinctCommentIds.Count == 0)
         {
-            return new Dictionary<Guid, string>();
+            return new Dictionary<Guid, ReactionType>();
         }
 
         var reactions = await _commentReactionRepository.GetByCommentIdsAndUserAsync(
@@ -523,31 +450,17 @@ public class CommentService : ICommentService
 
         return reactions
             .GroupBy(reaction => reaction.CommentId)
-            .ToDictionary(group => group.Key, group => group.OrderByDescending(reaction => reaction.UpdatedAt).First().Type.ToString());
+            .ToDictionary(group => group.Key, group => group.OrderByDescending(reaction => reaction.UpdatedAt).First().Type);
     }
 
-    private async Task<string?> ResolveCurrentUserReactionTypeAsync(
-        Guid commentId,
-        Guid? currentUserId,
-        CancellationToken cancellationToken)
-    {
-        if (!currentUserId.HasValue)
-        {
-            return null;
-        }
-
-        var reaction = await _commentReactionRepository.GetByCommentAndUserAsync(commentId, currentUserId.Value, cancellationToken);
-        return reaction?.Type.ToString();
-    }
-
-    private async Task<Dictionary<Guid, CommentReactionSummary>> ResolveReactionSummariesAsync(
+    private async Task<Dictionary<Guid, CommentMapper.CommentReactionSummary>> ResolveReactionSummariesAsync(
         IEnumerable<Guid> commentIds,
         CancellationToken cancellationToken)
     {
         var distinctCommentIds = commentIds.Distinct().ToList();
         if (distinctCommentIds.Count == 0)
         {
-            return new Dictionary<Guid, CommentReactionSummary>();
+            return new Dictionary<Guid, CommentMapper.CommentReactionSummary>();
         }
 
         var reactions = await _commentReactionRepository.GetByCommentIdsAsync(distinctCommentIds, cancellationToken);
@@ -556,39 +469,34 @@ public class CommentService : ICommentService
             .GroupBy(reaction => reaction.CommentId)
             .ToDictionary(
                 group => group.Key,
-                group => new CommentReactionSummary(
+                group => new CommentMapper.CommentReactionSummary(
                     group.Count(),
                     group
-                        .GroupBy(reaction => reaction.Type.ToString())
+                        .GroupBy(reaction => reaction.Type)
                         .OrderByDescending(typeGroup => typeGroup.Count())
-                        .ThenBy(typeGroup => typeGroup.Key, StringComparer.Ordinal)
+                        .ThenBy(typeGroup => typeGroup.Key)
                         .Take(3)
                         .Select(typeGroup => typeGroup.Key)
                         .ToList()));
     }
 
-    private async Task<CommentReactionSummary> ResolveReactionSummaryAsync(Guid commentId, CancellationToken cancellationToken)
-    {
-        var summaries = await ResolveReactionSummariesAsync([commentId], cancellationToken);
-        return summaries.TryGetValue(commentId, out var summary)
-            ? summary
-            : EmptyReactionSummary();
-    }
-
-    private static CommentReactionSummary EmptyReactionSummary()
-    {
-        return new CommentReactionSummary(0, Array.Empty<string>());
-    }
-
     private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(
         Guid? currentUserId,
         CancellationToken cancellationToken,
-        bool requireFresh = false)
+        bool requireFresh = false,
+        string? accessToken = null)
     {
-        return await _userReadModelService.ResolveBlockedUserIdsAsync(
+        return await _friendshipReadModelService.ResolveBlockedUserIdsAsync(
             currentUserId,
             cancellationToken,
-            requireFresh: requireFresh);
+            requireFresh: requireFresh,
+            accessToken: accessToken);
     }
 
 }
+
+
+
+
+
+

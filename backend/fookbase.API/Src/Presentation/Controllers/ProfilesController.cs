@@ -1,3 +1,4 @@
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Services;
@@ -27,16 +28,8 @@ public class ProfilesController : ApiControllerBase
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.GetByUserIdAsync(userId, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<ProfileResponseDto>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Profile not found.");
-        }
-
-        return Ok(ApiResponse<ProfileResponseDto>.Ok(result.Data));
+        var response = await _profileService.GetByUserIdAsync(userId, cancellationToken);
+        return Ok(ApiResponse<ProfileResponseDto>.Ok(response));
     }
 
     [HttpGet("me")]
@@ -45,16 +38,8 @@ public class ProfilesController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await _profileService.GetMyProfileSettingsAsync(userId, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<MyProfileSettingsResponseDto>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Load my profile settings failed.");
-        }
-
-        return Ok(ApiResponse<MyProfileSettingsResponseDto>.Ok(result.Data));
+        var response = await _profileService.GetMyProfileSettingsAsync(userId, cancellationToken);
+        return Ok(ApiResponse<MyProfileSettingsResponseDto>.Ok(response));
     }
 
     [HttpGet("me/page-info")]
@@ -62,16 +47,8 @@ public class ProfilesController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<ProfilePageInfoSettingsResponseDto>>> GetMyProfilePageInfoSettings(
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.GetMyProfilePageInfoSettingsAsync(ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<ProfilePageInfoSettingsResponseDto>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Load my profile page info settings failed.");
-        }
-
-        return Ok(ApiResponse<ProfilePageInfoSettingsResponseDto>.Ok(result.Data));
+        var response = await _profileService.GetMyProfilePageInfoSettingsAsync(cancellationToken);
+        return Ok(ApiResponse<ProfilePageInfoSettingsResponseDto>.Ok(response));
     }
 
     [HttpGet("me/page-info/visibility")]
@@ -79,54 +56,30 @@ public class ProfilesController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<ProfileInfoVisibilityResponseDto>>> GetMyProfilePageInfoVisibility(
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.GetMyProfilePageInfoVisibilityAsync(ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<ProfileInfoVisibilityResponseDto>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Load my profile page info visibility failed.");
-        }
-
-        return Ok(ApiResponse<ProfileInfoVisibilityResponseDto>.Ok(result.Data));
+        var response = await _profileService.GetMyProfilePageInfoVisibilityAsync(cancellationToken);
+        return Ok(ApiResponse<ProfileInfoVisibilityResponseDto>.Ok(response));
     }
 
     [HttpPatch("me/page-info/visibility")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<object?>>> UpdateMyProfilePageInfoVisibility(
+    public async Task<ActionResult<ApiResponse<NoContentDto>>> UpdateMyProfilePageInfoVisibility(
         [FromBody] UpdateProfileInfoVisibilityRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.UpdateMyProfilePageInfoVisibilityAsync(
+        await _profileService.UpdateMyProfilePageInfoVisibilityAsync(
             request,
-            ExtractAccessToken(),
             cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return BuildErrorResponse<object?>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Update profile page info visibility failed.");
-        }
 
         return NoContent();
     }
 
     [HttpPatch("me")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<object?>>> UpdateMyProfile(
+    public async Task<ActionResult<ApiResponse<NoContentDto>>> UpdateMyProfile(
         [FromBody] UpdateMyProfileRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _profileService.UpdateMyProfileAsync(request, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BuildErrorResponse<object?>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Update profile failed.");
-        }
+        await _profileService.UpdateMyProfileAsync(request, cancellationToken);
 
         return NoContent();
     }
@@ -143,13 +96,12 @@ public class ProfilesController : ApiControllerBase
         var normalizedPhoneNumber = phoneNumber?.Trim();
         var normalizedDisplayName = displayName?.Trim();
 
-        JavaApiCallResult<List<UserProfileSearchDto>> result;
+        List<UserProfileSearchDto> profiles;
 
         if (!string.IsNullOrWhiteSpace(normalizedPhoneNumber))
         {
-            result = await _profileService.SearchByPhoneNumberAsync(
+            profiles = await _profileService.SearchByPhoneNumberAsync(
                 normalizedPhoneNumber,
-                ExtractAccessToken(),
                 cancellationToken);
         }
         else
@@ -168,31 +120,24 @@ public class ProfilesController : ApiControllerBase
 
             if (Regex.IsMatch(resolvedDisplayName, "^0\\d{9}$"))
             {
-                result = await _profileService.SearchByPhoneNumberAsync(
+                profiles = await _profileService.SearchByPhoneNumberAsync(
                     resolvedDisplayName,
-                    ExtractAccessToken(),
                     cancellationToken);
             }
             else
             {
-                result = await _profileService.SearchByDisplayNameAsync(
+                profiles = await _profileService.SearchByDisplayNameAsync(
                     resolvedDisplayName,
-                    ExtractAccessToken(),
                     cancellationToken);
             }
         }
 
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<List<UserProfileSearchDto>>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Search profile failed.");
-        }
-
-        var statusCode = ResolveSuccessStatusCode(result.StatusCode);
-
-        return StatusCode(statusCode, ApiResponse<List<UserProfileSearchDto>>.Ok(result.Data));
+        return Ok(ApiResponse<List<UserProfileSearchDto>>.Ok(profiles));
     }
 }
+
+
+
+
+
 

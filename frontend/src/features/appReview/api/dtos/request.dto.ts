@@ -3,3 +3,7 @@ export interface CreateOrUpdateAppReviewRequestDto {
   displayName: string;
   comment: string;
 }
+
+export interface UpdateAppReviewVisibilityRequestDto {
+  isHidden: boolean;
+}

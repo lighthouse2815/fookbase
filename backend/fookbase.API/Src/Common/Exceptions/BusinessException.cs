@@ -21,3 +21,6 @@ public sealed class BusinessException : Exception
 
     public IReadOnlyDictionary<string, object?>? ErrorData { get; }
 }
+
+
+

@@ -7,3 +7,6 @@ public class OtpVerifyResponseDto
     [JsonPropertyName("result")]
     public string Result { get; set; } = string.Empty;
 }
+
+
+

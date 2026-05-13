@@ -15,3 +15,6 @@ public class CreateOrUpdateAppReviewRequestDto
     [StringLength(1000, MinimumLength = 3)]
     public string Comment { get; set; } = string.Empty;
 }
+
+
+

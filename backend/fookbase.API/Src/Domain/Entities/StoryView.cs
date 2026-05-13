@@ -12,3 +12,6 @@ public class StoryView
 
     public Story? Story { get; set; }
 }
+
+
+

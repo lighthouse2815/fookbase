@@ -4,13 +4,7 @@ namespace InteractHub.Api.Application.Interfaces.Repositories;
 
 public interface IAppReviewRepository
 {
-    Task<(IReadOnlyList<AppReview> Items, int TotalCount)> GetPublicPagedAsync(
-        int page,
-        int pageSize,
-        int? rating,
-        CancellationToken cancellationToken);
-
-    Task<(IReadOnlyList<AppReview> Items, int TotalCount)> GetAdminPagedAsync(
+    Task<(IReadOnlyList<AppReview> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,
         int? rating,
@@ -35,3 +29,6 @@ public interface IAppReviewRepository
 
     void Remove(AppReview appReview);
 }
+
+
+

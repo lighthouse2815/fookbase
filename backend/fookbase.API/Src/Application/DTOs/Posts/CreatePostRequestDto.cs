@@ -9,3 +9,6 @@ public class CreatePostRequestDto
 
     public IReadOnlyList<string>? ImageUrls { get; set; }
 }
+
+
+

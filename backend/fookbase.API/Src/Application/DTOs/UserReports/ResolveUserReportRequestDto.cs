@@ -8,3 +8,6 @@ public class ResolveUserReportRequestDto
     [StringLength(30, MinimumLength = 3)]
     public string Status { get; set; } = "RESOLVED";
 }
+
+
+

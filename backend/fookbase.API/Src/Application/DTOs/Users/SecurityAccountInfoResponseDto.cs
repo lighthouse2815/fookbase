@@ -13,3 +13,6 @@ public class SecurityAccountInfoResponseDto
     [JsonPropertyName("phoneNumber")]
     public string? PhoneNumber { get; set; }
 }
+
+
+

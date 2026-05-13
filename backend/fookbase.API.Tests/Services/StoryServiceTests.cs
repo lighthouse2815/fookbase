@@ -16,10 +16,12 @@ namespace InteractHub.Api.Tests.Services;
 
 public class StoryServiceTests
 {
+    private readonly Mock<IAccessTokenProvider> _accessTokenProviderMock = new();
     private readonly Mock<IStoryRepository> _storyRepositoryMock = new();
     private readonly Mock<IStoryReactionRepository> _storyReactionRepositoryMock = new();
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
     private readonly Mock<IUserReadModelService> _userReadModelServiceMock = new();
+    private readonly Mock<IUserProfileSummaryReadModelService> _userProfileSummaryReadModelServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
     private readonly Mock<ILogger<StoryService>> _loggerMock = new();
@@ -42,11 +44,21 @@ public class StoryServiceTests
                 It.IsAny<bool>()))
             .ReturnsAsync(new HashSet<Guid>());
 
+        _userProfileSummaryReadModelServiceMock
+            .Setup(service => service.GetProfileSummariesAsync(
+                It.IsAny<IEnumerable<Guid>>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<bool>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(new Dictionary<Guid, UserProfileSummaryDto?>());
+
         return new StoryService(
+            _accessTokenProviderMock.Object,
             _storyRepositoryMock.Object,
             _storyReactionRepositoryMock.Object,
             _javaApiServiceMock.Object,
             _userReadModelServiceMock.Object,
+            _userProfileSummaryReadModelServiceMock.Object,
             _unitOfWorkMock.Object,
             _httpContextAccessorMock.Object,
             _loggerMock.Object);
@@ -83,18 +95,17 @@ public class StoryServiceTests
         _javaApiServiceMock
             .Setup(service => service.GetUserById(userId, It.IsAny<CancellationToken>(), null))
             .ReturnsAsync(new UserDto { Id = userId });
-        _userReadModelServiceMock
-            .Setup(service => service.ResolveAuthorsAsync(
+        _userProfileSummaryReadModelServiceMock
+            .Setup(service => service.GetProfileSummariesAsync(
                 It.IsAny<IEnumerable<Guid>>(),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<bool>(),
-                It.IsAny<string?>(),
-                It.IsAny<string>()))
-            .ReturnsAsync(new Dictionary<Guid, AuthorSummaryDto>
+                It.IsAny<string?>()))
+            .ReturnsAsync(new Dictionary<Guid, UserProfileSummaryDto?>
             {
                 [userId] = new()
                 {
-                    Id = userId,
+                    UserId = userId,
                     DisplayName = "Story Owner",
                     AvatarUrl = "https://cdn.example.com/avatar.jpg"
                 }

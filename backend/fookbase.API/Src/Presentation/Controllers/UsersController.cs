@@ -1,3 +1,4 @@
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Extensions;
@@ -23,16 +24,9 @@ public class UsersController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<CurrentUserResponseDto>>> GetCurrentUser(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var accessToken = ExtractAccessToken();
-        var result = await _currentUserService.GetCurrentUserAsync(userId, accessToken, cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<CurrentUserResponseDto>(result, "Load current user failed.");
-        }
+        var response = await _currentUserService.GetCurrentUserAsync(userId, cancellationToken);
 
-        return StatusCode(
-            ResolveSuccessStatusCode(result.StatusCode),
-            ApiResponse<CurrentUserResponseDto>.Ok(result.Data));
+        return Ok(ApiResponse<CurrentUserResponseDto>.Ok(response));
     }
 
     [HttpGet("me/security-account")]
@@ -41,47 +35,33 @@ public class UsersController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var accessToken = ExtractAccessToken();
         var usernameFromClaims = User.GetUsernameOrNull();
-        var result = await _currentUserService.GetSecurityAccountInfoAsync(
+        var response = await _currentUserService.GetSecurityAccountInfoAsync(
             userId,
-            accessToken,
             usernameFromClaims,
             cancellationToken);
 
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<SecurityAccountInfoResponseDto>(result, "Load security account info failed.");
-        }
-
-        return StatusCode(
-            ResolveSuccessStatusCode(result.StatusCode),
-            ApiResponse<SecurityAccountInfoResponseDto>.Ok(result.Data));
+        return Ok(ApiResponse<SecurityAccountInfoResponseDto>.Ok(response));
     }
 
     [HttpPatch("me/security-account")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<object?>>> UpdateMySecurityAccountInfo(
+    public async Task<ActionResult<ApiResponse<NoContentDto>>> UpdateMySecurityAccountInfo(
         [FromHeader(Name = "X-Reset-Token")] string? resetToken,
         [FromBody] UpdateSecurityAccountRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
-        var result = await _currentUserService.UpdateSecurityAccountInfoAsync(
+        await _currentUserService.UpdateSecurityAccountInfoAsync(
             resetToken,
             request,
-            accessToken,
             cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return BuildErrorResponse<object?>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Update security account info failed.");
-        }
 
         return NoContent();
     }
 }
+
+
+
+
+
 

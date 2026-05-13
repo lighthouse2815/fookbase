@@ -13,3 +13,6 @@ public class UserProfileSummaryDto
     [JsonPropertyName("avatarUrl")]
     public string? AvatarUrl { get; set; }
 }
+
+
+

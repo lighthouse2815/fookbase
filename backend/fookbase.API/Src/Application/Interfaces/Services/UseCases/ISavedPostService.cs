@@ -12,3 +12,6 @@ public interface ISavedPostService
 
     Task<SavedPostStateResponseDto> RemoveAsync(Guid userId, Guid postId, CancellationToken cancellationToken);
 }
+
+
+

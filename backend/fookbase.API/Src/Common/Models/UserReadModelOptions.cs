@@ -6,3 +6,6 @@ public class UserReadModelOptions
 
     public int ProfileCacheTtlSeconds { get; set; } = 300;
 }
+
+
+

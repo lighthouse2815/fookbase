@@ -22,3 +22,6 @@ public class MyProfileSettingsResponseDto
 
     public string? Gender { get; set; }
 }
+
+
+

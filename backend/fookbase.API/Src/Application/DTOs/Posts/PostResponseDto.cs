@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Common;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.DTOs.Posts;
 
@@ -24,11 +25,14 @@ public record PostResponseDto
 
     public int ReactionCount { get; init; }
 
-    public string? CurrentUserReactionType { get; init; }
+    public ReactionType? CurrentUserReactionType { get; init; }
 
-    public IReadOnlyList<string> TopReactionTypes { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<ReactionType> TopReactionTypes { get; init; } = Array.Empty<ReactionType>();
 
     public int CommentCount { get; init; }
 
     public IReadOnlyList<string> Hashtags { get; init; } = Array.Empty<string>();
 }
+
+
+

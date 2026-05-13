@@ -18,14 +18,14 @@ public class NotificationServiceTests
     private readonly Mock<INotificationRepository> _notificationRepositoryMock = new();
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
     private readonly Mock<INotificationRealtimeService> _notificationRealtimeServiceMock = new();
-    private readonly Mock<IUserReadModelService> _userReadModelServiceMock = new();
+    private readonly Mock<IUserProfileSummaryReadModelService> _userProfileSummaryReadModelServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ILogger<NotificationService>> _loggerMock = new();
 
     private NotificationService CreateService()
     {
-        _userReadModelServiceMock
-            .Setup(service => service.ResolveProfileLookupAsync(
+        _userProfileSummaryReadModelServiceMock
+            .Setup(service => service.GetProfileSummariesAsync(
                 It.IsAny<IEnumerable<Guid>>(),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<bool>(),
@@ -39,7 +39,7 @@ public class NotificationServiceTests
             _notificationRepositoryMock.Object,
             _javaApiServiceMock.Object,
             _notificationRealtimeServiceMock.Object,
-            _userReadModelServiceMock.Object,
+            _userProfileSummaryReadModelServiceMock.Object,
             _unitOfWorkMock.Object,
             _loggerMock.Object);
     }

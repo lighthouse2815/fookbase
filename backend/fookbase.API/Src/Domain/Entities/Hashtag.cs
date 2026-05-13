@@ -14,3 +14,6 @@ public class Hashtag
 
     public ICollection<PostHashtag> PostHashtags { get; set; } = new List<PostHashtag>();
 }
+
+
+

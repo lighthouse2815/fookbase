@@ -8,7 +8,6 @@ public interface IStoryService
     Task<PagedResult<StoryResponseDto>> GetFeedAsync(
         Guid currentUserId,
         PaginationQuery query,
-        string? accessToken,
         CancellationToken cancellationToken);
 
     Task<PagedResult<StoryResponseDto>> GetByUserIdAsync(
@@ -25,3 +24,6 @@ public interface IStoryService
 
     Task DeleteAsync(Guid storyId, Guid userId, bool isAdmin, CancellationToken cancellationToken);
 }
+
+
+

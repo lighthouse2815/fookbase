@@ -28,3 +28,6 @@ public class UserProfilePrivateDto
     [JsonPropertyName("status")]
     public string? Status { get; set; }
 }
+
+
+

@@ -15,3 +15,6 @@ public class CreateStoryRequestDto
     [StringLength(500)]
     public string? Content { get; set; }
 }
+
+
+

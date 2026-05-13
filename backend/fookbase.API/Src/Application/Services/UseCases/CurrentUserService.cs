@@ -1,199 +1,95 @@
-using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Users;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Extensions;
+using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Enums;
+using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
-using Microsoft.AspNetCore.Http;
 
 namespace InteractHub.Api.Application.Services;
 
 public class CurrentUserService : ICurrentUserService
 {
-    private readonly IJavaApiService _javaApiService;
-    private readonly IUserReadModelService _userReadModelService;
-    private readonly ILogger<CurrentUserService> _logger;
+    private readonly IAccessTokenProvider _accessTokenProvider;
+    private readonly IJavaCurrentUserApiService _javaCurrentUserApiService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
 
     public CurrentUserService(
-        IJavaApiService javaApiService,
-        IUserReadModelService userReadModelService,
-        ILogger<CurrentUserService> logger)
+        IAccessTokenProvider accessTokenProvider,
+        IJavaCurrentUserApiService javaCurrentUserApiService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService)
     {
-        _javaApiService = javaApiService;
-        _userReadModelService = userReadModelService;
-        _logger = logger;
+        _accessTokenProvider = accessTokenProvider;
+        _javaCurrentUserApiService = javaCurrentUserApiService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
     }
 
-    public async Task<JavaApiCallResult<CurrentUserResponseDto>> GetCurrentUserAsync(
+    public async Task<CurrentUserResponseDto> GetCurrentUserAsync(
         Guid userId,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
-        try
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
+
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            [userId],
+            cancellationToken,
+            requireFresh: true,
+            accessToken: accessToken);
+
+        if (!profileLookup.TryGetValue(userId, out var profile) || profile is null)
         {
-            var profileLookup = await _userReadModelService.ResolveProfileLookupAsync(
-                [userId],
-                cancellationToken,
-                requireFresh: true,
-                accessToken: accessToken);
-
-            if (!profileLookup.TryGetValue(userId, out var profile) || profile is null)
-            {
-                return JavaApiCallResult<CurrentUserResponseDto>.Failure(
-                    StatusCodes.Status404NotFound,
-                    "User profile not found.");
-            }
-
-            var fullName = string.IsNullOrWhiteSpace(profile.DisplayName)
-                ? "user"
-                : profile.DisplayName.Trim();
-
-            var avatarUrl = string.IsNullOrWhiteSpace(profile.AvatarUrl)
-                ? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-                : profile.AvatarUrl.Trim();
-
-            var response = new CurrentUserResponseDto
-            {
-                Id = userId,
-                FullName = fullName,
-                AvatarUrl = avatarUrl
-            };
-
-            return JavaApiCallResult<CurrentUserResponseDto>.Success(response, StatusCodes.Status200OK);
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND, "User profile not found.");
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(exception, "Could not load current-user profile for user {UserId}.", userId);
-            return JavaApiCallResult<CurrentUserResponseDto>.Failure(
-                StatusCodes.Status503ServiceUnavailable,
-                "Current user profile is unavailable.");
-        }
+
+        return CurrentUserMapper.ToCurrentUserResponseDto(userId, profile);
     }
 
-    public async Task<JavaApiCallResult<SecurityAccountInfoResponseDto>> GetSecurityAccountInfoAsync(
+    public async Task<SecurityAccountInfoResponseDto> GetSecurityAccountInfoAsync(
         Guid userId,
-        string? accessToken,
         string? usernameFromClaims,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return JavaApiCallResult<SecurityAccountInfoResponseDto>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
-        var privateSecurityResult = await _javaApiService.GetMySecurityPrivateProfileAsync(
-            accessToken.Trim(),
+        var privateSecurityResult = await _javaCurrentUserApiService.GetMySecurityPrivateProfileAsync(
+            accessToken,
             cancellationToken);
 
-        if (!privateSecurityResult.IsSuccess)
-        {
-            var statusCode = privateSecurityResult.StatusCode > 0
-                ? privateSecurityResult.StatusCode
-                : StatusCodes.Status502BadGateway;
+        var privateSecurityProfile = JavaApiResultHelper.EnsureSuccessAndDataOrThrow(
+            privateSecurityResult,
+            "Load private security profile failed.",
+            "Java security profile API returned empty data.");
 
-            var errorMessage = string.IsNullOrWhiteSpace(privateSecurityResult.ErrorMessage)
-                ? "Load private security profile failed."
-                : privateSecurityResult.ErrorMessage;
-
-            return JavaApiCallResult<SecurityAccountInfoResponseDto>.Failure(statusCode, errorMessage);
-        }
-
-        if (privateSecurityResult.Data is null)
-        {
-            return JavaApiCallResult<SecurityAccountInfoResponseDto>.Failure(
-                StatusCodes.Status502BadGateway,
-                "Java security profile API returned empty data.");
-        }
-
-        var resolvedUsername = FirstNonEmpty(privateSecurityResult.Data.Username, usernameFromClaims);
-
-        if (string.IsNullOrWhiteSpace(resolvedUsername))
-        {
-            resolvedUsername = BuildFallbackUsername(userId);
-            _logger.LogInformation(
-                "Username is unavailable from private security profile and token claims for user {UserId}. Using fallback.",
-                userId);
-        }
-
-        var response = new SecurityAccountInfoResponseDto
-        {
-            Username = resolvedUsername,
-            Email = privateSecurityResult.Data.Email.TrimToNull(),
-            PhoneNumber = privateSecurityResult.Data.PhoneNumber.TrimToNull()
-        };
-
-        var successStatusCode = privateSecurityResult.StatusCode > 0
-            ? privateSecurityResult.StatusCode
-            : StatusCodes.Status200OK;
-
-        return JavaApiCallResult<SecurityAccountInfoResponseDto>.Success(response, successStatusCode);
+        return privateSecurityProfile.ToSecurityAccountInfoResponseDto(usernameFromClaims);
     }
 
-    public Task<JavaApiCallResult<object?>> UpdateSecurityAccountInfoAsync(
+    public async Task UpdateSecurityAccountInfoAsync(
         string? resetToken,
         UpdateSecurityAccountRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Task.FromResult(JavaApiCallResult<object?>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized."));
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
-        var username = request.Username.TrimToNull();
-        var phoneNumber = request.PhoneNumber.TrimToNull();
         var normalizedResetToken = resetToken?.Trim();
+        var normalizedRequest = request.ToNormalizedRequest();
 
         if (string.IsNullOrWhiteSpace(normalizedResetToken))
         {
-            return Task.FromResult(JavaApiCallResult<object?>.Failure(
-                StatusCodes.Status400BadRequest,
-                "X-Reset-Token header is required."));
+            throw new BusinessException(ErrorCode.RESET_TOKEN_HEADER_REQUIRED);
         }
 
-        if (username is null && phoneNumber is null)
+        if (normalizedRequest.Username is null && normalizedRequest.PhoneNumber is null)
         {
-            return Task.FromResult(JavaApiCallResult<object?>.Failure(
-                StatusCodes.Status400BadRequest,
-                "username or phoneNumber is required."));
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "username or phoneNumber is required.");
         }
 
-        var normalizedRequest = new UpdateSecurityAccountRequestDto
-        {
-            Username = username,
-            PhoneNumber = phoneNumber
-        };
-
-        return _javaApiService.UpdateMySecurityPrivateProfileAsync(
+        var result = await _javaCurrentUserApiService.UpdateMySecurityPrivateProfileAsync(
             normalizedResetToken,
             normalizedRequest,
-            accessToken.Trim(),
+            accessToken,
             cancellationToken);
-    }
 
-    private static string BuildFallbackUsername(Guid userId)
-    {
-        return $"user_{userId.ToString("N")[..8]}";
-    }
-
-    private static string? FirstNonEmpty(params string?[] values)
-    {
-        foreach (var value in values)
-        {
-            var normalized = value.TrimToNull();
-            if (normalized is not null)
-            {
-                return normalized;
-            }
-        }
-
-        return null;
+        JavaApiResultHelper.EnsureSuccessOrThrow(result, "Update security account info failed.");
     }
 }
+
+

@@ -4,3 +4,6 @@ public interface ITokenRoleService
 {
     bool IsAdmin(string? roleHint, string? token);
 }
+
+
+

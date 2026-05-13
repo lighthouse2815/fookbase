@@ -26,3 +26,6 @@ public class PostReport
 
     public Post? Post { get; set; }
 }
+
+
+

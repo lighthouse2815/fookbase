@@ -19,3 +19,6 @@ public interface IPostReportService
 
     Task DeleteAsync(Guid reportId, Guid userId, bool isAdmin, CancellationToken cancellationToken);
 }
+
+
+

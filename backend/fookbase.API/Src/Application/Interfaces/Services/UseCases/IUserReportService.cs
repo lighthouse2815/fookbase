@@ -19,3 +19,6 @@ public interface IUserReportService
 
     Task DeleteAsync(Guid reportId, Guid userId, bool isAdmin, CancellationToken cancellationToken);
 }
+
+
+

@@ -22,3 +22,6 @@ public class UpdateProfileInfoVisibilityRequestDto
     [Required]
     public bool? FriendCountVisible { get; set; }
 }
+
+
+

@@ -19,3 +19,6 @@ public class UserProfileSearchDto
     [JsonPropertyName("status")]
     public string? Status { get; set; }
 }
+
+
+

@@ -1,9 +1,11 @@
 using System.Text.RegularExpressions;
 using InteractHub.Api.Application.DTOs.Common;
+using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.DTOs.Posts;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
@@ -19,31 +21,31 @@ public class PostService : IPostService
 {
     private static readonly Regex HashtagRegex = new("#([A-Za-z0-9_]{1,50})", RegexOptions.Compiled);
 
+    private readonly IAccessTokenProvider _accessTokenProvider;
     private readonly IPostRepository _postRepository;
-    private readonly IJavaApiService _javaApiService;
     private readonly IHashtagRepository _hashtagRepository;
-    private readonly INotificationRepository _notificationRepository;
-    private readonly INotificationRealtimeService _notificationRealtimeService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly INotificationService _notificationService;
+    private readonly IFriendshipReadModelService _friendshipReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PostService> _logger;
 
     public PostService(
+        IAccessTokenProvider accessTokenProvider,
         IPostRepository postRepository,
-        IJavaApiService javaApiService,
         IHashtagRepository hashtagRepository,
-        INotificationRepository notificationRepository,
-        INotificationRealtimeService notificationRealtimeService,
-        IUserReadModelService userReadModelService,
+        INotificationService notificationService,
+        IFriendshipReadModelService friendshipReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         IUnitOfWork unitOfWork,
         ILogger<PostService> logger)
     {
+        _accessTokenProvider = accessTokenProvider;
         _postRepository = postRepository;
-        _javaApiService = javaApiService;
         _hashtagRepository = hashtagRepository;
-        _notificationRepository = notificationRepository;
-        _notificationRealtimeService = notificationRealtimeService;
-        _userReadModelService = userReadModelService;
+        _notificationService = notificationService;
+        _friendshipReadModelService = friendshipReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -64,25 +66,7 @@ public class PostService : IPostService
             blockedUserIds);
 
         var authors = await ResolveAuthorsAsync(items.Select(post => post.UserId), cancellationToken);
-
-        var mappedItems = items
-            .Select(post =>
-            {
-                var dto = post.ToResponseDto();
-                var currentUserReactionType = GetCurrentUserReactionType(post, currentUserId);
-                dto = dto with
-                {
-                    Author = authors.TryGetValue(post.UserId, out var author)
-                        ? author
-                        : CreateFallbackAuthor(post.UserId),
-                    CurrentUserReactionType = currentUserReactionType,
-                    LikedByCurrentUser = currentUserReactionType is not null,
-                    CommentCount = ResolveVisibleCommentCount(post, blockedUserIds)
-                };
-
-                return dto;
-            })
-            .ToList();
+        var mappedItems = items.ToResponseDtos(authors, currentUserId, blockedUserIds);
 
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -98,28 +82,22 @@ public class PostService : IPostService
             throw new BusinessException(ErrorCode.POST_NOT_FOUND);
         }
 
-        var dto = post.ToResponseDto();
-        var currentUserReactionType = GetCurrentUserReactionType(post, currentUserId);
-        return dto with
-        {
-            Author = await ResolveAuthorAsync(post.UserId, cancellationToken),
-            CurrentUserReactionType = currentUserReactionType,
-            LikedByCurrentUser = currentUserReactionType is not null,
-            CommentCount = ResolveVisibleCommentCount(post, blockedUserIds)
-        };
+        var author = (await ResolveAuthorsAsync([post.UserId], cancellationToken))[post.UserId];
+        return post.ToResponseDto(
+            currentUserId,
+            blockedUserIds,
+            author);
     }
 
     public async Task<PostResponseDto> CreateAsync(
         Guid userId,
         CreatePostRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
 
-        var normalizedContent = NormalizePostContent(request.Content);
-        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrls);
+        var normalizedContent = request.Content?.Trim() ?? string.Empty;
+        var normalizedMediaUrls = PostMediaSerializer.Normalize(request.ImageUrls);
         EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         var now = DateTime.UtcNow;
@@ -127,7 +105,7 @@ public class PostService : IPostService
         var post = new Post
         {
             Id = Guid.NewGuid(),
-            UserId = user.Id,
+            UserId = userId,
             Content = normalizedContent,
             CreatedAt = now,
             UpdatedAt = now
@@ -154,19 +132,13 @@ public class PostService : IPostService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await TryCreateFriendPostNotificationsAsync(
-            authorUserId: user.Id,
+            authorUserId: userId,
             postId: post.Id,
             accessToken: accessToken,
             cancellationToken: cancellationToken);
 
-        var dto = post.ToResponseDto();
-        var currentUserReactionType = GetCurrentUserReactionType(post, userId);
-        return dto with
-        {
-            Author = await ResolveAuthorAsync(post.UserId, cancellationToken),
-            CurrentUserReactionType = currentUserReactionType,
-            LikedByCurrentUser = currentUserReactionType is not null
-        };
+        var author = (await ResolveAuthorsAsync([post.UserId], cancellationToken))[post.UserId];
+        return post.ToResponseDto(userId, author: author);
     }
 
     public async Task<PostResponseDto> UpdateAsync(
@@ -181,8 +153,8 @@ public class PostService : IPostService
 
         EnsureOwnerOrAdmin(post.UserId, userId, isAdmin, "You are not allowed to update this post.");
 
-        var normalizedContent = NormalizePostContent(request.Content);
-        var normalizedMediaUrls = NormalizePostMedia(request.ImageUrls);
+        var normalizedContent = request.Content?.Trim() ?? string.Empty;
+        var normalizedMediaUrls = PostMediaSerializer.Normalize(request.ImageUrls);
         EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         post.Content = normalizedContent;
@@ -214,14 +186,8 @@ public class PostService : IPostService
         var updated = await _postRepository.GetByIdAsync(post.Id, cancellationToken)
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
-        var dto = updated.ToResponseDto();
-        var currentUserReactionType = GetCurrentUserReactionType(updated, userId);
-        return dto with
-        {
-            Author = await ResolveAuthorAsync(updated.UserId, cancellationToken),
-            CurrentUserReactionType = currentUserReactionType,
-            LikedByCurrentUser = currentUserReactionType is not null
-        };
+        var author = (await ResolveAuthorsAsync([updated.UserId], cancellationToken))[updated.UserId];
+        return updated.ToResponseDto(userId, author: author);
     }
 
     public async Task DeleteAsync(Guid postId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
@@ -288,61 +254,25 @@ public class PostService : IPostService
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        return await _userReadModelService.ResolveAuthorsAsync(
-            userIds,
+        var distinctUserIds = userIds
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (distinctUserIds.Count == 0)
+        {
+            return [];
+        }
+
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            distinctUserIds,
             cancellationToken,
-            requireFresh: false,
+            requireFresh: false);
+
+        return UserProfileSummaryMapper.ToAuthorSummaries(
+            distinctUserIds,
+            profileLookup,
             fallbackDisplayName: "user");
-    }
-
-    private async Task<AuthorSummaryDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        return await _userReadModelService.ResolveAuthorAsync(
-            userId,
-            cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "user");
-    }
-
-    private static AuthorSummaryDto CreateFallbackAuthor(Guid userId)
-    {
-        return new AuthorSummaryDto
-        {
-            Id = userId,
-            DisplayName = "user",
-            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-        };
-    }
-
-    private static string? GetCurrentUserReactionType(Post post, Guid? currentUserId)
-    {
-        if (!currentUserId.HasValue)
-        {
-            return null;
-        }
-
-        var reaction = post.Likes.FirstOrDefault(like => like.UserId == currentUserId.Value);
-        if (reaction is null)
-        {
-            return null;
-        }
-
-        return NormalizePostReactionType(reaction.Type);
-    }
-
-    private static int ResolveVisibleCommentCount(Post post, IReadOnlySet<Guid> blockedUserIds)
-    {
-        if (blockedUserIds.Count == 0)
-        {
-            return post.Comments.Count;
-        }
-
-        return post.Comments.Count(comment => !blockedUserIds.Contains(comment.UserId));
-    }
-
-    private static string NormalizePostReactionType(ReactionType type)
-    {
-        return type.ToString();
     }
 
     private static void EnsurePostHasContentOrMedia(string content, IReadOnlyList<string> mediaUrls)
@@ -351,16 +281,6 @@ public class PostService : IPostService
         {
             throw new BusinessException(ErrorCode.POST_TEXT_OR_MEDIA_REQUIRED);
         }
-    }
-
-    private static string NormalizePostContent(string? content)
-    {
-        return content?.Trim() ?? string.Empty;
-    }
-
-    private static IReadOnlyList<string> NormalizePostMedia(IReadOnlyList<string>? mediaUrls)
-    {
-        return PostMediaSerializer.Normalize(mediaUrls);
     }
 
     private static IReadOnlyList<PostMedia> BuildPostMediaItems(Guid postId, IReadOnlyList<string> mediaUrls, DateTime createdAtUtc)
@@ -410,7 +330,7 @@ public class PostService : IPostService
     {
         try
         {
-            var friendIds = await _userReadModelService.ResolveContactIdsAsync(
+            var friendIds = await _friendshipReadModelService.ResolveContactIdsAsync(
                 authorUserId,
                 accessToken?.Trim(),
                 cancellationToken,
@@ -423,34 +343,20 @@ public class PostService : IPostService
             }
 
             var actorSummary = await ResolveNotificationActorSummaryAsync(authorUserId, accessToken, cancellationToken);
-            var now = DateTime.UtcNow;
-            var createdNotifications = new List<Notification>(friendIds.Count);
 
             foreach (var friendId in friendIds)
             {
-                var notification = new Notification
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = friendId,
-                    ActorUserId = authorUserId,
-                    PostId = postId,
-                    Type = NotificationType.FRIEND_POST,
-                    Message = $"{actorSummary.DisplayName} shared a new post.",
-                    IsRead = false,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                };
-
-                await _notificationRepository.AddAsync(notification, cancellationToken);
-                createdNotifications.Add(notification);
-            }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            foreach (var notification in createdNotifications)
-            {
-                await _notificationRealtimeService.NotifyCreatedAsync(
-                    notification.ToResponseDto(actorSummary.DisplayName, actorSummary.AvatarUrl),
+                await _notificationService.CreateAsync(
+                    new CreateNotificationRequestDto
+                    {
+                        UserId = friendId,
+                        ActorUserId = authorUserId,
+                        PostId = postId,
+                        Type = NotificationType.FRIEND_POST.ToString(),
+                        Message = string.Format(
+                            ReportNotificationMessageConstants.Post.FriendPostFormat,
+                            actorSummary.DisplayName)
+                    },
                     cancellationToken);
             }
         }
@@ -472,17 +378,19 @@ public class PostService : IPostService
         string? accessToken,
         CancellationToken cancellationToken)
     {
-        return await _userReadModelService.ResolveAuthorAsync(
-            actorUserId,
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            [actorUserId],
             cancellationToken,
             requireFresh: false,
-            accessToken: accessToken,
-            fallbackDisplayName: "Your friend");
+            accessToken: accessToken);
+
+        var profile = profileLookup.TryGetValue(actorUserId, out var value) ? value : null;
+        return UserProfileSummaryMapper.ToAuthorSummary(actorUserId, profile, fallbackDisplayName: "Your friend");
     }
 
     private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(Guid? currentUserId, CancellationToken cancellationToken)
     {
-        return await _userReadModelService.ResolveBlockedUserIdsAsync(
+        return await _friendshipReadModelService.ResolveBlockedUserIdsAsync(
             currentUserId,
             cancellationToken,
             requireFresh: false);

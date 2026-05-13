@@ -306,3 +306,6 @@ public sealed class ChessService : IChessService
         public string? EndReason { get; set; }
     }
 }
+
+
+

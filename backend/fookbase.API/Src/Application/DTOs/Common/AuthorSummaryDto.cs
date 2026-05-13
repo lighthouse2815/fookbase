@@ -8,3 +8,6 @@ public class AuthorSummaryDto
 
     public string? AvatarUrl { get; init; }
 }
+
+
+

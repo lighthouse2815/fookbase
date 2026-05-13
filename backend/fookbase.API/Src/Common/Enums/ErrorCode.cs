@@ -9,6 +9,7 @@ public enum ErrorCode
     NOT_FOUND,
     SERVICE_UNAVAILABLE,
     UPSTREAM_SERVICE_ERROR,
+    SERVICE_ADMIN_JAVA_FAILED,
     BUSINESS_RULE_VIOLATION,
     INTERNAL_ERROR,
 
@@ -98,6 +99,7 @@ public static class ErrorCodeExtensions
                 or ErrorCode.ROOM_NOT_FOUND => StatusCodes.Status404NotFound,
             ErrorCode.SERVICE_UNAVAILABLE
                 or ErrorCode.UPSTREAM_SERVICE_ERROR
+                or ErrorCode.SERVICE_ADMIN_JAVA_FAILED
                 or ErrorCode.CLOUDINARY_SIGNING_NOT_CONFIGURED => StatusCodes.Status503ServiceUnavailable,
             ErrorCode.INTERNAL_ERROR => StatusCodes.Status500InternalServerError,
             _ => StatusCodes.Status400BadRequest
@@ -115,6 +117,7 @@ public static class ErrorCodeExtensions
             ErrorCode.NOT_FOUND => "Resource not found.",
             ErrorCode.SERVICE_UNAVAILABLE => "Service is unavailable.",
             ErrorCode.UPSTREAM_SERVICE_ERROR => "Upstream service error.",
+            ErrorCode.SERVICE_ADMIN_JAVA_FAILED => "Java admin service error.",
             ErrorCode.BUSINESS_RULE_VIOLATION => "Request cannot be completed.",
             ErrorCode.INTERNAL_ERROR => "An unexpected error occurred.",
 
@@ -180,3 +183,6 @@ public static class ErrorCodeExtensions
         };
     }
 }
+
+
+

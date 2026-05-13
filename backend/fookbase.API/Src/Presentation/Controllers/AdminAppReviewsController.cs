@@ -34,19 +34,18 @@ public class AdminAppReviewsController : ApiControllerBase
         return Ok(ApiResponse<PagedResult<AppReviewResponseDto>>.Ok(reviews));
     }
 
-    [HttpPatch("{reviewId:guid}/hide")]
-    public async Task<ActionResult<ApiResponse<AppReviewResponseDto>>> Hide(Guid reviewId, CancellationToken cancellationToken)
+    [HttpPatch("{reviewId:guid}/visibility")]
+    public async Task<ActionResult<ApiResponse<AppReviewResponseDto>>> UpdateVisibility(
+        Guid reviewId,
+        [FromBody] UpdateAppReviewVisibilityRequestDto request,
+        CancellationToken cancellationToken)
     {
         var adminUserId = GetCurrentUserId();
-        var review = await _appReviewService.HideAsync(reviewId, adminUserId, cancellationToken);
-        return Ok(ApiResponse<AppReviewResponseDto>.Ok(review));
-    }
-
-    [HttpPatch("{reviewId:guid}/unhide")]
-    public async Task<ActionResult<ApiResponse<AppReviewResponseDto>>> Unhide(Guid reviewId, CancellationToken cancellationToken)
-    {
-        var adminUserId = GetCurrentUserId();
-        var review = await _appReviewService.UnhideAsync(reviewId, adminUserId, cancellationToken);
+        var review = await _appReviewService.UpdateVisibilityAsync(
+            reviewId,
+            adminUserId,
+            request.IsHidden!.Value,
+            cancellationToken);
         return Ok(ApiResponse<AppReviewResponseDto>.Ok(review));
     }
 
@@ -62,3 +61,6 @@ public class AdminAppReviewsController : ApiControllerBase
         }));
     }
 }
+
+
+

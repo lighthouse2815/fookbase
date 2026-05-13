@@ -18,3 +18,6 @@ public class AppReview
 
     public DateTime UpdatedAt { get; set; }
 }
+
+
+

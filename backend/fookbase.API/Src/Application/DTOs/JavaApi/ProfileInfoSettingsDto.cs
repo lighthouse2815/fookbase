@@ -22,3 +22,6 @@ public class ProfileInfoSettingsDto
     [JsonPropertyName("friendCount")]
     public long FriendCount { get; set; }
 }
+
+
+

@@ -16,3 +16,6 @@ public interface ICaroService
     void RemoveRoom(Guid roomId);
 }
 
+
+
+

@@ -21,3 +21,6 @@ public interface IPostReportRepository
 
     void Remove(PostReport postReport);
 }
+
+
+

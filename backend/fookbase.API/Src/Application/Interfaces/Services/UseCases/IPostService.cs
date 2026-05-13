@@ -15,10 +15,12 @@ public interface IPostService
     Task<PostResponseDto> CreateAsync(
         Guid userId,
         CreatePostRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
     Task<PostResponseDto> UpdateAsync(Guid postId, Guid userId, bool isAdmin, UpdatePostRequestDto request, CancellationToken cancellationToken);
 
     Task DeleteAsync(Guid postId, Guid userId, bool isAdmin, CancellationToken cancellationToken);
 }
+
+
+

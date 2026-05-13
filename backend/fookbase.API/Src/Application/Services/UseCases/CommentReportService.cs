@@ -4,6 +4,7 @@ using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
@@ -16,20 +17,9 @@ namespace InteractHub.Api.Application.Services;
 
 public class CommentReportService : ICommentReportService
 {
-    private static readonly HashSet<ReportStatus> AllowedResolveStatuses =
-    [
-        ReportStatus.RESOLVED,
-        ReportStatus.REJECTED
-    ];
-
-    private const NotificationType CommentReportApprovedNotificationType = NotificationType.COMMENT_REPORT_APPROVED;
-    private const NotificationType CommentReportRejectedNotificationType = NotificationType.COMMENT_REPORT_REJECTED;
-    private const NotificationType CommentReportTargetNotificationType = NotificationType.COMMENT_REPORT_TARGET_ACTION;
-
     private readonly ICommentReportRepository _commentReportRepository;
     private readonly ICommentRepository _commentRepository;
-    private readonly IJavaApiService _javaApiService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly INotificationService _notificationService;
     private readonly IAdminAuditLogService _adminAuditLogService;
     private readonly IUnitOfWork _unitOfWork;
@@ -38,8 +28,7 @@ public class CommentReportService : ICommentReportService
     public CommentReportService(
         ICommentReportRepository commentReportRepository,
         ICommentRepository commentRepository,
-        IJavaApiService javaApiService,
-        IUserReadModelService userReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         INotificationService notificationService,
         IAdminAuditLogService adminAuditLogService,
         IUnitOfWork unitOfWork,
@@ -47,8 +36,7 @@ public class CommentReportService : ICommentReportService
     {
         _commentReportRepository = commentReportRepository;
         _commentRepository = commentRepository;
-        _javaApiService = javaApiService;
-        _userReadModelService = userReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _notificationService = notificationService;
         _adminAuditLogService = adminAuditLogService;
         _unitOfWork = unitOfWork;
@@ -110,13 +98,10 @@ public class CommentReportService : ICommentReportService
         CreateCommentReportRequestDto request,
         CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
         var comment = await _commentRepository.GetByIdAsync(request.CommentId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
 
-        var hasPendingReport = await _commentReportRepository.ExistsByCommentAndReporterAsync(comment.Id, user.Id, cancellationToken);
+        var hasPendingReport = await _commentReportRepository.ExistsByCommentAndReporterAsync(comment.Id, userId, cancellationToken);
         if (hasPendingReport)
         {
             throw new BusinessException(ErrorCode.DUPLICATE_COMMENT_REPORT);
@@ -128,7 +113,7 @@ public class CommentReportService : ICommentReportService
             Id = Guid.NewGuid(),
             CommentId = comment.Id,
             PostId = comment.PostId,
-            ReportedByUserId = user.Id,
+            ReportedByUserId = userId,
             Reason = request.Reason.Trim(),
             Status = ReportStatus.PENDING,
             CreatedAt = now,
@@ -148,23 +133,18 @@ public class CommentReportService : ICommentReportService
         ResolveCommentReportRequestDto request,
         CancellationToken cancellationToken)
     {
-        var adminUser = await _javaApiService.GetUserById(adminUserId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.ADMIN_USER_NOT_FOUND);
-
         var report = await _commentReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.COMMENT_REPORT_NOT_FOUND);
 
         if (!EnumParser.TryParseReportStatus(request.Status, out var normalizedStatus)
-            || !AllowedResolveStatuses.Contains(normalizedStatus))
+            || (normalizedStatus is not ReportStatus.RESOLVED and not ReportStatus.REJECTED))
         {
             throw new BusinessException(ErrorCode.INVALID_REPORT_STATUS);
         }
 
         var ownerMap = await _commentRepository.GetOwnerUserIdsByCommentIdsAsync([report.CommentId], cancellationToken);
-        var commentOwnerUserId = ownerMap.TryGetValue(report.CommentId, out var ownerId)
-            ? ownerId
-            : (Guid?)null;
-        var auditTargetUserId = commentOwnerUserId ?? report.ReportedByUserId;
+        var commentOwnerUserId = ownerMap[report.CommentId];
+        var auditTargetUserId = commentOwnerUserId;
         var previousStatus = report.Status;
 
         if (normalizedStatus == ReportStatus.RESOLVED)
@@ -181,46 +161,26 @@ public class CommentReportService : ICommentReportService
 
         report.Status = normalizedStatus;
         report.ResolvedAt = DateTime.UtcNow;
-        report.ResolvedByUserId = adminUser.Id;
+        report.ResolvedByUserId = adminUserId;
         report.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await TryCreateResolveNotificationsAsync(
+        await CreateResolveNotificationsAsync(
             report,
             adminUserId,
             normalizedStatus,
             commentOwnerUserId,
             cancellationToken);
 
-        try
-        {
-            await _adminAuditLogService.CreateAdminAuditLogAsync(
-                adminUserId,
-                normalizedStatus == ReportStatus.RESOLVED
-                    ? AdminAuditActionType.COMMENT_REPORT_APPROVED
-                    : AdminAuditActionType.COMMENT_REPORT_REJECTED,
-                AdminAuditEntityType.COMMENT_REPORT,
-                report.Id,
-                auditTargetUserId,
-                $"CommentReportId={report.Id};CommentId={report.CommentId};PostId={report.PostId};Previous={previousStatus};Current={normalizedStatus}.",
-                cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(exception, "Could not persist audit log for comment report resolution. ReportId={ReportId}", report.Id);
-        }
-
-        _logger.LogInformation(
-            "Admin moderation action on comment report. AdminUserId={AdminUserId}, ReportId={ReportId}, CommentId={CommentId}, PostId={PostId}, ReporterUserId={ReporterUserId}, CommentOwnerUserId={CommentOwnerUserId}, PreviousStatus={PreviousStatus}, NewStatus={NewStatus}.",
-            adminUser.Id,
+        await _adminAuditLogService.CreateAdminAuditLogAsync(
+            adminUserId,
+            normalizedStatus == ReportStatus.RESOLVED
+                ? AdminAuditActionType.COMMENT_REPORT_APPROVED
+                : AdminAuditActionType.COMMENT_REPORT_REJECTED,
+            AdminAuditEntityType.COMMENT_REPORT,
             report.Id,
-            report.CommentId,
-            report.PostId,
-            report.ReportedByUserId,
-            commentOwnerUserId,
-            previousStatus,
-            report.Status);
+            auditTargetUserId,
+            $"CommentReportId={report.Id};CommentId={report.CommentId};PostId={report.PostId};Previous={previousStatus};Current={normalizedStatus}.",
+            cancellationToken);
 
         var mappedItems = await MapReportsAsync([report], cancellationToken);
         return mappedItems[0];
@@ -259,67 +219,28 @@ public class CommentReportService : ICommentReportService
             .Distinct()
             .ToList();
 
-        var summaries = await _userReadModelService.ResolveAuthorsAsync(
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
             userIds,
             cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "user");
+            requireFresh: false);
 
-        return reports
-            .Select(report =>
-            {
-                var commentOwnerUserId = ownerMap.TryGetValue(report.CommentId, out var ownerId) ? ownerId : (Guid?)null;
-                return report.ToResponseDto(
-                    commentOwnerUserId: commentOwnerUserId,
-                    reporter: ResolveSummaryOrFallback(report.ReportedByUserId, summaries),
-                    commentOwner: commentOwnerUserId.HasValue
-                        ? ResolveSummaryOrFallback(commentOwnerUserId.Value, summaries)
-                        : null);
-            })
-            .ToList();
+        return CommentReportMapper.ToResponseDtos(
+            reports,
+            ownerMap,
+            profileLookup,
+            fallbackDisplayName: "user");
     }
 
-    private async Task TryCreateResolveNotificationsAsync(
+    private async Task CreateResolveNotificationsAsync(
         CommentReport report,
         Guid adminUserId,
         ReportStatus status,
-        Guid? commentOwnerUserId,
+        Guid commentOwnerUserId,
         CancellationToken cancellationToken)
     {
-        try
+    
+        if (status == ReportStatus.RESOLVED)
         {
-            if (status == ReportStatus.RESOLVED)
-            {
-                await _notificationService.CreateAsync(
-                    new CreateNotificationRequestDto
-                    {
-                        UserId = report.ReportedByUserId,
-                        ActorUserId = adminUserId,
-                        PostId = report.PostId,
-                        CommentId = report.CommentId,
-                        Type = CommentReportApprovedNotificationType.ToString(),
-                        Message = "Bao cao binh luan da duoc duyet. Binh luan vi pham da bi xoa. / Your comment report was approved and the reported comment was removed."
-                    },
-                    cancellationToken);
-
-                if (commentOwnerUserId.HasValue && commentOwnerUserId.Value != report.ReportedByUserId)
-                {
-                    await _notificationService.CreateAsync(
-                        new CreateNotificationRequestDto
-                        {
-                            UserId = commentOwnerUserId.Value,
-                            ActorUserId = adminUserId,
-                            PostId = report.PostId,
-                            CommentId = report.CommentId,
-                            Type = CommentReportTargetNotificationType.ToString(),
-                            Message = "Binh luan cua ban da bi xoa do vi pham sau khi admin duyet bao cao. / Your comment was removed by admin after report approval."
-                        },
-                        cancellationToken);
-                }
-
-                return;
-            }
-
             await _notificationService.CreateAsync(
                 new CreateNotificationRequestDto
                 {
@@ -327,38 +248,45 @@ public class CommentReportService : ICommentReportService
                     ActorUserId = adminUserId,
                     PostId = report.PostId,
                     CommentId = report.CommentId,
-                    Type = CommentReportRejectedNotificationType.ToString(),
-                    Message = "Bao cao binh luan da bi tu choi sau khi xem xet. / Your comment report was rejected after review."
+                    Type = NotificationType.COMMENT_REPORT_APPROVED.ToString(),
+                    Message = ReportNotificationMessageConstants.Comment.ReporterApproved
                 },
                 cancellationToken);
+
+            
+            await _notificationService.CreateAsync(
+                new CreateNotificationRequestDto
+                {
+                    UserId = commentOwnerUserId,
+                    ActorUserId = adminUserId,
+                    PostId = report.PostId,
+                    CommentId = report.CommentId,
+                    Type = NotificationType.COMMENT_REPORT_TARGET_ACTION.ToString(),
+                    Message = ReportNotificationMessageConstants.Comment.TargetRemoved
+                },
+                cancellationToken);
+            
+
+            return;
         }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Could not create comment report resolve notifications. ReportId={ReportId}, Status={Status}.",
-                report.Id,
-                status);
-        }
+
+        await _notificationService.CreateAsync(
+            new CreateNotificationRequestDto
+            {
+                UserId = report.ReportedByUserId,
+                ActorUserId = adminUserId,
+                PostId = report.PostId,
+                CommentId = report.CommentId,
+                Type = NotificationType.COMMENT_REPORT_REJECTED.ToString(),
+                Message = ReportNotificationMessageConstants.Comment.ReporterRejected
+            },
+            cancellationToken);  
     }
 
-    private static AuthorSummaryDto ResolveSummaryOrFallback(Guid userId, IReadOnlyDictionary<Guid, AuthorSummaryDto> summaries)
-    {
-        if (summaries.TryGetValue(userId, out var summary))
-        {
-            return summary;
-        }
-
-        return BuildFallbackSummary(userId);
-    }
-
-    private static AuthorSummaryDto BuildFallbackSummary(Guid userId)
-    {
-        return new AuthorSummaryDto
-        {
-            Id = userId,
-            DisplayName = "user",
-            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-        };
-    }
 }
+
+
+
+
+
+

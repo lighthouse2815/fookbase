@@ -29,3 +29,6 @@ public sealed class ChessStateDto
     public IReadOnlyList<ChessMoveRecordDto> MoveHistory { get; init; } = Array.Empty<ChessMoveRecordDto>();
 }
 
+
+
+

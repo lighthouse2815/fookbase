@@ -3,11 +3,16 @@ import { apiClient, javaApiClient } from '@/shared/api/apiClient';
 import type { ApiEnvelope } from '@/shared/types/api';
 import type { UpdateSecurityAccountRequestDto } from '@/features/user/api/dtos/request.dto';
 import type {
+  CurrentUserResponseDto,
   SecurityAccountInfoResponseDto,
   UserProfilePresenceResponseDto,
   UserResponseDto,
 } from '@/features/user/api/dtos/response.dto';
-import { mapPresenceToUser, mapUserResponseDtoToUser } from '@/features/user/api/mapper/mapper';
+import {
+  mapCurrentUserResponseDtoToUser,
+  mapPresenceToUser,
+  mapUserResponseDtoToUser,
+} from '@/features/user/api/mapper/mapper';
 import type {
   FriendPresenceResult,
   SecurityAccountInfo,
@@ -19,14 +24,14 @@ const { USERS, FRIENDSHIPS } = API_ENDPOINTS;
 
 export const userService = {
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<ApiEnvelope<UserResponseDto>>(USERS.ME);
+    const response = await apiClient.get<ApiEnvelope<CurrentUserResponseDto>>(USERS.ME);
     const currentUser = response.data.data;
 
     if (!currentUser) {
       throw new Error(response.data.error?.message ?? 'Failed to load current user');
     }
 
-    return mapUserResponseDtoToUser(currentUser);
+    return mapCurrentUserResponseDtoToUser(currentUser);
   },
 
   async getSecurityAccountInfo(): Promise<SecurityAccountInfo> {

@@ -22,3 +22,6 @@ public class PendingFriendRequesterDto
     [JsonPropertyName("updateAt")]
     public string? UpdateAt { get; set; }
 }
+
+
+

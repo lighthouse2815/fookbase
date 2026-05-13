@@ -39,7 +39,6 @@ export const API_ENDPOINTS = {
     LIST: '/api/posts',
     CREATE: '/api/posts',
     BY_ID: postById,
-    LIKES: (id: string) => `${postById(id)}/likes`,
   },
   COMMENTS: {
     BY_POST_ID: (id: string) => `/api/comments/post/${id}`,
@@ -88,8 +87,7 @@ export const API_ENDPOINTS = {
     UPDATE_ME: '/api/app-reviews/me',
     DELETE_ME: '/api/app-reviews/me',
     ADMIN_LIST: '/api/admin/app-reviews',
-    ADMIN_HIDE: (id: string) => `/api/admin/app-reviews/${id}/hide`,
-    ADMIN_UNHIDE: (id: string) => `/api/admin/app-reviews/${id}/unhide`,
+    ADMIN_VISIBILITY: (id: string) => `/api/admin/app-reviews/${id}/visibility`,
     ADMIN_DELETE: (id: string) => `/api/admin/app-reviews/${id}`,
   },
   ADMIN: {

@@ -8,3 +8,6 @@ public sealed class LeaveRoomRequestDto
     public Guid RoomId { get; init; }
 }
 
+
+
+

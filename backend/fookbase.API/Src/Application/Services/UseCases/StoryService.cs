@@ -2,7 +2,7 @@ using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
-using InteractHub.Api.Common.Extensions;
+using InteractHub.Api.Application.Mappers;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
@@ -34,27 +34,33 @@ public class StoryService : IStoryService
         ".mov"
     };
 
+    private readonly IAccessTokenProvider _accessTokenProvider;
     private readonly IStoryRepository _storyRepository;
     private readonly IStoryReactionRepository _storyReactionRepository;
-    private readonly IJavaApiService _javaApiService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IUserIdentityReadModelService _userIdentityReadModelService;
+    private readonly IFriendshipReadModelService _friendshipReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<StoryService> _logger;
 
     public StoryService(
+        IAccessTokenProvider accessTokenProvider,
         IStoryRepository storyRepository,
         IStoryReactionRepository storyReactionRepository,
-        IJavaApiService javaApiService,
-        IUserReadModelService userReadModelService,
+        IUserIdentityReadModelService userIdentityReadModelService,
+        IFriendshipReadModelService friendshipReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
         ILogger<StoryService> logger)
     {
+        _accessTokenProvider = accessTokenProvider;
         _storyRepository = storyRepository;
         _storyReactionRepository = storyReactionRepository;
-        _javaApiService = javaApiService;
-        _userReadModelService = userReadModelService;
+        _userIdentityReadModelService = userIdentityReadModelService;
+        _friendshipReadModelService = friendshipReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _unitOfWork = unitOfWork;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
@@ -63,13 +69,17 @@ public class StoryService : IStoryService
     public async Task<PagedResult<StoryResponseDto>> GetFeedAsync(
         Guid currentUserId,
         PaginationQuery query,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
         query.Normalize();
 
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
         var feedUserIds = await ResolveFeedUserIdsAsync(currentUserId, accessToken, cancellationToken);
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken, requireFresh: false);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            requireFresh: false,
+            accessToken: accessToken);
         if (blockedUserIds.Count > 0)
         {
             feedUserIds = feedUserIds
@@ -84,13 +94,11 @@ public class StoryService : IStoryService
             currentUserId,
             cancellationToken);
 
-        var mappedItems = items
-            .Select(story => MapStoryToResponse(
-                story,
-                currentUserId,
-                authors,
-                currentUserReactions.TryGetValue(story.Id, out var reactionType) ? reactionType : null))
-            .ToList();
+        var mappedItems = items.ToResponseDtos(
+            currentUserId,
+            authors,
+            currentUserReactions,
+            ResolveStoryMediaUrl);
 
         return PagedResult<StoryResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -103,17 +111,28 @@ public class StoryService : IStoryService
     {
         query.Normalize();
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken, requireFresh: true);
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            requireFresh: true,
+            accessToken: accessToken);
         if (blockedUserIds.Contains(targetUserId))
         {
             return PagedResult<StoryResponseDto>.Create(new List<StoryResponseDto>(), query.Page, query.PageSize, 0);
         }
 
-        var user = await _javaApiService.GetUserById(targetUserId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        var targetUserExists = await EnsureUserExistsAsync(
+            targetUserId,
+            "Could not verify story owner user.",
+            cancellationToken);
+        if (!targetUserExists)
+        {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
 
         var (items, totalCount) = await _storyRepository.GetPagedActiveByUserIdAsync(
-            user.Id,
+            targetUserId,
             query.Page,
             query.PageSize,
             cancellationToken);
@@ -123,23 +142,26 @@ public class StoryService : IStoryService
             items.Select(story => story.Id).ToList(),
             currentUserId,
             cancellationToken);
-        var mappedItems = items
-            .Select(story => MapStoryToResponse(
-                story,
-                currentUserId,
-                authors,
-                currentUserReactions.TryGetValue(story.Id, out var reactionType) ? reactionType : null))
-            .ToList();
+        var mappedItems = items.ToResponseDtos(
+            currentUserId,
+            authors,
+            currentUserReactions,
+            ResolveStoryMediaUrl);
 
         return PagedResult<StoryResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
     public async Task<StoryResponseDto> GetByIdAsync(Guid storyId, Guid currentUserId, CancellationToken cancellationToken)
     {
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
         var story = await _storyRepository.GetByIdAsync(storyId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken, requireFresh: true);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(
+            currentUserId,
+            cancellationToken,
+            requireFresh: true,
+            accessToken: accessToken);
         if (blockedUserIds.Contains(story.UserId))
         {
             throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
@@ -149,14 +171,11 @@ public class StoryService : IStoryService
 
         var authors = await ResolveAuthorsAsync([story.UserId], cancellationToken);
         var currentUserReactionType = await ResolveCurrentUserReactionTypeAsync(story.Id, currentUserId, cancellationToken);
-        return MapStoryToResponse(story, currentUserId, authors, currentUserReactionType);
+        return story.ToResponseDto(currentUserId, authors, currentUserReactionType, ResolveStoryMediaUrl);
     }
 
     public async Task<StoryResponseDto> CreateAsync(Guid userId, CreateStoryRequestDto request, CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
         var mediaType = NormalizeMediaType(request.MediaType);
         var mediaUrl = NormalizeMediaUrl(request.MediaUrl);
         ValidateMediaUrlByType(mediaUrl, mediaType);
@@ -165,7 +184,7 @@ public class StoryService : IStoryService
         var story = new Story
         {
             Id = Guid.NewGuid(),
-            UserId = user.Id,
+            UserId = userId,
             MediaUrl = mediaUrl,
             MediaType = mediaType,
             Content = NormalizeContent(request.Content),
@@ -178,15 +197,20 @@ public class StoryService : IStoryService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var authors = await ResolveAuthorsAsync([story.UserId], cancellationToken);
-        return MapStoryToResponse(story, userId, authors, currentUserReactionType: null);
+        return story.ToResponseDto(userId, authors, currentUserReactionType: null, ResolveStoryMediaUrl);
     }
 
     public async Task MarkAsViewedAsync(Guid storyId, Guid viewerUserId, CancellationToken cancellationToken)
     {
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
         var story = await _storyRepository.GetByIdForUpdateAsync(storyId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(viewerUserId, cancellationToken, requireFresh: true);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(
+            viewerUserId,
+            cancellationToken,
+            requireFresh: true,
+            accessToken: accessToken);
         if (blockedUserIds.Contains(story.UserId))
         {
             throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
@@ -232,7 +256,7 @@ public class StoryService : IStoryService
         string? accessToken,
         CancellationToken cancellationToken)
     {
-        var userIds = await _userReadModelService.ResolveContactIdsAsync(
+        var userIds = await _friendshipReadModelService.ResolveContactIdsAsync(
             currentUserId,
             accessToken,
             cancellationToken,
@@ -246,58 +270,28 @@ public class StoryService : IStoryService
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        return await _userReadModelService.ResolveAuthorsAsync(
-            userIds,
-            cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "user");
-    }
-
-    private async Task<AuthorSummaryDto> ResolveAuthorAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        return await _userReadModelService.ResolveAuthorAsync(
-            userId,
-            cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "user");
-    }
-
-    private StoryResponseDto MapStoryToResponse(
-        Story story,
-        Guid currentUserId,
-        IReadOnlyDictionary<Guid, AuthorSummaryDto> authors,
-        string? currentUserReactionType)
-    {
-        var isViewedByCurrentUser = story.UserId == currentUserId || story.Views.Any(view => view.ViewerId == currentUserId);
-        var viewCount = story.Views
-            .Select(view => view.ViewerId)
+        var distinctUserIds = userIds
+            .Where(userId => userId != Guid.Empty)
             .Distinct()
-            .Count();
+            .ToList();
 
-        return new StoryResponseDto
+        if (distinctUserIds.Count == 0)
         {
-            Id = story.Id,
-            UserId = story.UserId,
-            Author = authors.TryGetValue(story.UserId, out var author)
-                ? author
-                : new AuthorSummaryDto
-                {
-                    Id = story.UserId,
-                    DisplayName = "user",
-                    AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(story.UserId)
-                },
-            MediaUrl = ResolveStoryMediaUrl(story.MediaUrl),
-            MediaType = story.MediaType.ToString(),
-            Content = story.Content,
-            CreatedAt = story.CreatedAt,
-            ExpiredAt = story.ExpiredAt,
-            IsViewedByCurrentUser = isViewedByCurrentUser,
-            CurrentUserReactionType = currentUserReactionType,
-            ViewCount = viewCount
-        };
+            return [];
+        }
+
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            distinctUserIds,
+            cancellationToken,
+            requireFresh: false);
+
+        return UserProfileSummaryMapper.ToAuthorSummaries(
+            distinctUserIds,
+            profileLookup,
+            fallbackDisplayName: "user");
     }
 
-    private async Task<Dictionary<Guid, string>> ResolveCurrentUserReactionsAsync(
+    private async Task<Dictionary<Guid, ReactionType>> ResolveCurrentUserReactionsAsync(
         IReadOnlyCollection<Guid> storyIds,
         Guid currentUserId,
         CancellationToken cancellationToken)
@@ -305,19 +299,19 @@ public class StoryService : IStoryService
         var reactions = await _storyReactionRepository.GetByStoryIdsAndUserAsync(storyIds, currentUserId, cancellationToken);
         if (reactions.Count == 0)
         {
-            return new Dictionary<Guid, string>();
+            return new Dictionary<Guid, ReactionType>();
         }
 
-        return reactions.ToDictionary(reaction => reaction.StoryId, reaction => reaction.Type.ToString());
+        return reactions.ToDictionary(reaction => reaction.StoryId, reaction => reaction.Type);
     }
 
-    private async Task<string?> ResolveCurrentUserReactionTypeAsync(
+    private async Task<ReactionType?> ResolveCurrentUserReactionTypeAsync(
         Guid storyId,
         Guid currentUserId,
         CancellationToken cancellationToken)
     {
         var reaction = await _storyReactionRepository.GetByStoryAndUserAsync(storyId, currentUserId, cancellationToken);
-        return reaction?.Type.ToString();
+        return reaction?.Type;
     }
 
     private string ResolveStoryMediaUrl(string mediaUrl)
@@ -443,12 +437,40 @@ public class StoryService : IStoryService
     private async Task<HashSet<Guid>> ResolveBlockedUserIdsAsync(
         Guid currentUserId,
         CancellationToken cancellationToken,
-        bool requireFresh = false)
+        bool requireFresh = false,
+        string? accessToken = null)
     {
-        return await _userReadModelService.ResolveBlockedUserIdsAsync(
+        return await _friendshipReadModelService.ResolveBlockedUserIdsAsync(
             currentUserId,
             cancellationToken,
-            requireFresh: requireFresh);
+            requireFresh: requireFresh,
+            accessToken: accessToken);
+    }
+
+    private async Task<bool> EnsureUserExistsAsync(
+        Guid userId,
+        string serviceUnavailableMessage,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _userIdentityReadModelService.ExistsAsync(userId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Could not verify user identity for {UserId}.", userId);
+            throw new BusinessException(ErrorCode.SERVICE_UNAVAILABLE, serviceUnavailableMessage);
+        }
     }
 
 }
+
+
+
+
+
+

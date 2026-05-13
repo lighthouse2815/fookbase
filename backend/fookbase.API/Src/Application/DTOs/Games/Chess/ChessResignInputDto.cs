@@ -8,3 +8,6 @@ public sealed class ChessResignInputDto
     public Guid RoomId { get; init; }
 }
 
+
+
+

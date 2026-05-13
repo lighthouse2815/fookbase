@@ -19,3 +19,6 @@ public class UserProfilePresenceDto
     [JsonPropertyName("lastSeenAt")]
     public string? LastSeenAt { get; set; }
 }
+
+
+

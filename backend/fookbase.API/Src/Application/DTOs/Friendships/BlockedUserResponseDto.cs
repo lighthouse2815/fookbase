@@ -16,3 +16,6 @@ public class BlockedUserResponseDto
     [JsonPropertyName("blockedAt")]
     public DateTime? BlockedAt { get; set; }
 }
+
+
+

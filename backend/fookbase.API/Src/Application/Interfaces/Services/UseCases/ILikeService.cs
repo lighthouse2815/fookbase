@@ -16,8 +16,7 @@ public interface ILikeService
         Guid postId,
         Guid userId,
         CancellationToken cancellationToken);
-
-    Task<LikeStateResponseDto> LikeAsync(Guid postId, Guid userId, CancellationToken cancellationToken);
-
-    Task<LikeStateResponseDto> UnlikeAsync(Guid postId, Guid userId, CancellationToken cancellationToken);
 }
+
+
+

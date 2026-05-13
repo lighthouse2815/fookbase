@@ -8,3 +8,6 @@ public class ResetPasswordRequestDto
     [StringLength(255, MinimumLength = 1)]
     public string NewPassword { get; set; } = string.Empty;
 }
+
+
+

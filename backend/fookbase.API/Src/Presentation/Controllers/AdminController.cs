@@ -29,7 +29,7 @@ public class AdminController : ApiControllerBase
         [FromQuery] string? keyword,
         CancellationToken cancellationToken)
     {
-        var users = await _adminConsoleService.SearchUsersAsync(keyword, ExtractAccessToken(), cancellationToken);
+        var users = await _adminConsoleService.SearchUsersAsync(keyword, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AdminUserSearchResponseDto>>.Ok(users));
     }
 
@@ -44,7 +44,6 @@ public class AdminController : ApiControllerBase
             adminUserId,
             userId,
             request,
-            ExtractAccessToken(),
             cancellationToken);
 
         return Ok(ApiResponse<AdminUserSearchResponseDto>.Ok(updated));
@@ -53,7 +52,7 @@ public class AdminController : ApiControllerBase
     [HttpGet("dashboard")]
     public async Task<ActionResult<ApiResponse<AdminDashboardResponseDto>>> GetDashboard(CancellationToken cancellationToken)
     {
-        var dashboard = await _adminConsoleService.GetDashboardAsync(ExtractAccessToken(), cancellationToken);
+        var dashboard = await _adminConsoleService.GetDashboardAsync(cancellationToken);
         return Ok(ApiResponse<AdminDashboardResponseDto>.Ok(dashboard));
     }
 
@@ -66,4 +65,7 @@ public class AdminController : ApiControllerBase
         return Ok(ApiResponse<PagedResult<AdminAuditLogResponseDto>>.Ok(logs));
     }
 }
+
+
+
 

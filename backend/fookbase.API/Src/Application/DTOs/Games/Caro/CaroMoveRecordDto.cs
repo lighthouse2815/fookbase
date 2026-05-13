@@ -15,3 +15,6 @@ public sealed class CaroMoveRecordDto
     public DateTime MovedAt { get; init; }
 }
 
+
+
+

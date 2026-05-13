@@ -12,3 +12,6 @@ public sealed class SnakeInputDto
     public required string Direction { get; init; }
 }
 
+
+
+

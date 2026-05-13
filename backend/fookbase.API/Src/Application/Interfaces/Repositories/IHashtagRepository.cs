@@ -24,3 +24,6 @@ public interface IHashtagRepository
 
     void Remove(Hashtag hashtag);
 }
+
+
+

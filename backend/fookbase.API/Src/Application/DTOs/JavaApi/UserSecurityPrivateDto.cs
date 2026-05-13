@@ -13,3 +13,6 @@ public class UserSecurityPrivateDto
     [JsonPropertyName("phoneNumber")]
     public string? PhoneNumber { get; set; }
 }
+
+
+

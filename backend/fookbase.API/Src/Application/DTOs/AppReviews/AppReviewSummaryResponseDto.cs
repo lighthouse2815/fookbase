@@ -16,3 +16,6 @@ public class AppReviewSummaryResponseDto
 
     public int OneStarCount { get; init; }
 }
+
+
+

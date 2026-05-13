@@ -32,3 +32,6 @@ public class RabbitMqReadModelOptions
 
     public ushort PrefetchCount { get; set; } = 32;
 }
+
+
+

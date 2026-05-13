@@ -3,47 +3,39 @@ using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
-using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Entities;
 using InteractHub.Api.Domain.Enums;
-using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
 
 public class LikeService : ILikeService
 {
-    private sealed record ReactionSummary(int Count, IReadOnlyList<string> TopTypes);
+    private sealed record ReactionSummary(int Count, IReadOnlyList<ReactionType> TopTypes);
 
     private readonly ILikeRepository _likeRepository;
     private readonly IPostRepository _postRepository;
-    private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<LikeService> _logger;
 
     public LikeService(
         ILikeRepository likeRepository,
         IPostRepository postRepository,
-        IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
-        IUserReadModelService userReadModelService,
-        IUnitOfWork unitOfWork,
-        ILogger<LikeService> logger)
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
+        IUnitOfWork unitOfWork)
     {
         _likeRepository = likeRepository;
         _postRepository = postRepository;
-        _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
-        _userReadModelService = userReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _unitOfWork = unitOfWork;
-        _logger = logger;
     }
 
     public async Task<PostReactionUsersResponseDto> GetReactionUsersAsync(Guid postId, CancellationToken cancellationToken)
@@ -54,12 +46,7 @@ public class LikeService : ILikeService
         var reactions = await _likeRepository.GetByPostIdAsync(post.Id, cancellationToken);
         if (reactions.Count == 0)
         {
-            return new PostReactionUsersResponseDto
-            {
-                PostId = post.Id,
-                TotalCount = 0,
-                Users = Array.Empty<PostReactionUserDto>()
-            };
+            return LikeMapper.ToUsersResponseDto(post.Id, Array.Empty<PostReactionUserDto>());
         }
 
         var userProfiles = await ResolveProfileLookupAsync(reactions.Select(reaction => reaction.UserId), cancellationToken);
@@ -69,26 +56,11 @@ public class LikeService : ILikeService
                 var profile = userProfiles.TryGetValue(reaction.UserId, out var item)
                     ? item
                     : null;
-                var displayName = profile?.DisplayName.TrimToNull() ?? "user";
-                var avatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(reaction.UserId);
-
-                return new PostReactionUserDto
-                {
-                    UserId = reaction.UserId,
-                    DisplayName = displayName,
-                    AvatarUrl = avatarUrl,
-                    ReactionType = NormalizeReactionType(reaction.Type),
-                    ReactedAt = reaction.UpdatedAt
-                };
+                return reaction.ToUserDto(profile);
             })
             .ToList();
 
-        return new PostReactionUsersResponseDto
-        {
-            PostId = post.Id,
-            TotalCount = users.Count,
-            Users = users
-        };
+        return LikeMapper.ToUsersResponseDto(post.Id, users);
     }
 
     public async Task<PostReactionStateResponseDto> SetReactionAsync(
@@ -97,9 +69,6 @@ public class LikeService : ILikeService
         SetPostReactionRequestDto request,
         CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
@@ -108,7 +77,7 @@ public class LikeService : ILikeService
             throw new BusinessException(ErrorCode.INVALID_REACTION_TYPE);
         }
 
-        var existingLike = await _likeRepository.GetByPostAndUserAsync(post.Id, user.Id, cancellationToken);
+        var existingLike = await _likeRepository.GetByPostAndUserAsync(post.Id, userId, cancellationToken);
         var now = DateTime.UtcNow;
         Notification? createdNotification = null;
         string? notificationActorDisplayName = null;
@@ -119,26 +88,31 @@ public class LikeService : ILikeService
             {
                 Id = Guid.NewGuid(),
                 PostId = post.Id,
-                UserId = user.Id,
+                UserId = userId,
                 Type = normalizedType,
                 CreatedAt = now,
                 UpdatedAt = now
             }, cancellationToken);
 
-            if (post.UserId != user.Id)
+            if (post.UserId != userId)
             {
-                var actorSummary = await ResolveNotificationActorSummaryAsync(user.Id, cancellationToken);
-                notificationActorDisplayName = actorSummary.DisplayName;
-                notificationActorAvatarUrl = actorSummary.AvatarUrl;
+                var actorProfileLookup = await ResolveProfileLookupAsync([userId], cancellationToken);
+                var actorProfile = actorProfileLookup.TryGetValue(userId, out var value) ? value : null;
+                notificationActorDisplayName = string.IsNullOrWhiteSpace(actorProfile?.DisplayName)
+                    ? "Someone"
+                    : actorProfile.DisplayName.Trim();
+                notificationActorAvatarUrl = string.IsNullOrWhiteSpace(actorProfile?.AvatarUrl)
+                    ? AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
+                    : actorProfile.AvatarUrl.Trim();
 
                 createdNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = post.UserId,
-                    ActorUserId = user.Id,
+                    ActorUserId = userId,
                     PostId = post.Id,
                     Type = NotificationType.LIKE,
-                    Message = $"{actorSummary.DisplayName} reacted to your post.",
+                    Message = $"{notificationActorDisplayName} reacted to your post.",
                     IsRead = false,
                     CreatedAt = now,
                     UpdatedAt = now
@@ -163,13 +137,7 @@ public class LikeService : ILikeService
 
         var reactionSummary = await ResolveReactionSummaryAsync(post.Id, cancellationToken);
 
-        return new PostReactionStateResponseDto
-        {
-            PostId = post.Id,
-            ReactionType = normalizedType.ToString(),
-            ReactionCount = reactionSummary.Count,
-            TopReactionTypes = reactionSummary.TopTypes
-        };
+        return LikeMapper.ToStateResponseDto(post.Id, normalizedType, reactionSummary.Count, reactionSummary.TopTypes);
     }
 
     public async Task<PostReactionStateResponseDto> RemoveReactionAsync(
@@ -189,41 +157,7 @@ public class LikeService : ILikeService
 
         var reactionSummary = await ResolveReactionSummaryAsync(post.Id, cancellationToken);
 
-        return new PostReactionStateResponseDto
-        {
-            PostId = post.Id,
-            ReactionType = null,
-            ReactionCount = reactionSummary.Count,
-            TopReactionTypes = reactionSummary.TopTypes
-        };
-    }
-
-    public async Task<LikeStateResponseDto> LikeAsync(Guid postId, Guid userId, CancellationToken cancellationToken)
-    {
-        var state = await SetReactionAsync(
-            postId,
-            userId,
-            new SetPostReactionRequestDto { Type = ReactionType.LIKE.ToString() },
-            cancellationToken);
-
-        return new LikeStateResponseDto
-        {
-            PostId = state.PostId,
-            Liked = true,
-            LikeCount = state.ReactionCount
-        };
-    }
-
-    public async Task<LikeStateResponseDto> UnlikeAsync(Guid postId, Guid userId, CancellationToken cancellationToken)
-    {
-        var state = await RemoveReactionAsync(postId, userId, cancellationToken);
-
-        return new LikeStateResponseDto
-        {
-            PostId = state.PostId,
-            Liked = false,
-            LikeCount = state.ReactionCount
-        };
+        return LikeMapper.ToStateResponseDto(post.Id, reactionType: null, reactionSummary.Count, reactionSummary.TopTypes);
     }
 
     private async Task<ReactionSummary> ResolveReactionSummaryAsync(Guid postId, CancellationToken cancellationToken)
@@ -231,13 +165,13 @@ public class LikeService : ILikeService
         var reactions = await _likeRepository.GetByPostIdAsync(postId, cancellationToken);
         if (reactions.Count == 0)
         {
-            return new ReactionSummary(0, Array.Empty<string>());
+            return new ReactionSummary(0, Array.Empty<ReactionType>());
         }
 
         var topTypes = reactions
-            .GroupBy(reaction => NormalizeReactionType(reaction.Type))
+            .GroupBy(reaction => reaction.Type)
             .OrderByDescending(group => group.Count())
-            .ThenBy(group => group.Key, StringComparer.Ordinal)
+            .ThenBy(group => group.Key)
             .Take(3)
             .Select(group => group.Key)
             .ToList();
@@ -245,32 +179,15 @@ public class LikeService : ILikeService
         return new ReactionSummary(reactions.Count, topTypes);
     }
 
-    private static string NormalizeReactionType(ReactionType type)
-    {
-        return type.ToString();
-    }
-
     private async Task<Dictionary<Guid, UserProfileSummaryDto?>> ResolveProfileLookupAsync(
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        return await _userReadModelService.ResolveProfileLookupAsync(
+        return await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
             userIds,
             cancellationToken,
             requireFresh: false);
     }
 
-    private async Task<(string DisplayName, string AvatarUrl)> ResolveNotificationActorSummaryAsync(
-        Guid actorUserId,
-        CancellationToken cancellationToken)
-    {
-        var summary = await _userReadModelService.ResolveAuthorAsync(
-            actorUserId,
-            cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "Someone");
-
-        return (summary.DisplayName, summary.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
-    }
-
 }
+

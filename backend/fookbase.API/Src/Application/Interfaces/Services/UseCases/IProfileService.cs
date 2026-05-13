@@ -5,41 +5,38 @@ namespace InteractHub.Api.Application.Interfaces.Services;
 
 public interface IProfileService
 {
-    Task<JavaApiCallResult<ProfileResponseDto>> GetByUserIdAsync(
+    Task<ProfileResponseDto> GetByUserIdAsync(
         Guid userId,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<MyProfileSettingsResponseDto>> GetMyProfileSettingsAsync(
+    Task<MyProfileSettingsResponseDto> GetMyProfileSettingsAsync(
         Guid userId,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<ProfilePageInfoSettingsResponseDto>> GetMyProfilePageInfoSettingsAsync(
-        string? accessToken,
+    Task<ProfilePageInfoSettingsResponseDto> GetMyProfilePageInfoSettingsAsync(
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<ProfileInfoVisibilityResponseDto>> GetMyProfilePageInfoVisibilityAsync(
-        string? accessToken,
+    Task<ProfileInfoVisibilityResponseDto> GetMyProfilePageInfoVisibilityAsync(
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<object?>> UpdateMyProfilePageInfoVisibilityAsync(
+    Task UpdateMyProfilePageInfoVisibilityAsync(
         UpdateProfileInfoVisibilityRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
+    Task UpdateMyProfileAsync(
         UpdateMyProfileRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchByPhoneNumberAsync(
+    Task<List<UserProfileSearchDto>> SearchByPhoneNumberAsync(
         string phoneNumber,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchByDisplayNameAsync(
+    Task<List<UserProfileSearchDto>> SearchByDisplayNameAsync(
         string displayName,
-        string? accessToken,
         CancellationToken cancellationToken);
 }
+
+
+
+
+

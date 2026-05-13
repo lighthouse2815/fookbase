@@ -48,8 +48,7 @@ public class PostsController : ApiControllerBase
         [FromBody] CreatePostRequestDto request,
         CancellationToken cancellationToken)
     {
-        var accessToken = ExtractAccessToken();
-        var created = await _postService.CreateAsync(GetCurrentUserId(), request, accessToken, cancellationToken);
+        var created = await _postService.CreateAsync(GetCurrentUserId(), request, cancellationToken);
 
         return CreatedAtAction(
             nameof(GetPostById),
@@ -77,22 +76,6 @@ public class PostsController : ApiControllerBase
         await _postService.DeleteAsync(postId, GetCurrentUserId(), User.IsAdmin(), cancellationToken);
 
         return Ok(ApiResponse<object>.Ok(new { message = "Post deleted." }));
-    }
-
-    [HttpPost("{postId:guid}/likes")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> LikePost(Guid postId, CancellationToken cancellationToken)
-    {
-        var state = await _likeService.LikeAsync(postId, GetCurrentUserId(), cancellationToken);
-        return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
-    }
-
-    [HttpDelete("{postId:guid}/likes")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<LikeStateResponseDto>>> UnlikePost(Guid postId, CancellationToken cancellationToken)
-    {
-        var state = await _likeService.UnlikeAsync(postId, GetCurrentUserId(), cancellationToken);
-        return Ok(ApiResponse<LikeStateResponseDto>.Ok(state));
     }
 
     [HttpPut("{postId:guid}/reactions")]
@@ -127,4 +110,7 @@ public class PostsController : ApiControllerBase
     }
 
 }
+
+
+
 

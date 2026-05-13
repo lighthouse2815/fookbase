@@ -26,3 +26,6 @@ public interface IStoryReportRepository
     void Remove(StoryReport storyReport);
 }
 
+
+
+

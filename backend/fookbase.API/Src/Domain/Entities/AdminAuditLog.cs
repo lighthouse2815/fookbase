@@ -20,3 +20,6 @@ public class AdminAuditLog
 
     public DateTime CreatedAt { get; set; }
 }
+
+
+

@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Extensions;
@@ -8,18 +7,9 @@ namespace InteractHub.Api.Application.Services;
 
 public class TokenRoleService : ITokenRoleService
 {
-    private static readonly string[] RoleClaimTypes =
-    [
-        ClaimTypes.Role,
-        "role",
-        "roles",
-        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
-        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"
-    ];
-
     public bool IsAdmin(string? roleHint, string? token)
     {
-        if (string.Equals(roleHint, AppRoles.Admin, StringComparison.OrdinalIgnoreCase))
+        if (IsAdminRoleValue(roleHint))
         {
             return true;
         }
@@ -33,9 +23,10 @@ public class TokenRoleService : ITokenRoleService
         try
         {
             var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(normalizedToken);
-            return jwtToken.Claims.Any(claim =>
-                IsRoleClaimType(claim.Type)
-                && string.Equals(claim.Value, AppRoles.Admin, StringComparison.OrdinalIgnoreCase));
+            return jwtToken.Claims
+                .Where(claim => IsRoleClaimType(claim.Type))
+                .SelectMany(claim => ExpandRoleValues(claim.Value))
+                .Any(IsAdminRoleValue);
         }
         catch (ArgumentException)
         {
@@ -45,6 +36,41 @@ public class TokenRoleService : ITokenRoleService
 
     private static bool IsRoleClaimType(string claimType)
     {
-        return RoleClaimTypes.Any(type => string.Equals(type, claimType, StringComparison.OrdinalIgnoreCase));
+        return string.Equals(claimType, AuthClaimTypes.Role, StringComparison.Ordinal)
+            || string.Equals(claimType, "roles", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(claimType, "authorities", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(claimType, "authority", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IEnumerable<string> ExpandRoleValues(string? rawValue)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return Array.Empty<string>();
+        }
+
+        return rawValue
+            .Split([',', ';', ' '], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => value.Trim().Trim('"', '\'', '[', ']'))
+            .Where(value => !string.IsNullOrWhiteSpace(value));
+    }
+
+    private static bool IsAdminRoleValue(string? roleValue)
+    {
+        if (string.IsNullOrWhiteSpace(roleValue))
+        {
+            return false;
+        }
+
+        var normalizedRole = roleValue.Trim();
+        if (normalizedRole.StartsWith("ROLE_", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedRole = normalizedRole[5..];
+        }
+
+        return string.Equals(normalizedRole, AppRoles.Admin, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+
+

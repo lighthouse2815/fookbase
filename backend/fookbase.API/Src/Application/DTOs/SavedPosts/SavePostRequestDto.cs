@@ -7,3 +7,6 @@ public class SavePostRequestDto
     [Required]
     public Guid PostId { get; set; }
 }
+
+
+

@@ -25,3 +25,6 @@ public class RegisterRequestDto
     [StringLength(100, MinimumLength = 1)]
     public string FirstName { get; set; } = string.Empty;
 }
+
+
+

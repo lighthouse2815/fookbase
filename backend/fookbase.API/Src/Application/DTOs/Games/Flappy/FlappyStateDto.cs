@@ -26,3 +26,6 @@ public sealed class FlappyStateDto
 
     public string? EndReason { get; init; }
 }
+
+
+

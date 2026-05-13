@@ -8,3 +8,5 @@ public class ResolvePostReportRequestDto
     [StringLength(30, MinimumLength = 3)]
     public string Status { get; set; } = "RESOLVED";
 }
+
+

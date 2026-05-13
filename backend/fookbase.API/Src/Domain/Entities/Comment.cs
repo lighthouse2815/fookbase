@@ -30,3 +30,6 @@ public class Comment
 
     public ICollection<CommentMedia> MediaItems { get; set; } = new List<CommentMedia>();
 }
+
+
+

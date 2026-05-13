@@ -16,3 +16,6 @@ public class FriendSuggestionDto
     [JsonPropertyName("mutualFriends")]
     public int MutualFriends { get; set; }
 }
+
+
+

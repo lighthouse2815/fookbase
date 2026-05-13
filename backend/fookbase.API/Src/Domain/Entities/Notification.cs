@@ -28,3 +28,6 @@ public class Notification
 
     public DateTime? DeletedAt { get; set; }
 }
+
+
+

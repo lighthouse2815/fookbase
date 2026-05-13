@@ -20,3 +20,6 @@ public sealed class GameRoomDto
 
     public IReadOnlyList<GameRoomPlayerDto> Players { get; init; } = Array.Empty<GameRoomPlayerDto>();
 }
+
+
+

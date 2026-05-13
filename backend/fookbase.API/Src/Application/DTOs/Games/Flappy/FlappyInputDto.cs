@@ -12,3 +12,6 @@ public sealed class FlappyInputDto
     public required string Action { get; init; }
 }
 
+
+
+

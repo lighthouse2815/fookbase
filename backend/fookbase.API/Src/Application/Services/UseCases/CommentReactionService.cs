@@ -3,7 +3,6 @@ using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
-using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
@@ -15,33 +14,28 @@ namespace InteractHub.Api.Application.Services;
 
 public class CommentReactionService : ICommentReactionService
 {
-    private const NotificationType CommentReactionNotificationType = NotificationType.COMMENT_REACTION;
-
     private readonly ICommentRepository _commentRepository;
     private readonly ICommentReactionRepository _commentReactionRepository;
-    private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CommentReactionService> _logger;
 
     public CommentReactionService(
         ICommentRepository commentRepository,
         ICommentReactionRepository commentReactionRepository,
-        IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
-        IUserReadModelService userReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         IUnitOfWork unitOfWork,
         ILogger<CommentReactionService> logger)
     {
         _commentRepository = commentRepository;
         _commentReactionRepository = commentReactionRepository;
-        _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
-        _userReadModelService = userReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -56,15 +50,13 @@ public class CommentReactionService : ICommentReactionService
         var reactions = await _commentReactionRepository.GetByCommentIdAsync(comment.Id, cancellationToken);
         if (reactions.Count == 0)
         {
-            return new CommentReactionUsersResponseDto
-            {
-                CommentId = comment.Id,
-                TotalCount = 0,
-                Users = Array.Empty<CommentReactionUserDto>()
-            };
+            return CommentReactionMapper.ToUsersResponseDto(comment.Id, Array.Empty<CommentReactionUserDto>());
         }
 
-        var userProfiles = await ResolveProfileLookupAsync(reactions.Select(reaction => reaction.UserId), cancellationToken);
+        var userProfiles = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+            reactions.Select(reaction => reaction.UserId),
+            cancellationToken,
+            requireFresh: false);
 
         var users = reactions
             .Select(reaction =>
@@ -72,26 +64,11 @@ public class CommentReactionService : ICommentReactionService
                 var profile = userProfiles.TryGetValue(reaction.UserId, out var item)
                     ? item
                     : null;
-                var displayName = profile?.DisplayName.TrimToNull() ?? "user";
-                var avatarUrl = profile?.AvatarUrl.TrimToNull() ?? AvatarUrlHelper.BuildDefaultAvatarUrl(reaction.UserId);
-
-                return new CommentReactionUserDto
-                {
-                    UserId = reaction.UserId,
-                    DisplayName = displayName,
-                    AvatarUrl = avatarUrl,
-                    ReactionType = reaction.Type.ToString(),
-                    ReactedAt = reaction.UpdatedAt
-                };
+                return reaction.ToUserDto(profile);
             })
             .ToList();
 
-        return new CommentReactionUsersResponseDto
-        {
-            CommentId = comment.Id,
-            TotalCount = users.Count,
-            Users = users
-        };
+        return CommentReactionMapper.ToUsersResponseDto(comment.Id, users);
     }
 
     public async Task<CommentReactionStateResponseDto> SetReactionAsync(
@@ -100,9 +77,6 @@ public class CommentReactionService : ICommentReactionService
         SetCommentReactionRequestDto request,
         CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
         var comment = await _commentRepository.GetByIdAsync(commentId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
 
@@ -111,7 +85,7 @@ public class CommentReactionService : ICommentReactionService
             throw new BusinessException(ErrorCode.INVALID_REACTION_TYPE);
         }
 
-        var existingReaction = await _commentReactionRepository.GetByCommentAndUserAsync(comment.Id, user.Id, cancellationToken);
+        var existingReaction = await _commentReactionRepository.GetByCommentAndUserAsync(comment.Id, userId, cancellationToken);
         Notification? createdNotification = null;
         string? notificationActorDisplayName = null;
         string? notificationActorAvatarUrl = null;
@@ -123,15 +97,23 @@ public class CommentReactionService : ICommentReactionService
             {
                 Id = Guid.NewGuid(),
                 CommentId = comment.Id,
-                UserId = user.Id,
+                UserId = userId,
                 Type = normalizedType,
                 CreatedAt = now,
                 UpdatedAt = now
             }, cancellationToken);
 
-            if (comment.UserId != user.Id)
+            if (comment.UserId != userId)
             {
-                var actorSummary = await ResolveNotificationActorSummaryAsync(user.Id, cancellationToken);
+                var actorProfileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+                    [userId],
+                    cancellationToken,
+                    requireFresh: false);
+                var actorProfile = actorProfileLookup.TryGetValue(userId, out var profile) ? profile : null;
+                var actorSummary = UserProfileSummaryMapper.ToAuthorSummary(
+                    userId,
+                    actorProfile,
+                    fallbackDisplayName: "Someone");
                 notificationActorDisplayName = actorSummary.DisplayName;
                 notificationActorAvatarUrl = actorSummary.AvatarUrl;
 
@@ -139,10 +121,10 @@ public class CommentReactionService : ICommentReactionService
                 {
                     Id = Guid.NewGuid(),
                     UserId = comment.UserId,
-                    ActorUserId = user.Id,
+                    ActorUserId = userId,
                     PostId = comment.PostId,
                     CommentId = comment.Id,
-                    Type = CommentReactionNotificationType,
+                    Type = NotificationType.COMMENT_REACTION,
                     Message = $"{actorSummary.DisplayName} reacted to your comment.",
                     IsRead = false,
                     CreatedAt = now,
@@ -167,11 +149,7 @@ public class CommentReactionService : ICommentReactionService
                 cancellationToken);
         }
 
-        return new CommentReactionStateResponseDto
-        {
-            CommentId = comment.Id,
-            ReactionType = normalizedType.ToString()
-        };
+        return CommentReactionMapper.ToStateResponseDto(comment.Id, normalizedType);
     }
 
     public async Task<CommentReactionStateResponseDto> RemoveReactionAsync(
@@ -189,34 +167,13 @@ public class CommentReactionService : ICommentReactionService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return new CommentReactionStateResponseDto
-        {
-            CommentId = comment.Id,
-            ReactionType = null
-        };
-    }
-
-    private async Task<Dictionary<Guid, UserProfileSummaryDto?>> ResolveProfileLookupAsync(
-        IEnumerable<Guid> userIds,
-        CancellationToken cancellationToken)
-    {
-        return await _userReadModelService.ResolveProfileLookupAsync(
-            userIds,
-            cancellationToken,
-            requireFresh: false);
-    }
-
-    private async Task<(string DisplayName, string AvatarUrl)> ResolveNotificationActorSummaryAsync(
-        Guid actorUserId,
-        CancellationToken cancellationToken)
-    {
-        var summary = await _userReadModelService.ResolveAuthorAsync(
-            actorUserId,
-            cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "Someone");
-
-        return (summary.DisplayName, summary.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
+        return CommentReactionMapper.ToStateResponseDto(comment.Id, reactionType: null);
     }
 
 }
+
+
+
+
+
+

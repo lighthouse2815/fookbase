@@ -11,13 +11,19 @@ namespace InteractHub.Api.Tests.Services;
 
 public class ProfileServiceTests
 {
+    private readonly Mock<IAccessTokenProvider> _accessTokenProviderMock = new();
     private readonly Mock<IJavaApiService> _javaApiServiceMock = new();
     private readonly Mock<IPostRepository> _postRepositoryMock = new();
     private readonly Mock<ILogger<ProfileService>> _loggerMock = new();
 
     private ProfileService CreateService()
     {
+        _accessTokenProviderMock
+            .Setup(provider => provider.GetAccessTokenOrNull())
+            .Returns("token");
+
         return new ProfileService(
+            _accessTokenProviderMock.Object,
             _javaApiServiceMock.Object,
             _postRepositoryMock.Object,
             _loggerMock.Object);
@@ -32,7 +38,7 @@ public class ProfileServiceTests
             .ReturnsAsync((UserProfileDto?)null);
 
         var service = CreateService();
-        var result = await service.GetByUserIdAsync(userId, "token", CancellationToken.None);
+        var result = await service.GetByUserIdAsync(userId, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
@@ -62,7 +68,7 @@ public class ProfileServiceTests
             .ReturnsAsync(-1);
 
         var service = CreateService();
-        var result = await service.GetByUserIdAsync(userId, "token", CancellationToken.None);
+        var result = await service.GetByUserIdAsync(userId, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Data);
@@ -86,7 +92,7 @@ public class ProfileServiceTests
             .ThrowsAsync(new HttpRequestException("forbidden", null, HttpStatusCode.Unauthorized));
 
         var service = CreateService();
-        var result = await service.GetByUserIdAsync(userId, "token", CancellationToken.None);
+        var result = await service.GetByUserIdAsync(userId, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(StatusCodes.Status401Unauthorized, result.StatusCode);
@@ -96,7 +102,11 @@ public class ProfileServiceTests
     public async Task GetMyProfileSettingsAsync_ReturnsUnauthorized_WhenAccessTokenIsMissing()
     {
         var service = CreateService();
-        var result = await service.GetMyProfileSettingsAsync(Guid.NewGuid(), "  ", CancellationToken.None);
+        _accessTokenProviderMock
+            .Setup(provider => provider.GetAccessTokenOrNull())
+            .Returns("  ");
+
+        var result = await service.GetMyProfileSettingsAsync(Guid.NewGuid(), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(StatusCodes.Status401Unauthorized, result.StatusCode);
@@ -117,7 +127,7 @@ public class ProfileServiceTests
             .ReturnsAsync(JavaApiCallResult<UserProfileSearchDto>.Success(expectedProfile, StatusCodes.Status200OK));
 
         var service = CreateService();
-        var result = await service.SearchByPhoneNumberAsync("0909", "token", CancellationToken.None);
+        var result = await service.SearchByPhoneNumberAsync("0909", CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Data);

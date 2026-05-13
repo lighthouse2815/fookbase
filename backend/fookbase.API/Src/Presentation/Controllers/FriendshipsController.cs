@@ -1,3 +1,4 @@
+using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Friendships;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.Interfaces.Services;
@@ -23,38 +24,23 @@ public class FriendshipsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<List<PendingFriendRequesterDto>>>> GetPendingRequesters(
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.GetPendingRequestersAsync(ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<List<PendingFriendRequesterDto>>(result, "Load pending friend requests failed.");
-        }
-
-        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<PendingFriendRequesterDto>>.Ok(result.Data));
+        var response = await _friendshipService.GetPendingRequestersAsync(cancellationToken);
+        return Ok(ApiResponse<List<PendingFriendRequesterDto>>.Ok(response));
     }
 
     [HttpGet("contacts")]
     public async Task<ActionResult<ApiResponse<List<ContactDto>>>> GetContacts(CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.GetContactsAsync(GetCurrentUserId(), ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<List<ContactDto>>(result, "Load contacts failed.");
-        }
-
-        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<ContactDto>>.Ok(result.Data));
+        var response = await _friendshipService.GetContactsAsync(GetCurrentUserId(), cancellationToken);
+        return Ok(ApiResponse<List<ContactDto>>.Ok(response));
     }
 
     [HttpGet("presence")]
     public async Task<ActionResult<ApiResponse<List<UserProfilePresenceDto>>>> GetFriendPresence(
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.GetFriendPresenceAsync(ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<List<UserProfilePresenceDto>>(result, "Load friend presence failed.");
-        }
-
-        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<UserProfilePresenceDto>>.Ok(result.Data));
+        var response = await _friendshipService.GetFriendPresenceAsync(cancellationToken);
+        return Ok(ApiResponse<List<UserProfilePresenceDto>>.Ok(response));
     }
 
     [HttpGet("suggestions")]
@@ -63,13 +49,8 @@ public class FriendshipsController : ApiControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var result = await _friendshipService.GetSuggestionsAsync(ExtractAccessToken(), page, pageSize, cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<List<FriendSuggestionResponseDto>>(result, "Load friend suggestions failed.");
-        }
-
-        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<FriendSuggestionResponseDto>>.Ok(result.Data));
+        var response = await _friendshipService.GetSuggestionsAsync(page, pageSize, cancellationToken);
+        return Ok(ApiResponse<List<FriendSuggestionResponseDto>>.Ok(response));
     }
 
     [HttpPost("request")]
@@ -77,13 +58,8 @@ public class FriendshipsController : ApiControllerBase
         [FromBody] SendFriendRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.SendFriendRequestAsync(request, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<FriendshipResponseDto>(result, "Send friend request failed.");
-        }
-
-        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<FriendshipResponseDto>.Ok(result.Data));
+        var response = await _friendshipService.SendFriendRequestAsync(request, cancellationToken);
+        return Ok(ApiResponse<FriendshipResponseDto>.Ok(response));
     }
 
     [HttpPost("accept")]
@@ -91,68 +67,43 @@ public class FriendshipsController : ApiControllerBase
         [FromBody] FriendRequestActionDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.AcceptFriendRequestAsync(request, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<FriendshipResponseDto>(result, "Accept friend request failed.");
-        }
-
-        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<FriendshipResponseDto>.Ok(result.Data));
+        var response = await _friendshipService.AcceptFriendRequestAsync(request, cancellationToken);
+        return Ok(ApiResponse<FriendshipResponseDto>.Ok(response));
     }
 
     [HttpPost("reject")]
-    public async Task<ActionResult<ApiResponse<object?>>> RejectFriendRequest(
+    public async Task<ActionResult<ApiResponse<NoContentDto>>> RejectFriendRequest(
         [FromBody] FriendRequestActionDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.RejectFriendRequestAsync(request, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BuildErrorResponse<object?>(result, "Reject friend request failed.");
-        }
-
+        await _friendshipService.RejectFriendRequestAsync(request, cancellationToken);
         return NoContent();
     }
 
     [HttpPost("unfriend")]
-    public async Task<ActionResult<ApiResponse<object?>>> Unfriend(
+    public async Task<ActionResult<ApiResponse<NoContentDto>>> Unfriend(
         [FromBody] UnfriendActionDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.UnfriendAsync(request, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BuildErrorResponse<object?>(result, "Unfriend failed.");
-        }
-
+        await _friendshipService.UnfriendAsync(request, cancellationToken);
         return NoContent();
     }
 
     [HttpPost("block")]
-    public async Task<ActionResult<ApiResponse<object?>>> BlockUser(
+    public async Task<ActionResult<ApiResponse<NoContentDto>>> BlockUser(
         [FromBody] BlockUserActionDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.BlockUserAsync(request, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BuildErrorResponse<object?>(result, "Block user failed.");
-        }
-
+        await _friendshipService.BlockUserAsync(request, cancellationToken);
         return NoContent();
     }
 
     [HttpDelete("block/{targetUserId}")]
-    public async Task<ActionResult<ApiResponse<object?>>> UnblockUser(
+    public async Task<ActionResult<ApiResponse<NoContentDto>>> UnblockUser(
         string targetUserId,
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.UnblockUserAsync(targetUserId, ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BuildErrorResponse<object?>(result, "Unblock user failed.");
-        }
-
+        await _friendshipService.UnblockUserAsync(targetUserId, cancellationToken);
         return NoContent();
     }
 
@@ -160,13 +111,13 @@ public class FriendshipsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<List<BlockedUserResponseDto>>>> GetBlockedUsers(
         CancellationToken cancellationToken)
     {
-        var result = await _friendshipService.GetBlockedUsersAsync(ExtractAccessToken(), cancellationToken);
-        if (!result.IsSuccess || result.Data is null)
-        {
-            return BuildErrorResponse<List<BlockedUserResponseDto>>(result, "Load blocked users failed.");
-        }
-
-        return StatusCode(ResolveSuccessStatusCode(result.StatusCode), ApiResponse<List<BlockedUserResponseDto>>.Ok(result.Data));
+        var response = await _friendshipService.GetBlockedUsersAsync(GetCurrentUserId(), cancellationToken);
+        return Ok(ApiResponse<List<BlockedUserResponseDto>>.Ok(response));
     }
 
 }
+
+
+
+
+

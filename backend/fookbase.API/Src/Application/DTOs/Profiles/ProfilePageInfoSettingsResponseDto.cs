@@ -14,3 +14,6 @@ public class ProfilePageInfoSettingsResponseDto
 
     public long FriendCount { get; set; }
 }
+
+
+

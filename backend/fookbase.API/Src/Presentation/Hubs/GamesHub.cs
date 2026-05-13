@@ -6,6 +6,7 @@ using InteractHub.Api.Application.DTOs.Games.Flappy;
 using InteractHub.Api.Application.DTOs.Games.Snake;
 using InteractHub.Api.Application.Interfaces.Services.Games;
 using InteractHub.Api.Application.Services.Games;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -596,10 +597,7 @@ public class GamesHub : Hub
 
     private Guid? TryResolveCurrentUserId()
     {
-        var rawUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? Context.User?.FindFirstValue("sub");
-
-        return Guid.TryParse(rawUserId, out var parsedUserId) ? parsedUserId : null;
+        return Context.User.TryGetUserId(out var parsedUserId) ? parsedUserId : null;
     }
 
     private string ResolveCurrentDisplayName()
@@ -651,3 +649,6 @@ public class GamesHub : Hub
         }
     }
 }
+
+
+

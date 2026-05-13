@@ -3,6 +3,7 @@ using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Models;
+using InteractHub.Api.Common.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InteractHub.Api.Controllers;
@@ -22,13 +23,13 @@ public abstract class ApiControllerBase : ControllerBase
         string fallbackError,
         string? errorCode = null)
     {
-        var resolvedStatusCode = statusCode > 0
-            ? statusCode
-            : StatusCodes.Status502BadGateway;
+        var resolvedStatusCode = JavaApiResultHelper.ResolveStatusCode(
+            statusCode,
+            StatusCodes.Status502BadGateway);
 
-        var resolvedError = string.IsNullOrWhiteSpace(errorMessage)
-            ? fallbackError
-            : errorMessage;
+        var resolvedError = JavaApiResultHelper.ResolveErrorMessage(
+            errorMessage,
+            fallbackError);
 
         var resolvedErrorCode = string.IsNullOrWhiteSpace(errorCode)
             ? ErrorCode.UPSTREAM_SERVICE_ERROR.ToString()
@@ -39,9 +40,7 @@ public abstract class ApiControllerBase : ControllerBase
 
     protected static int ResolveSuccessStatusCode(int statusCode)
     {
-        return statusCode > 0
-            ? statusCode
-            : StatusCodes.Status200OK;
+        return JavaApiResultHelper.ResolveSuccessStatusCode(statusCode);
     }
 
     protected string? ExtractAccessToken()
@@ -86,8 +85,7 @@ public abstract class ApiControllerBase : ControllerBase
 
     protected Guid? TryGetCurrentUserId()
     {
-        return User.Identity?.IsAuthenticated == true
-            ? User.GetUserId()
-            : null;
+        return User.TryGetUserId(out var userId) ? userId : null;
     }
 }
+

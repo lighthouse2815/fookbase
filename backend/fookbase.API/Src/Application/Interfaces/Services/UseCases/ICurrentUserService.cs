@@ -1,24 +1,25 @@
-using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Users;
 
 namespace InteractHub.Api.Application.Interfaces.Services;
 
 public interface ICurrentUserService
 {
-    Task<JavaApiCallResult<CurrentUserResponseDto>> GetCurrentUserAsync(
+    Task<CurrentUserResponseDto> GetCurrentUserAsync(
         Guid userId,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<SecurityAccountInfoResponseDto>> GetSecurityAccountInfoAsync(
+    Task<SecurityAccountInfoResponseDto> GetSecurityAccountInfoAsync(
         Guid userId,
-        string? accessToken,
         string? usernameFromClaims,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<object?>> UpdateSecurityAccountInfoAsync(
+    Task UpdateSecurityAccountInfoAsync(
         string? resetToken,
         UpdateSecurityAccountRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 }
+
+
+
+
+

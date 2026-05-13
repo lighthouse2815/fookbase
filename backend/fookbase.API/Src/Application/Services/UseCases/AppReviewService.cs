@@ -2,9 +2,9 @@ using InteractHub.Api.Application.DTOs.AppReviews;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Application.Validators;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
-using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Domain.Entities;
 using InteractHub.Api.Domain.Enums;
@@ -14,28 +14,18 @@ namespace InteractHub.Api.Application.Services;
 
 public class AppReviewService : IAppReviewService
 {
-    private const int MinRating = 1;
-    private const int MaxRating = 5;
-    private const int MinDisplayNameLength = 2;
-    private const int MaxDisplayNameLength = 80;
-    private const int MinCommentLength = 3;
-    private const int MaxCommentLength = 1000;
-
     private readonly IAppReviewRepository _appReviewRepository;
-    private readonly IJavaApiService _javaApiService;
     private readonly IAdminAuditLogService _adminAuditLogService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AppReviewService> _logger;
 
     public AppReviewService(
         IAppReviewRepository appReviewRepository,
-        IJavaApiService javaApiService,
         IAdminAuditLogService adminAuditLogService,
         IUnitOfWork unitOfWork,
         ILogger<AppReviewService> logger)
     {
         _appReviewRepository = appReviewRepository;
-        _javaApiService = javaApiService;
         _adminAuditLogService = adminAuditLogService;
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -46,20 +36,12 @@ public class AppReviewService : IAppReviewService
         int? rating,
         CancellationToken cancellationToken)
     {
-        query.Normalize();
-        ValidateOptionalRating(rating);
-
-        var (items, totalCount) = await _appReviewRepository.GetPublicPagedAsync(
-            query.Page,
-            query.PageSize,
+        return await GetPagedAsync(
+            query,
             rating,
+            isHidden: false,
+            static review => review.ToPublicResponseDto(),
             cancellationToken);
-
-        var mappedItems = items
-            .Select(review => review.ToPublicResponseDto())
-            .ToList();
-
-        return PagedResult<PublicAppReviewResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
     public async Task<AppReviewSummaryResponseDto> GetSummaryAsync(CancellationToken cancellationToken)
@@ -68,16 +50,7 @@ public class AppReviewService : IAppReviewService
         var average = await _appReviewRepository.GetPublicAverageRatingAsync(cancellationToken);
         var totalCount = await _appReviewRepository.CountPublicAsync(cancellationToken);
 
-        return new AppReviewSummaryResponseDto
-        {
-            AverageRating = Math.Round(average, 1, MidpointRounding.AwayFromZero),
-            TotalReviews = totalCount,
-            FiveStarCount = distribution.TryGetValue(5, out var fiveStarCount) ? fiveStarCount : 0,
-            FourStarCount = distribution.TryGetValue(4, out var fourStarCount) ? fourStarCount : 0,
-            ThreeStarCount = distribution.TryGetValue(3, out var threeStarCount) ? threeStarCount : 0,
-            TwoStarCount = distribution.TryGetValue(2, out var twoStarCount) ? twoStarCount : 0,
-            OneStarCount = distribution.TryGetValue(1, out var oneStarCount) ? oneStarCount : 0
-        };
+        return AppReviewMapper.ToSummaryResponseDto(distribution, average, totalCount);
     }
 
     public async Task<AppReviewResponseDto?> GetMyReviewAsync(Guid userId, CancellationToken cancellationToken)
@@ -92,11 +65,10 @@ public class AppReviewService : IAppReviewService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        await EnsureUserExistsAsync(userId, cancellationToken);
 
-        var rating = ValidateRating(request.Rating);
-        var displayName = NormalizeDisplayName(request.DisplayName);
-        var comment = NormalizeComment(request.Comment);
+        var rating = AppReviewValidator.ValidateRating(request.Rating);
+        var displayName = AppReviewValidator.NormalizeDisplayName(request.DisplayName);
+        var comment = AppReviewValidator.NormalizeComment(request.Comment);
 
         var now = DateTime.UtcNow;
         var existing = await _appReviewRepository.GetByUserIdForUpdateAsync(userId, cancellationToken);
@@ -145,59 +117,15 @@ public class AppReviewService : IAppReviewService
         bool? isHidden,
         CancellationToken cancellationToken)
     {
-        query.Normalize();
-        ValidateOptionalRating(rating);
-
-        var (items, totalCount) = await _appReviewRepository.GetAdminPagedAsync(
-            query.Page,
-            query.PageSize,
+        return await GetPagedAsync(
+            query,
             rating,
             isHidden,
+            static review => review.ToResponseDto(),
             cancellationToken);
-
-        var mappedItems = items
-            .Select(review => review.ToResponseDto())
-            .ToList();
-
-        return PagedResult<AppReviewResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
-    public Task<AppReviewResponseDto> HideAsync(Guid reviewId, Guid adminUserId, CancellationToken cancellationToken)
-    {
-        return SetHiddenStateAsync(reviewId, adminUserId, true, cancellationToken);
-    }
-
-    public Task<AppReviewResponseDto> UnhideAsync(Guid reviewId, Guid adminUserId, CancellationToken cancellationToken)
-    {
-        return SetHiddenStateAsync(reviewId, adminUserId, false, cancellationToken);
-    }
-
-    public async Task DeleteByAdminAsync(Guid reviewId, Guid adminUserId, CancellationToken cancellationToken)
-    {
-        var review = await _appReviewRepository.GetByIdForUpdateAsync(reviewId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.APP_REVIEW_NOT_FOUND);
-
-        _appReviewRepository.Remove(review);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        try
-        {
-            await _adminAuditLogService.CreateAdminAuditLogAsync(
-                adminUserId,
-                AdminAuditActionType.APP_REVIEW_DELETED,
-                AdminAuditEntityType.APP_REVIEW,
-                review.Id,
-                review.UserId,
-                $"AppReviewId={review.Id};UserId={review.UserId};Rating={review.Rating}.",
-                cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(exception, "Could not persist audit log for app review deletion. ReviewId={ReviewId}", review.Id);
-        }
-    }
-
-    private async Task<AppReviewResponseDto> SetHiddenStateAsync(
+    public async Task<AppReviewResponseDto> UpdateVisibilityAsync(
         Guid reviewId,
         Guid adminUserId,
         bool isHidden,
@@ -211,81 +139,61 @@ public class AppReviewService : IAppReviewService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        try
-        {
-            await _adminAuditLogService.CreateAdminAuditLogAsync(
-                adminUserId,
-                isHidden ? AdminAuditActionType.APP_REVIEW_HIDDEN : AdminAuditActionType.APP_REVIEW_UNHIDDEN,
-                AdminAuditEntityType.APP_REVIEW,
-                review.Id,
-                review.UserId,
-                $"AppReviewId={review.Id};UserId={review.UserId};IsHidden={isHidden};Rating={review.Rating}.",
-                cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Could not persist audit log for app review visibility update. ReviewId={ReviewId}, IsHidden={IsHidden}",
-                review.Id,
-                isHidden);
-        }
+        await _adminAuditLogService.CreateAdminAuditLogAsync(
+            adminUserId,
+            isHidden ? AdminAuditActionType.APP_REVIEW_HIDDEN : AdminAuditActionType.APP_REVIEW_UNHIDDEN,
+            AdminAuditEntityType.APP_REVIEW,
+            review.Id,
+            review.UserId,
+            $"AppReviewId={review.Id};UserId={review.UserId};IsHidden={isHidden};Rating={review.Rating}.",
+            cancellationToken);
 
         return review.ToResponseDto();
     }
 
-    private async Task EnsureUserExistsAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task DeleteByAdminAsync(Guid reviewId, Guid adminUserId, CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken);
-        if (user is null)
-        {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
+        var review = await _appReviewRepository.GetByIdForUpdateAsync(reviewId, cancellationToken)
+            ?? throw new BusinessException(ErrorCode.APP_REVIEW_NOT_FOUND);
+
+        _appReviewRepository.Remove(review);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _adminAuditLogService.CreateAdminAuditLogAsync(
+            adminUserId,
+            AdminAuditActionType.APP_REVIEW_DELETED,
+            AdminAuditEntityType.APP_REVIEW,
+            review.Id,
+            review.UserId,
+            $"AppReviewId={review.Id};UserId={review.UserId};Rating={review.Rating}.",
+            cancellationToken);
     }
 
-    private static void ValidateOptionalRating(int? rating)
+    private async Task<PagedResult<TResponse>> GetPagedAsync<TResponse>(
+        PaginationQuery query,
+        int? rating,
+        bool? isHidden,
+        Func<AppReview, TResponse> map,
+        CancellationToken cancellationToken)
     {
-        if (!rating.HasValue)
-        {
-            return;
-        }
+        query.Normalize();
+        AppReviewValidator.ValidateOptionalRating(rating);
 
-        ValidateRating(rating.Value);
+        var (items, totalCount) = await _appReviewRepository.GetPagedAsync(
+            query.Page,
+            query.PageSize,
+            rating,
+            isHidden,
+            cancellationToken);
+
+        var mappedItems = items
+            .Select(map)
+            .ToList();
+
+        return PagedResult<TResponse>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
-    private static int ValidateRating(int rating)
-    {
-        if (rating < MinRating || rating > MaxRating)
-        {
-            throw new BusinessException(ErrorCode.APP_REVIEW_RATING_INVALID);
-        }
-
-        return rating;
-    }
-
-    private static string NormalizeDisplayName(string? displayName)
-    {
-        var normalized = displayName.TrimToNull()
-            ?? throw new BusinessException(ErrorCode.DISPLAY_NAME_REQUIRED);
-
-        if (normalized.Length < MinDisplayNameLength || normalized.Length > MaxDisplayNameLength)
-        {
-            throw new BusinessException(ErrorCode.DISPLAY_NAME_LENGTH_INVALID);
-        }
-
-        return normalized;
-    }
-
-    private static string NormalizeComment(string? comment)
-    {
-        var normalized = comment.TrimToNull()
-            ?? throw new BusinessException(ErrorCode.COMMENT_REQUIRED);
-
-        if (normalized.Length < MinCommentLength || normalized.Length > MaxCommentLength)
-        {
-            throw new BusinessException(ErrorCode.COMMENT_LENGTH_INVALID);
-        }
-
-        return normalized;
-    }
 }
+
+
+

@@ -27,3 +27,6 @@ public sealed class CaroStateDto
     public string? EndReason { get; init; }
 }
 
+
+
+

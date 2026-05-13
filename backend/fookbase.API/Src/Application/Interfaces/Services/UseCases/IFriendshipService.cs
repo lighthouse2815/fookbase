@@ -5,56 +5,51 @@ namespace InteractHub.Api.Application.Interfaces.Services;
 
 public interface IFriendshipService
 {
-    Task<JavaApiCallResult<List<PendingFriendRequesterDto>>> GetPendingRequestersAsync(
-        string? accessToken,
+    Task<List<PendingFriendRequesterDto>> GetPendingRequestersAsync(
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<List<ContactDto>>> GetContactsAsync(
+    Task<List<ContactDto>> GetContactsAsync(
         Guid currentUserId,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<List<UserProfilePresenceDto>>> GetFriendPresenceAsync(
-        string? accessToken,
+    Task<List<UserProfilePresenceDto>> GetFriendPresenceAsync(
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<List<FriendSuggestionResponseDto>>> GetSuggestionsAsync(
-        string? accessToken,
+    Task<List<FriendSuggestionResponseDto>> GetSuggestionsAsync(
         int page,
         int pageSize,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<FriendshipResponseDto>> SendFriendRequestAsync(
+    Task<FriendshipResponseDto> SendFriendRequestAsync(
         SendFriendRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<FriendshipResponseDto>> AcceptFriendRequestAsync(
+    Task<FriendshipResponseDto> AcceptFriendRequestAsync(
         FriendRequestActionDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<object?>> RejectFriendRequestAsync(
+    Task RejectFriendRequestAsync(
         FriendRequestActionDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<object?>> UnfriendAsync(
+    Task UnfriendAsync(
         UnfriendActionDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<object?>> BlockUserAsync(
+    Task BlockUserAsync(
         BlockUserActionDto request,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<object?>> UnblockUserAsync(
+    Task UnblockUserAsync(
         string targetUserId,
-        string? accessToken,
         CancellationToken cancellationToken);
 
-    Task<JavaApiCallResult<List<BlockedUserResponseDto>>> GetBlockedUsersAsync(
-        string? accessToken,
+    Task<List<BlockedUserResponseDto>> GetBlockedUsersAsync(
+        Guid currentUserId,
         CancellationToken cancellationToken);
 }
+
+
+
+
+

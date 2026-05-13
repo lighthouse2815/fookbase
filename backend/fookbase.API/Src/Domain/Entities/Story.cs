@@ -26,3 +26,6 @@ public class Story
 
     public ICollection<StoryReport> Reports { get; set; } = new List<StoryReport>();
 }
+
+
+

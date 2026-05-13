@@ -48,3 +48,6 @@ public sealed class GlobalExceptionMiddleware
         return context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(error));
     }
 }
+
+
+

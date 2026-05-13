@@ -1,279 +1,133 @@
-using System.Net;
 using InteractHub.Api.Application.DTOs.JavaApi;
 using InteractHub.Api.Application.DTOs.Profiles;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
+using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Enums;
+using InteractHub.Api.Common.Exceptions;
+using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Utilities;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace InteractHub.Api.Application.Services;
 
 public class ProfileService : IProfileService
 {
-    private readonly IJavaApiService _javaApiService;
+    private readonly IAccessTokenProvider _accessTokenProvider;
+    private readonly IUserProfilePublicReadModelService _userProfilePublicReadModelService;
+    private readonly IJavaUserProfileApiService _javaUserProfileApiService;
     private readonly IPostRepository _postRepository;
-    private readonly ILogger<ProfileService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public ProfileService(
-        IJavaApiService javaApiService,
+        IAccessTokenProvider accessTokenProvider,
+        IUserProfilePublicReadModelService userProfilePublicReadModelService,
+        IJavaUserProfileApiService javaUserProfileApiService,
         IPostRepository postRepository,
-        ILogger<ProfileService> logger)
+        IHttpContextAccessor httpContextAccessor)
     {
-        _javaApiService = javaApiService;
+        _accessTokenProvider = accessTokenProvider;
+        _userProfilePublicReadModelService = userProfilePublicReadModelService;
+        _javaUserProfileApiService = javaUserProfileApiService;
         _postRepository = postRepository;
-        _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<JavaApiCallResult<ProfileResponseDto>> GetByUserIdAsync(
+    public async Task<ProfileResponseDto> GetByUserIdAsync(
         Guid userId,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var profile = await _javaApiService.GetProfileByUserId(
-                userId,
-                cancellationToken: cancellationToken,
-                accessToken: accessToken);
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
+        var requesterUserId = _httpContextAccessor.HttpContext?.User.TryGetUserId(out var parsedRequesterUserId) == true
+            ? parsedRequesterUserId
+            : Guid.Empty;
+        var profileResult = await _userProfilePublicReadModelService.GetByUserIdAsync(
+            requesterUserId,
+            userId,
+            accessToken,
+            cancellationToken,
+            requireFresh: false);
 
-            if (profile is null)
+        if (!profileResult.IsSuccess)
+        {
+            if (profileResult.StatusCode is StatusCodes.Status401Unauthorized or StatusCodes.Status403Forbidden)
             {
-                return JavaApiCallResult<ProfileResponseDto>.Failure(
-                    StatusCodes.Status404NotFound,
-                    "Profile not found.");
+                throw new BusinessException(ErrorCode.UNAUTHORIZED);
             }
 
-            var relationshipStatus = FirstNonEmpty(profile.Status);
-            var isBlockedRelationship = string.Equals(
-                relationshipStatus,
-                "BLOCKED",
-                StringComparison.OrdinalIgnoreCase);
-
-            if (isBlockedRelationship)
+            if (profileResult.StatusCode == StatusCodes.Status404NotFound)
             {
-                var blockedDisplayName = FirstNonEmpty(profile.DisplayName, "user") ?? "user";
-                var blockedResponse = new ProfileResponseDto
-                {
-                    UserId = profile.UserId == Guid.Empty ? userId : profile.UserId,
-                    DisplayName = blockedDisplayName,
-                    FullName = null,
-                    AvatarUrl = FirstNonEmpty(profile.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
-                    FriendsCount = 0,
-                    PostsCount = 0,
-                    PhoneNumber = null,
-                    Email = null,
-                    Gender = null,
-                    BirthDate = null,
-                    FullNameVisible = false,
-                    PhoneVisible = false,
-                    EmailVisible = false,
-                    DateOfBirthVisible = false,
-                    GenderVisible = false,
-                    FriendCountVisible = false,
-                    Status = relationshipStatus,
-                    UserStatus = FirstNonEmpty(profile.UserStatus),
-                    Nickname = null
-                };
-
-                return JavaApiCallResult<ProfileResponseDto>.Success(blockedResponse, StatusCodes.Status200OK);
+                throw new BusinessException(ErrorCode.NOT_FOUND, "Profile not found.");
             }
 
-            var postsCount = await _postRepository.CountByUserIdAsync(userId, cancellationToken);
-            var displayName = FirstNonEmpty(profile.DisplayName, "user") ?? "user";
-            var response = new ProfileResponseDto
-            {
-                UserId = profile.UserId == Guid.Empty ? userId : profile.UserId,
-                DisplayName = displayName,
-                FullName = FirstNonEmpty(profile.FullName),
-                AvatarUrl = FirstNonEmpty(profile.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(userId),
-                FriendsCount = profile.FriendsCount < 0 ? 0 : profile.FriendsCount,
-                PostsCount = postsCount < 0 ? 0 : postsCount,
-                PhoneNumber = FirstNonEmpty(profile.PhoneNumber),
-                Email = FirstNonEmpty(profile.Email),
-                Gender = FirstNonEmpty(profile.Gender),
-                BirthDate = FirstNonEmpty(profile.BirthDate),
-                FullNameVisible = profile.FullNameVisible ?? true,
-                PhoneVisible = profile.PhoneVisible ?? true,
-                EmailVisible = profile.EmailVisible ?? true,
-                DateOfBirthVisible = profile.DateOfBirthVisible ?? true,
-                GenderVisible = profile.GenderVisible ?? true,
-                FriendCountVisible = profile.FriendCountVisible ?? true,
-                Status = relationshipStatus,
-                UserStatus = FirstNonEmpty(profile.UserStatus),
-                Nickname = FirstNonEmpty(profile.Nickname)
-            };
+            JavaApiResultHelper.EnsureSuccessOrThrow(
+                profileResult,
+                "Load profile failed.",
+                fallbackStatusCode: StatusCodes.Status503ServiceUnavailable);
+        }
 
-            return JavaApiCallResult<ProfileResponseDto>.Success(response, StatusCodes.Status200OK);
-        }
-        catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        var profile = profileResult.Data;
+        if (profile is null)
         {
-            _logger.LogWarning(exception, "Java profile API rejected token for user {UserId}.", userId);
-            return JavaApiCallResult<ProfileResponseDto>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
+            throw new BusinessException(ErrorCode.NOT_FOUND, "Profile not found.");
         }
-        catch (HttpRequestException exception)
+
+        var relationshipStatus = ProfileMapper.FirstNonEmpty(profile.Status);
+        var isBlockedRelationship = ProfileMapper.IsBlockedRelationship(relationshipStatus);
+
+        if (isBlockedRelationship)
         {
-            _logger.LogError(exception, "Java profile API is unavailable when loading profile for user {UserId}.", userId);
-            return JavaApiCallResult<ProfileResponseDto>.Failure(
-                StatusCodes.Status503ServiceUnavailable,
-                "Java profile API is unavailable.");
+            return ProfileMapper.ToBlockedProfileResponseDto(userId, profile, relationshipStatus);
         }
+
+        var postsCount = await _postRepository.CountByUserIdAsync(userId, cancellationToken);
+        return ProfileMapper.ToProfileResponseDto(userId, profile, postsCount, relationshipStatus);
     }
 
-    public async Task<JavaApiCallResult<MyProfileSettingsResponseDto>> GetMyProfileSettingsAsync(
+    public async Task<MyProfileSettingsResponseDto> GetMyProfileSettingsAsync(
         Guid userId,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return JavaApiCallResult<MyProfileSettingsResponseDto>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
-        var safeAccessToken = accessToken.Trim();
-        var overviewResult = await _javaApiService.GetMyProfileOverviewAsync(safeAccessToken, cancellationToken);
-        if (!overviewResult.IsSuccess)
-        {
-            return BuildFailure<MyProfileSettingsResponseDto>(
-                overviewResult.StatusCode,
-                overviewResult.ErrorMessage,
-                "Load profile overview failed.");
-        }
+        var overviewResult = await _javaUserProfileApiService.GetMyProfileOverviewAsync(accessToken, cancellationToken);
+        JavaApiResultHelper.EnsureSuccessOrThrow(overviewResult, "Load profile overview failed.");
 
-        var overview = overviewResult.Data;
-
-        var resolvedUserId = userId;
-        if (Guid.TryParse(overview?.UserId, out var userIdFromOverview))
-        {
-            resolvedUserId = userIdFromOverview;
-        }
-
-        var username = FirstNonEmpty(overview?.Username, "user") ?? "user";
-
-        var displayName = FirstNonEmpty(
-            overview?.DisplayName,
-            overview?.FirstName,
-            username,
-            "user");
-
-        var response = new MyProfileSettingsResponseDto
-        {
-            UserId = resolvedUserId,
-            Username = username,
-            DisplayName = displayName ?? "user",
-            FirstName = FirstNonEmpty(overview?.FirstName),
-            LastName = FirstNonEmpty(overview?.LastName),
-            Email = overview?.Email,
-            PhoneNumber = MaskPhoneNumber(FirstNonEmpty(overview?.PhoneNumber)),
-            AvatarUrl = FirstNonEmpty(overview?.AvatarUrl) ?? AvatarUrlHelper.BuildDefaultAvatarUrl(resolvedUserId),
-            BirthDate = FirstNonEmpty(overview?.BirthDate),
-            Gender = FirstNonEmpty(overview?.Gender)
-        };
-
-        return JavaApiCallResult<MyProfileSettingsResponseDto>.Success(response, StatusCodes.Status200OK);
+        return ProfileMapper.ToMyProfileSettingsResponseDto(userId, overviewResult.Data);
     }
 
-    public async Task<JavaApiCallResult<ProfilePageInfoSettingsResponseDto>> GetMyProfilePageInfoSettingsAsync(
-        string? accessToken,
+    public async Task<ProfilePageInfoSettingsResponseDto> GetMyProfilePageInfoSettingsAsync(
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return JavaApiCallResult<ProfilePageInfoSettingsResponseDto>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
-        var result = await _javaApiService.GetMyProfileInfoSettingsAsync(accessToken.Trim(), cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BuildFailure<ProfilePageInfoSettingsResponseDto>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Load profile info settings failed.");
-        }
+        var result = await _javaUserProfileApiService.GetMyProfileInfoSettingsAsync(accessToken, cancellationToken);
+        var data = JavaApiResultHelper.EnsureSuccessAndDataOrThrow(
+            result,
+            "Load profile info settings failed.",
+            "Java API returned empty profile info settings.");
 
-        var data = result.Data;
-        if (data is null)
-        {
-            return BuildFailure<ProfilePageInfoSettingsResponseDto>(
-                StatusCodes.Status502BadGateway,
-                "Java API returned empty profile info settings.",
-                "Load profile info settings failed.");
-        }
-
-        var response = new ProfilePageInfoSettingsResponseDto
-        {
-            FullName = FirstNonEmpty(data.FullName, "user") ?? "user",
-            PhoneNumber = FirstNonEmpty(data.PhoneNumber),
-            Email = FirstNonEmpty(data.Email),
-            DateOfBirth = FirstNonEmpty(data.DateOfBirth),
-            Gender = FirstNonEmpty(data.Gender),
-            FriendCount = data.FriendCount < 0 ? 0 : data.FriendCount
-        };
-
-        return JavaApiCallResult<ProfilePageInfoSettingsResponseDto>.Success(
-            response,
-            result.StatusCode > 0 ? result.StatusCode : StatusCodes.Status200OK);
+        return ProfileMapper.ToProfilePageInfoSettingsResponseDto(data);
     }
 
-    public async Task<JavaApiCallResult<ProfileInfoVisibilityResponseDto>> GetMyProfilePageInfoVisibilityAsync(
-        string? accessToken,
+    public async Task<ProfileInfoVisibilityResponseDto> GetMyProfilePageInfoVisibilityAsync(
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return JavaApiCallResult<ProfileInfoVisibilityResponseDto>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
-        var result = await _javaApiService.GetMyProfileInfoVisibilityAsync(accessToken.Trim(), cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BuildFailure<ProfileInfoVisibilityResponseDto>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Load profile info visibility failed.");
-        }
+        var result = await _javaUserProfileApiService.GetMyProfileInfoVisibilityAsync(accessToken, cancellationToken);
+        var visibility = JavaApiResultHelper.EnsureSuccessAndDataOrThrow(
+            result,
+            "Load profile info visibility failed.",
+            "Java API returned empty profile info visibility.");
 
-        var visibility = result.Data;
-        if (visibility is null)
-        {
-            return BuildFailure<ProfileInfoVisibilityResponseDto>(
-                StatusCodes.Status502BadGateway,
-                "Java API returned empty profile info visibility.",
-                "Load profile info visibility failed.");
-        }
-
-        return JavaApiCallResult<ProfileInfoVisibilityResponseDto>.Success(
-            new ProfileInfoVisibilityResponseDto
-            {
-                FullNameVisible = visibility.FullNameVisible,
-                PhoneVisible = visibility.PhoneVisible,
-                EmailVisible = visibility.EmailVisible,
-                DateOfBirthVisible = visibility.DateOfBirthVisible,
-                GenderVisible = visibility.GenderVisible,
-                FriendCountVisible = visibility.FriendCountVisible,
-            },
-            result.StatusCode > 0 ? result.StatusCode : StatusCodes.Status200OK);
+        return ProfileMapper.ToProfileInfoVisibilityResponseDto(visibility);
     }
 
-    public Task<JavaApiCallResult<object?>> UpdateMyProfilePageInfoVisibilityAsync(
+    public async Task UpdateMyProfilePageInfoVisibilityAsync(
         UpdateProfileInfoVisibilityRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Task.FromResult(JavaApiCallResult<object?>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized."));
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
         if (!request.FullNameVisible.HasValue
             || !request.PhoneVisible.HasValue
@@ -282,159 +136,67 @@ public class ProfileService : IProfileService
             || !request.GenderVisible.HasValue
             || !request.FriendCountVisible.HasValue)
         {
-            return Task.FromResult(JavaApiCallResult<object?>.Failure(
-                StatusCodes.Status400BadRequest,
-                "All visibility fields are required."));
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "All visibility fields are required.");
         }
 
-        return _javaApiService.UpdateMyProfileInfoVisibilityAsync(request, accessToken.Trim(), cancellationToken);
+        var result = await _javaUserProfileApiService.UpdateMyProfileInfoVisibilityAsync(
+            request,
+            accessToken,
+            cancellationToken);
+
+        JavaApiResultHelper.EnsureSuccessOrThrow(result, "Update profile page info visibility failed.");
     }
 
-    public Task<JavaApiCallResult<object?>> UpdateMyProfileAsync(
+    public async Task UpdateMyProfileAsync(
         UpdateMyProfileRequestDto request,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Task.FromResult(JavaApiCallResult<object?>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized."));
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
+        var result = await _javaUserProfileApiService.UpdateMyProfileAsync(request, accessToken, cancellationToken);
 
-        return _javaApiService.UpdateMyProfileAsync(request, accessToken.Trim(), cancellationToken);
+        JavaApiResultHelper.EnsureSuccessOrThrow(result, "Update profile failed.");
     }
 
-    public async Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchByPhoneNumberAsync(
+    public async Task<List<UserProfileSearchDto>> SearchByPhoneNumberAsync(
         string phoneNumber,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(phoneNumber))
         {
-            return JavaApiCallResult<List<UserProfileSearchDto>>.Failure(
-                StatusCodes.Status400BadRequest,
-                "phoneNumber is required.");
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "phoneNumber is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return JavaApiCallResult<List<UserProfileSearchDto>>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
-        var result = await _javaApiService.SearchProfileByPhoneNumberAsync(
+        var result = await _javaUserProfileApiService.SearchProfileByPhoneNumberAsync(
             phoneNumber.Trim(),
-            accessToken.Trim(),
+            accessToken,
             cancellationToken);
 
-        if (!result.IsSuccess)
-        {
-            return BuildFailure<List<UserProfileSearchDto>>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Search profile failed.");
-        }
+        JavaApiResultHelper.EnsureSuccessOrThrow(result, "Search profile failed.");
 
-        var profiles = result.Data is null
-            ? new List<UserProfileSearchDto>()
-            : new List<UserProfileSearchDto> { result.Data };
-
-        var statusCode = result.StatusCode > 0
-            ? result.StatusCode
-            : StatusCodes.Status200OK;
-
-        return JavaApiCallResult<List<UserProfileSearchDto>>.Success(profiles, statusCode);
+        return ProfileMapper.ToSearchResultList(result.Data);
     }
 
-    public async Task<JavaApiCallResult<List<UserProfileSearchDto>>> SearchByDisplayNameAsync(
+    public async Task<List<UserProfileSearchDto>> SearchByDisplayNameAsync(
         string displayName,
-        string? accessToken,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(displayName))
         {
-            return JavaApiCallResult<List<UserProfileSearchDto>>.Failure(
-                StatusCodes.Status400BadRequest,
-                "displayName is required.");
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "displayName is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return JavaApiCallResult<List<UserProfileSearchDto>>.Failure(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized.");
-        }
+        var accessToken = _accessTokenProvider.GetRequiredAccessToken();
 
-        var result = await _javaApiService.SearchProfilesByDisplayNameAsync(
+        var result = await _javaUserProfileApiService.SearchProfilesByDisplayNameAsync(
             displayName.Trim(),
-            accessToken.Trim(),
+            accessToken,
             cancellationToken);
 
-        if (!result.IsSuccess)
-        {
-            return BuildFailure<List<UserProfileSearchDto>>(
-                result.StatusCode,
-                result.ErrorMessage,
-                "Search profile failed.");
-        }
-
-        var profiles = result.Data ?? new List<UserProfileSearchDto>();
-        var statusCode = result.StatusCode > 0
-            ? result.StatusCode
-            : StatusCodes.Status200OK;
-
-        return JavaApiCallResult<List<UserProfileSearchDto>>.Success(profiles, statusCode);
-    }
-
-    private static JavaApiCallResult<TDestination> BuildFailure<TDestination>(
-        int statusCode,
-        string? errorMessage,
-        string fallbackError)
-    {
-        var resolvedStatusCode = statusCode > 0
-            ? statusCode
-            : StatusCodes.Status502BadGateway;
-
-        var resolvedErrorMessage = string.IsNullOrWhiteSpace(errorMessage)
-            ? fallbackError
-            : errorMessage;
-
-        return JavaApiCallResult<TDestination>.Failure(resolvedStatusCode, resolvedErrorMessage);
-    }
-
-    private static string? FirstNonEmpty(params string?[] values)
-    {
-        foreach (var value in values)
-        {
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                return value.Trim();
-            }
-        }
-
-        return null;
-    }
-
-    private static string? MaskPhoneNumber(string? phoneNumber)
-    {
-        if (string.IsNullOrWhiteSpace(phoneNumber))
-        {
-            return null;
-        }
-
-        var normalized = phoneNumber.Trim();
-        if (normalized.Contains('*', StringComparison.Ordinal))
-        {
-            return normalized;
-        }
-
-        if (normalized.Length < 7)
-        {
-            return "****";
-        }
-
-        return $"{normalized[..3]}****{normalized[^4..]}";
+        JavaApiResultHelper.EnsureSuccessOrThrow(result, "Search profile failed.");
+        return result.Data ?? new List<UserProfileSearchDto>();
     }
 }
+
+

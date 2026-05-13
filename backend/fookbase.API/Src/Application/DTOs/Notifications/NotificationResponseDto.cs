@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Application.DTOs.Notifications;
 
 public class NotificationResponseDto
@@ -18,7 +20,7 @@ public class NotificationResponseDto
 
     public Guid? StoryId { get; init; }
 
-    public string Type { get; init; } = string.Empty;
+    public NotificationType Type { get; init; }
 
     public string Message { get; init; } = string.Empty;
 
@@ -26,3 +28,6 @@ public class NotificationResponseDto
 
     public DateTime CreatedAt { get; init; }
 }
+
+
+

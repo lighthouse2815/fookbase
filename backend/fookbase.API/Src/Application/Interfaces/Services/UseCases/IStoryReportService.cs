@@ -24,3 +24,6 @@ public interface IStoryReportService
     Task DeleteAsync(Guid reportId, Guid userId, bool isAdmin, CancellationToken cancellationToken);
 }
 
+
+
+

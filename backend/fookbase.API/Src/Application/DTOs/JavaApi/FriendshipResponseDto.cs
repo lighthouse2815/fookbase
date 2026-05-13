@@ -19,3 +19,6 @@ public class FriendshipResponseDto
     [JsonPropertyName("updateAt")]
     public string? UpdateAt { get; set; }
 }
+
+
+

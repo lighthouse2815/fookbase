@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Common;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.DTOs.UserReports;
 
@@ -12,7 +13,7 @@ public class UserReportResponseDto
 
     public string Reason { get; init; } = string.Empty;
 
-    public string Status { get; init; } = string.Empty;
+    public ReportStatus Status { get; init; }
 
     public Guid? ResolvedByUserId { get; init; }
 
@@ -26,3 +27,6 @@ public class UserReportResponseDto
 
     public AuthorSummaryDto? TargetUser { get; init; }
 }
+
+
+

@@ -14,3 +14,6 @@ public class ProfileInfoVisibilityResponseDto
 
     public bool FriendCountVisible { get; set; }
 }
+
+
+

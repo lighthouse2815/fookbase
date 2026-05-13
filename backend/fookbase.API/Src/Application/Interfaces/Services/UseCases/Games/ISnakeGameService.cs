@@ -16,3 +16,6 @@ public interface ISnakeGameService
     void RemoveRoom(Guid roomId);
 }
 
+
+
+

@@ -24,3 +24,6 @@ public sealed class SignalRGameRealtimeService : IGameRealtimeService
         return _hubContext.Clients.Group(GameHubGroups.Room(roomId)).SendAsync(eventName, payload, cancellationToken);
     }
 }
+
+
+

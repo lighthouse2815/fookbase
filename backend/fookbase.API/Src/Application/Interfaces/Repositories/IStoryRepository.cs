@@ -30,3 +30,6 @@ public interface IStoryRepository
 
     Task AddViewAsync(StoryView storyView, CancellationToken cancellationToken);
 }
+
+
+

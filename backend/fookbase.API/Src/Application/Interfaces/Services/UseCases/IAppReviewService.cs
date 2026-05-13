@@ -27,9 +27,14 @@ public interface IAppReviewService
         bool? isHidden,
         CancellationToken cancellationToken);
 
-    Task<AppReviewResponseDto> HideAsync(Guid reviewId, Guid adminUserId, CancellationToken cancellationToken);
-
-    Task<AppReviewResponseDto> UnhideAsync(Guid reviewId, Guid adminUserId, CancellationToken cancellationToken);
+    Task<AppReviewResponseDto> UpdateVisibilityAsync(
+        Guid reviewId,
+        Guid adminUserId,
+        bool isHidden,
+        CancellationToken cancellationToken);
 
     Task DeleteByAdminAsync(Guid reviewId, Guid adminUserId, CancellationToken cancellationToken);
 }
+
+
+

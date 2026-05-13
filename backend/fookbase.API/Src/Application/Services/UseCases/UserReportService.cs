@@ -1,9 +1,9 @@
 using InteractHub.Api.Application.DTOs.UserReports;
-using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
@@ -16,36 +16,29 @@ namespace InteractHub.Api.Application.Services;
 
 public class UserReportService : IUserReportService
 {
-    private static readonly HashSet<ReportStatus> AllowedResolveStatuses =
-    [
-        ReportStatus.RESOLVED,
-        ReportStatus.REJECTED
-    ];
-
     private readonly IUserReportRepository _userReportRepository;
-    private readonly IJavaApiService _javaApiService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IJavaAdminApiService _javaAdminApiService;
+    private readonly IUserIdentityReadModelService _userIdentityReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly INotificationService _notificationService;
     private readonly IAdminAuditLogService _adminAuditLogService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UserReportService> _logger;
 
-    private const NotificationType UserReportApprovedNotificationType = NotificationType.USER_REPORT_APPROVED;
-    private const NotificationType UserReportRejectedNotificationType = NotificationType.USER_REPORT_REJECTED;
-    private const NotificationType UserReportTargetNotificationType = NotificationType.USER_REPORT_TARGET_ACTION;
-
     public UserReportService(
         IUserReportRepository userReportRepository,
-        IJavaApiService javaApiService,
-        IUserReadModelService userReadModelService,
+        IJavaAdminApiService javaAdminApiService,
+        IUserIdentityReadModelService userIdentityReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         INotificationService notificationService,
         IAdminAuditLogService adminAuditLogService,
         IUnitOfWork unitOfWork,
         ILogger<UserReportService> logger)
     {
         _userReportRepository = userReportRepository;
-        _javaApiService = javaApiService;
-        _userReadModelService = userReadModelService;
+        _javaAdminApiService = javaAdminApiService;
+        _userIdentityReadModelService = userIdentityReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _notificationService = notificationService;
         _adminAuditLogService = adminAuditLogService;
         _unitOfWork = unitOfWork;
@@ -99,18 +92,21 @@ public class UserReportService : IUserReportService
 
     public async Task<UserReportResponseDto> CreateAsync(Guid userId, CreateUserReportRequestDto request, CancellationToken cancellationToken)
     {
-        var reporter = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
-        var targetUser = await _javaApiService.GetUserById(request.TargetUserId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.TARGET_USER_NOT_FOUND);
-
-        if (reporter.Id == targetUser.Id)
+        if (userId == request.TargetUserId)
         {
             throw new BusinessException(ErrorCode.CANNOT_REPORT_SELF);
         }
 
-        var hasPendingReport = await _userReportRepository.ExistsByTargetAndReporterAsync(targetUser.Id, reporter.Id, cancellationToken);
+        var targetUserExists = await EnsureUserExistsAsync(
+            request.TargetUserId,
+            "Could not verify report target user.",
+            cancellationToken);
+        if (!targetUserExists)
+        {
+            throw new BusinessException(ErrorCode.TARGET_USER_NOT_FOUND);
+        }
+
+        var hasPendingReport = await _userReportRepository.ExistsByTargetAndReporterAsync(request.TargetUserId, userId, cancellationToken);
         if (hasPendingReport)
         {
             throw new BusinessException(ErrorCode.DUPLICATE_USER_REPORT);
@@ -120,8 +116,8 @@ public class UserReportService : IUserReportService
         var report = new UserReport
         {
             Id = Guid.NewGuid(),
-            TargetUserId = targetUser.Id,
-            ReportedByUserId = reporter.Id,
+            TargetUserId = request.TargetUserId,
+            ReportedByUserId = userId,
             Reason = request.Reason.Trim(),
             Status = ReportStatus.PENDING,
             CreatedAt = now,
@@ -141,72 +137,50 @@ public class UserReportService : IUserReportService
         ResolveUserReportRequestDto request,
         CancellationToken cancellationToken)
     {
-        var adminUser = await _javaApiService.GetUserById(adminUserId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.ADMIN_USER_NOT_FOUND);
-
         var report = await _userReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.USER_REPORT_NOT_FOUND);
 
-        var previousStatus = report.Status;
         if (!EnumParser.TryParseReportStatus(request.Status, out var normalizedStatus)
-            || !AllowedResolveStatuses.Contains(normalizedStatus))
+            || (normalizedStatus is not ReportStatus.RESOLVED and not ReportStatus.REJECTED))
         {
             throw new BusinessException(ErrorCode.INVALID_REPORT_STATUS);
         }
 
+        var previousStatus = report.Status;
         if (normalizedStatus == ReportStatus.RESOLVED)
         {
-            var statusUpdateResult = await _javaApiService.UpdateAdminUserStatusAsync(
+            var statusUpdateResult = await _javaAdminApiService.UpdateAdminUserStatusAsync(
                 report.TargetUserId,
-                "BANNED",
+                UserStatus.BANNED,
                 accessToken: null,
                 cancellationToken: cancellationToken);
 
             if (!statusUpdateResult.IsSuccess || statusUpdateResult.Data is null)
             {
-                var errorMessage = string.IsNullOrWhiteSpace(statusUpdateResult.ErrorMessage)
-                    ? "Could not ban reported user."
-                    : statusUpdateResult.ErrorMessage;
+                var errorMessage = JavaApiResultHelper.ResolveErrorMessage(
+                    statusUpdateResult.ErrorMessage,
+                    "Could not ban reported user.");
                 throw new BusinessException(ErrorCode.SERVICE_UNAVAILABLE, errorMessage);
             }
         }
 
         report.Status = normalizedStatus;
         report.ResolvedAt = DateTime.UtcNow;
-        report.ResolvedByUserId = adminUser.Id;
+        report.ResolvedByUserId = adminUserId;
         report.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await CreateResolveNotificationsAsync(report, adminUserId, normalizedStatus, cancellationToken);
 
-        await TryCreateResolveNotificationsAsync(report, adminUserId, normalizedStatus, cancellationToken);
-
-        try
-        {
-            await _adminAuditLogService.CreateAdminAuditLogAsync(
-                adminUserId,
-                normalizedStatus == ReportStatus.RESOLVED
-                    ? AdminAuditActionType.USER_REPORT_APPROVED
-                    : AdminAuditActionType.USER_REPORT_REJECTED,
-                AdminAuditEntityType.USER_REPORT,
-                report.Id,
-                report.TargetUserId,
-                $"UserReportId={report.Id};TargetUserId={report.TargetUserId};Previous={previousStatus};Current={normalizedStatus}.",
-                cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(exception, "Could not persist audit log for user report resolution. ReportId={ReportId}", report.Id);
-        }
-
-        _logger.LogInformation(
-            "Admin moderation action on user report. AdminUserId={AdminUserId}, ReportId={ReportId}, TargetUserId={TargetUserId}, ReporterUserId={ReporterUserId}, PreviousStatus={PreviousStatus}, NewStatus={NewStatus}, ResolvedAt={ResolvedAt}.",
-            adminUser.Id,
+        await _adminAuditLogService.CreateAdminAuditLogAsync(
+            adminUserId,
+            normalizedStatus == ReportStatus.RESOLVED
+                ? AdminAuditActionType.USER_REPORT_APPROVED
+                : AdminAuditActionType.USER_REPORT_REJECTED,
+            AdminAuditEntityType.USER_REPORT,
             report.Id,
             report.TargetUserId,
-            report.ReportedByUserId,
-            previousStatus,
-            report.Status,
-            report.ResolvedAt);
+            $"UserReportId={report.Id};TargetUserId={report.TargetUserId};Previous={previousStatus};Current={normalizedStatus}.",
+            cancellationToken);
 
         var mappedItems = await MapReportsAsync([report], cancellationToken);
         return mappedItems[0];
@@ -241,92 +215,76 @@ public class UserReportService : IUserReportService
             .Distinct()
             .ToList();
 
-        var summaries = await _userReadModelService.ResolveAuthorsAsync(
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
             userIds,
             cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "user");
+            requireFresh: false);
 
-        return reports
-            .Select(report => report.ToResponseDto(
-                reporter: ResolveSummaryOrFallback(report.ReportedByUserId, summaries),
-                targetUser: ResolveSummaryOrFallback(report.TargetUserId, summaries)))
-            .ToList();
+        return UserReportMapper.ToResponseDtos(
+            reports,
+            profileLookup,
+            fallbackDisplayName: "user");
     }
 
-    private async Task TryCreateResolveNotificationsAsync(
+    private async Task CreateResolveNotificationsAsync(
         UserReport report,
         Guid adminUserId,
         ReportStatus status,
         CancellationToken cancellationToken)
     {
-        try
+        if (status == ReportStatus.RESOLVED)
         {
-            if (status == ReportStatus.RESOLVED)
-            {
-                await _notificationService.CreateAsync(
-                    new CreateNotificationRequestDto
-                    {
-                        UserId = report.ReportedByUserId,
-                        ActorUserId = adminUserId,
-                        Type = UserReportApprovedNotificationType.ToString(),
-                        Message = "Bao cao user da duoc duyet. Tai khoan bi bao cao da bi khoa. / Your user report was approved and the reported account was banned."
-                    },
-                    cancellationToken);
-
-                if (report.TargetUserId != report.ReportedByUserId)
-                {
-                    await _notificationService.CreateAsync(
-                        new CreateNotificationRequestDto
-                        {
-                            UserId = report.TargetUserId,
-                            ActorUserId = adminUserId,
-                            Type = UserReportTargetNotificationType.ToString(),
-                            Message = "Tai khoan cua ban da bi khoa do vi pham. / Your account was banned due to policy violations."
-                        },
-                        cancellationToken);
-                }
-
-                return;
-            }
-
             await _notificationService.CreateAsync(
                 new CreateNotificationRequestDto
                 {
                     UserId = report.ReportedByUserId,
                     ActorUserId = adminUserId,
-                    Type = UserReportRejectedNotificationType.ToString(),
-                    Message = "Bao cao user da bi tu choi sau khi xem xet. / Your user report was rejected after review."
+                    Type = NotificationType.USER_REPORT_APPROVED.ToString(),
+                    Message = ReportNotificationMessageConstants.User.ReporterApproved
                 },
                 cancellationToken);
+
+            await _notificationService.CreateAsync(
+                new CreateNotificationRequestDto
+                {
+                    UserId = report.TargetUserId,
+                    ActorUserId = adminUserId,
+                    Type = NotificationType.USER_REPORT_TARGET_ACTION.ToString(),
+                    Message = ReportNotificationMessageConstants.User.TargetRemoved
+                },
+                cancellationToken);
+
+            return;
+        }
+
+        await _notificationService.CreateAsync(
+            new CreateNotificationRequestDto
+            {
+                UserId = report.ReportedByUserId,
+                ActorUserId = adminUserId,
+                Type = NotificationType.USER_REPORT_REJECTED.ToString(),
+                Message = ReportNotificationMessageConstants.User.ReporterRejected
+            },
+            cancellationToken);
+    }
+
+    private async Task<bool> EnsureUserExistsAsync(
+        Guid userId,
+        string serviceUnavailableMessage,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _userIdentityReadModelService.ExistsAsync(userId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(
-                exception,
-                "Could not create user report resolve notifications. ReportId={ReportId}, Status={Status}.",
-                report.Id,
-                status);
+            _logger.LogWarning(exception, "Could not verify user identity for {UserId}.", userId);
+            throw new BusinessException(ErrorCode.SERVICE_UNAVAILABLE, serviceUnavailableMessage);
         }
-    }
-
-    private static AuthorSummaryDto ResolveSummaryOrFallback(Guid userId, IReadOnlyDictionary<Guid, AuthorSummaryDto> summaries)
-    {
-        if (summaries.TryGetValue(userId, out var summary))
-        {
-            return summary;
-        }
-
-        return BuildFallbackSummary(userId);
-    }
-
-    private static AuthorSummaryDto BuildFallbackSummary(Guid userId)
-    {
-        return new AuthorSummaryDto
-        {
-            Id = userId,
-            DisplayName = "user",
-            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-        };
     }
 }

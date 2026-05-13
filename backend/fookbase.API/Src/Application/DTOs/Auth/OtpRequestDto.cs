@@ -13,3 +13,6 @@ public class OtpRequestDto
     [StringLength(50, MinimumLength = 1)]
     public string Type { get; set; } = string.Empty;
 }
+
+
+

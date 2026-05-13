@@ -17,15 +17,13 @@ export const useHideAppReview = (): UseHideAppReviewReturn => {
   const toggleHidden = useCallback(async (reviewId: string, hide: boolean) => {
     setIsSubmitting(true);
     try {
-      const updated = hide
-        ? await appReviewService.hideAdminReview(reviewId)
-        : await appReviewService.unhideAdminReview(reviewId);
+      const updated = await appReviewService.updateAdminReviewVisibility(reviewId, hide);
       setError(null);
       return updated;
     } catch (submitError) {
       const message = getApiErrorMessage(
         submitError,
-        hide ? 'Unable to hide app review.' : 'Unable to unhide app review.',
+        'Unable to update app review visibility.',
       );
       setError(message);
       throw new Error(message);

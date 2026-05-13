@@ -15,3 +15,6 @@ public sealed class CaroMoveOutcomeDto
     public GameOverDto? GameOver { get; init; }
 }
 
+
+
+

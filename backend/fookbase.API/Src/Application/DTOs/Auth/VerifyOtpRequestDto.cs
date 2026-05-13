@@ -12,3 +12,6 @@ public class VerifyOtpRequestDto
     [StringLength(20, MinimumLength = 1)]
     public string Otp { get; set; } = string.Empty;
 }
+
+
+

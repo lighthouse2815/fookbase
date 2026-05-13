@@ -37,3 +37,6 @@ public class LoginResponseDto
     [JsonPropertyName("avatarUrl")]
     public string? AvatarUrl { get; set; }
 }
+
+
+

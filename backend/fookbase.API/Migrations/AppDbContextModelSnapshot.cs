@@ -774,7 +774,7 @@ namespace fookbase.API.Migrations
                     b.ToTable("UserContactReadModel", (string)null);
                 });
 
-            modelBuilder.Entity("InteractHub.Api.Domain.Entities.UserProfileReadModel", b =>
+            modelBuilder.Entity("InteractHub.Api.Domain.Entities.UserProfileSummaryReadModel", b =>
                 {
                     b.Property<Guid>("UserId")
                         .ValueGeneratedOnAdd()
@@ -795,7 +795,7 @@ namespace fookbase.API.Migrations
 
                     b.HasKey("UserId");
 
-                    b.ToTable("UserProfileReadModel", (string)null);
+                    b.ToTable("UserProfileSummaryReadModel", (string)null);
                 });
 
             modelBuilder.Entity("InteractHub.Api.Domain.Entities.UserReadModelSyncState", b =>

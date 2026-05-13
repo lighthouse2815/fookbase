@@ -17,3 +17,6 @@ public sealed class ChessMoveRecordDto
     public DateTime MovedAt { get; init; }
 }
 
+
+
+

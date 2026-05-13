@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Common;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.DTOs.StoryReports;
 
@@ -14,7 +15,7 @@ public class StoryReportResponseDto
 
     public string Reason { get; init; } = string.Empty;
 
-    public string Status { get; init; } = string.Empty;
+    public ReportStatus Status { get; init; }
 
     public Guid? ResolvedByUserId { get; init; }
 
@@ -28,3 +29,6 @@ public class StoryReportResponseDto
 
     public AuthorSummaryDto? StoryOwner { get; init; }
 }
+
+
+

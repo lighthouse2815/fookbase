@@ -28,7 +28,7 @@ public class StoriesController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var stories = await _storyService.GetFeedAsync(userId, query, ExtractAccessToken(), cancellationToken);
+        var stories = await _storyService.GetFeedAsync(userId, query, cancellationToken);
         return Ok(ApiResponse<PagedResult<StoryResponseDto>>.Ok(stories));
     }
 
@@ -104,3 +104,6 @@ public class StoriesController : ApiControllerBase
         return Ok(ApiResponse<StoryReactionStateResponseDto>.Ok(state));
     }
 }
+
+
+

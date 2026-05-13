@@ -7,3 +7,6 @@ public sealed class RematchRequestDto
     [Required]
     public Guid RoomId { get; init; }
 }
+
+
+

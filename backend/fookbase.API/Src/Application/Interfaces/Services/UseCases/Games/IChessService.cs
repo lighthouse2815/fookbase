@@ -18,3 +18,6 @@ public interface IChessService
     void RemoveRoom(Guid roomId);
 }
 
+
+
+

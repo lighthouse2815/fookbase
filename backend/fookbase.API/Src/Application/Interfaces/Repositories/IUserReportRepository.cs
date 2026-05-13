@@ -21,3 +21,6 @@ public interface IUserReportRepository
 
     void Remove(UserReport userReport);
 }
+
+
+

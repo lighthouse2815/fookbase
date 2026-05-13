@@ -25,7 +25,7 @@ public class HashtagService : IHashtagService
         query.Normalize();
 
         var (items, totalCount) = await _hashtagRepository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
-        var mappedItems = await MapManyAsync(items, cancellationToken);
+        var mappedItems = await items.ToResponseDtosAsync(_hashtagRepository.CountPostUsageAsync, cancellationToken);
 
         return PagedResult<HashtagResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -40,7 +40,7 @@ public class HashtagService : IHashtagService
         }
 
         var (items, totalCount) = await _hashtagRepository.SearchPagedAsync(keyword, query.Page, query.PageSize, cancellationToken);
-        var mappedItems = await MapManyAsync(items, cancellationToken);
+        var mappedItems = await items.ToResponseDtosAsync(_hashtagRepository.CountPostUsageAsync, cancellationToken);
 
         return PagedResult<HashtagResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -50,7 +50,7 @@ public class HashtagService : IHashtagService
         var hashtag = await _hashtagRepository.GetByIdAsync(hashtagId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.HASHTAG_NOT_FOUND);
 
-        return await MapOneAsync(hashtag, cancellationToken);
+        return await hashtag.ToResponseDtoAsync(_hashtagRepository.CountPostUsageAsync, cancellationToken);
     }
 
     public async Task<HashtagResponseDto> CreateAsync(CreateHashtagRequestDto request, CancellationToken cancellationToken)
@@ -76,7 +76,7 @@ public class HashtagService : IHashtagService
         await _hashtagRepository.AddAsync(hashtag, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return await MapOneAsync(hashtag, cancellationToken);
+        return await hashtag.ToResponseDtoAsync(_hashtagRepository.CountPostUsageAsync, cancellationToken);
     }
 
     public async Task<HashtagResponseDto> UpdateAsync(Guid hashtagId, UpdateHashtagRequestDto request, CancellationToken cancellationToken)
@@ -97,7 +97,7 @@ public class HashtagService : IHashtagService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return await MapOneAsync(hashtag, cancellationToken);
+        return await hashtag.ToResponseDtoAsync(_hashtagRepository.CountPostUsageAsync, cancellationToken);
     }
 
     public async Task DeleteAsync(Guid hashtagId, CancellationToken cancellationToken)
@@ -115,25 +115,6 @@ public class HashtagService : IHashtagService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<List<HashtagResponseDto>> MapManyAsync(IEnumerable<Hashtag> hashtags, CancellationToken cancellationToken)
-    {
-        var mapped = new List<HashtagResponseDto>();
-
-        foreach (var hashtag in hashtags)
-        {
-            mapped.Add(await MapOneAsync(hashtag, cancellationToken));
-        }
-
-        return mapped;
-    }
-
-    private async Task<HashtagResponseDto> MapOneAsync(Hashtag hashtag, CancellationToken cancellationToken)
-    {
-        var usageCount = await _hashtagRepository.CountPostUsageAsync(hashtag.Id, cancellationToken);
-
-        return hashtag.ToResponseDto(usageCount);
-    }
-
     private static string NormalizeName(string value)
     {
         var normalized = value.Trim().TrimStart('#').ToLowerInvariant();
@@ -145,3 +126,6 @@ public class HashtagService : IHashtagService
         return normalized;
     }
 }
+
+
+

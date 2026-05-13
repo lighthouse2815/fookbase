@@ -2,7 +2,6 @@ using InteractHub.Api.Application.DTOs.Stories;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
-using InteractHub.Api.Common.Extensions;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Utilities;
@@ -13,31 +12,26 @@ namespace InteractHub.Api.Application.Services;
 
 public class StoryReactionService : IStoryReactionService
 {
-    private const NotificationType StoryReactionNotificationType = NotificationType.STORY_REACTION;
-
     private readonly IStoryRepository _storyRepository;
     private readonly IStoryReactionRepository _storyReactionRepository;
-    private readonly IJavaApiService _javaApiService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INotificationRealtimeService _notificationRealtimeService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly IUnitOfWork _unitOfWork;
 
     public StoryReactionService(
         IStoryRepository storyRepository,
         IStoryReactionRepository storyReactionRepository,
-        IJavaApiService javaApiService,
         INotificationRepository notificationRepository,
         INotificationRealtimeService notificationRealtimeService,
-        IUserReadModelService userReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         IUnitOfWork unitOfWork)
     {
         _storyRepository = storyRepository;
         _storyReactionRepository = storyReactionRepository;
-        _javaApiService = javaApiService;
         _notificationRepository = notificationRepository;
         _notificationRealtimeService = notificationRealtimeService;
-        _userReadModelService = userReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _unitOfWork = unitOfWork;
     }
 
@@ -47,48 +41,56 @@ public class StoryReactionService : IStoryReactionService
         SetStoryReactionRequestDto request,
         CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
-        var story = await _storyRepository.GetByIdForUpdateAsync(storyId, cancellationToken)
+        var story = await _storyRepository.GetByIdAsync(storyId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
-        EnsureStoryIsActive(story);
+        if (story.IsDeleted || story.ExpiredAt <= DateTime.UtcNow)
+        {
+            throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
+        }
 
         if (!EnumParser.TryParseReactionType(request.Type, out var normalizedType))
         {
             throw new BusinessException(ErrorCode.INVALID_REACTION_TYPE);
         }
 
-        var now = DateTime.UtcNow;
-        var existingReaction = await _storyReactionRepository.GetByStoryAndUserAsync(story.Id, user.Id, cancellationToken);
+        var existingReaction = await _storyReactionRepository.GetByStoryAndUserAsync(story.Id, userId, cancellationToken);
         Notification? createdNotification = null;
         string? notificationActorDisplayName = null;
         string? notificationActorAvatarUrl = null;
 
         if (existingReaction is null)
         {
+            var now = DateTime.UtcNow;
             await _storyReactionRepository.AddAsync(new StoryReaction
             {
                 Id = Guid.NewGuid(),
                 StoryId = story.Id,
-                UserId = user.Id,
+                UserId = userId,
                 Type = normalizedType,
                 CreatedAt = now,
                 UpdatedAt = now
             }, cancellationToken);
 
-            if (story.UserId != user.Id)
+            if (story.UserId != userId)
             {
-                var actorSummary = await ResolveActorSummaryAsync(user.Id, cancellationToken);
+                var actorProfileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
+                    [userId],
+                    cancellationToken,
+                    requireFresh: false);
+                var actorProfile = actorProfileLookup.TryGetValue(userId, out var profile) ? profile : null;
+                var actorSummary = UserProfileSummaryMapper.ToAuthorSummary(
+                    userId,
+                    actorProfile,
+                    fallbackDisplayName: "Someone");
                 notificationActorDisplayName = actorSummary.DisplayName;
                 notificationActorAvatarUrl = actorSummary.AvatarUrl;
                 createdNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = story.UserId,
-                    ActorUserId = user.Id,
+                    ActorUserId = userId,
                     StoryId = story.Id,
-                    Type = StoryReactionNotificationType,
+                    Type = NotificationType.STORY_REACTION,
                     Message = $"{actorSummary.DisplayName} reacted to your story.",
                     IsRead = false,
                     CreatedAt = now,
@@ -101,7 +103,7 @@ public class StoryReactionService : IStoryReactionService
         else
         {
             existingReaction.Type = normalizedType;
-            existingReaction.UpdatedAt = now;
+            existingReaction.UpdatedAt = DateTime.UtcNow;
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -113,11 +115,7 @@ public class StoryReactionService : IStoryReactionService
                 cancellationToken);
         }
 
-        return new StoryReactionStateResponseDto
-        {
-            StoryId = story.Id,
-            ReactionType = normalizedType.ToString()
-        };
+        return StoryReactionMapper.ToStateResponseDto(story.Id, normalizedType);
     }
 
     public async Task<StoryReactionStateResponseDto> RemoveReactionAsync(
@@ -125,9 +123,12 @@ public class StoryReactionService : IStoryReactionService
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var story = await _storyRepository.GetByIdForUpdateAsync(storyId, cancellationToken)
+        var story = await _storyRepository.GetByIdAsync(storyId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
-        EnsureStoryIsActive(story);
+        if (story.IsDeleted || story.ExpiredAt <= DateTime.UtcNow)
+        {
+            throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
+        }
 
         var existingReaction = await _storyReactionRepository.GetByStoryAndUserAsync(story.Id, userId, cancellationToken);
         if (existingReaction is not null)
@@ -136,31 +137,7 @@ public class StoryReactionService : IStoryReactionService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return new StoryReactionStateResponseDto
-        {
-            StoryId = story.Id,
-            ReactionType = null
-        };
+        return StoryReactionMapper.ToStateResponseDto(story.Id, reactionType: null);
     }
 
-    private async Task<(string DisplayName, string AvatarUrl)> ResolveActorSummaryAsync(
-        Guid actorUserId,
-        CancellationToken cancellationToken)
-    {
-        var summary = await _userReadModelService.ResolveAuthorAsync(
-            actorUserId,
-            cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "Someone");
-
-        return (summary.DisplayName, summary.AvatarUrl ?? AvatarUrlHelper.BuildDefaultAvatarUrl(actorUserId));
-    }
-
-    private static void EnsureStoryIsActive(Story story)
-    {
-        if (story.IsDeleted || story.ExpiredAt <= DateTime.UtcNow)
-        {
-            throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
-        }
-    }
 }

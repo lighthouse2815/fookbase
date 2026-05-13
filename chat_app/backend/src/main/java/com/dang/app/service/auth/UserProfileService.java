@@ -402,6 +402,35 @@ public class UserProfileService {
         return userProfileMapper.toUserProfileSummary(profile);
     }
 
+    public List<UserProfileSummaryResponse> getUserProfileSummaries(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> distinctUserIds = userIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (distinctUserIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, UserProfile> profileByUserId = userProfileRepository.findPublicProfilesByUserIds(distinctUserIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getId(),
+                        Function.identity(),
+                        (left, ignored) -> left
+                ));
+
+        return distinctUserIds.stream()
+                .map(profileByUserId::get)
+                .filter(Objects::nonNull)
+                .map(userProfileMapper::toUserProfileSummary)
+                .toList();
+    }
+
     public List<UserProfilePresenceResponse> getFriendPresenceList(UUID userId) {
         User user = userService.findById(userId);
         userGuard.requireActiveAndNotDeleted(user);

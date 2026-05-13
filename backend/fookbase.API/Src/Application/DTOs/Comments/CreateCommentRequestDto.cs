@@ -14,3 +14,6 @@ public class CreateCommentRequestDto
 
     public IReadOnlyList<string>? MediaUrls { get; set; }
 }
+
+
+

@@ -22,3 +22,6 @@ public class ProfileInfoVisibilityDto
     [JsonPropertyName("friendCountVisible")]
     public bool FriendCountVisible { get; set; }
 }
+
+
+

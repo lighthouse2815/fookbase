@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using InteractHub.Api.Common.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -36,10 +36,7 @@ public class NotificationsHub : Hub<INotificationsClient>
 
     private Guid? ResolveUserId()
     {
-        var rawUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? Context.User?.FindFirstValue("sub");
-
-        if (Guid.TryParse(rawUserId, out var userId))
+        if (Context.User.TryGetUserId(out var userId))
         {
             return userId;
         }
@@ -47,3 +44,6 @@ public class NotificationsHub : Hub<INotificationsClient>
         return null;
     }
 }
+
+
+

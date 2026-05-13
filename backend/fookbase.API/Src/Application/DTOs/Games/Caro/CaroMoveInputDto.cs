@@ -14,3 +14,6 @@ public sealed class CaroMoveInputDto
     public int Col { get; init; }
 }
 
+
+
+

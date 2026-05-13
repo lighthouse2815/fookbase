@@ -19,3 +19,6 @@ public sealed class ChessMoveInputDto
     public string? Promotion { get; init; }
 }
 
+
+
+

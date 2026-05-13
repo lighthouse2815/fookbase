@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Common;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.DTOs.Comments;
 
@@ -22,13 +23,16 @@ public record CommentResponseDto
 
     public DateTime UpdatedAt { get; init; }
 
-    public string? CurrentUserReactionType { get; init; }
+    public ReactionType? CurrentUserReactionType { get; init; }
 
     public int ReactionCount { get; init; }
 
-    public IReadOnlyList<string> TopReactionTypes { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<ReactionType> TopReactionTypes { get; init; } = Array.Empty<ReactionType>();
 
     public int ReplyCount { get; init; }
 
     public IReadOnlyList<CommentResponseDto> Replies { get; init; } = Array.Empty<CommentResponseDto>();
 }
+
+
+

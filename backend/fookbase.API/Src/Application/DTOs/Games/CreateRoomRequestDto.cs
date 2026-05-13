@@ -18,3 +18,6 @@ public sealed class CreateRoomRequestDto
     public string? AvatarUrl { get; init; }
 }
 
+
+
+

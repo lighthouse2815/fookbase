@@ -12,3 +12,6 @@ public sealed class GameDefinitionDto
 
     public int MaxPlayers { get; init; }
 }
+
+
+

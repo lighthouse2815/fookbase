@@ -21,3 +21,6 @@ public sealed class SnakePlayerStateDto
     public bool IsAlive { get; init; }
 }
 
+
+
+

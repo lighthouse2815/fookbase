@@ -14,3 +14,6 @@ public class CloudinaryOptions
 
     public string UploadFolder { get; set; } = "fookbase/posts";
 }
+
+
+

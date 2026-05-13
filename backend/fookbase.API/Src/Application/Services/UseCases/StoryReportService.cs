@@ -1,9 +1,9 @@
-using InteractHub.Api.Application.DTOs.Common;
 using InteractHub.Api.Application.DTOs.Notifications;
 using InteractHub.Api.Application.DTOs.StoryReports;
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
+using InteractHub.Api.Common.Constants;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
 using InteractHub.Api.Common.Pagination;
@@ -16,20 +16,9 @@ namespace InteractHub.Api.Application.Services;
 
 public class StoryReportService : IStoryReportService
 {
-    private static readonly HashSet<ReportStatus> AllowedResolveStatuses =
-    [
-        ReportStatus.RESOLVED,
-        ReportStatus.REJECTED
-    ];
-
-    private const NotificationType StoryReportApprovedNotificationType = NotificationType.STORY_REPORT_APPROVED;
-    private const NotificationType StoryReportRejectedNotificationType = NotificationType.STORY_REPORT_REJECTED;
-    private const NotificationType StoryReportTargetNotificationType = NotificationType.STORY_REPORT_TARGET_ACTION;
-
     private readonly IStoryReportRepository _storyReportRepository;
     private readonly IStoryRepository _storyRepository;
-    private readonly IJavaApiService _javaApiService;
-    private readonly IUserReadModelService _userReadModelService;
+    private readonly IUserProfileSummaryReadModelService _userProfileSummaryReadModelService;
     private readonly INotificationService _notificationService;
     private readonly IAdminAuditLogService _adminAuditLogService;
     private readonly IUnitOfWork _unitOfWork;
@@ -38,8 +27,7 @@ public class StoryReportService : IStoryReportService
     public StoryReportService(
         IStoryReportRepository storyReportRepository,
         IStoryRepository storyRepository,
-        IJavaApiService javaApiService,
-        IUserReadModelService userReadModelService,
+        IUserProfileSummaryReadModelService userProfileSummaryReadModelService,
         INotificationService notificationService,
         IAdminAuditLogService adminAuditLogService,
         IUnitOfWork unitOfWork,
@@ -47,8 +35,7 @@ public class StoryReportService : IStoryReportService
     {
         _storyReportRepository = storyReportRepository;
         _storyRepository = storyRepository;
-        _javaApiService = javaApiService;
-        _userReadModelService = userReadModelService;
+        _userProfileSummaryReadModelService = userProfileSummaryReadModelService;
         _notificationService = notificationService;
         _adminAuditLogService = adminAuditLogService;
         _unitOfWork = unitOfWork;
@@ -110,20 +97,20 @@ public class StoryReportService : IStoryReportService
         CreateStoryReportRequestDto request,
         CancellationToken cancellationToken)
     {
-        var user = await _javaApiService.GetUserById(userId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
         var story = await _storyRepository.GetByIdAsync(request.StoryId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
 
-        EnsureStoryIsReportable(story);
+        if (story.IsDeleted || story.ExpiredAt <= DateTime.UtcNow)
+        {
+            throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
+        }
 
-        if (story.UserId == user.Id)
+        if (story.UserId == userId)
         {
             throw new BusinessException(ErrorCode.CANNOT_REPORT_OWN_STORY);
         }
 
-        var hasPendingReport = await _storyReportRepository.ExistsByStoryAndReporterAsync(story.Id, user.Id, cancellationToken);
+        var hasPendingReport = await _storyReportRepository.ExistsByStoryAndReporterAsync(story.Id, userId, cancellationToken);
         if (hasPendingReport)
         {
             throw new BusinessException(ErrorCode.DUPLICATE_STORY_REPORT);
@@ -134,7 +121,7 @@ public class StoryReportService : IStoryReportService
         {
             Id = Guid.NewGuid(),
             StoryId = story.Id,
-            ReportedByUserId = user.Id,
+            ReportedByUserId = userId,
             Reason = request.Reason.Trim(),
             Status = ReportStatus.PENDING,
             CreatedAt = now,
@@ -154,23 +141,19 @@ public class StoryReportService : IStoryReportService
         ResolveStoryReportRequestDto request,
         CancellationToken cancellationToken)
     {
-        var adminUser = await _javaApiService.GetUserById(adminUserId, cancellationToken)
-            ?? throw new BusinessException(ErrorCode.ADMIN_USER_NOT_FOUND);
-
         var report = await _storyReportRepository.GetByIdForUpdateAsync(reportId, cancellationToken)
             ?? throw new BusinessException(ErrorCode.STORY_REPORT_NOT_FOUND);
 
         if (!EnumParser.TryParseReportStatus(request.Status, out var normalizedStatus)
-            || !AllowedResolveStatuses.Contains(normalizedStatus))
+            || (normalizedStatus is not ReportStatus.RESOLVED and not ReportStatus.REJECTED))
         {
             throw new BusinessException(ErrorCode.INVALID_REPORT_STATUS);
         }
 
         var ownerMap = await _storyRepository.GetOwnerUserIdsByStoryIdsAsync([report.StoryId], cancellationToken);
-        var storyOwnerUserId = ownerMap.TryGetValue(report.StoryId, out var ownerId)
-            ? ownerId
-            : (Guid?)null;
-        var auditTargetUserId = storyOwnerUserId ?? report.ReportedByUserId;
+        var storyOwnerUserId = ownerMap[report.StoryId];
+        var auditTargetUserId = storyOwnerUserId;
+        var previousStatus = report.Status;
 
         if (normalizedStatus == ReportStatus.RESOLVED)
         {
@@ -183,45 +166,26 @@ public class StoryReportService : IStoryReportService
             }
         }
 
-        var previousStatus = report.Status;
         report.Status = normalizedStatus;
         report.ResolvedAt = DateTime.UtcNow;
-        report.ResolvedByUserId = adminUser.Id;
+        report.ResolvedByUserId = adminUserId;
         report.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await CreateResolveNotificationsAsync(report, adminUserId, normalizedStatus, storyOwnerUserId, cancellationToken);
 
-        await TryCreateResolveNotificationsAsync(report, adminUserId, normalizedStatus, storyOwnerUserId, cancellationToken);
-
-        try
-        {
-            await _adminAuditLogService.CreateAdminAuditLogAsync(
-                adminUserId,
-                normalizedStatus == ReportStatus.RESOLVED
-                    ? AdminAuditActionType.STORY_REPORT_APPROVED
-                    : AdminAuditActionType.STORY_REPORT_REJECTED,
-                AdminAuditEntityType.STORY_REPORT,
-                report.Id,
-                auditTargetUserId,
-                $"StoryReportId={report.Id};StoryId={report.StoryId};Previous={previousStatus};Current={normalizedStatus}.",
-                cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(exception, "Could not persist audit log for story report resolution. ReportId={ReportId}", report.Id);
-        }
-
-        _logger.LogInformation(
-            "Admin moderation action on story report. AdminUserId={AdminUserId}, ReportId={ReportId}, StoryId={StoryId}, ReporterUserId={ReporterUserId}, StoryOwnerUserId={StoryOwnerUserId}, PreviousStatus={PreviousStatus}, NewStatus={NewStatus}.",
-            adminUser.Id,
+        await _adminAuditLogService.CreateAdminAuditLogAsync(
+            adminUserId,
+            normalizedStatus == ReportStatus.RESOLVED
+                ? AdminAuditActionType.STORY_REPORT_APPROVED
+                : AdminAuditActionType.STORY_REPORT_REJECTED,
+            AdminAuditEntityType.STORY_REPORT,
             report.Id,
-            report.StoryId,
-            report.ReportedByUserId,
-            storyOwnerUserId,
-            previousStatus,
-            report.Status);
+            auditTargetUserId,
+            $"StoryReportId={report.Id};StoryId={report.StoryId};Previous={previousStatus};Current={normalizedStatus}.",
+            cancellationToken);
+    
 
-        var mappedItems = await MapReportsAsync([report], cancellationToken);
+        var mappedItems = await MapReportsAsync([report], cancellationToken); 
         return mappedItems[0];
     }
 
@@ -258,111 +222,62 @@ public class StoryReportService : IStoryReportService
             .Distinct()
             .ToList();
 
-        var userSummaries = await _userReadModelService.ResolveAuthorsAsync(
+        var profileLookup = await _userProfileSummaryReadModelService.GetProfileSummariesAsync(
             userIds,
             cancellationToken,
-            requireFresh: false,
-            fallbackDisplayName: "user");
+            requireFresh: false);
 
-        return reports
-            .Select(report =>
-            {
-                var storyOwnerUserId = ownerMap.TryGetValue(report.StoryId, out var ownerId) ? ownerId : (Guid?)null;
-                return report.ToResponseDto(
-                    storyOwnerUserId: storyOwnerUserId,
-                    reporter: ResolveSummaryOrFallback(report.ReportedByUserId, userSummaries),
-                    storyOwner: storyOwnerUserId.HasValue
-                        ? ResolveSummaryOrFallback(storyOwnerUserId.Value, userSummaries)
-                        : null);
-            })
-            .ToList();
+        return StoryReportMapper.ToResponseDtos(
+            reports,
+            ownerMap,
+            profileLookup,
+            fallbackDisplayName: "user");
     }
 
-    private async Task TryCreateResolveNotificationsAsync(
+    private async Task CreateResolveNotificationsAsync(
         StoryReport report,
         Guid adminUserId,
         ReportStatus status,
-        Guid? storyOwnerUserId,
+        Guid storyOwnerUserId,
         CancellationToken cancellationToken)
     {
-        try
+        if (status == ReportStatus.RESOLVED)
         {
-            if (status == ReportStatus.RESOLVED)
-            {
-                await _notificationService.CreateAsync(
-                    new CreateNotificationRequestDto
+            await _notificationService.CreateAsync(
+                new CreateNotificationRequestDto
                     {
                         UserId = report.ReportedByUserId,
                         ActorUserId = adminUserId,
                         StoryId = report.StoryId,
-                        Type = StoryReportApprovedNotificationType.ToString(),
-                        Message = "Bao cao story da duoc duyet. Story vi pham da bi xoa. / Your story report was approved and the reported story was removed."
+                        Type = NotificationType.STORY_REPORT_APPROVED.ToString(),
+                        Message = ReportNotificationMessageConstants.Story.ReporterApproved
                     },
                     cancellationToken);
-
-                if (storyOwnerUserId.HasValue && storyOwnerUserId.Value != report.ReportedByUserId)
-                {
-                    await _notificationService.CreateAsync(
-                        new CreateNotificationRequestDto
-                        {
-                            UserId = storyOwnerUserId.Value,
-                            ActorUserId = adminUserId,
-                            StoryId = report.StoryId,
-                            Type = StoryReportTargetNotificationType.ToString(),
-                            Message = "Story cua ban da bi xoa vi vi pham sau khi admin duyet bao cao. / Your story was removed by admin after report approval."
-                        },
-                        cancellationToken);
-                }
-
-                return;
-            }
 
             await _notificationService.CreateAsync(
                 new CreateNotificationRequestDto
                 {
-                    UserId = report.ReportedByUserId,
+                    UserId = storyOwnerUserId,
                     ActorUserId = adminUserId,
                     StoryId = report.StoryId,
-                    Type = StoryReportRejectedNotificationType.ToString(),
-                    Message = "Bao cao story bi tu choi sau khi xem xet. / Your story report was rejected after review."
+                    Type = NotificationType.STORY_REPORT_TARGET_ACTION.ToString(),
+                    Message = ReportNotificationMessageConstants.Story.TargetRemoved
                 },
                 cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(
-                exception,
-                "Could not create story report resolve notifications. ReportId={ReportId}, Status={Status}.",
-                report.Id,
-                status);
-        }
-    }
 
-    private static void EnsureStoryIsReportable(Story story)
-    {
-        if (story.IsDeleted || story.ExpiredAt <= DateTime.UtcNow)
-        {
-            throw new BusinessException(ErrorCode.STORY_NOT_FOUND);
-        }
-    }
-
-    private static AuthorSummaryDto ResolveSummaryOrFallback(Guid userId, IReadOnlyDictionary<Guid, AuthorSummaryDto> summaries)
-    {
-        if (summaries.TryGetValue(userId, out var summary))
-        {
-            return summary;
+            return;
         }
 
-        return BuildFallbackSummary(userId);
+        await _notificationService.CreateAsync(
+            new CreateNotificationRequestDto
+            {
+                UserId = report.ReportedByUserId,
+                ActorUserId = adminUserId,
+                StoryId = report.StoryId,
+                Type = NotificationType.STORY_REPORT_REJECTED.ToString(),
+                Message = ReportNotificationMessageConstants.Story.ReporterRejected
+            },
+            cancellationToken);
     }
 
-    private static AuthorSummaryDto BuildFallbackSummary(Guid userId)
-    {
-        return new AuthorSummaryDto
-        {
-            Id = userId,
-            DisplayName = "user",
-            AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(userId)
-        };
-    }
 }

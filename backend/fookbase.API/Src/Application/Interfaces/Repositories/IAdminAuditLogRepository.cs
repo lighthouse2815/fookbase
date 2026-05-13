@@ -9,3 +9,6 @@ public interface IAdminAuditLogRepository
     Task AddAsync(AdminAuditLog log, CancellationToken cancellationToken);
 }
 
+
+
+

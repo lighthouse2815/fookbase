@@ -26,3 +26,6 @@ public class Post
 
     public ICollection<PostMedia> MediaItems { get; set; } = new List<PostMedia>();
 }
+
+
+

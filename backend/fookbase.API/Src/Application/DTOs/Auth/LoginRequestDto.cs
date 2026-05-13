@@ -12,3 +12,6 @@ public class LoginRequestDto
     [StringLength(255, MinimumLength = 1)]
     public string Password { get; set; } = string.Empty;
 }
+
+
+
