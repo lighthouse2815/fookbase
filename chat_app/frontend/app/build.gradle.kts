@@ -24,19 +24,19 @@ android {
     productFlavors {
         create("dev") {
             dimension = "env"
-            buildConfigField("String", "BASE_URL", "\"https://interacthub-java-api-hqash7cvg0eubkee.japanwest-01.azurewebsites.net/\"")
+            buildConfigField("String", "BASE_URL", "\"https://fookbase-java-be.onrender.com/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
             manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
         create("staging") {
             dimension = "env"
-            buildConfigField("String", "BASE_URL", "\"https://interacthub-java-api-hqash7cvg0eubkee.japanwest-01.azurewebsites.net/\"")
+            buildConfigField("String", "BASE_URL", "\"https://fookbase-java-be.onrender.com/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
             manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
         create("prod") {
             dimension = "env"
-            buildConfigField("String", "BASE_URL", "\"https://interacthub-java-api-hqash7cvg0eubkee.japanwest-01.azurewebsites.net/\"")
+            buildConfigField("String", "BASE_URL", "\"https://fookbase-java-be.onrender.com/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
             manifestPlaceholders["usesCleartextTraffic"] = "false"
         }

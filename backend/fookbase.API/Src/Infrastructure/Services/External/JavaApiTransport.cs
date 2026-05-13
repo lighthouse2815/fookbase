@@ -35,10 +35,11 @@ public class JavaApiTransport
     public async Task<T?> GetAsync<T>(
         string relativePath,
         string? accessToken,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowAmbientAccessToken = true)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
-        var resolvedAccessToken = ResolveAccessToken(accessToken);
+        var resolvedAccessToken = ResolveAccessToken(accessToken, allowAmbientAccessToken);
 
         if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
         {
@@ -74,12 +75,13 @@ public class JavaApiTransport
     public async Task<JavaApiCallResult<T>> GetResultAsync<T>(
         string relativePath,
         string? accessToken,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowAmbientAccessToken = true)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
-            var resolvedAccessToken = ResolveAccessToken(accessToken);
+            var resolvedAccessToken = ResolveAccessToken(accessToken, allowAmbientAccessToken);
 
             if (!string.IsNullOrWhiteSpace(resolvedAccessToken))
             {
@@ -161,12 +163,13 @@ public class JavaApiTransport
         object? payload,
         CancellationToken cancellationToken,
         string? accessToken = null,
-        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+        IReadOnlyDictionary<string, string>? additionalHeaders = null,
+        bool allowAmbientAccessToken = true)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, relativePath);
-            var resolvedAccessToken = ResolveAccessToken(accessToken);
+            var resolvedAccessToken = ResolveAccessToken(accessToken, allowAmbientAccessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
@@ -260,12 +263,13 @@ public class JavaApiTransport
         object? payload,
         CancellationToken cancellationToken,
         string? accessToken = null,
-        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+        IReadOnlyDictionary<string, string>? additionalHeaders = null,
+        bool allowAmbientAccessToken = true)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, relativePath);
-            var resolvedAccessToken = ResolveAccessToken(accessToken);
+            var resolvedAccessToken = ResolveAccessToken(accessToken, allowAmbientAccessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
@@ -345,12 +349,13 @@ public class JavaApiTransport
         object? payload,
         CancellationToken cancellationToken,
         string? accessToken = null,
-        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+        IReadOnlyDictionary<string, string>? additionalHeaders = null,
+        bool allowAmbientAccessToken = true)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Delete, relativePath);
-            var resolvedAccessToken = ResolveAccessToken(accessToken);
+            var resolvedAccessToken = ResolveAccessToken(accessToken, allowAmbientAccessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
@@ -430,12 +435,13 @@ public class JavaApiTransport
         object? payload,
         CancellationToken cancellationToken,
         string? accessToken = null,
-        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+        IReadOnlyDictionary<string, string>? additionalHeaders = null,
+        bool allowAmbientAccessToken = true)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Patch, relativePath);
-            var resolvedAccessToken = ResolveAccessToken(accessToken);
+            var resolvedAccessToken = ResolveAccessToken(accessToken, allowAmbientAccessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
@@ -515,12 +521,13 @@ public class JavaApiTransport
         object? payload,
         CancellationToken cancellationToken,
         string? accessToken = null,
-        IReadOnlyDictionary<string, string>? additionalHeaders = null)
+        IReadOnlyDictionary<string, string>? additionalHeaders = null,
+        bool allowAmbientAccessToken = true)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Patch, relativePath);
-            var resolvedAccessToken = ResolveAccessToken(accessToken);
+            var resolvedAccessToken = ResolveAccessToken(accessToken, allowAmbientAccessToken);
             if (payload is not null)
             {
                 request.Content = JsonContent.Create(payload, options: SerializerOptions);
@@ -715,11 +722,16 @@ public class JavaApiTransport
         return JsonSerializer.Deserialize<T>(element.GetRawText(), SerializerOptions);
     }
 
-    private string? ResolveAccessToken(string? accessToken)
+    private string? ResolveAccessToken(string? accessToken, bool allowAmbientAccessToken = true)
     {
         if (!string.IsNullOrWhiteSpace(accessToken))
         {
             return accessToken.NormalizeAccessTokenOrNull();
+        }
+
+        if (!allowAmbientAccessToken)
+        {
+            return null;
         }
 
         return _accessTokenProvider.GetAccessTokenOrNull();

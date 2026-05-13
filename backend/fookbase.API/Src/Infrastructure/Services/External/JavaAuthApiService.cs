@@ -27,7 +27,11 @@ public class JavaAuthApiService : IJavaAuthApiService
         CancellationToken cancellationToken = default)
     {
         var path = JavaApiTransport.BuildPath(_options.RegisterPathTemplate);
-        return _transport.PostAsync<RegisterResponseDto>(path, request, cancellationToken);
+        return _transport.PostAsync<RegisterResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<LoginResponseDto>> LoginAsync(
@@ -35,7 +39,11 @@ public class JavaAuthApiService : IJavaAuthApiService
         CancellationToken cancellationToken = default)
     {
         var path = JavaApiTransport.BuildPath(_options.LoginPathTemplate);
-        return _transport.PostAsync<LoginResponseDto>(path, request, cancellationToken);
+        return _transport.PostAsync<LoginResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<GoogleAuthResponseDto>> AuthWithGoogleAsync(
@@ -43,7 +51,11 @@ public class JavaAuthApiService : IJavaAuthApiService
         CancellationToken cancellationToken = default)
     {
         var path = JavaApiTransport.BuildPath(_options.GooglePathTemplate);
-        return _transport.PostAsync<GoogleAuthResponseDto>(path, request, cancellationToken);
+        return _transport.PostAsync<GoogleAuthResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<TokenResponseDto>> RefreshTokenAsync(
@@ -54,7 +66,8 @@ public class JavaAuthApiService : IJavaAuthApiService
         return _transport.PostAsync<TokenResponseDto>(
             path,
             new RefreshTokenRequestDto { RefreshToken = refreshToken },
-            cancellationToken);
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<NoContentDto>> LogoutAsync(
@@ -65,7 +78,8 @@ public class JavaAuthApiService : IJavaAuthApiService
         return _transport.PostNoContentAsync(
             path,
             new LogoutRequestDto { RefreshToken = refreshToken },
-            cancellationToken);
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenNotLoginAsync(
@@ -73,7 +87,11 @@ public class JavaAuthApiService : IJavaAuthApiService
         CancellationToken cancellationToken = default)
     {
         var path = JavaApiTransport.BuildPath(_options.SendVerifyEmailOtpWhenNotLoginPathTemplate);
-        return _transport.PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+        return _transport.PostAsync<OtpVerifyResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendVerifyEmailOtpWhenLoginAsync(
@@ -123,7 +141,11 @@ public class JavaAuthApiService : IJavaAuthApiService
         CancellationToken cancellationToken = default)
     {
         var path = JavaApiTransport.BuildPath(_options.SendResetPasswordOtpWhenNotLoginPathTemplate);
-        return _transport.PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+        return _transport.PostAsync<OtpVerifyResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<OtpVerifyResponseDto>> SendResetPasswordOtpWhenLoginAsync(
@@ -139,7 +161,11 @@ public class JavaAuthApiService : IJavaAuthApiService
         CancellationToken cancellationToken = default)
     {
         var path = JavaApiTransport.BuildPath(_options.VerifyEmailOtpWhenNotLoginPathTemplate);
-        return _transport.PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+        return _transport.PostAsync<OtpVerifyResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyEmailOtpWhenLoginAsync(
@@ -156,7 +182,11 @@ public class JavaAuthApiService : IJavaAuthApiService
         CancellationToken cancellationToken = default)
     {
         var path = JavaApiTransport.BuildPath(_options.VerifyResetPasswordOtpWhenNotLoginPathTemplate);
-        return _transport.PostAsync<OtpVerifyResponseDto>(path, request, cancellationToken);
+        return _transport.PostAsync<OtpVerifyResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            allowAmbientAccessToken: false);
     }
 
     public Task<JavaApiCallResult<OtpVerifyResponseDto>> VerifyResetPasswordOtpWhenLoginAsync(
@@ -179,6 +209,11 @@ public class JavaAuthApiService : IJavaAuthApiService
             ["X-Reset-Token"] = resetToken
         };
 
-        return _transport.PostAsync<MessageResponseDto>(path, request, cancellationToken, additionalHeaders: additionalHeaders);
+        return _transport.PostAsync<MessageResponseDto>(
+            path,
+            request,
+            cancellationToken,
+            additionalHeaders: additionalHeaders,
+            allowAmbientAccessToken: false);
     }
 }
