@@ -38,7 +38,7 @@ export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => 
           }
         }}
         className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px]"
-        aria-label="Dong popup reaction"
+        aria-label="Đóng popup reaction"
       />
 
       <div className="relative z-[97] w-full max-w-xl overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl">
@@ -67,7 +67,7 @@ export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => 
               }
             }}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white"
-            aria-label="Dong popup"
+            aria-label="Đóng popup"
           >
             <X size={16} />
           </button>
@@ -77,7 +77,7 @@ export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => 
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-300">
               <Loader2 size={16} className="animate-spin" />
-              Dang tai danh sach reaction...
+              Đang tải danh sách reaction...
             </div>
           ) : null}
 
@@ -88,7 +88,7 @@ export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => 
           ) : null}
 
           {!isLoading && filteredUsers.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">Chua co reaction nao trong nhom nay.</p>
+            <p className="py-6 text-center text-sm text-slate-400">Chưa có reaction nào trong nhóm này.</p>
           ) : null}
 
           {!isLoading
@@ -122,9 +122,9 @@ export const PostReactionViewerModal = (props: PostReactionViewerModalProps) => 
                         className={`${friendActionMeta.className} disabled:cursor-not-allowed disabled:opacity-70`}
                       >
                         {isFriendActionLoading ? <Loader2 size={14} className="animate-spin" /> : null}
-                        {!isFriendActionLoading && friendActionMeta.label === 'Them ban be' ? <UserPlus size={13} /> : null}
-                        {!isFriendActionLoading && friendActionMeta.label === 'Ban be' ? <UserCheck size={13} /> : null}
-                        <span>{isFriendActionLoading ? 'Dang xu ly...' : friendActionMeta.label}</span>
+                        {!isFriendActionLoading && friendActionMeta.label === 'Thêm bạn bè' ? <UserPlus size={13} /> : null}
+                        {!isFriendActionLoading && friendActionMeta.label === 'Bạn bè' ? <UserCheck size={13} /> : null}
+                        <span>{isFriendActionLoading ? 'Đang xử lý...' : friendActionMeta.label}</span>
                       </button>
                     ) : null}
                   </div>

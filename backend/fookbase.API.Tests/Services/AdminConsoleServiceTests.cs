@@ -16,6 +16,7 @@ public class AdminConsoleServiceTests
     private readonly Mock<IAccessTokenProvider> _accessTokenProviderMock = new();
     private readonly Mock<IJavaAdminApiService> _javaAdminApiServiceMock = new();
     private readonly Mock<IPostRepository> _postRepositoryMock = new();
+    private readonly Mock<IHashtagRepository> _hashtagRepositoryMock = new();
     private readonly Mock<IPostReportRepository> _postReportRepositoryMock = new();
     private readonly Mock<ICommentReportRepository> _commentReportRepositoryMock = new();
     private readonly Mock<IUserReportRepository> _userReportRepositoryMock = new();
@@ -33,6 +34,7 @@ public class AdminConsoleServiceTests
             _accessTokenProviderMock.Object,
             _javaAdminApiServiceMock.Object,
             _postRepositoryMock.Object,
+            _hashtagRepositoryMock.Object,
             _postReportRepositoryMock.Object,
             _commentReportRepositoryMock.Object,
             _userReportRepositoryMock.Object,

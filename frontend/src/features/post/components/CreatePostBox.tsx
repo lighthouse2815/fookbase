@@ -91,7 +91,7 @@ export const CreatePostBox = ({ currentUser, isSubmitting = false, onCreatePost 
                   type="button"
                   onClick={() => removeSelectedImage(index)}
                   className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100"
-                  aria-label="Xoa anh da chon"
+                  aria-label="Xóa ảnh đã chọn"
                 >
                   <X size={12} />
                 </button>

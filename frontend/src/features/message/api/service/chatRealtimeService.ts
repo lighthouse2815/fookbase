@@ -37,7 +37,7 @@ export const createChatRealtimeConnection = (handlers: ChatRealtimeHandlers): Ch
                   handlers.onMessage(message);
                 }
               } catch {
-                handlers.onError?.('Khong the xu ly du lieu realtime.');
+                handlers.onError?.('Không thể xử lý dữ liệu realtime.');
               }
             },
           );
@@ -53,10 +53,10 @@ export const createChatRealtimeConnection = (handlers: ChatRealtimeHandlers): Ch
       handlers.onConnectionChange?.(false);
     },
     onStompError: (frame) => {
-      handlers.onError?.(frame.headers.message ?? 'Ket noi realtime gap loi.');
+      handlers.onError?.(frame.headers.message ?? 'Kết nối realtime gặp lỗi.');
     },
     onWebSocketError: () => {
-      handlers.onError?.('Ket noi websocket gap loi.');
+      handlers.onError?.('Kết nối websocket gặp lỗi.');
     },
   });
 
@@ -81,7 +81,7 @@ export const createChatRealtimeConnection = (handlers: ChatRealtimeHandlers): Ch
             handlers.onMessage(message);
           }
         } catch {
-          handlers.onError?.('Khong the xu ly du lieu realtime.');
+          handlers.onError?.('Không thể xử lý dữ liệu realtime.');
         }
       },
     );
@@ -93,7 +93,7 @@ export const createChatRealtimeConnection = (handlers: ChatRealtimeHandlers): Ch
     connect: () => {
       const token = storage.getToken();
       if (!token) {
-        handlers.onError?.('Khong tim thay token dang nhap de ket noi realtime.');
+        handlers.onError?.('Không tìm thấy token đăng nhập để kết nối realtime.');
         return;
       }
 

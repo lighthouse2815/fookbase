@@ -114,6 +114,24 @@ export interface AdminAuditLogResponseDto {
   targetUser?: ReportUserSummaryResponseDto | null;
 }
 
+export interface AdminHashtagUsageResponseDto {
+  id: string;
+  name: string;
+  usageCount?: number | string | null;
+  createdAt: string;
+}
+
+export interface AdminHashtagOverviewResponseDto {
+  currentMonth: string;
+  topHashtags?: AdminHashtagUsageResponseDto[] | null;
+  hashtags: {
+    items?: AdminHashtagUsageResponseDto[] | null;
+    page?: number;
+    pageSize?: number;
+    totalCount?: number;
+  };
+}
+
 export type PostReportPayload = PostReportResponseDto;
 export type UserReportPayload = UserReportResponseDto;
 export type StoryReportPayload = StoryReportResponseDto;
@@ -123,3 +141,5 @@ export type UserReportListPagedPayload = UserReportListPagedResponseDto;
 export type AdminUserPayload = AdminUserResponseDto;
 export type AdminDashboardPayload = AdminDashboardResponseDto;
 export type AdminAuditLogPayload = AdminAuditLogResponseDto;
+export type AdminHashtagUsagePayload = AdminHashtagUsageResponseDto;
+export type AdminHashtagOverviewPayload = AdminHashtagOverviewResponseDto;

@@ -3,9 +3,10 @@ import {
   BellRing,
   FileWarning,
   Flag,
+  Hash,
   MessageSquareWarning,
-  Star,
   Shield,
+  Star,
   UserCircle2,
   UserCog,
 } from 'lucide-react';
@@ -60,6 +61,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: Star,
     viLabel: 'Đánh giá ứng dụng',
     enLabel: 'App reviews',
+  },
+  {
+    path: '/admin/hashtags',
+    icon: Hash,
+    viLabel: 'Hashtag',
+    enLabel: 'Hashtags',
   },
   {
     path: '/admin/audit-logs',

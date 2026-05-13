@@ -52,6 +52,48 @@ public class PostRepository : IPostRepository
         return (items, totalCount);
     }
 
+    public async Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedByHashtagAsync(
+        string hashtagName,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null)
+    {
+        var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
+        var normalizedHashtagName = hashtagName.Trim().ToLowerInvariant();
+
+        IQueryable<Post> query = _context.Posts.AsNoTracking();
+
+        if (excludedIds.Count > 0)
+        {
+            query = query.Where(post => !excludedIds.Contains(post.UserId));
+        }
+
+        query = query
+            .Where(post => post.PostHashtags.Any(postHashtag => postHashtag.Hashtag != null && postHashtag.Hashtag.Name == normalizedHashtagName))
+            .Include(post => post.MediaItems)
+            .Include(post => post.Likes)
+            .Include(post => post.Comments)
+            .Include(post => post.PostHashtags)
+                .ThenInclude(postHashtag => postHashtag.Hashtag)
+            .Include(post => post.OriginalPost)
+                .ThenInclude(post => post!.MediaItems)
+            .Include(post => post.OriginalPost)
+                .ThenInclude(post => post!.Likes)
+            .Include(post => post.OriginalPost)
+                .ThenInclude(post => post!.Comments)
+            .OrderByDescending(post => post.CreatedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     private static IReadOnlyList<Guid> NormalizeExcludedUserIds(IReadOnlyCollection<Guid>? excludedUserIds)
     {
         return excludedUserIds?

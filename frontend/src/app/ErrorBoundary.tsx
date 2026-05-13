@@ -9,7 +9,7 @@ interface AppErrorBoundaryState {
   errorMessage: string;
 }
 
-const DEFAULT_MESSAGE = 'Trang gap loi runtime. Vui long tai lai trang.';
+const DEFAULT_MESSAGE = 'Trang gặp lỗi runtime. Vui lòng tải lại trang.';
 
 export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
   public state: AppErrorBoundaryState = {
@@ -37,14 +37,14 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <div className="w-full max-w-xl rounded-2xl border border-rose-200 bg-white p-6 shadow-sm dark:border-rose-400/30 dark:bg-slate-900">
-          <h1 className="text-lg font-semibold text-rose-600 dark:text-rose-300">Frontend da gap loi</h1>
+          <h1 className="text-lg font-semibold text-rose-600 dark:text-rose-300">Frontend đã gặp lỗi</h1>
           <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{this.state.errorMessage}</p>
           <button
             type="button"
             onClick={() => window.location.reload()}
             className="mt-4 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
-            Tai lai trang
+            Tải lại trang
           </button>
         </div>
       </div>

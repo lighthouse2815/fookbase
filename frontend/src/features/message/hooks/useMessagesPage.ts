@@ -19,6 +19,14 @@ import {
   sortMessagesByOldest,
 } from '@/features/message/utils/page.util';
 
+const markConversationsAsRead = (items: ConversationSummary[]): ConversationSummary[] => {
+  return items.map((conversation) => ({
+    ...conversation,
+    hasUnread: false,
+    unreadCount: 0,
+  }));
+};
+
 export const useMessagesPage = (): UseMessagesPageReturn => {
   const { t } = useTranslation();
   const { currentUser, onlineUsers, offlineUsers } = useOutletContext<MainLayoutOutletContext>();
@@ -88,7 +96,8 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
       }
 
       const resolvedConversations = sortConversationsByNewest(Array.from(mergedById.values()));
-      setConversations(resolvedConversations);
+      const readConversations = markConversationsAsRead(resolvedConversations);
+      setConversations(readConversations);
 
       if (resolvedConversations.length === 0 && allResult.status === 'rejected' && groupResult.status === 'rejected') {
         setFetchState('error');
@@ -102,7 +111,7 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
         setErrorMessage(t('messagesPage.errors.partialData'));
       }
 
-      return resolvedConversations;
+      return readConversations;
     },
     [t],
   );
@@ -222,6 +231,23 @@ export const useMessagesPage = (): UseMessagesPageReturn => {
 
   useEffect(() => {
     selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
+
+  useEffect(() => {
+    if (!selectedConversationId) {
+      return;
+    }
+
+    setConversations((existing) =>
+      existing.map((conversation) =>
+        conversation.conversationId === selectedConversationId
+          ? {
+              ...conversation,
+              hasUnread: false,
+              unreadCount: 0,
+            }
+          : conversation),
+    );
   }, [selectedConversationId]);
 
   useEffect(() => {

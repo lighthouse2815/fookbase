@@ -78,6 +78,37 @@ public class PostService : IPostService
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
+    public async Task<PagedResult<PostResponseDto>> GetPagedByHashtagAsync(
+        string hashtagName,
+        PaginationQuery query,
+        Guid? currentUserId,
+        CancellationToken cancellationToken)
+    {
+        query.Normalize();
+
+        var normalizedHashtag = NormalizeHashtagKeyword(hashtagName);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
+
+        var (items, totalCount) = await _postRepository.GetPagedByHashtagAsync(
+            normalizedHashtag,
+            query.Page,
+            query.PageSize,
+            cancellationToken,
+            blockedUserIds);
+
+        var authors = await ResolveAuthorsAsync(
+            items
+                .Select(post => post.UserId)
+                .Concat(items.Where(post => post.OriginalPost is not null).Select(post => post.OriginalPost!.UserId)),
+            cancellationToken);
+        var shareCounts = await _postRepository.GetShareCountsAsync(
+            items.Select(post => post.Id).ToList(),
+            cancellationToken);
+        var mappedItems = items.ToResponseDtos(authors, currentUserId, blockedUserIds, shareCounts);
+
+        return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
+    }
+
     public async Task<PostResponseDto> GetByIdAsync(Guid postId, Guid? currentUserId, CancellationToken cancellationToken)
     {
         var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
@@ -335,6 +366,17 @@ public class PostService : IPostService
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct()
             .ToList();
+    }
+
+    private static string NormalizeHashtagKeyword(string hashtagName)
+    {
+        var normalized = hashtagName.Trim().TrimStart('#').ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            throw new BusinessException(ErrorCode.HASHTAG_KEYWORD_REQUIRED);
+        }
+
+        return normalized;
     }
 
     private static void EnsureOwnerOrAdmin(Guid ownerId, Guid currentUserId, bool isAdmin, string error)

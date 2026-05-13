@@ -214,9 +214,9 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     try {
       await savedPostService.savePost(post.id);
       setIsPostMenuOpen(false);
-      onActionToast?.('Da luu bai viet', 'success');
+      onActionToast?.('Đã lưu bài viết', 'success');
     } catch (error) {
-      const message = getApiErrorMessage(error, 'Khong the luu bai viet.');
+      const message = getApiErrorMessage(error, 'Không thể lưu bài viết.');
       setPostActionError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -235,7 +235,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
 
     const normalizedReason = reportReason.trim();
     if (normalizedReason.length < 3) {
-      setReportReasonError('Vui long nhap ly do toi thieu 3 ky tu.');
+      setReportReasonError('Vui lòng nhập lý do tối thiểu 3 ký tự.');
       setIsReportingPost(false);
       return;
     }
@@ -244,9 +244,9 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
       await postReportService.create(post.id, normalizedReason);
       setIsReportDialogOpen(false);
       setReportReason('');
-      onActionToast?.('Ban da to cao bai viet thanh cong', 'success');
+      onActionToast?.('Bạn đã tố cáo bài viết thành công', 'success');
     } catch (error) {
-      const message = getApiErrorMessage(error, 'Khong the bao cao bai viet.');
+      const message = getApiErrorMessage(error, 'Không thể báo cáo bài viết.');
       setPostActionError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -266,10 +266,10 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
       await postService.deletePost(post.id);
       setIsDeleteDialogOpen(false);
       setIsPostMenuOpen(false);
-      onActionToast?.('Da xoa bai viet', 'success');
+      onActionToast?.('Đã xóa bài viết', 'success');
       onPostDeleted?.(post.id);
     } catch (error) {
-      const message = getApiErrorMessage(error, 'Khong the xoa bai viet.');
+      const message = getApiErrorMessage(error, 'Không thể xóa bài viết.');
       setPostActionError(message);
       onActionToast?.(message, 'error');
     } finally {
@@ -288,9 +288,9 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     try {
       await postService.sharePost(post.id, {});
       setShareCount((previous) => previous + 1);
-      onActionToast?.('Da chia se bai viet', 'success');
+      onActionToast?.('Đã chia sẻ bài viết', 'success');
     } catch (error) {
-      const message = getApiErrorMessage(error, 'Khong the chia se bai viet.');
+      const message = getApiErrorMessage(error, 'Không thể chia sẻ bài viết.');
       setPostActionError(message);
       onActionToast?.(message, 'error');
     } finally {

@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
     LIST: '/api/posts',
     CREATE: '/api/posts',
     BY_ID: postById,
+    BY_HASHTAG: (hashtag: string) => `/api/posts/hashtags/${encodeURIComponent(hashtag)}`,
     SHARE: (id: string) => `/api/posts/${id}/share`,
   },
   COMMENTS: {
@@ -98,6 +99,7 @@ export const API_ENDPOINTS = {
     USERS_SEARCH: '/api/admin/users/search',
     USER_STATUS: (id: string) => `/api/admin/users/${id}/status`,
     DASHBOARD: '/api/admin/dashboard',
+    HASHTAGS: '/api/admin/hashtags',
     AUDIT_LOGS: '/api/admin/audit-logs',
   },
   STORIES: {

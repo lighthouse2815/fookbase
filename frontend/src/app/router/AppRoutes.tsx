@@ -11,6 +11,7 @@ import { AdminProfilePage } from '@/features/admin/pages/AdminProfilePage';
 import { AdminStoryReportsPage } from '@/features/admin/pages/AdminStoryReportsPage';
 import { AdminUserReportsPage } from '@/features/admin/pages/AdminUserReportsPage';
 import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage';
+import { AdminHashtagsPage } from '@/features/admin/pages/AdminHashtagsPage';
 import { AdminAppReviewsPage } from '@/features/appReview/pages/AdminAppReviewsPage';
 import { PublicAppReviewsPage } from '@/features/appReview/pages/PublicAppReviewsPage';
 import { FriendSearchPage } from '@/features/friendship/pages/FriendSearchPage';
@@ -100,6 +101,7 @@ export const AppRoutes = () => {
           <Route path="reports/comments" element={<AdminCommentReportsPage />} />
           <Route path="reports/stories" element={<AdminStoryReportsPage />} />
           <Route path="reviews" element={<AdminAppReviewsPage />} />
+          <Route path="hashtags" element={<AdminHashtagsPage />} />
           <Route path="audit-logs" element={<AdminAuditLogsPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
         </Route>

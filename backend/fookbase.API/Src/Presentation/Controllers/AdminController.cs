@@ -56,6 +56,15 @@ public class AdminController : ApiControllerBase
         return Ok(ApiResponse<AdminDashboardResponseDto>.Ok(dashboard));
     }
 
+    [HttpGet("hashtags")]
+    public async Task<ActionResult<ApiResponse<AdminHashtagOverviewResponseDto>>> GetHashtagOverview(
+        [FromQuery] PaginationQuery query,
+        CancellationToken cancellationToken)
+    {
+        var overview = await _adminConsoleService.GetHashtagOverviewAsync(query, cancellationToken);
+        return Ok(ApiResponse<AdminHashtagOverviewResponseDto>.Ok(overview));
+    }
+
     [HttpGet("audit-logs")]
     public async Task<ActionResult<ApiResponse<PagedResult<AdminAuditLogResponseDto>>>> GetAuditLogs(
         [FromQuery] PaginationQuery query,

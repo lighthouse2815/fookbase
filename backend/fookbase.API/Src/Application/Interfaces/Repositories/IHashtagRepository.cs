@@ -8,6 +8,17 @@ public interface IHashtagRepository
 
     Task<(IReadOnlyList<Hashtag> Items, int TotalCount)> SearchPagedAsync(string keyword, int page, int pageSize, CancellationToken cancellationToken);
 
+    Task<(IReadOnlyList<(Hashtag Hashtag, int UsageCount)> Items, int TotalCount)> GetUsagePagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<(Hashtag Hashtag, int UsageCount)>> GetTopUsageInRangeAsync(
+        DateTime fromUtcInclusive,
+        DateTime toUtcExclusive,
+        int take,
+        CancellationToken cancellationToken);
+
     Task<Hashtag?> GetByIdAsync(Guid hashtagId, CancellationToken cancellationToken);
 
     Task<Hashtag?> GetByIdForUpdateAsync(Guid hashtagId, CancellationToken cancellationToken);

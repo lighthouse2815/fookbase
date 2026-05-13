@@ -49,6 +49,28 @@ export const postService = {
     };
   },
 
+  async getPostsByHashtag(hashtag: string, page: number, pageSize: number): Promise<PaginatedPosts> {
+    const normalizedHashtag = hashtag.trim().replace(/^#/, '');
+    const response = await apiClient.get<ApiEnvelope<PagedResult<PostResponseDto>>>(POSTS.BY_HASHTAG(normalizedHashtag), {
+      params: {
+        page,
+        pageSize,
+      },
+    });
+
+    const paged = extractData(response.data, 'Failed to load hashtag posts');
+    const items = paged.items.map(mapPost);
+    const loadedCount = paged.page * paged.pageSize;
+
+    return {
+      items,
+      page: paged.page,
+      pageSize: paged.pageSize,
+      totalCount: paged.totalCount,
+      hasMore: loadedCount < paged.totalCount,
+    };
+  },
+
   async createPost(request: CreatePostRequestDto): Promise<Post> {
     const response = await apiClient.post<ApiEnvelope<PostResponseDto>>(POSTS.CREATE, request);
     const created = extractData(response.data, 'Failed to create post');

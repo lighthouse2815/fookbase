@@ -77,7 +77,7 @@ export const usePostReactionViewerModal = ({
           }));
         }
       } catch (actionError) {
-        const message = getApiErrorMessage(actionError, 'Khong the cap nhat trang thai ban be.');
+        const message = getApiErrorMessage(actionError, 'Không thể cập nhật trạng thái bạn bè.');
         setError(message);
         onActionToast?.(message, 'error');
       } finally {
@@ -115,7 +115,7 @@ export const usePostReactionViewerModal = ({
       if (reactionUsersResult.status === 'fulfilled') {
         setUsers(reactionUsersResult.value.users);
       } else {
-        setError(getApiErrorMessage(reactionUsersResult.reason, 'Khong the tai danh sach reaction.'));
+        setError(getApiErrorMessage(reactionUsersResult.reason, 'Không thể tải danh sách reaction.'));
       }
 
       const friendIds = friendsResult.status === 'fulfilled' ? friendsResult.value.map((friend) => friend.id) : [];

@@ -1,4 +1,5 @@
 using InteractHub.Api.Application.DTOs.Admin;
+using InteractHub.Api.Common.Pagination;
 
 namespace InteractHub.Api.Application.Interfaces.Services;
 
@@ -15,6 +16,10 @@ public interface IAdminConsoleService
         CancellationToken cancellationToken);
 
     Task<AdminDashboardResponseDto> GetDashboardAsync(
+        CancellationToken cancellationToken);
+
+    Task<AdminHashtagOverviewResponseDto> GetHashtagOverviewAsync(
+        PaginationQuery query,
         CancellationToken cancellationToken);
 }
 

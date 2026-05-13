@@ -2,6 +2,8 @@ import type { PagedResult } from '@/shared/types/api';
 import type {
   AdminAuditLogResponseDto,
   AdminDashboardResponseDto,
+  AdminHashtagOverviewResponseDto,
+  AdminHashtagUsageResponseDto,
   AdminUserResponseDto,
   PendingCountOptionalResponseDto,
   PendingCountResponseDto,
@@ -14,6 +16,8 @@ import type {
 import type {
   AdminAuditLogItem,
   AdminDashboard,
+  AdminHashtagOverview,
+  AdminHashtagUsageItem,
   AdminUserItem,
   PaginatedAdminAuditLogs,
 } from '@/features/admin/types/admin';
@@ -98,6 +102,33 @@ export const mapAdminAuditLogResponseDto = (payload: AdminAuditLogResponseDto): 
     createdAt: payload.createdAt,
     admin: mapReportUserSummaryResponseDto(payload.admin),
     targetUser: mapReportUserSummaryResponseDto(payload.targetUser),
+  };
+};
+
+export const mapAdminHashtagUsageResponseDto = (payload: AdminHashtagUsageResponseDto): AdminHashtagUsageItem => {
+  return {
+    id: payload.id,
+    name: payload.name,
+    usageCount: Number(payload.usageCount ?? 0),
+    createdAt: payload.createdAt,
+  };
+};
+
+export const mapAdminHashtagOverviewResponseDto = (payload: AdminHashtagOverviewResponseDto): AdminHashtagOverview => {
+  const paged = payload.hashtags ?? {};
+  const page = typeof paged.page === 'number' ? paged.page : 1;
+  const pageSize = typeof paged.pageSize === 'number' ? paged.pageSize : 0;
+  const totalCount = typeof paged.totalCount === 'number' ? paged.totalCount : 0;
+  const loadedCount = page * pageSize;
+
+  return {
+    currentMonth: payload.currentMonth,
+    topHashtags: Array.isArray(payload.topHashtags) ? payload.topHashtags.map(mapAdminHashtagUsageResponseDto) : [],
+    items: Array.isArray(paged.items) ? paged.items.map(mapAdminHashtagUsageResponseDto) : [],
+    page,
+    pageSize,
+    totalCount,
+    hasMore: loadedCount < totalCount,
   };
 };
 

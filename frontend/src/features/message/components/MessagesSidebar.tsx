@@ -22,7 +22,7 @@ export const MessagesSidebar = ({
   return (
     <aside
       className={clsx(
-        'border-slate-200 dark:border-slate-700 lg:border-b-0 lg:border-r',
+        'min-h-0 border-slate-200 dark:border-slate-700 lg:border-b-0 lg:border-r',
         showConversationList ? 'flex flex-col border-b' : 'hidden lg:flex lg:flex-col',
       )}
     >
@@ -80,7 +80,7 @@ export const MessagesSidebar = ({
         ) : null}
       </div>
 
-      <div className="max-h-[calc(100dvh-20rem)] space-y-1 overflow-y-auto px-2 pb-3 lg:max-h-[calc(75vh-9.75rem)]">
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
         {filteredConversations.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
             {t('messagesPage.empty')}

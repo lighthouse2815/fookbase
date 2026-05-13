@@ -57,3 +57,20 @@ export interface PaginatedAdminAuditLogs {
   pageSize: number;
   hasMore: boolean;
 }
+
+export interface AdminHashtagUsageItem {
+  id: string;
+  name: string;
+  usageCount: number;
+  createdAt: string;
+}
+
+export interface AdminHashtagOverview {
+  currentMonth: string;
+  topHashtags: AdminHashtagUsageItem[];
+  items: AdminHashtagUsageItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  hasMore: boolean;
+}

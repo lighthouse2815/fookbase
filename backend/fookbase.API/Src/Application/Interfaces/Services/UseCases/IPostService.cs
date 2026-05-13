@@ -10,6 +10,12 @@ public interface IPostService
         Guid? currentUserId,
         CancellationToken cancellationToken);
 
+    Task<PagedResult<PostResponseDto>> GetPagedByHashtagAsync(
+        string hashtagName,
+        PaginationQuery query,
+        Guid? currentUserId,
+        CancellationToken cancellationToken);
+
     Task<PostResponseDto> GetByIdAsync(Guid postId, Guid? currentUserId, CancellationToken cancellationToken);
 
     Task<PostResponseDto> CreateAsync(

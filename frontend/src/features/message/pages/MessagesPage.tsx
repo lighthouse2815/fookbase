@@ -56,7 +56,7 @@ export const MessagesPage = () => {
   return (
     <>
       <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/75 sm:rounded-3xl">
-        <div className="grid min-h-[calc(100dvh-10rem)] grid-cols-1 lg:min-h-[75vh] lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid h-[calc(100dvh-10rem)] max-h-[calc(100dvh-10rem)] min-h-0 grid-cols-1 lg:h-[75vh] lg:max-h-[75vh] lg:grid-cols-[320px_minmax(0,1fr)]">
           <MessagesSidebar
             t={t}
             showConversationList={showConversationList}
@@ -81,6 +81,8 @@ export const MessagesPage = () => {
             loadingConversationId={loadingConversationId}
             messageError={messageError}
             currentUserId={currentUser.id}
+            currentUserAvatarUrl={currentUser.avatarUrl}
+            knownUsers={friendCandidates}
             composerValue={composerValue}
             setComposerValue={setComposerValue}
             isSending={isSending}

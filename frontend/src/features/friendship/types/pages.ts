@@ -14,12 +14,6 @@ export type FriendSearchActionKind = 'send' | 'cancel' | 'accept' | 'reject' | n
 
 export type FriendSearchMode = 'users' | 'hashtags';
 
-export interface HashtagSearchResult {
-  id: string;
-  name: string;
-  usageCount: number;
-}
-
 export interface FriendSearchStatusMeta {
   label: string;
   action: 'send' | 'cancel' | 'respond' | 'none';

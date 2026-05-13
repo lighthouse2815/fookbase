@@ -49,14 +49,14 @@ const normalizeMediaType = (file: File): StoryMediaType => {
     return 'VIDEO';
   }
 
-  throw new Error('Story chi ho tro file anh hoac video.');
+  throw new Error('Story chỉ hỗ trợ file ảnh hoặc video.');
 };
 
 const validateFileSize = (file: File, mediaType: StoryMediaType) => {
   const maxBytes = mediaType === 'IMAGE' ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
   if (file.size > maxBytes) {
     const maxSizeMb = Math.floor(maxBytes / (1024 * 1024));
-    throw new Error(`File vuot qua gioi han ${maxSizeMb}MB cho ${mediaType.toLowerCase()}.`);
+    throw new Error(`File vượt quá giới hạn ${maxSizeMb}MB cho ${mediaType.toLowerCase()}.`);
   }
 };
 
@@ -138,7 +138,7 @@ export const StoryProvider = ({ children }: StoryProviderProps) => {
       setPage(targetPage);
       setHasMore(result.hasMore);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Khong the tai stories.');
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể tải stories.');
     } finally {
       loadingRef.current = false;
       setIsLoading(false);
@@ -177,7 +177,7 @@ export const StoryProvider = ({ children }: StoryProviderProps) => {
   const createStoryFromFile = useCallback(
     async (file: File, content?: string) => {
       if (!isAuthenticated) {
-        throw new Error('Ban can dang nhap de dang story.');
+        throw new Error('Bạn cần đăng nhập để đăng story.');
       }
 
       const mediaType = normalizeMediaType(file);

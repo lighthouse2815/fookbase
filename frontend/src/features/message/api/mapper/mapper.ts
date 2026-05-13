@@ -74,7 +74,7 @@ export const mapConversationResponseDtoToConversationSummary = (
 
   return {
     conversationId,
-    name: toStringOrFallback(dto.name, type === 'GROUP' ? 'Nhom moi' : 'Tin nhan'),
+    name: toStringOrFallback(dto.name, type === 'GROUP' ? 'Nhóm mới' : 'Tin nhắn'),
     avatarUrl: toOptionalNullableString(dto.avatarUrl),
     type,
     lastSenderId: toOptionalNullableString(dto.lastSenderId),

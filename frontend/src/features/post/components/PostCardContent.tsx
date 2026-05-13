@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
 import { Link } from 'react-router-dom';
 
@@ -7,6 +7,7 @@ import type { Post } from '@/features/post/types/contracts';
 import { formatRelativeTime } from '@/shared/lib/date';
 
 const POST_CONTENT_PREVIEW_LIMIT = 180;
+const HASHTAG_PATTERN = /#[A-Za-z0-9_]{1,50}/g;
 
 interface PostCardContentProps {
   t: TFunction;
@@ -43,6 +44,42 @@ export const PostCardContent = ({
   const originalPreviewMediaUrl = originalMediaUrls[0];
   const originalPreviewMediaKind = detectMediaKind(originalPreviewMediaUrl);
   const hasOriginalMoreMedia = originalMediaUrls.length > 1;
+
+  const renderContentWithHashtagLinks = (content: string, keyPrefix: string): ReactNode[] => {
+    const tokens: ReactNode[] = [];
+    let currentIndex = 0;
+
+    for (const match of content.matchAll(HASHTAG_PATTERN)) {
+      const matchedText = match[0];
+      const matchIndex = match.index ?? -1;
+      if (!matchedText || matchIndex < 0) {
+        continue;
+      }
+
+      if (matchIndex > currentIndex) {
+        tokens.push(content.slice(currentIndex, matchIndex));
+      }
+
+      const normalizedHashtag = matchedText.slice(1).toLowerCase();
+      tokens.push(
+        <Link
+          key={`${keyPrefix}-${matchIndex}-${normalizedHashtag}`}
+          to={`/friends/search?keyword=${encodeURIComponent(`#${normalizedHashtag}`)}`}
+          className="font-semibold text-sky-600 transition hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+        >
+          {matchedText}
+        </Link>,
+      );
+
+      currentIndex = matchIndex + matchedText.length;
+    }
+
+    if (currentIndex < content.length) {
+      tokens.push(content.slice(currentIndex));
+    }
+
+    return tokens;
+  };
 
   const renderMediaTile = (index: number, className: string, overlayCount = 0) => {
     const mediaUrl = mediaUrls[index];
@@ -93,7 +130,12 @@ export const PostCardContent = ({
     <>
       {normalizedPostContent ? (
         <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7 text-slate-700 dark:text-slate-300">
-          {displayedPostContent}
+          {renderContentWithHashtagLinks(displayedPostContent, `post-${post.id}`)}
+          {shouldTruncatePostContent ? (
+            <>
+              {' '}
+            </>
+          ) : null}
           {shouldTruncatePostContent ? (
             <button
               type="button"
@@ -133,7 +175,7 @@ export const PostCardContent = ({
             </div>
             {originalPost.content ? (
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-300">
-                {originalPost.content}
+                {renderContentWithHashtagLinks(originalPost.content, `shared-${originalPost.id}`)}
               </p>
             ) : null}
           </div>

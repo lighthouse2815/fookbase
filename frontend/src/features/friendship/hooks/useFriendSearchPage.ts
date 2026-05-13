@@ -1,30 +1,21 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 
-import { API_ENDPOINTS } from '@/shared/api/endpoints';
-import { apiClient } from '@/shared/api/apiClient';
-import { extractData } from '@/shared/api/httpResponse';
-import type { ApiEnvelope, PagedResult } from '@/shared/types/api';
 import type { MainLayoutOutletContext } from '@/shared/types/layout';
 import type { UserProfileSearchResult } from '@/features/profile/types/contracts';
+import type { Post } from '@/features/post/types/contracts';
 import { friendshipService } from '@/features/friendship/api/service/friendshipService';
+import { postService } from '@/features/post/api/service/postService';
 import { profileService } from '@/features/profile/api/service/profileService';
 import { getApiErrorMessage } from '@/shared/api/error';
 import type {
   FriendSearchActionKind,
   FriendSearchFetchState,
   FriendSearchMode,
-  HashtagSearchResult,
 } from '@/features/friendship/types/pages';
 
-interface HashtagSearchResultResponseDto {
-  id?: string;
-  name?: string;
-  usageCount?: number;
-}
-
-const HASHTAG_SEARCH_PAGE = 1;
-const HASHTAG_SEARCH_PAGE_SIZE = 20;
+const HASHTAG_POSTS_FIRST_PAGE = 1;
+const HASHTAG_POSTS_PAGE_SIZE = 10;
 
 export const useFriendSearchPage = () => {
   const { currentUser } = useOutletContext<MainLayoutOutletContext>();
@@ -33,7 +24,10 @@ export const useFriendSearchPage = () => {
   const [fetchState, setFetchState] = useState<FriendSearchFetchState>('idle');
   const [searchMode, setSearchMode] = useState<FriendSearchMode>('users');
   const [results, setResults] = useState<UserProfileSearchResult[]>([]);
-  const [hashtagResults, setHashtagResults] = useState<HashtagSearchResult[]>([]);
+  const [hashtagPosts, setHashtagPosts] = useState<Post[]>([]);
+  const [hashtagPage, setHashtagPage] = useState(HASHTAG_POSTS_FIRST_PAGE);
+  const [hashtagHasMore, setHashtagHasMore] = useState(false);
+  const [isLoadingMoreHashtagPosts, setIsLoadingMoreHashtagPosts] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionUserId, setActionUserId] = useState<string | null>(null);
@@ -50,7 +44,9 @@ export const useFriendSearchPage = () => {
       setFetchState('idle');
       setSearchMode('users');
       setResults([]);
-      setHashtagResults([]);
+      setHashtagPosts([]);
+      setHashtagPage(HASHTAG_POSTS_FIRST_PAGE);
+      setHashtagHasMore(false);
       setErrorMessage(null);
       return;
     }
@@ -66,12 +62,18 @@ export const useFriendSearchPage = () => {
         const normalizedHashtagKeyword = normalizeHashtagKeyword(keywordQuery);
         if (normalizedHashtagKeyword) {
           setSearchMode('hashtags');
-          const hashtags = await searchHashtags(normalizedHashtagKeyword);
+          const hashtagPostsPage = await postService.getPostsByHashtag(
+            normalizedHashtagKeyword,
+            HASHTAG_POSTS_FIRST_PAGE,
+            HASHTAG_POSTS_PAGE_SIZE,
+          );
           if (isCancelled) {
             return;
           }
 
-          setHashtagResults(hashtags);
+          setHashtagPosts(hashtagPostsPage.items);
+          setHashtagPage(hashtagPostsPage.page);
+          setHashtagHasMore(hashtagPostsPage.hasMore);
           setResults([]);
           setFetchState('success');
           return;
@@ -84,7 +86,9 @@ export const useFriendSearchPage = () => {
         }
 
         setResults(users);
-        setHashtagResults([]);
+        setHashtagPosts([]);
+        setHashtagPage(HASHTAG_POSTS_FIRST_PAGE);
+        setHashtagHasMore(false);
         setFetchState('success');
       } catch (error) {
         if (isCancelled) {
@@ -92,9 +96,11 @@ export const useFriendSearchPage = () => {
         }
 
         setResults([]);
-        setHashtagResults([]);
+        setHashtagPosts([]);
+        setHashtagPage(HASHTAG_POSTS_FIRST_PAGE);
+        setHashtagHasMore(false);
         setFetchState('error');
-        setErrorMessage(getApiErrorMessage(error, 'Khong tim thay ket qua phu hop.'));
+        setErrorMessage(getApiErrorMessage(error, 'Không tìm thấy kết quả phù hợp.'));
       }
     };
 
@@ -117,6 +123,33 @@ export const useFriendSearchPage = () => {
     setSearchParams({ keyword: normalizedKeyword });
   };
 
+  const handleLoadMoreHashtagPosts = async () => {
+    if (searchMode !== 'hashtags' || !hashtagHasMore || fetchState !== 'success' || isLoadingMoreHashtagPosts) {
+      return;
+    }
+
+    const normalizedHashtagKeyword = normalizeHashtagKeyword(keywordQuery);
+    if (!normalizedHashtagKeyword) {
+      return;
+    }
+
+    setIsLoadingMoreHashtagPosts(true);
+    setErrorMessage(null);
+
+    try {
+      const nextPage = hashtagPage + 1;
+      const response = await postService.getPostsByHashtag(normalizedHashtagKeyword, nextPage, HASHTAG_POSTS_PAGE_SIZE);
+
+      setHashtagPosts((previous) => [...previous, ...response.items]);
+      setHashtagPage(response.page);
+      setHashtagHasMore(response.hasMore);
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error, 'Không thể tải thêm bài viết theo hashtag.'));
+    } finally {
+      setIsLoadingMoreHashtagPosts(false);
+    }
+  };
+
   const handleSendFriendRequest = async (targetUserId: string) => {
     setActionUserId(targetUserId);
     setActionType('send');
@@ -129,9 +162,9 @@ export const useFriendSearchPage = () => {
       setResults((existing) =>
         existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'PENDING' } : item)),
       );
-      setActionMessage('Da gui loi moi ket ban.');
+      setActionMessage('Đã gửi lời mời kết bạn.');
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Gui loi moi ket ban that bai.'));
+      setErrorMessage(getApiErrorMessage(error, 'Gửi lời mời kết bạn thất bại.'));
     } finally {
       setActionUserId(null);
       setActionType(null);
@@ -150,9 +183,9 @@ export const useFriendSearchPage = () => {
       setResults((existing) =>
         existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'NONE' } : item)),
       );
-      setActionMessage('Da huy loi moi ket ban.');
+      setActionMessage('Đã hủy lời mời kết bạn.');
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Huy loi moi ket ban that bai.'));
+      setErrorMessage(getApiErrorMessage(error, 'Hủy lời mời kết bạn thất bại.'));
     } finally {
       setActionUserId(null);
       setActionType(null);
@@ -171,9 +204,9 @@ export const useFriendSearchPage = () => {
       setResults((existing) =>
         existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'ACCEPTED' } : item)),
       );
-      setActionMessage('Da chap nhan loi moi ket ban.');
+      setActionMessage('Đã chấp nhận lời mời kết bạn.');
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Chap nhan loi moi that bai.'));
+      setErrorMessage(getApiErrorMessage(error, 'Chấp nhận lời mời thất bại.'));
     } finally {
       setActionUserId(null);
       setActionType(null);
@@ -192,17 +225,21 @@ export const useFriendSearchPage = () => {
       setResults((existing) =>
         existing.map((item) => (item.userId === targetUserId ? { ...item, status: 'NONE' } : item)),
       );
-      setActionMessage('Da tu choi loi moi ket ban.');
+      setActionMessage('Đã từ chối lời mời kết bạn.');
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Tu choi loi moi that bai.'));
+      setErrorMessage(getApiErrorMessage(error, 'Từ chối lời mời thất bại.'));
     } finally {
       setActionUserId(null);
       setActionType(null);
     }
   };
 
+  const handleHashtagPostDeleted = (postId: string) => {
+    setHashtagPosts((previous) => previous.filter((post) => post.id !== postId));
+  };
+
   const showEmptyState = fetchState === 'success'
-    && ((searchMode === 'users' && results.length === 0) || (searchMode === 'hashtags' && hashtagResults.length === 0));
+    && ((searchMode === 'users' && results.length === 0) || (searchMode === 'hashtags' && hashtagPosts.length === 0));
 
   return {
     currentUser,
@@ -211,12 +248,16 @@ export const useFriendSearchPage = () => {
     fetchState,
     searchMode,
     results,
-    hashtagResults,
+    hashtagPosts,
+    hashtagHasMore,
+    isLoadingMoreHashtagPosts,
     errorMessage,
     actionMessage,
     actionUserId,
     actionType,
     handleSearchSubmit,
+    handleLoadMoreHashtagPosts,
+    handleHashtagPostDeleted,
     handleSendFriendRequest,
     handleCancelSentRequest,
     handleAcceptReceivedRequest,
@@ -233,23 +274,4 @@ const normalizeHashtagKeyword = (keyword: string): string | null => {
 
   const hashtagKeyword = normalizedKeyword.slice(1).trim();
   return hashtagKeyword.length > 0 ? hashtagKeyword : null;
-};
-
-const searchHashtags = async (keyword: string): Promise<HashtagSearchResult[]> => {
-  const response = await apiClient.get<ApiEnvelope<PagedResult<HashtagSearchResultResponseDto>>>(API_ENDPOINTS.HASHTAGS.SEARCH, {
-    params: {
-      keyword,
-      page: HASHTAG_SEARCH_PAGE,
-      pageSize: HASHTAG_SEARCH_PAGE_SIZE,
-    },
-  });
-
-  const paged = extractData(response.data, 'Khong the tim hashtag.');
-  const items = Array.isArray(paged.items) ? paged.items : [];
-
-  return items.map((item, index) => ({
-    id: item.id?.trim() || `hashtag-search-${index}`,
-    name: item.name?.trim() || keyword,
-    usageCount: typeof item.usageCount === 'number' ? Math.max(0, item.usageCount) : 0,
-  }));
 };

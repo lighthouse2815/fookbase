@@ -47,6 +47,62 @@ public class HashtagRepository : IHashtagRepository
         return (items, totalCount);
     }
 
+    public async Task<(IReadOnlyList<(Hashtag Hashtag, int UsageCount)> Items, int TotalCount)> GetUsagePagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = _context.Hashtags
+            .AsNoTracking()
+            .Select(hashtag => new
+            {
+                Hashtag = hashtag,
+                UsageCount = hashtag.PostHashtags.Count()
+            })
+            .OrderByDescending(item => item.UsageCount)
+            .ThenBy(item => item.Hashtag.Name);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var rows = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var items = rows
+            .Select(row => (row.Hashtag, row.UsageCount))
+            .ToList();
+
+        return (items, totalCount);
+    }
+
+    public async Task<IReadOnlyList<(Hashtag Hashtag, int UsageCount)>> GetTopUsageInRangeAsync(
+        DateTime fromUtcInclusive,
+        DateTime toUtcExclusive,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var rows = await _context.Hashtags
+            .AsNoTracking()
+            .Select(hashtag => new
+            {
+                Hashtag = hashtag,
+                UsageCount = hashtag.PostHashtags.Count(
+                    postHashtag => postHashtag.Post != null
+                        && postHashtag.Post.CreatedAt >= fromUtcInclusive
+                        && postHashtag.Post.CreatedAt < toUtcExclusive)
+            })
+            .Where(item => item.UsageCount > 0)
+            .OrderByDescending(item => item.UsageCount)
+            .ThenBy(item => item.Hashtag.Name)
+            .Take(Math.Max(1, take))
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .Select(row => (row.Hashtag, row.UsageCount))
+            .ToList();
+    }
+
     public Task<Hashtag?> GetByIdAsync(Guid hashtagId, CancellationToken cancellationToken)
     {
         return _context.Hashtags

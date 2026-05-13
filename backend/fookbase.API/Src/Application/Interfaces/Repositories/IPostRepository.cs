@@ -10,6 +10,13 @@ public interface IPostRepository
         CancellationToken cancellationToken,
         IReadOnlyCollection<Guid>? excludedUserIds = null);
 
+    Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedByHashtagAsync(
+        string hashtagName,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? excludedUserIds = null);
+
     Task<Post?> GetByIdAsync(Guid postId, CancellationToken cancellationToken);
 
     Task<Post?> GetByIdForUpdateAsync(Guid postId, CancellationToken cancellationToken);

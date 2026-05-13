@@ -32,6 +32,21 @@ public class PostsController : ApiControllerBase
         return Ok(ApiResponse<PagedResult<PostResponseDto>>.Ok(posts));
     }
 
+    [HttpGet("hashtags/{hashtagName}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<PagedResult<PostResponseDto>>>> GetPostsByHashtag(
+        string hashtagName,
+        [FromQuery] PaginationQuery query,
+        CancellationToken cancellationToken)
+    {
+        var posts = await _postService.GetPagedByHashtagAsync(
+            hashtagName,
+            query,
+            TryGetCurrentUserId(),
+            cancellationToken);
+        return Ok(ApiResponse<PagedResult<PostResponseDto>>.Ok(posts));
+    }
+
     [HttpGet("{postId:guid}")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<PostResponseDto>>> GetPostById(

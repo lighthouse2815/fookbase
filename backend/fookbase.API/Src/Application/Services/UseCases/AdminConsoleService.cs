@@ -4,6 +4,7 @@ using InteractHub.Api.Application.Interfaces.Services;
 using InteractHub.Api.Application.Mappers;
 using InteractHub.Api.Common.Enums;
 using InteractHub.Api.Common.Exceptions;
+using InteractHub.Api.Common.Pagination;
 using InteractHub.Api.Common.Utilities;
 using InteractHub.Api.Domain.Enums;
 using System.Globalization;
@@ -15,6 +16,7 @@ public class AdminConsoleService : IAdminConsoleService
     private readonly IAccessTokenProvider _accessTokenProvider;
     private readonly IJavaAdminApiService _javaAdminApiService;
     private readonly IPostRepository _postRepository;
+    private readonly IHashtagRepository _hashtagRepository;
     private readonly IPostReportRepository _postReportRepository;
     private readonly ICommentReportRepository _commentReportRepository;
     private readonly IUserReportRepository _userReportRepository;
@@ -26,6 +28,7 @@ public class AdminConsoleService : IAdminConsoleService
         IAccessTokenProvider accessTokenProvider,
         IJavaAdminApiService javaAdminApiService,
         IPostRepository postRepository,
+        IHashtagRepository hashtagRepository,
         IPostReportRepository postReportRepository,
         ICommentReportRepository commentReportRepository,
         IUserReportRepository userReportRepository,
@@ -36,6 +39,7 @@ public class AdminConsoleService : IAdminConsoleService
         _accessTokenProvider = accessTokenProvider;
         _javaAdminApiService = javaAdminApiService;
         _postRepository = postRepository;
+        _hashtagRepository = hashtagRepository;
         _postReportRepository = postReportRepository;
         _commentReportRepository = commentReportRepository;
         _userReportRepository = userReportRepository;
@@ -133,6 +137,53 @@ public class AdminConsoleService : IAdminConsoleService
             pendingUserReports,
             pendingStoryReports,
             monthlyMetrics);
+    }
+
+    public async Task<AdminHashtagOverviewResponseDto> GetHashtagOverviewAsync(
+        PaginationQuery query,
+        CancellationToken cancellationToken)
+    {
+        query.Normalize();
+
+        var nowUtc = DateTime.UtcNow;
+        var monthStartUtc = new DateTime(nowUtc.Year, nowUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var nextMonthStartUtc = monthStartUtc.AddMonths(1);
+
+        var topHashtags = await _hashtagRepository.GetTopUsageInRangeAsync(
+            monthStartUtc,
+            nextMonthStartUtc,
+            take: 3,
+            cancellationToken);
+
+        var (items, totalCount) = await _hashtagRepository.GetUsagePagedAsync(
+            query.Page,
+            query.PageSize,
+            cancellationToken);
+
+        return new AdminHashtagOverviewResponseDto
+        {
+            CurrentMonth = monthStartUtc.ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            TopHashtags = topHashtags
+                .Select(item => new AdminHashtagUsageResponseDto
+                {
+                    Id = item.Hashtag.Id,
+                    Name = item.Hashtag.Name,
+                    UsageCount = item.UsageCount,
+                    CreatedAt = item.Hashtag.CreatedAt
+                })
+                .ToList(),
+            Hashtags = PagedResult<AdminHashtagUsageResponseDto>.Create(
+                items.Select(item => new AdminHashtagUsageResponseDto
+                {
+                    Id = item.Hashtag.Id,
+                    Name = item.Hashtag.Name,
+                    UsageCount = item.UsageCount,
+                    CreatedAt = item.Hashtag.CreatedAt
+                }).ToList(),
+                query.Page,
+                query.PageSize,
+                totalCount)
+        };
     }
 
     private static DateTime ResolveFirstMonthUtc(string monthValue)

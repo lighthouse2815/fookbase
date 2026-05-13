@@ -5,16 +5,19 @@ import type { UpdateAdminUserStatusRequestDto } from '@/features/admin/api/dtos/
 import type {
   AdminAuditLogResponseDto,
   AdminDashboardResponseDto,
+  AdminHashtagOverviewResponseDto,
   AdminUserResponseDto,
 } from '@/features/admin/api/dtos/response.dto';
 import {
   mapAdminDashboardResponseDto,
+  mapAdminHashtagOverviewResponseDto,
   mapAdminUserResponseDto,
   mapPagedAuditLogs,
 } from '@/features/admin/api/mapper/admin.mapper';
 import type { ApiEnvelope, PagedResult } from '@/shared/types/api';
 import type {
   AdminDashboard,
+  AdminHashtagOverview,
   AdminUserItem,
   PaginatedAdminAuditLogs,
 } from '@/features/admin/types/admin';
@@ -48,6 +51,14 @@ export const adminService = {
       params: { page, pageSize },
     });
     return mapPagedAuditLogs(extractData(response.data, 'Failed to load admin audit logs'));
+  },
+
+  async getHashtagOverview(page: number, pageSize: number): Promise<AdminHashtagOverview> {
+    const response = await apiClient.get<ApiEnvelope<AdminHashtagOverviewResponseDto>>(ADMIN.HASHTAGS, {
+      params: { page, pageSize },
+    });
+    const overview = extractData(response.data, 'Failed to load hashtag overview');
+    return mapAdminHashtagOverviewResponseDto(overview);
   },
 };
 

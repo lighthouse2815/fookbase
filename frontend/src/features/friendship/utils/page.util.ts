@@ -223,9 +223,9 @@ export const normalizeFriendSearchStatus = (status?: string | null): string => s
 export const getFriendSearchStatusMeta = (status: string, isSelf: boolean): FriendSearchStatusMeta => {
   if (isSelf) {
     return {
-      label: 'Tai khoan cua ban',
+      label: 'Tài khoản của bạn',
       action: 'none',
-      buttonLabel: 'Khong the ket ban',
+      buttonLabel: 'Không thể kết bạn',
       buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
       badgeClassName:
         'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
@@ -235,27 +235,27 @@ export const getFriendSearchStatusMeta = (status: string, isSelf: boolean): Frie
   switch (status) {
     case 'PENDING':
       return {
-        label: 'Da gui loi moi',
+        label: 'Đã gửi lời mời',
         action: 'cancel',
-        buttonLabel: 'Huy loi moi',
+        buttonLabel: 'Hủy lời mời',
         buttonClassName: 'bg-slate-600 text-white hover:bg-slate-700',
         badgeClassName:
           'border border-amber-300/60 bg-amber-100 text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-200',
       };
     case 'INVITED':
       return {
-        label: 'Da nhan loi moi tu nguoi nay',
+        label: 'Đã nhận lời mời từ người này',
         action: 'respond',
-        buttonLabel: 'Chap nhan',
+        buttonLabel: 'Chấp nhận',
         buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
           'border border-sky-300/60 bg-sky-100 text-sky-800 dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-200',
       };
     case 'ACCEPTED':
       return {
-        label: 'Da la ban be',
+        label: 'Đã là bạn bè',
         action: 'none',
-        buttonLabel: 'Da ket ban',
+        buttonLabel: 'Đã kết bạn',
         buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
           'border border-emerald-300/60 bg-emerald-100 text-emerald-800 dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-200',
@@ -264,27 +264,27 @@ export const getFriendSearchStatusMeta = (status: string, isSelf: boolean): Frie
     case 'REMOVED':
     case 'NONE':
       return {
-        label: 'Chua ket ban',
+        label: 'Chưa kết bạn',
         action: 'send',
-        buttonLabel: 'Gui ket ban',
+        buttonLabel: 'Gửi kết bạn',
         buttonClassName: 'bg-brand-600 text-white hover:bg-brand-700',
         badgeClassName:
           'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',
       };
     case 'BLOCKED':
       return {
-        label: 'Khong the ket ban luc nay',
+        label: 'Không thể kết bạn lúc này',
         action: 'none',
-        buttonLabel: 'Khong kha dung',
+        buttonLabel: 'Không khả dụng',
         buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
           'border border-rose-300/60 bg-rose-100 text-rose-800 dark:border-rose-500/50 dark:bg-rose-500/15 dark:text-rose-200',
       };
     default:
       return {
-        label: `Trang thai: ${status}`,
+        label: `Trạng thái: ${status}`,
         action: 'none',
-        buttonLabel: 'Khong kha dung',
+        buttonLabel: 'Không khả dụng',
         buttonClassName: 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         badgeClassName:
           'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200',

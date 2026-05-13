@@ -64,7 +64,7 @@ export const getFriendActionMeta = (
 
   if (state.status === 'FRIEND') {
     return {
-      label: 'Ban be',
+      label: 'Bạn bè',
       disabled: true,
       className:
         'inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200',
@@ -73,7 +73,7 @@ export const getFriendActionMeta = (
 
   if (state.status === 'REQUEST_SENT') {
     return {
-      label: 'Huy loi moi',
+      label: 'Hủy lời mời',
       disabled: false,
       className:
         'inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
@@ -82,7 +82,7 @@ export const getFriendActionMeta = (
 
   if (state.status === 'REQUEST_RECEIVED') {
     return {
-      label: 'Xac nhan',
+      label: 'Xác nhận',
       disabled: false,
       className:
         'inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-700',
@@ -90,7 +90,7 @@ export const getFriendActionMeta = (
   }
 
   return {
-    label: 'Them ban be',
+    label: 'Thêm bạn bè',
     disabled: false,
     className:
       'inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700',

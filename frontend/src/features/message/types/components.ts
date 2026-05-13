@@ -30,6 +30,8 @@ export interface MessagesConversationDetailProps {
   loadingConversationId: string | null;
   messageError: string | null;
   currentUserId: string;
+  currentUserAvatarUrl: string;
+  knownUsers: User[];
   composerValue: string;
   setComposerValue: Dispatch<SetStateAction<string>>;
   isSending: boolean;

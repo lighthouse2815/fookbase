@@ -1,8 +1,48 @@
 import clsx from 'clsx';
 import { ChevronLeft, Send, UsersRound } from 'lucide-react';
 
-import { formatRelativeTime } from '@/shared/lib/date';
 import type { MessagesConversationDetailProps } from '@/features/message/types/components';
+import { buildFallbackAvatar, toComparableTimestamp } from '@/features/message/utils/page.util';
+
+const CONTINUOUS_MESSAGE_GAP_MS = 60 * 1000;
+
+const isSameCalendarDay = (firstTime: number, secondTime: number): boolean => {
+  if (firstTime <= 0 || secondTime <= 0) {
+    return false;
+  }
+
+  const firstDate = new Date(firstTime);
+  const secondDate = new Date(secondTime);
+
+  return firstDate.getFullYear() === secondDate.getFullYear()
+    && firstDate.getMonth() === secondDate.getMonth()
+    && firstDate.getDate() === secondDate.getDate();
+};
+
+const formatMessageTime = (timestamp: number): string => {
+  if (timestamp <= 0) {
+    return '--:--';
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(timestamp));
+};
+
+const formatMessageDate = (timestamp: number): string => {
+  if (timestamp <= 0) {
+    return '--/--/----';
+  }
+
+  const date = new Date(timestamp);
+  const day = date.getDate();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+};
 
 export const MessagesConversationDetail = ({
   t,
@@ -12,6 +52,8 @@ export const MessagesConversationDetail = ({
   loadingConversationId,
   messageError,
   currentUserId,
+  currentUserAvatarUrl,
+  knownUsers,
   composerValue,
   setComposerValue,
   isSending,
@@ -21,10 +63,28 @@ export const MessagesConversationDetail = ({
   onBack,
   onSendMessage,
 }: MessagesConversationDetailProps) => {
+  const knownUserAvatarById = new Map(knownUsers.map((user) => [user.id, user.avatarUrl]));
+
+  const resolveSenderAvatar = (senderId: string) => {
+    if (senderId === currentUserId) {
+      return currentUserAvatarUrl || buildFallbackAvatar(senderId);
+    }
+
+    if (knownUserAvatarById.has(senderId)) {
+      return knownUserAvatarById.get(senderId) || buildFallbackAvatar(senderId);
+    }
+
+    if (selectedConversation?.type === 'PRIVATE') {
+      return selectedConversation.displayAvatar || buildFallbackAvatar(senderId);
+    }
+
+    return buildFallbackAvatar(senderId);
+  };
+
   return (
     <div
       className={clsx(
-        'min-h-[calc(100dvh-10rem)] flex-col lg:min-h-[75vh]',
+        'flex h-full min-h-0 flex-col',
         showConversationDetail ? 'flex' : 'hidden lg:flex',
       )}
     >
@@ -92,7 +152,7 @@ export const MessagesConversationDetail = ({
 
           <div
             ref={messagesViewportRef}
-            className="flex-1 space-y-3 overflow-y-auto bg-slate-50/70 p-3 sm:p-4 dark:bg-slate-900/40"
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50/70 p-3 sm:p-4 dark:bg-slate-900/40"
           >
             {loadingConversationId === selectedConversation.conversationId ? (
               <p className="text-center text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
@@ -109,40 +169,87 @@ export const MessagesConversationDetail = ({
                 {t('messagesPage.noMessagesYet')}
               </p>
             ) : (
-              selectedMessages.map((message) => {
+              selectedMessages.map((message, index) => {
                 const isMine = message.senderId === currentUserId;
+                const messageTime = toComparableTimestamp(message.createdAt);
+                const previousMessage = index > 0 ? selectedMessages[index - 1] : undefined;
+                const nextMessage = index < selectedMessages.length - 1 ? selectedMessages[index + 1] : undefined;
+
+                const previousTime = previousMessage ? toComparableTimestamp(previousMessage.createdAt) : 0;
+                const nextTime = nextMessage ? toComparableTimestamp(nextMessage.createdAt) : 0;
+                const sameSenderAsPrevious = Boolean(previousMessage && previousMessage.senderId === message.senderId);
+                const sameSenderAsNext = Boolean(nextMessage && nextMessage.senderId === message.senderId);
+                const gapWithPrevious = previousMessage ? messageTime - previousTime : Number.POSITIVE_INFINITY;
+                const gapWithNext = nextMessage ? nextTime - messageTime : Number.POSITIVE_INFINITY;
+
+                const isConsecutiveWithPrevious = sameSenderAsPrevious && gapWithPrevious >= 0 && gapWithPrevious <= CONTINUOUS_MESSAGE_GAP_MS;
+                const isConsecutiveWithNext = sameSenderAsNext && gapWithNext >= 0 && gapWithNext <= CONTINUOUS_MESSAGE_GAP_MS;
+                const shouldShowAvatar = !isConsecutiveWithPrevious;
+                const shouldShowTime = !isConsecutiveWithNext;
+                const shouldShowSenderName = selectedConversation.type === 'GROUP' && !isMine && shouldShowAvatar;
+                const shouldShowDateDivider = !previousMessage || !isSameCalendarDay(previousTime, messageTime);
+                const senderAvatar = resolveSenderAvatar(message.senderId);
 
                 return (
-                  <div
-                    key={message.messageId}
-                    className={clsx('flex', isMine ? 'justify-end' : 'justify-start')}
-                  >
-                    <div className={clsx('max-w-[88%] sm:max-w-[80%]', isMine ? 'items-end' : 'items-start')}>
-                      {!isMine && selectedConversation.type === 'GROUP' ? (
-                        <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                          {message.senderName}
-                        </p>
-                      ) : null}
+                  <div key={message.messageId} className="space-y-1.5">
+                    {shouldShowDateDivider ? (
+                      <p className="pt-2 text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        {formatMessageDate(messageTime)}
+                      </p>
+                    ) : null}
 
+                    <div
+                      className={clsx(
+                        'flex w-full',
+                        isMine ? 'justify-end' : 'justify-start',
+                      )}
+                    >
                       <div
                         className={clsx(
-                          'rounded-2xl px-3 py-2 text-sm',
-                          isMine
-                            ? 'rounded-br-md bg-brand-600 text-white'
-                            : 'rounded-bl-md bg-white text-slate-800 shadow-sm dark:bg-slate-800 dark:text-slate-100',
+                          'flex max-w-[92%] items-end gap-2 sm:max-w-[84%]',
+                          isMine ? 'flex-row-reverse' : 'flex-row',
                         )}
                       >
-                        {message.content || t('messagesPage.attachmentOnly')}
-                      </div>
+                        {shouldShowAvatar ? (
+                          <img
+                            src={senderAvatar}
+                            alt={message.senderName}
+                            className="h-8 w-8 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 shrink-0" aria-hidden />
+                        )}
 
-                      <p
-                        className={clsx(
-                          'mt-1 text-[11px] text-slate-500 dark:text-slate-400',
-                          isMine ? 'text-right' : 'text-left',
-                        )}
-                      >
-                        {formatRelativeTime(message.createdAt)}
-                      </p>
+                        <div className="min-w-0">
+                          {shouldShowSenderName ? (
+                            <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                              {message.senderName}
+                            </p>
+                          ) : null}
+
+                          <div
+                            className={clsx(
+                              'rounded-2xl px-3 py-2 text-sm',
+                              isMine
+                                ? 'rounded-br-md bg-brand-600 text-white'
+                                : 'rounded-bl-md bg-white text-slate-800 shadow-sm dark:bg-slate-800 dark:text-slate-100',
+                            )}
+                          >
+                            {message.content || t('messagesPage.attachmentOnly')}
+                          </div>
+
+                          {shouldShowTime ? (
+                            <p
+                              className={clsx(
+                                'mt-1 text-[11px] text-slate-500 dark:text-slate-400',
+                                isMine ? 'text-right' : 'text-left',
+                              )}
+                            >
+                              {formatMessageTime(messageTime)}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -175,7 +282,7 @@ export const MessagesConversationDetail = ({
           </form>
         </>
       ) : (
-        <div className="flex h-full min-h-[75vh] items-center justify-center p-6 text-center">
+        <div className="flex h-full min-h-0 items-center justify-center p-6 text-center">
           <div>
             <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
               {t('messagesPage.placeholderTitle')}

@@ -61,7 +61,7 @@ export const usePostDetailPage = (): UsePostDetailPageReturn => {
 
   const handlePostDeleted = () => {
     setPost(null);
-    setErrorMessage('Bai viet da duoc xoa.');
+    setErrorMessage('Bài viết đã được xóa.');
   };
 
   return {
