@@ -22,7 +22,13 @@ namespace fookbase.API.Migrations
 
             migrationBuilder.Sql("""
                 WITH canonical AS (
-                    SELECT "Id", "Name", MIN("Id") OVER (PARTITION BY "Name") AS keep_id
+                    SELECT
+                        "Id",
+                        "Name",
+                        FIRST_VALUE("Id") OVER (
+                            PARTITION BY "Name"
+                            ORDER BY "Id"
+                        ) AS keep_id
                     FROM "Hashtag"
                 ),
                 mapping AS (
@@ -39,7 +45,13 @@ namespace fookbase.API.Migrations
 
             migrationBuilder.Sql("""
                 WITH canonical AS (
-                    SELECT "Id", "Name", MIN("Id") OVER (PARTITION BY "Name") AS keep_id
+                    SELECT
+                        "Id",
+                        "Name",
+                        FIRST_VALUE("Id") OVER (
+                            PARTITION BY "Name"
+                            ORDER BY "Id"
+                        ) AS keep_id
                     FROM "Hashtag"
                 ),
                 mapping AS (
@@ -54,7 +66,13 @@ namespace fookbase.API.Migrations
 
             migrationBuilder.Sql("""
                 WITH canonical AS (
-                    SELECT "Id", "Name", MIN("Id") OVER (PARTITION BY "Name") AS keep_id
+                    SELECT
+                        "Id",
+                        "Name",
+                        FIRST_VALUE("Id") OVER (
+                            PARTITION BY "Name"
+                            ORDER BY "Id"
+                        ) AS keep_id
                     FROM "Hashtag"
                 ),
                 mapping AS (
