@@ -25,6 +25,7 @@ export interface UseHomePageReturn {
   showToast: (message: string, type?: HomeCornerToastType, durationMs?: number) => void;
   handleCreatePost: (draft: CreatePostDraft) => Promise<boolean>;
   handlePostDeleted: (postId: string) => void;
+  handlePostUpdated: (updatedPost: Post) => void;
   postColumnClass: string;
 }
 

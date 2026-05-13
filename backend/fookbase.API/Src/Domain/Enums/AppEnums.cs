@@ -108,5 +108,12 @@ public enum MediaType
     VIDEO
 }
 
+public enum PostVisibility
+{
+    ONLY_ME,
+    FRIENDS,
+    PUBLIC
+}
+
 
 

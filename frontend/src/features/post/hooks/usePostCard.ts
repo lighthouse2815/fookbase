@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { postReportService } from '@/features/post/api/service/postReportService';
 import { postService } from '@/features/post/api/service/postService';
 import { savedPostService } from '@/features/post/api/service/savedPostService';
-import type { PostReactionType } from '@/features/post/types/contracts';
+import type { PostReactionType, PostVisibility } from '@/features/post/types/contracts';
 import type { PostCardProps, ReactionFilterTab } from '@/features/post/types/components';
 import { getApiErrorMessage } from '@/shared/api/error';
 
@@ -11,7 +11,7 @@ import { getReactionMeta, POST_REACTION_OPTIONS } from '@/features/post/utils/re
 
 type UsePostCardParams = PostCardProps;
 
-export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }: UsePostCardParams) => {
+export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted, onPostUpdated }: UsePostCardParams) => {
   const authorProfilePath = `/profile/${post.author.id}`;
   const isPostOwner = currentUser.id.trim().toLowerCase() === post.author.id.trim().toLowerCase();
 
@@ -31,12 +31,17 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSavingPost, setIsSavingPost] = useState(false);
   const [isReportingPost, setIsReportingPost] = useState(false);
   const [isDeletingPost, setIsDeletingPost] = useState(false);
+  const [isUpdatingPost, setIsUpdatingPost] = useState(false);
   const [isSharingPost, setIsSharingPost] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportReasonError, setReportReasonError] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState(post.content);
+  const [editVisibility, setEditVisibility] = useState<PostVisibility>(post.visibility);
+  const [editError, setEditError] = useState<string | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
 
   const postMenuRef = useRef<HTMLDivElement | null>(null);
@@ -53,11 +58,16 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     setIsPostMenuOpen(false);
     setIsReportDialogOpen(false);
     setIsDeleteDialogOpen(false);
+    setIsEditDialogOpen(false);
     setReportReason('');
     setReportReasonError(null);
+    setEditContent(post.content);
+    setEditVisibility(post.visibility);
+    setEditError(null);
     setLikeError(null);
     setPostActionError(null);
     setIsDeletingPost(false);
+    setIsUpdatingPost(false);
     setIsSharingPost(false);
     setIsReactionPickerOpen(false);
     setIsReactionViewerOpen(false);
@@ -66,9 +76,11 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     post.commentCount,
     post.comments.length,
     post.currentUserReactionType,
+    post.content,
     post.id,
     post.likedByCurrentUser,
     post.likes,
+    post.visibility,
     post.shareCount,
     post.reactionCount,
     post.topReactionTypes,
@@ -224,6 +236,66 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     }
   }, [isSavingPost, onActionToast, post.id]);
 
+  const handleOpenEditDialog = useCallback(() => {
+    if (!isPostOwner) {
+      return;
+    }
+
+    setEditContent(post.content);
+    setEditVisibility(post.visibility);
+    setEditError(null);
+    setPostActionError(null);
+    setIsPostMenuOpen(false);
+    setIsEditDialogOpen(true);
+  }, [isPostOwner, post.content, post.visibility]);
+
+  const handleConfirmUpdatePost = useCallback(async () => {
+    if (!isPostOwner || isUpdatingPost) {
+      return;
+    }
+
+    const normalizedContent = editContent.trim();
+    const normalizedMediaUrls = (post.imageUrls ?? [])
+      .map((mediaUrl) => mediaUrl.trim())
+      .filter((mediaUrl) => mediaUrl.length > 0);
+
+    if (!normalizedContent && normalizedMediaUrls.length === 0) {
+      setEditError('Noi dung bai viet khong duoc de trong.');
+      return;
+    }
+
+    setIsUpdatingPost(true);
+    setEditError(null);
+    setPostActionError(null);
+
+    try {
+      const updatedPost = await postService.updatePost(post.id, {
+        content: normalizedContent,
+        imageUrls: normalizedMediaUrls,
+        visibility: editVisibility,
+      });
+      setIsEditDialogOpen(false);
+      onPostUpdated?.(updatedPost);
+      onActionToast?.('Da cap nhat bai viet', 'success');
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Khong the cap nhat bai viet.');
+      setEditError(message);
+      setPostActionError(message);
+      onActionToast?.(message, 'error');
+    } finally {
+      setIsUpdatingPost(false);
+    }
+  }, [
+    editContent,
+    editVisibility,
+    isPostOwner,
+    isUpdatingPost,
+    onActionToast,
+    onPostUpdated,
+    post.id,
+    post.imageUrls,
+  ]);
+
   const handleConfirmReportPost = useCallback(async () => {
     if (isReportingPost) {
       return;
@@ -322,14 +394,23 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     setIsReportDialogOpen,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
+    isEditDialogOpen,
+    setIsEditDialogOpen,
     isSavingPost,
     isReportingPost,
     isDeletingPost,
+    isUpdatingPost,
     isSharingPost,
     reportReason,
     setReportReason,
     reportReasonError,
     setReportReasonError,
+    editContent,
+    setEditContent,
+    editVisibility,
+    setEditVisibility,
+    editError,
+    setEditError,
     postActionError,
     postMenuRef,
     commentSectionRef,
@@ -343,6 +424,8 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     handleOpenComments,
     handleOpenReactionViewer,
     handleSavePost,
+    handleOpenEditDialog,
+    handleConfirmUpdatePost,
     handleConfirmReportPost,
     handleDeletePost,
     handleSharePost,

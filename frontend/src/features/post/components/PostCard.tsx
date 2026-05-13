@@ -9,6 +9,7 @@ import { PostCardContent } from '@/features/post/components/PostCardContent';
 import { PostCardEngagementActions } from '@/features/post/components/PostCardEngagementActions';
 import { PostCardHeader } from '@/features/post/components/PostCardHeader';
 import { PostDeleteDialog } from '@/features/post/components/PostDeleteDialog';
+import { PostEditDialog } from '@/features/post/components/PostEditDialog';
 import { PostMediaViewer } from '@/features/post/components/PostMediaViewer';
 import { PostReactionViewerModal } from '@/features/post/components/PostReactionViewerModal';
 import { PostReportDialog } from '@/features/post/components/PostReportDialog';
@@ -26,6 +27,7 @@ export const PostCard = ({
   showPostMenu = true,
   onActionToast,
   onPostDeleted,
+  onPostUpdated,
 }: PostCardProps) => {
   const { t } = useTranslation();
   const mediaUrls = post.imageUrls ?? [];
@@ -108,7 +110,17 @@ export const PostCard = ({
     handleConfirmReportPost,
     handleDeletePost,
     handleSharePost,
-  } = usePostCard({ post, currentUser, onActionToast, onPostDeleted });
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    isUpdatingPost,
+    editContent,
+    setEditContent,
+    editVisibility,
+    setEditVisibility,
+    editError,
+    handleOpenEditDialog,
+    handleConfirmUpdatePost,
+  } = usePostCard({ post, currentUser, onActionToast, onPostDeleted, onPostUpdated });
 
   useEffect(() => {
     if (!isMediaViewerOpen) {
@@ -202,6 +214,8 @@ export const PostCard = ({
         setReportReasonError={setReportReasonError}
         setIsReportDialogOpen={setIsReportDialogOpen}
         isReportingPost={isReportingPost}
+        handleOpenEditDialog={handleOpenEditDialog}
+        isUpdatingPost={isUpdatingPost}
         setIsDeleteDialogOpen={setIsDeleteDialogOpen}
         isDeletingPost={isDeletingPost}
       />
@@ -288,6 +302,20 @@ export const PostCard = ({
             setReportReasonError(null);
           }}
           onConfirm={handleConfirmReportPost}
+        />
+      ) : null}
+
+      {showPostMenu ? (
+        <PostEditDialog
+          isOpen={isEditDialogOpen}
+          isUpdatingPost={isUpdatingPost}
+          content={editContent}
+          visibility={editVisibility}
+          errorMessage={editError}
+          onContentChange={setEditContent}
+          onVisibilityChange={setEditVisibility}
+          onClose={() => setIsEditDialogOpen(false)}
+          onConfirm={handleConfirmUpdatePost}
         />
       ) : null}
 

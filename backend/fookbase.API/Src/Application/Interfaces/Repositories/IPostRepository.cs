@@ -7,6 +7,8 @@ public interface IPostRepository
     Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
         CancellationToken cancellationToken,
         IReadOnlyCollection<Guid>? excludedUserIds = null);
 
@@ -14,10 +16,18 @@ public interface IPostRepository
         string hashtagName,
         int page,
         int pageSize,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
         CancellationToken cancellationToken,
         IReadOnlyCollection<Guid>? excludedUserIds = null);
 
     Task<Post?> GetByIdAsync(Guid postId, CancellationToken cancellationToken);
+
+    Task<Post?> GetVisibleByIdAsync(
+        Guid postId,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
+        CancellationToken cancellationToken);
 
     Task<Post?> GetByIdForUpdateAsync(Guid postId, CancellationToken cancellationToken);
 

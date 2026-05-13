@@ -24,6 +24,7 @@ export const HomePage = () => {
     showToast,
     handleCreatePost,
     handlePostDeleted,
+    handlePostUpdated,
     postColumnClass,
   } = useHomePage();
 
@@ -86,6 +87,7 @@ export const HomePage = () => {
             enableMediaViewer
             onActionToast={showToast}
             onPostDeleted={handlePostDeleted}
+            onPostUpdated={handlePostUpdated}
           />
         ))}
       </motion.section>

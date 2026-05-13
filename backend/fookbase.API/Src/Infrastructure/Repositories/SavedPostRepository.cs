@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using InteractHub.Api.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,8 @@ public class SavedPostRepository : ISavedPostRepository
         Guid userId,
         int page,
         int pageSize,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
         CancellationToken cancellationToken,
         IReadOnlyCollection<Guid>? excludedPostOwnerUserIds = null)
     {
@@ -28,6 +31,8 @@ public class SavedPostRepository : ISavedPostRepository
 
         // Exclude rows whose related post is filtered out by Post's query filter.
         query = query.Where(savedPost => savedPost.Post != null);
+
+        query = ApplyPostVisibilityFilter(query, viewerUserId, viewerFriendUserIds);
 
         if (excludedIds.Count > 0)
         {
@@ -94,6 +99,35 @@ public class SavedPostRepository : ISavedPostRepository
             .Distinct()
             .ToList()
             ?? [];
+    }
+
+    private static IQueryable<SavedPost> ApplyPostVisibilityFilter(
+        IQueryable<SavedPost> query,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds)
+    {
+        var normalizedFriendIds = viewerFriendUserIds?
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList()
+            ?? [];
+
+        if (!viewerUserId.HasValue || viewerUserId.Value == Guid.Empty)
+        {
+            return query.Where(savedPost =>
+                savedPost.Post != null
+                && savedPost.Post.Visibility == PostVisibility.PUBLIC);
+        }
+
+        var viewerId = viewerUserId.Value;
+        return query.Where(savedPost =>
+            savedPost.Post != null
+            && (
+                savedPost.Post.UserId == viewerId
+                || savedPost.Post.Visibility == PostVisibility.PUBLIC
+                || (savedPost.Post.Visibility == PostVisibility.FRIENDS
+                    && normalizedFriendIds.Contains(savedPost.Post.UserId))
+            ));
     }
 }
 

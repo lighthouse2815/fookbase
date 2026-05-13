@@ -8,6 +8,8 @@ public interface ISavedPostRepository
         Guid userId,
         int page,
         int pageSize,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
         CancellationToken cancellationToken,
         IReadOnlyCollection<Guid>? excludedPostOwnerUserIds = null);
 

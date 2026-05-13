@@ -108,9 +108,7 @@ public class FriendRequestsFragment extends Fragment {
     private void setupToolbar() {
         binding.toolbarTitle.setText(getString(R.string.friend_requests_title));
         binding.btnBack.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
-        binding.btnSettings.setOnClickListener(v ->
-                UiHelper.showToast(requireContext(), getString(R.string.settings_coming_soon))
-        );
+        binding.btnSettings.setOnClickListener(v -> viewModel.loadData());
     }
 
     private void setupRecyclerView() {

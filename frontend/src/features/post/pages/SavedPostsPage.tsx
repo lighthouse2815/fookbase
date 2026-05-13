@@ -21,6 +21,7 @@ export const SavedPostsPage = () => {
     loadSavedPosts,
     handleRemoveSavedPost,
     handlePostDeleted,
+    handlePostUpdated,
   } = useSavedPostsPage();
 
   return (
@@ -62,6 +63,7 @@ export const SavedPostsPage = () => {
               currentUser={currentUser}
               onActionToast={showToast}
               onPostDeleted={handlePostDeleted}
+              onPostUpdated={handlePostUpdated}
             />
           </div>
         ))}

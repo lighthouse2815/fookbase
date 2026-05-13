@@ -21,6 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:adjustViewBounds="true"
+            android:contentDescription="@null"
             android:scaleType="centerCrop"
             tools:src="@drawable/default_avatar"
             tools:visibility="visible" />

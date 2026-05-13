@@ -4,7 +4,16 @@ import { PostCard } from '@/features/post/components/PostCard';
 import { usePostDetailPage } from '@/features/post/hooks/usePostDetailPage';
 
 export const PostDetailPage = () => {
-  const { currentUser, post, isLoading, errorMessage, toast, showToast, handlePostDeleted } = usePostDetailPage();
+  const {
+    currentUser,
+    post,
+    isLoading,
+    errorMessage,
+    toast,
+    showToast,
+    handlePostDeleted,
+    handlePostUpdated,
+  } = usePostDetailPage();
 
   if (isLoading) {
     return (
@@ -28,7 +37,13 @@ export const PostDetailPage = () => {
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Post Notification</p>
       </section>
 
-      <PostCard post={post} currentUser={currentUser} onActionToast={showToast} onPostDeleted={handlePostDeleted} />
+      <PostCard
+        post={post}
+        currentUser={currentUser}
+        onActionToast={showToast}
+        onPostDeleted={handlePostDeleted}
+        onPostUpdated={handlePostUpdated}
+      />
       <CornerToast message={toast?.message ?? null} type={toast?.type} />
     </div>
   );

@@ -33,6 +33,7 @@ public static class PostMapper
                 AvatarUrl = AvatarUrlHelper.BuildDefaultAvatarUrl(post.UserId)
             },
             Content = post.Content,
+            Visibility = post.Visibility,
             ImageUrls = mediaUrls,
             CreatedAt = post.CreatedAt,
             UpdatedAt = post.UpdatedAt,
@@ -57,14 +58,20 @@ public static class PostMapper
         IReadOnlySet<Guid>? blockedUserIds = null,
         AuthorSummaryDto? author = null,
         IReadOnlyDictionary<Guid, int>? shareCountLookup = null,
-        IReadOnlyDictionary<Guid, AuthorSummaryDto>? authorsByUserId = null)
+        IReadOnlyDictionary<Guid, AuthorSummaryDto>? authorsByUserId = null,
+        IReadOnlySet<Guid>? viewerFriendUserIds = null)
     {
         ArgumentNullException.ThrowIfNull(post);
 
         var effectiveBlockedUserIds = blockedUserIds ?? EmptyBlockedUserIds;
         var currentUserReactionType = GetCurrentUserReactionType(post, currentUserId);
         var shareCount = ResolveShareCount(post.Id, shareCountLookup);
-        var originalPost = ResolveOriginalPostReference(post.OriginalPost, effectiveBlockedUserIds, authorsByUserId);
+        var originalPost = ResolveOriginalPostReference(
+            post.OriginalPost,
+            effectiveBlockedUserIds,
+            authorsByUserId,
+            currentUserId,
+            viewerFriendUserIds ?? EmptyViewerFriendUserIds);
 
         return post.ToBaseResponseDto() with
         {
@@ -82,7 +89,8 @@ public static class PostMapper
         IReadOnlyDictionary<Guid, AuthorSummaryDto> authors,
         Guid? currentUserId,
         IReadOnlySet<Guid>? blockedUserIds = null,
-        IReadOnlyDictionary<Guid, int>? shareCountLookup = null)
+        IReadOnlyDictionary<Guid, int>? shareCountLookup = null,
+        IReadOnlySet<Guid>? viewerFriendUserIds = null)
     {
         ArgumentNullException.ThrowIfNull(posts);
         ArgumentNullException.ThrowIfNull(authors);
@@ -95,7 +103,8 @@ public static class PostMapper
                 effectiveBlockedUserIds,
                 authors.TryGetValue(post.UserId, out var author) ? author : null,
                 shareCountLookup,
-                authors))
+                authors,
+                viewerFriendUserIds))
             .ToList();
     }
 
@@ -148,7 +157,9 @@ public static class PostMapper
     private static SharedPostReferenceDto? ResolveOriginalPostReference(
         Post? originalPost,
         IReadOnlySet<Guid> blockedUserIds,
-        IReadOnlyDictionary<Guid, AuthorSummaryDto>? authorsByUserId)
+        IReadOnlyDictionary<Guid, AuthorSummaryDto>? authorsByUserId,
+        Guid? currentUserId,
+        IReadOnlySet<Guid> viewerFriendUserIds)
     {
         if (originalPost is null)
         {
@@ -156,6 +167,11 @@ public static class PostMapper
         }
 
         if (blockedUserIds.Contains(originalPost.UserId))
+        {
+            return null;
+        }
+
+        if (!IsPostVisibleToViewer(originalPost, currentUserId, viewerFriendUserIds))
         {
             return null;
         }
@@ -196,5 +212,26 @@ public static class PostMapper
         return shareCountLookup.TryGetValue(postId, out var count) ? Math.Max(0, count) : 0;
     }
 
+    private static bool IsPostVisibleToViewer(
+        Post post,
+        Guid? currentUserId,
+        IReadOnlySet<Guid> viewerFriendUserIds)
+    {
+        if (currentUserId.HasValue && currentUserId.Value == post.UserId)
+        {
+            return true;
+        }
+
+        if (post.Visibility == PostVisibility.PUBLIC)
+        {
+            return true;
+        }
+
+        return post.Visibility == PostVisibility.FRIENDS
+               && currentUserId.HasValue
+               && viewerFriendUserIds.Contains(post.UserId);
+    }
+
     private static readonly IReadOnlySet<Guid> EmptyBlockedUserIds = new HashSet<Guid>();
+    private static readonly IReadOnlySet<Guid> EmptyViewerFriendUserIds = new HashSet<Guid>();
 }

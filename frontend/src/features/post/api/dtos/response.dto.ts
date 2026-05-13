@@ -12,8 +12,10 @@ export interface PostResponseDto {
   userId: string;
   author?: PostAuthorResponseDto;
   content: string;
+  visibility?: string;
   imageUrls?: string[] | null;
   createdAt: string;
+  updatedAt?: string;
   likeCount?: number;
   reactionCount?: number;
   currentUserReactionType?: string | null;

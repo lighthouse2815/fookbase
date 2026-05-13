@@ -1,9 +1,10 @@
-import { BookmarkPlus, Ellipsis, Flag, Trash2 } from 'lucide-react';
+import { BookmarkPlus, Ellipsis, Flag, PencilLine, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 
 import { formatRelativeTime } from '@/shared/lib/date';
 import type { Post } from '@/features/post/types/contracts';
+import { isPostEdited, resolvePostVisibilityMeta } from '@/features/post/utils/visibility';
 
 interface PostCardHeaderProps {
   post: Post;
@@ -19,6 +20,8 @@ interface PostCardHeaderProps {
   setReportReasonError: (value: string | null) => void;
   setIsReportDialogOpen: Dispatch<SetStateAction<boolean>>;
   isReportingPost: boolean;
+  handleOpenEditDialog: () => void;
+  isUpdatingPost: boolean;
   setIsDeleteDialogOpen: Dispatch<SetStateAction<boolean>>;
   isDeletingPost: boolean;
 }
@@ -37,17 +40,33 @@ export const PostCardHeader = ({
   setReportReasonError,
   setIsReportDialogOpen,
   isReportingPost,
+  handleOpenEditDialog,
+  isUpdatingPost,
   setIsDeleteDialogOpen,
   isDeletingPost,
 }: PostCardHeaderProps) => {
+  const visibilityMeta = resolvePostVisibilityMeta(post.visibility);
+  const VisibilityIcon = visibilityMeta.icon;
+  const wasEdited = isPostEdited(post.createdAt, post.updatedAt);
+  const displayTime = wasEdited ? post.updatedAt : post.createdAt;
+
   return (
     <header className="flex items-start gap-2.5 sm:gap-3">
       <Link to={authorProfilePath} aria-label={post.author.fullName} className="inline-flex">
         <img src={post.author.avatarUrl} alt={post.author.fullName} className="h-10 w-10 rounded-full sm:h-11 sm:w-11" />
       </Link>
-      <div>
+      <div className="min-w-0">
         <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{post.author.fullName}</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{formatRelativeTime(post.createdAt)}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {formatRelativeTime(displayTime)}
+          {wasEdited ? ' - da chinh sua' : ''}
+        </p>
+        {isPostOwner ? (
+          <span className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${visibilityMeta.chipClassName}`}>
+            <VisibilityIcon size={12} />
+            {visibilityMeta.label}
+          </span>
+        ) : null}
       </div>
 
       {showPostMenu ? (
@@ -56,13 +75,13 @@ export const PostCardHeader = ({
             type="button"
             onClick={() => setIsPostMenuOpen((current) => !current)}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100 sm:h-9 sm:w-9"
-            aria-label="Mở tùy chọn bài viết"
+            aria-label="Mo tuy chon bai viet"
           >
             <Ellipsis size={20} />
           </button>
 
           {isPostMenuOpen ? (
-            <div className="absolute right-0 top-10 z-20 w-52 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="absolute right-0 top-10 z-20 w-56 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
               <button
                 type="button"
                 onClick={() => void handleSavePost()}
@@ -70,8 +89,19 @@ export const PostCardHeader = ({
                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <BookmarkPlus size={16} />
-                {isSavingPost ? 'Đang lưu bài viết...' : 'Lưu bài viết'}
+                {isSavingPost ? 'Dang luu bai viet...' : 'Luu bai viet'}
               </button>
+              {isPostOwner ? (
+                <button
+                  type="button"
+                  onClick={handleOpenEditDialog}
+                  disabled={isUpdatingPost}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  <PencilLine size={16} />
+                  {isUpdatingPost ? 'Dang cap nhat...' : 'Chinh sua bai viet'}
+                </button>
+              ) : null}
               {!isPostOwner ? (
                 <button
                   type="button"
@@ -85,7 +115,7 @@ export const PostCardHeader = ({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
                 >
                   <Flag size={16} />
-                  Báo cáo
+                  Bao cao
                 </button>
               ) : null}
               {isPostOwner ? (
@@ -99,7 +129,7 @@ export const PostCardHeader = ({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-rose-300 dark:hover:bg-rose-500/10"
                 >
                   <Trash2 size={16} />
-                  {isDeletingPost ? 'Đang xóa bài viết...' : 'Xóa bài viết'}
+                  {isDeletingPost ? 'Dang xoa bai viet...' : 'Xoa bai viet'}
                 </button>
               ) : null}
             </div>

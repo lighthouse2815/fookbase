@@ -13,6 +13,7 @@ public static class SavedPostMapper
         Guid currentUserId,
         IReadOnlyDictionary<Guid, UserProfileSummaryDto?> profileLookup,
         IReadOnlySet<Guid> blockedUserIds,
+        IReadOnlySet<Guid> viewerFriendUserIds,
         IReadOnlyDictionary<Guid, int>? shareCountLookup = null)
     {
         ArgumentNullException.ThrowIfNull(post);
@@ -31,7 +32,8 @@ public static class SavedPostMapper
             blockedUserIds,
             author: ResolveAuthorSummary(post.UserId, profileLookup),
             shareCountLookup: shareCountLookup,
-            authorsByUserId: authorLookup);
+            authorsByUserId: authorLookup,
+            viewerFriendUserIds: viewerFriendUserIds);
     }
 
     public static SavedPostStateResponseDto ToStateResponseDto(Guid postId, bool saved, DateTime? savedAt = null)

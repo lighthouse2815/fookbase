@@ -147,7 +147,7 @@ export const sanitizeRequests = (
           : undefined;
 
     const fullName = resolveDisplayNameFromRecord(raw, 'User');
-    const username = readField(raw, 'username') ?? `user_${safeId}`;
+    const username = readField(raw, 'displayName') ?? `user_${safeId}`;
 
     return {
       id: safeId,

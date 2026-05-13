@@ -3,6 +3,7 @@ import type { User } from '@/features/user/types/contracts';
 
 export type CommentReactionType = 'LIKE' | 'WOW' | 'SAD' | 'ANGRY' | 'HAHA' | 'LOVE';
 export type PostReactionType = CommentReactionType;
+export type PostVisibility = 'ONLY_ME' | 'FRIENDS' | 'PUBLIC';
 
 export type CommentReactionFriendshipStatus = 'SELF' | 'FRIEND' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'NONE';
 
@@ -62,8 +63,10 @@ export interface Post {
   id: string;
   author: User;
   content: string;
+  visibility: PostVisibility;
   imageUrls?: string[];
   createdAt: string;
+  updatedAt: string;
   likes: number;
   likedByCurrentUser?: boolean;
   reactionCount: number;
@@ -77,6 +80,7 @@ export interface Post {
 
 export interface CreatePostDraft {
   content: string;
+  visibility: PostVisibility;
   imageFiles?: File[];
   videoFile?: File;
 }

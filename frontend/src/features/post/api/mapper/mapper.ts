@@ -3,6 +3,7 @@ import type { PostResponseDto } from '@/features/post/api/dtos/response.dto';
 import { ENV } from '@/shared/env/env';
 import { parseReactionType, parseReactionTypes } from '@/features/comment/utils/reaction.util';
 import type { PostReactionType } from '@/features/post/types/contracts';
+import { parsePostVisibility } from '@/features/post/utils/visibility';
 
 const resolvePostMediaUrl = (mediaUrl: string): string => {
   const normalized = mediaUrl.trim();
@@ -58,8 +59,10 @@ export const mapPost = (payload: PostResponseDto): Post => {
       avatarUrl: payload.author?.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
     },
     content: payload.content,
+    visibility: parsePostVisibility(payload.visibility),
     imageUrls: payloadImageUrls,
     createdAt: payload.createdAt,
+    updatedAt: payload.updatedAt ?? payload.createdAt,
     likes: reactionCount,
     likedByCurrentUser: payload.likedByCurrentUser ?? Boolean(currentUserReactionType),
     reactionCount,

@@ -132,6 +132,7 @@ export const useHomePage = (): UseHomePageReturn => {
       const created = await postService.createPost({
         content: draft.content,
         imageUrls: mediaUrls,
+        visibility: draft.visibility,
       });
       setFeed((previous) => [created, ...previous]);
       return true;
@@ -145,6 +146,12 @@ export const useHomePage = (): UseHomePageReturn => {
 
   const handlePostDeleted = (postId: string) => {
     setFeed((previous) => previous.filter((post) => post.id !== postId));
+  };
+
+  const handlePostUpdated = (updatedPost: Post) => {
+    setFeed((previous) =>
+      previous.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
+    );
   };
 
   return {
@@ -161,6 +168,7 @@ export const useHomePage = (): UseHomePageReturn => {
     showToast,
     handleCreatePost,
     handlePostDeleted,
+    handlePostUpdated,
     postColumnClass: HOME_POST_COLUMN_CLASS,
   };
 };

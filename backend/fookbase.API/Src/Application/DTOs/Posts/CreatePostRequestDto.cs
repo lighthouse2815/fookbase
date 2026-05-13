@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using InteractHub.Api.Domain.Enums;
 
 namespace InteractHub.Api.Application.DTOs.Posts;
 
@@ -8,6 +9,8 @@ public class CreatePostRequestDto
     public string Content { get; set; } = string.Empty;
 
     public IReadOnlyList<string>? ImageUrls { get; set; }
+
+    public PostVisibility Visibility { get; set; } = PostVisibility.PUBLIC;
 }
 
 

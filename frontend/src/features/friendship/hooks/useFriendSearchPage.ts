@@ -238,6 +238,12 @@ export const useFriendSearchPage = () => {
     setHashtagPosts((previous) => previous.filter((post) => post.id !== postId));
   };
 
+  const handleHashtagPostUpdated = (updatedPost: Post) => {
+    setHashtagPosts((previous) =>
+      previous.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
+    );
+  };
+
   const showEmptyState = fetchState === 'success'
     && ((searchMode === 'users' && results.length === 0) || (searchMode === 'hashtags' && hashtagPosts.length === 0));
 
@@ -258,6 +264,7 @@ export const useFriendSearchPage = () => {
     handleSearchSubmit,
     handleLoadMoreHashtagPosts,
     handleHashtagPostDeleted,
+    handleHashtagPostUpdated,
     handleSendFriendRequest,
     handleCancelSentRequest,
     handleAcceptReceivedRequest,

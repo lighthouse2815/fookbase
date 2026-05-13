@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { CreatePostDraft } from '@/features/post/types/contracts';
+import type { PostVisibility } from '@/features/post/types/contracts';
 import type { CreatePostBoxProps, CreatePostMediaKind } from '@/features/post/types/components';
 import {
   CREATE_POST_ICON_OPTIONS,
@@ -10,12 +11,14 @@ import {
   MAX_VIDEO_FILE_SIZE_BYTES,
 } from '@/features/post/utils/constants';
 import { detectMediaKindFromFile } from '@/features/post/utils/media';
+import { POST_VISIBILITY_OPTIONS } from '@/features/post/utils/visibility';
 
 type UseCreatePostBoxParams = Pick<CreatePostBoxProps, 'onCreatePost'>;
 
 export const useCreatePostBox = ({ onCreatePost }: UseCreatePostBoxParams) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
+  const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const [selectedImagePreviewUrls, setSelectedImagePreviewUrls] = useState<string[]>([]);
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | undefined>(undefined);
@@ -193,6 +196,7 @@ export const useCreatePostBox = ({ onCreatePost }: UseCreatePostBoxParams) => {
 
     const draft: CreatePostDraft = {
       content: trimmed,
+      visibility,
       imageFiles: selectedImageFiles.length > 0 ? selectedImageFiles : undefined,
       videoFile: selectedVideoFile,
     };
@@ -201,13 +205,15 @@ export const useCreatePostBox = ({ onCreatePost }: UseCreatePostBoxParams) => {
 
     if (isCreated) {
       setContent('');
+      setVisibility('PUBLIC');
       clearSelectedMedia();
       setIsIconPickerOpen(false);
     }
-  }, [clearSelectedMedia, content, onCreatePost, selectedImageFiles, selectedVideoFile]);
+  }, [clearSelectedMedia, content, onCreatePost, selectedImageFiles, selectedVideoFile, visibility]);
 
   const handleCancelDraft = useCallback(() => {
     setContent('');
+    setVisibility('PUBLIC');
     clearSelectedMedia();
     setIsIconPickerOpen(false);
   }, [clearSelectedMedia]);
@@ -218,6 +224,8 @@ export const useCreatePostBox = ({ onCreatePost }: UseCreatePostBoxParams) => {
     t,
     content,
     setContent,
+    visibility,
+    setVisibility,
     selectedImageFiles,
     selectedImagePreviewUrls,
     selectedVideoFile,
@@ -237,5 +245,6 @@ export const useCreatePostBox = ({ onCreatePost }: UseCreatePostBoxParams) => {
     handleCancelDraft,
     hasDraft,
     iconOptions: CREATE_POST_ICON_OPTIONS,
+    visibilityOptions: POST_VISIBILITY_OPTIONS,
   };
 };

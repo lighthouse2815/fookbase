@@ -70,6 +70,12 @@ export const useSavedPostsPage = (): UseSavedPostsPageReturn => {
     setSavedPosts((previous) => previous.filter((post) => post.id !== postId));
   };
 
+  const handlePostUpdated = (updatedPost: Post) => {
+    setSavedPosts((previous) =>
+      previous.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
+    );
+  };
+
   return {
     t,
     currentUser,
@@ -84,6 +90,7 @@ export const useSavedPostsPage = (): UseSavedPostsPageReturn => {
     loadSavedPosts,
     handleRemoveSavedPost,
     handlePostDeleted,
+    handlePostUpdated,
   };
 };
 

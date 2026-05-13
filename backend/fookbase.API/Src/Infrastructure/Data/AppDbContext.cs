@@ -70,6 +70,12 @@ public class AppDbContext : DbContext
             entity.HasKey(post => post.Id);
 
             entity.Property(post => post.Content).HasMaxLength(2000).IsRequired();
+            entity.Property(post => post.Visibility)
+                .HasConversion(
+                    visibility => visibility.ToString(),
+                    value => ParsePostVisibility(value))
+                .HasMaxLength(20)
+                .IsRequired();
 
             entity.HasOne(post => post.OriginalPost)
                 .WithMany(post => post.SharedPosts)
@@ -81,6 +87,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(post => post.UserId);
             entity.HasIndex(post => post.OriginalPostId);
             entity.HasIndex(post => post.CreatedAt);
+            entity.HasIndex(post => post.Visibility);
         });
 
         modelBuilder.Entity<PostMedia>(entity =>
@@ -593,6 +600,14 @@ public class AppDbContext : DbContext
             && Enum.IsDefined(parsedType)
             ? parsedType
             : AdminAuditEntityType.USER;
+    }
+
+    private static PostVisibility ParsePostVisibility(string? value)
+    {
+        return Enum.TryParse(value?.Trim(), ignoreCase: true, out PostVisibility parsedVisibility)
+            && Enum.IsDefined(parsedVisibility)
+            ? parsedVisibility
+            : PostVisibility.PUBLIC;
     }
 }
 

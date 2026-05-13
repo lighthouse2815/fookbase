@@ -64,6 +64,10 @@ export const usePostDetailPage = (): UsePostDetailPageReturn => {
     setErrorMessage('Bài viết đã được xóa.');
   };
 
+  const handlePostUpdated = (updatedPost: Post) => {
+    setPost(updatedPost);
+  };
+
   return {
     currentUser,
     post,
@@ -72,6 +76,7 @@ export const usePostDetailPage = (): UsePostDetailPageReturn => {
     toast,
     showToast,
     handlePostDeleted,
+    handlePostUpdated,
   };
 };
 

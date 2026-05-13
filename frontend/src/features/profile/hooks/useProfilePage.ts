@@ -205,6 +205,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
       const created = await postService.createPost({
         content: draft.content,
         imageUrls: mediaUrls,
+        visibility: draft.visibility,
       });
 
       setPersonalPosts((previous) => [created, ...previous]);
@@ -219,6 +220,12 @@ export const useProfilePage = (): UseProfilePageReturn => {
 
   const handlePostDeleted = (postId: string) => {
     setPersonalPosts((previous) => previous.filter((post) => post.id !== postId));
+  };
+
+  const handlePostUpdated = (updatedPost: Post) => {
+    setPersonalPosts((previous) =>
+      previous.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
+    );
   };
 
   const updateFriendshipStatus = (nextStatus: FriendshipStatusCode) => {
@@ -407,6 +414,7 @@ export const useProfilePage = (): UseProfilePageReturn => {
     infoItems,
     handleCreatePost,
     handlePostDeleted,
+    handlePostUpdated,
     handlePrimaryAction,
     handleCancelSentRequest,
     handleUnfriend,

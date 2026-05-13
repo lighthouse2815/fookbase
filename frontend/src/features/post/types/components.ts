@@ -25,6 +25,7 @@ export interface PostCardProps {
   showPostMenu?: boolean;
   onActionToast?: (message: string, type?: 'success' | 'error') => void;
   onPostDeleted?: (postId: string) => void;
+  onPostUpdated?: (post: Post) => void;
 }
 
 export interface CreatePostBoxProps {

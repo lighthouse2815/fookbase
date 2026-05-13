@@ -13,6 +13,8 @@ public record PostResponseDto
 
     public string Content { get; init; } = string.Empty;
 
+    public PostVisibility Visibility { get; init; } = PostVisibility.PUBLIC;
+
     public IReadOnlyList<string> ImageUrls { get; init; } = Array.Empty<string>();
 
     public DateTime CreatedAt { get; init; }

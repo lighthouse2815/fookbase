@@ -1,5 +1,6 @@
 using InteractHub.Api.Application.Interfaces.Repositories;
 using InteractHub.Api.Domain.Entities;
+using InteractHub.Api.Domain.Enums;
 using InteractHub.Api.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,11 +18,16 @@ public class PostRepository : IPostRepository
     public async Task<(IReadOnlyList<Post> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
         CancellationToken cancellationToken,
         IReadOnlyCollection<Guid>? excludedUserIds = null)
     {
         var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
-        IQueryable<Post> query = _context.Posts.AsNoTracking();
+        IQueryable<Post> query = ApplyVisibilityFilter(
+            _context.Posts.AsNoTracking(),
+            viewerUserId,
+            viewerFriendUserIds);
 
         if (excludedIds.Count > 0)
         {
@@ -56,13 +62,18 @@ public class PostRepository : IPostRepository
         string hashtagName,
         int page,
         int pageSize,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
         CancellationToken cancellationToken,
         IReadOnlyCollection<Guid>? excludedUserIds = null)
     {
         var excludedIds = NormalizeExcludedUserIds(excludedUserIds);
         var normalizedHashtagName = hashtagName.Trim().ToLowerInvariant();
 
-        IQueryable<Post> query = _context.Posts.AsNoTracking();
+        IQueryable<Post> query = ApplyVisibilityFilter(
+            _context.Posts.AsNoTracking(),
+            viewerUserId,
+            viewerFriendUserIds);
 
         if (excludedIds.Count > 0)
         {
@@ -103,10 +114,59 @@ public class PostRepository : IPostRepository
             ?? [];
     }
 
+    private static IQueryable<Post> ApplyVisibilityFilter(
+        IQueryable<Post> query,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds)
+    {
+        var normalizedFriendIds = viewerFriendUserIds?
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList()
+            ?? [];
+
+        if (!viewerUserId.HasValue || viewerUserId.Value == Guid.Empty)
+        {
+            return query.Where(post => post.Visibility == PostVisibility.PUBLIC);
+        }
+
+        var viewerId = viewerUserId.Value;
+        return query.Where(post =>
+            post.UserId == viewerId
+            || post.Visibility == PostVisibility.PUBLIC
+            || (post.Visibility == PostVisibility.FRIENDS && normalizedFriendIds.Contains(post.UserId)));
+    }
+
     public Task<Post?> GetByIdAsync(Guid postId, CancellationToken cancellationToken)
     {
         return _context.Posts
             .AsNoTracking()
+            .Include(post => post.MediaItems)
+            .Include(post => post.Likes)
+            .Include(post => post.Comments)
+            .Include(post => post.PostHashtags)
+                .ThenInclude(postHashtag => postHashtag.Hashtag)
+            .Include(post => post.OriginalPost)
+                .ThenInclude(post => post!.MediaItems)
+            .Include(post => post.OriginalPost)
+                .ThenInclude(post => post!.Likes)
+            .Include(post => post.OriginalPost)
+                .ThenInclude(post => post!.Comments)
+            .FirstOrDefaultAsync(post => post.Id == postId, cancellationToken);
+    }
+
+    public Task<Post?> GetVisibleByIdAsync(
+        Guid postId,
+        Guid? viewerUserId,
+        IReadOnlyCollection<Guid>? viewerFriendUserIds,
+        CancellationToken cancellationToken)
+    {
+        var query = ApplyVisibilityFilter(
+            _context.Posts.AsNoTracking(),
+            viewerUserId,
+            viewerFriendUserIds);
+
+        return query
             .Include(post => post.MediaItems)
             .Include(post => post.Likes)
             .Include(post => post.Comments)

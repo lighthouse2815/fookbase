@@ -23,6 +23,7 @@ export const FriendSearchPage = () => {
     handleSearchSubmit,
     handleLoadMoreHashtagPosts,
     handleHashtagPostDeleted,
+    handleHashtagPostUpdated,
     handleSendFriendRequest,
     handleCancelSentRequest,
     handleAcceptReceivedRequest,
@@ -103,6 +104,7 @@ export const FriendSearchPage = () => {
               currentUser={currentUser}
               enableMediaViewer
               onPostDeleted={handleHashtagPostDeleted}
+              onPostUpdated={handleHashtagPostUpdated}
             />
           ))}
 

@@ -1229,8 +1229,9 @@ public class ChatDetailFragment extends Fragment {
         }
 
         Dialog dialog = new Dialog(requireContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        FrameLayout dialogRoot = new FrameLayout(requireContext());
         View dialogView = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_chat_image_viewer_fullscreen, null, false);
+                .inflate(R.layout.dialog_chat_image_viewer_fullscreen, dialogRoot, false);
 
         ImageButton closeButton = dialogView.findViewById(R.id.btnCloseImageViewer);
         ImageButton moreButton = dialogView.findViewById(R.id.btnMoreImageViewer);

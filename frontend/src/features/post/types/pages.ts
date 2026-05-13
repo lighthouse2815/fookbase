@@ -18,6 +18,7 @@ export interface UsePostDetailPageReturn {
   toast: PostCornerToastSnapshot | null;
   showToast: (message: string, type?: PostCornerToastType, durationMs?: number) => void;
   handlePostDeleted: () => void;
+  handlePostUpdated: (updatedPost: Post) => void;
 }
 
 export interface UseSavedPostsPageReturn {
@@ -34,6 +35,7 @@ export interface UseSavedPostsPageReturn {
   loadSavedPosts: (targetPage: number, replace?: boolean) => Promise<void>;
   handleRemoveSavedPost: (postId: string) => Promise<void>;
   handlePostDeleted: (postId: string) => void;
+  handlePostUpdated: (updatedPost: Post) => void;
 }
 
 

@@ -1,3 +1,5 @@
+using InteractHub.Api.Domain.Enums;
+
 namespace InteractHub.Api.Domain.Entities;
 
 public class Post
@@ -11,6 +13,8 @@ public class Post
     public Post? OriginalPost { get; set; }
 
     public string Content { get; set; } = string.Empty;
+
+    public PostVisibility Visibility { get; set; } = PostVisibility.PUBLIC;
 
     public DateTime CreatedAt { get; set; }
 

@@ -25,6 +25,7 @@ export const ProfilePage = () => {
     infoItems,
     handleCreatePost,
     handlePostDeleted,
+    handlePostUpdated,
     handlePrimaryAction,
     handleCancelSentRequest,
     handleUnfriend,
@@ -132,6 +133,7 @@ export const ProfilePage = () => {
               enableMediaViewer
               onActionToast={showToast}
               onPostDeleted={handlePostDeleted}
+              onPostUpdated={handlePostUpdated}
             />
           ))}
         </section>

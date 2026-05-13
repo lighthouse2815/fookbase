@@ -57,11 +57,14 @@ public class PostService : IPostService
     {
         query.Normalize();
 
+        var viewerFriendUserIds = await ResolveViewerFriendUserIdsAsync(currentUserId, cancellationToken);
         var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
 
         var (items, totalCount) = await _postRepository.GetPagedAsync(
             query.Page,
             query.PageSize,
+            currentUserId,
+            viewerFriendUserIds,
             cancellationToken,
             blockedUserIds);
 
@@ -73,7 +76,12 @@ public class PostService : IPostService
         var shareCounts = await _postRepository.GetShareCountsAsync(
             items.Select(post => post.Id).ToList(),
             cancellationToken);
-        var mappedItems = items.ToResponseDtos(authors, currentUserId, blockedUserIds, shareCounts);
+        var mappedItems = items.ToResponseDtos(
+            authors,
+            currentUserId,
+            blockedUserIds,
+            shareCounts,
+            viewerFriendUserIds);
 
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -87,12 +95,15 @@ public class PostService : IPostService
         query.Normalize();
 
         var normalizedHashtag = NormalizeHashtagKeyword(hashtagName);
+        var viewerFriendUserIds = await ResolveViewerFriendUserIdsAsync(currentUserId, cancellationToken);
         var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
 
         var (items, totalCount) = await _postRepository.GetPagedByHashtagAsync(
             normalizedHashtag,
             query.Page,
             query.PageSize,
+            currentUserId,
+            viewerFriendUserIds,
             cancellationToken,
             blockedUserIds);
 
@@ -104,14 +115,24 @@ public class PostService : IPostService
         var shareCounts = await _postRepository.GetShareCountsAsync(
             items.Select(post => post.Id).ToList(),
             cancellationToken);
-        var mappedItems = items.ToResponseDtos(authors, currentUserId, blockedUserIds, shareCounts);
+        var mappedItems = items.ToResponseDtos(
+            authors,
+            currentUserId,
+            blockedUserIds,
+            shareCounts,
+            viewerFriendUserIds);
 
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
 
     public async Task<PostResponseDto> GetByIdAsync(Guid postId, Guid? currentUserId, CancellationToken cancellationToken)
     {
-        var post = await _postRepository.GetByIdAsync(postId, cancellationToken)
+        var viewerFriendUserIds = await ResolveViewerFriendUserIdsAsync(currentUserId, cancellationToken);
+        var post = await _postRepository.GetVisibleByIdAsync(
+            postId,
+            currentUserId,
+            viewerFriendUserIds,
+            cancellationToken)
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
         var blockedUserIds = await ResolveBlockedUserIdsAsync(currentUserId, cancellationToken);
@@ -134,7 +155,8 @@ public class PostService : IPostService
             blockedUserIds,
             author,
             shareCounts,
-            authorLookup);
+            authorLookup,
+            viewerFriendUserIds);
     }
 
     public async Task<PostResponseDto> CreateAsync(
@@ -155,6 +177,7 @@ public class PostService : IPostService
             Id = Guid.NewGuid(),
             UserId = userId,
             Content = normalizedContent,
+            Visibility = request.Visibility,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -196,11 +219,16 @@ public class PostService : IPostService
         CancellationToken cancellationToken)
     {
         var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
+        var viewerFriendUserIds = await ResolveViewerFriendUserIdsAsync(userId, cancellationToken, requireFresh: true);
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
 
-        var sourcePost = await _postRepository.GetByIdAsync(postId, cancellationToken)
+        var sourcePost = await _postRepository.GetVisibleByIdAsync(
+            postId,
+            userId,
+            viewerFriendUserIds,
+            cancellationToken)
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
-        var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
         if (blockedUserIds.Contains(sourcePost.UserId))
         {
             throw new BusinessException(ErrorCode.POST_NOT_FOUND);
@@ -224,6 +252,7 @@ public class PostService : IPostService
             UserId = userId,
             OriginalPostId = originalPostId,
             Content = normalizedContent,
+            Visibility = PostVisibility.PUBLIC,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -264,7 +293,8 @@ public class PostService : IPostService
             blockedUserIds,
             author,
             shareCounts,
-            authorLookup);
+            authorLookup,
+            viewerFriendUserIds);
     }
 
     public async Task<PostResponseDto> UpdateAsync(
@@ -284,6 +314,10 @@ public class PostService : IPostService
         EnsurePostHasContentOrMedia(normalizedContent, normalizedMediaUrls);
 
         post.Content = normalizedContent;
+        if (request.Visibility.HasValue)
+        {
+            post.Visibility = request.Visibility.Value;
+        }
         post.UpdatedAt = DateTime.UtcNow;
         post.MediaItems.Clear();
         foreach (var media in BuildPostMediaItems(post.Id, normalizedMediaUrls, DateTime.UtcNow))
@@ -313,7 +347,10 @@ public class PostService : IPostService
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
         var author = (await ResolveAuthorsAsync([updated.UserId], cancellationToken))[updated.UserId];
-        return updated.ToResponseDto(userId, author: author);
+        return updated.ToResponseDto(
+            userId,
+            author: author,
+            viewerFriendUserIds: new HashSet<Guid>());
     }
 
     public async Task DeleteAsync(Guid postId, Guid userId, bool isAdmin, CancellationToken cancellationToken)
@@ -531,6 +568,26 @@ public class PostService : IPostService
             currentUserId,
             cancellationToken,
             requireFresh: false);
+    }
+
+    private async Task<HashSet<Guid>> ResolveViewerFriendUserIdsAsync(
+        Guid? currentUserId,
+        CancellationToken cancellationToken,
+        bool requireFresh = false)
+    {
+        if (!currentUserId.HasValue || currentUserId.Value == Guid.Empty)
+        {
+            return [];
+        }
+
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
+        var friendUserIds = await _friendshipReadModelService.ResolveContactIdsAsync(
+            currentUserId.Value,
+            accessToken,
+            cancellationToken,
+            requireFresh: requireFresh);
+        friendUserIds.Remove(currentUserId.Value);
+        return friendUserIds;
     }
 
 }

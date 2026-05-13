@@ -15,6 +15,7 @@ namespace InteractHub.Api.Application.Services;
 
 public class SavedPostService : ISavedPostService
 {
+    private readonly IAccessTokenProvider _accessTokenProvider;
     private readonly ISavedPostRepository _savedPostRepository;
     private readonly IPostRepository _postRepository;
     private readonly IFriendshipReadModelService _friendshipReadModelService;
@@ -23,6 +24,7 @@ public class SavedPostService : ISavedPostService
     private readonly ILogger<SavedPostService> _logger;
 
     public SavedPostService(
+        IAccessTokenProvider accessTokenProvider,
         ISavedPostRepository savedPostRepository,
         IPostRepository postRepository,
         IFriendshipReadModelService friendshipReadModelService,
@@ -30,6 +32,7 @@ public class SavedPostService : ISavedPostService
         IUnitOfWork unitOfWork,
         ILogger<SavedPostService> logger)
     {
+        _accessTokenProvider = accessTokenProvider;
         _savedPostRepository = savedPostRepository;
         _postRepository = postRepository;
         _friendshipReadModelService = friendshipReadModelService;
@@ -42,11 +45,14 @@ public class SavedPostService : ISavedPostService
     {
         query.Normalize();
 
+        var viewerFriendUserIds = await ResolveViewerFriendUserIdsAsync(userId, cancellationToken, requireFresh: true);
         var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken, requireFresh: true);
         var (items, totalCount) = await _savedPostRepository.GetPagedByUserAsync(
             userId,
             query.Page,
             query.PageSize,
+            userId,
+            viewerFriendUserIds,
             cancellationToken,
             blockedUserIds);
 
@@ -64,7 +70,12 @@ public class SavedPostService : ISavedPostService
             cancellationToken);
 
         var mappedItems = posts
-            .Select(post => post.ToSavedPostResponseDto(userId, profileLookup, blockedUserIds, shareCounts))
+            .Select(post => post.ToSavedPostResponseDto(
+                userId,
+                profileLookup,
+                blockedUserIds,
+                viewerFriendUserIds,
+                shareCounts))
             .ToList();
 
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
@@ -75,7 +86,12 @@ public class SavedPostService : ISavedPostService
         SavePostRequestDto request,
         CancellationToken cancellationToken)
     {
-        var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken)
+        var viewerFriendUserIds = await ResolveViewerFriendUserIdsAsync(userId, cancellationToken);
+        var post = await _postRepository.GetVisibleByIdAsync(
+                request.PostId,
+                userId,
+                viewerFriendUserIds,
+                cancellationToken)
             ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 
         var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
@@ -137,6 +153,26 @@ public class SavedPostService : ISavedPostService
             currentUserId,
             cancellationToken,
             requireFresh: requireFresh);
+    }
+
+    private async Task<HashSet<Guid>> ResolveViewerFriendUserIdsAsync(
+        Guid currentUserId,
+        CancellationToken cancellationToken,
+        bool requireFresh = false)
+    {
+        if (currentUserId == Guid.Empty)
+        {
+            return [];
+        }
+
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
+        var friendUserIds = await _friendshipReadModelService.ResolveContactIdsAsync(
+            currentUserId,
+            accessToken,
+            cancellationToken,
+            requireFresh: requireFresh);
+        friendUserIds.Remove(currentUserId);
+        return friendUserIds;
     }
 
 }

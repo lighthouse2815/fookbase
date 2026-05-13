@@ -7,6 +7,7 @@ import com.dangngulon.frontend.feature.zola.domain.model.MessageCursorPage;
 import com.dangngulon.frontend.feature.zola.domain.model.SendMessageCommand;
 import com.dangngulon.frontend.feature.zola.domain.repository.IChatRepository;
 import com.dangngulon.frontend.feature.zola.domain.repository.IMessageRepository;
+import com.dangngulon.frontend.feature.zola.domain.repository.IUploadRepository;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -23,13 +24,15 @@ public class ChatDetailUseCaseTest {
 
     private FakeMessageRepository messageRepository;
     private FakeChatRepository chatRepository;
+    private FakeUploadRepository uploadRepository;
     private ChatDetailUseCase useCase;
 
     @Before
     public void setUp() {
         messageRepository = new FakeMessageRepository();
         chatRepository = new FakeChatRepository();
-        useCase = new ChatDetailUseCase(messageRepository, chatRepository);
+        uploadRepository = new FakeUploadRepository();
+        useCase = new ChatDetailUseCase(messageRepository, chatRepository, uploadRepository);
     }
 
     @Test
@@ -109,6 +112,13 @@ public class ChatDetailUseCaseTest {
             return CompletableFuture.completedFuture(
                     AppResult.success(new MessageCursorPage(Collections.emptyList(), null))
             );
+        }
+    }
+
+    private static class FakeUploadRepository implements IUploadRepository {
+        @Override
+        public CompletableFuture<AppResult<String>> upload(String fileName, String contentType, byte[] bytes) {
+            return CompletableFuture.completedFuture(AppResult.success("https://example.com/" + fileName));
         }
     }
 }

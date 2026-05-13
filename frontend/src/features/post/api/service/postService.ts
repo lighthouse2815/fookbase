@@ -17,6 +17,7 @@ import type {
 import type {
   CreatePostRequestDto,
   SharePostRequestDto,
+  UpdatePostRequestDto,
 } from '@/features/post/api/dtos/request.dto';
 import type {
   PostReactionStateResponseDto,
@@ -87,6 +88,12 @@ export const postService = {
     const response = await apiClient.post<ApiEnvelope<PostResponseDto>>(POSTS.SHARE(postId), request);
     const created = extractData(response.data, 'Failed to share post');
     return mapPost(created);
+  },
+
+  async updatePost(postId: string, request: UpdatePostRequestDto): Promise<Post> {
+    const response = await apiClient.put<ApiEnvelope<PostResponseDto>>(POSTS.BY_ID(postId), request);
+    const updated = extractData(response.data, 'Failed to update post');
+    return mapPost(updated);
   },
 
   async setReaction(postId: string, type: PostReactionType): Promise<{

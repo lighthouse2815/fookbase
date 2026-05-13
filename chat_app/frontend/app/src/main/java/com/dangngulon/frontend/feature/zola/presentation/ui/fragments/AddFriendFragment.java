@@ -260,9 +260,10 @@ public class AddFriendFragment extends Fragment {
             NavHostFragment.findNavController(this).navigate(R.id.action_global_qrScanner);
         });
 
-        binding.suggestedFriendsOption.setOnClickListener(v ->
-                UiHelper.showToast(requireContext(), R.string.suggested_friends_coming_soon)
-        );
+        binding.suggestedFriendsOption.setOnClickListener(v -> {
+            ChatAppAnimation.animateCardClick(v);
+            NavHostFragment.findNavController(this).navigate(R.id.action_global_friendRequests);
+        });
 
         binding.etPhoneNumber.addTextChangedListener(new TextWatcher() {
             @Override
