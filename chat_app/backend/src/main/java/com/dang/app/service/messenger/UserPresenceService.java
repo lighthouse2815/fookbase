@@ -1,5 +1,6 @@
 package com.dang.app.service.messenger;
 
+import com.dang.app.service.integration.ReadModelEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.messaging.simp.user.SimpUser;
@@ -18,12 +19,17 @@ import java.util.concurrent.ConcurrentMap;
 public class UserPresenceService {
 
     private final SimpUserRegistry simpUserRegistry;
+    private final ReadModelEventPublisher readModelEventPublisher;
     private final ConcurrentMap<String, UUID> sessionOwners = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Integer> activeSessionCounts = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, LocalDateTime> lastSeenAtByUserId = new ConcurrentHashMap<>();
 
-    public UserPresenceService(SimpUserRegistry simpUserRegistry) {
+    public UserPresenceService(
+            SimpUserRegistry simpUserRegistry,
+            ReadModelEventPublisher readModelEventPublisher
+    ) {
         this.simpUserRegistry = simpUserRegistry;
+        this.readModelEventPublisher = readModelEventPublisher;
     }
 
     public boolean isOnline(UUID userId) {
@@ -47,6 +53,8 @@ public class UserPresenceService {
             return;
         }
 
+        boolean wasOnline = isOnline(userId);
+
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
         String sessionId = accessor.getSessionId();
         if (sessionId == null) {
@@ -59,6 +67,10 @@ public class UserPresenceService {
         }
 
         lastSeenAtByUserId.remove(userId);
+
+        if (!wasOnline) {
+            readModelEventPublisher.publishPresenceChanged(userId, true, null);
+        }
     }
 
     @EventListener
@@ -80,7 +92,9 @@ public class UserPresenceService {
         });
 
         if (!isOnline(userId)) {
-            lastSeenAtByUserId.put(userId, LocalDateTime.now());
+            LocalDateTime lastSeenAt = LocalDateTime.now();
+            lastSeenAtByUserId.put(userId, lastSeenAt);
+            readModelEventPublisher.publishPresenceChanged(userId, false, lastSeenAt);
         }
     }
 

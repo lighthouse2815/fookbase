@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDateTime;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,6 +25,7 @@ public class ReadModelEventPublisher {
     private static final String USER_UNBLOCKED = "user.unblocked";
     private static final String FRIENDSHIP_ACCEPTED = "friendship.accepted";
     private static final String FRIENDSHIP_REMOVED = "friendship.removed";
+    private static final String PRESENCE_CHANGED = "presence.changed";
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -71,6 +74,19 @@ public class ReadModelEventPublisher {
 
     public void publishFriendshipRemoved(UUID firstUserId, UUID secondUserId) {
         publishFriendshipState(FRIENDSHIP_REMOVED, firstUserId, secondUserId, false, "removed");
+    }
+
+    public void publishPresenceChanged(UUID userId, boolean isOnline, LocalDateTime lastSeenAt) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("userId", userId);
+        payload.put("isOnline", isOnline);
+        payload.put("status", isOnline ? "online" : "offline");
+
+        if (lastSeenAt != null) {
+            payload.put("lastSeenAt", lastSeenAt.toString());
+        }
+
+        publishAfterCommit(PRESENCE_CHANGED, payload);
     }
 
     private void publishFriendshipState(

@@ -17,6 +17,12 @@ public interface IPostService
         CreatePostRequestDto request,
         CancellationToken cancellationToken);
 
+    Task<PostResponseDto> ShareAsync(
+        Guid postId,
+        Guid userId,
+        SharePostRequestDto? request,
+        CancellationToken cancellationToken);
+
     Task<PostResponseDto> UpdateAsync(Guid postId, Guid userId, bool isAdmin, UpdatePostRequestDto request, CancellationToken cancellationToken);
 
     Task DeleteAsync(Guid postId, Guid userId, bool isAdmin, CancellationToken cancellationToken);

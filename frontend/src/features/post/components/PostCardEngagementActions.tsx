@@ -13,6 +13,7 @@ interface PostCardEngagementActionsProps {
   getReactionMeta: (reactionType?: PostReactionType | null) => ReactionMeta;
   onOpenReactionViewer: (filter: 'ALL' | PostReactionType) => void;
   commentCount: number;
+  shareCount: number;
   onOpenComments: () => void;
   isReactionUpdating: boolean;
   currentUserReactionType: PostReactionType | null;
@@ -25,6 +26,8 @@ interface PostCardEngagementActionsProps {
   onSetReaction: (reactionType: PostReactionType) => Promise<void>;
   isCommentsOpen: boolean;
   onToggleComments: () => void;
+  onShare: () => Promise<void>;
+  isSharing: boolean;
 }
 
 export const PostCardEngagementActions = ({
@@ -35,6 +38,7 @@ export const PostCardEngagementActions = ({
   getReactionMeta,
   onOpenReactionViewer,
   commentCount,
+  shareCount,
   onOpenComments,
   isReactionUpdating,
   currentUserReactionType,
@@ -47,6 +51,8 @@ export const PostCardEngagementActions = ({
   onSetReaction,
   isCommentsOpen,
   onToggleComments,
+  onShare,
+  isSharing,
 }: PostCardEngagementActionsProps) => {
   return (
     <>
@@ -80,13 +86,18 @@ export const PostCardEngagementActions = ({
           <span>0</span>
         )}
 
-        <button
-          type="button"
-          onClick={onOpenComments}
-          className="font-semibold transition hover:text-slate-700 dark:hover:text-slate-200"
-        >
-          {t('post.commentCountLabel', { count: commentCount })}
-        </button>
+        <div className="inline-flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onOpenComments}
+            className="font-semibold transition hover:text-slate-700 dark:hover:text-slate-200"
+          >
+            {t('post.commentCountLabel', { count: commentCount })}
+          </button>
+          <span className="font-semibold">
+            {shareCount} {t('post.share')}
+          </span>
+        </div>
       </div>
 
       <div className="my-3 grid grid-cols-3 gap-1.5 border-y border-slate-100 py-2 dark:border-slate-700 sm:gap-2">
@@ -139,7 +150,12 @@ export const PostCardEngagementActions = ({
           <MessageCircle size={16} />
           {t('post.comment')}
         </button>
-        <button className="inline-flex items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:text-sm">
+        <button
+          type="button"
+          onClick={() => void onShare()}
+          disabled={isSharing}
+          className="inline-flex items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-300 dark:hover:bg-slate-700 sm:text-sm"
+        >
           <Share2 size={16} />
           {t('post.share')}
         </button>

@@ -48,6 +48,16 @@ export interface PostReactionUsersResponse {
   users: PostReactionUser[];
 }
 
+export interface SharedPostReference {
+  id: string;
+  author: User;
+  content: string;
+  imageUrls?: string[];
+  createdAt: string;
+  reactionCount: number;
+  commentCount: number;
+}
+
 export interface Post {
   id: string;
   author: User;
@@ -60,6 +70,8 @@ export interface Post {
   currentUserReactionType?: PostReactionType | null;
   topReactionTypes: PostReactionType[];
   commentCount?: number;
+  shareCount: number;
+  originalPost?: SharedPostReference | null;
   comments: Comment[];
 }
 

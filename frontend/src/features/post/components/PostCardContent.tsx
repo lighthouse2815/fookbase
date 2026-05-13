@@ -34,6 +34,10 @@ export const PostCardContent = ({
       : normalizedPostContent;
   const allMediaAreImages = mediaUrls.length > 0 && mediaUrls.every((mediaUrl) => detectMediaKind(mediaUrl) === 'image');
   const hiddenMediaCount = mediaUrls.length > 4 ? mediaUrls.length - 4 : 0;
+  const originalPost = post.originalPost ?? null;
+  const originalPreviewMediaUrl = originalPost?.imageUrls?.[0];
+  const originalPreviewMediaKind = detectMediaKind(originalPreviewMediaUrl);
+  const hasOriginalMoreMedia = (originalPost?.imageUrls?.length ?? 0) > 1;
 
   const renderMediaTile = (index: number, className: string, overlayCount = 0) => {
     const mediaUrl = mediaUrls[index];
@@ -95,6 +99,39 @@ export const PostCardContent = ({
             </button>
           ) : null}
         </p>
+      ) : null}
+
+      {originalPost ? (
+        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-900/30">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Shared from {originalPost.author.fullName}</p>
+          {originalPost.content ? (
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-300">
+              {originalPost.content}
+            </p>
+          ) : null}
+          {originalPreviewMediaUrl ? (
+            <div className="relative mt-2 overflow-hidden rounded-lg">
+              {originalPreviewMediaKind === 'video' ? (
+                <video
+                  src={originalPreviewMediaUrl}
+                  controls
+                  className="max-h-80 w-full bg-black object-cover"
+                />
+              ) : (
+                <img
+                  src={originalPreviewMediaUrl}
+                  alt={originalPost.author.fullName}
+                  className="max-h-80 w-full bg-slate-100 object-cover dark:bg-slate-900"
+                />
+              )}
+              {hasOriginalMoreMedia ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-sm font-semibold text-white">
+                  +{(originalPost.imageUrls?.length ?? 1) - 1}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {mediaUrls.length === 1 && mediaKind === 'video' ? (

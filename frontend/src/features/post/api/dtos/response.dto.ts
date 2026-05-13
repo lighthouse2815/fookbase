@@ -20,6 +20,19 @@ export interface PostResponseDto {
   topReactionTypes?: string[] | null;
   commentCount: number;
   likedByCurrentUser?: boolean;
+  shareCount?: number;
+  originalPost?: SharedPostReferenceDto | null;
+}
+
+export interface SharedPostReferenceDto {
+  id: string;
+  userId: string;
+  author?: PostAuthorResponseDto;
+  content: string;
+  imageUrls?: string[] | null;
+  createdAt: string;
+  reactionCount?: number;
+  commentCount?: number;
 }
 
 export interface CommentReactionStateResponseDto {

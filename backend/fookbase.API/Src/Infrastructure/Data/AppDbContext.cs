@@ -71,9 +71,15 @@ public class AppDbContext : DbContext
 
             entity.Property(post => post.Content).HasMaxLength(2000).IsRequired();
 
+            entity.HasOne(post => post.OriginalPost)
+                .WithMany(post => post.SharedPosts)
+                .HasForeignKey(post => post.OriginalPostId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasQueryFilter(post => post.DeletedAt == null);
 
             entity.HasIndex(post => post.UserId);
+            entity.HasIndex(post => post.OriginalPostId);
             entity.HasIndex(post => post.CreatedAt);
         });
 

@@ -70,6 +70,7 @@ export const PostCard = ({
     likeError,
     commentCount,
     setCommentCount,
+    shareCount,
     isCommentsOpen,
     setIsCommentsOpen,
     isPostMenuOpen,
@@ -81,6 +82,7 @@ export const PostCard = ({
     isSavingPost,
     isReportingPost,
     isDeletingPost,
+    isSharingPost,
     reportReason,
     setReportReason,
     reportReasonError,
@@ -99,6 +101,7 @@ export const PostCard = ({
     handleSavePost,
     handleConfirmReportPost,
     handleDeletePost,
+    handleSharePost,
   } = usePostCard({ post, currentUser, onActionToast, onPostDeleted });
 
   useEffect(() => {
@@ -195,6 +198,7 @@ export const PostCard = ({
           getReactionMeta={getReactionMeta}
           onOpenReactionViewer={handleOpenReactionViewer}
           commentCount={commentCount}
+          shareCount={shareCount}
           onOpenComments={handleOpenComments}
           isReactionUpdating={isReactionUpdating}
           currentUserReactionType={currentUserReactionType}
@@ -207,6 +211,8 @@ export const PostCard = ({
           onSetReaction={handleSetReaction}
           isCommentsOpen={isCommentsOpen}
           onToggleComments={() => setIsCommentsOpen((previous) => !previous)}
+          onShare={handleSharePost}
+          isSharing={isSharingPost}
         />
       ) : null}
 

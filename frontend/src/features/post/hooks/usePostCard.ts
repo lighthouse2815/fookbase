@@ -26,6 +26,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
   const [reactionViewerFilter, setReactionViewerFilter] = useState<ReactionFilterTab>('ALL');
   const [likeError, setLikeError] = useState<string | null>(null);
   const [commentCount, setCommentCount] = useState(post.commentCount ?? post.comments.length);
+  const [shareCount, setShareCount] = useState(post.shareCount ?? 0);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -33,6 +34,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
   const [isSavingPost, setIsSavingPost] = useState(false);
   const [isReportingPost, setIsReportingPost] = useState(false);
   const [isDeletingPost, setIsDeletingPost] = useState(false);
+  const [isSharingPost, setIsSharingPost] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportReasonError, setReportReasonError] = useState<string | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
@@ -46,6 +48,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     setCurrentUserReactionType(post.currentUserReactionType ?? (post.likedByCurrentUser ? 'LIKE' : null));
     setTopReactionTypes(post.topReactionTypes ?? []);
     setCommentCount(post.commentCount ?? post.comments.length);
+    setShareCount(post.shareCount ?? 0);
     setIsCommentsOpen(false);
     setIsPostMenuOpen(false);
     setIsReportDialogOpen(false);
@@ -55,6 +58,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     setLikeError(null);
     setPostActionError(null);
     setIsDeletingPost(false);
+    setIsSharingPost(false);
     setIsReactionPickerOpen(false);
     setIsReactionViewerOpen(false);
     setReactionViewerFilter('ALL');
@@ -65,6 +69,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     post.id,
     post.likedByCurrentUser,
     post.likes,
+    post.shareCount,
     post.reactionCount,
     post.topReactionTypes,
   ]);
@@ -272,6 +277,27 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     }
   }, [isDeletingPost, isPostOwner, onActionToast, onPostDeleted, post.id]);
 
+  const handleSharePost = useCallback(async () => {
+    if (isSharingPost) {
+      return;
+    }
+
+    setIsSharingPost(true);
+    setPostActionError(null);
+
+    try {
+      await postService.sharePost(post.id, {});
+      setShareCount((previous) => previous + 1);
+      onActionToast?.('Da chia se bai viet', 'success');
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Khong the chia se bai viet.');
+      setPostActionError(message);
+      onActionToast?.(message, 'error');
+    } finally {
+      setIsSharingPost(false);
+    }
+  }, [isSharingPost, onActionToast, post.id]);
+
   return {
     authorProfilePath,
     isPostOwner,
@@ -287,6 +313,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     likeError,
     commentCount,
     setCommentCount,
+    shareCount,
     isCommentsOpen,
     setIsCommentsOpen,
     isPostMenuOpen,
@@ -298,6 +325,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     isSavingPost,
     isReportingPost,
     isDeletingPost,
+    isSharingPost,
     reportReason,
     setReportReason,
     reportReasonError,
@@ -317,6 +345,7 @@ export const usePostCard = ({ post, currentUser, onActionToast, onPostDeleted }:
     handleSavePost,
     handleConfirmReportPost,
     handleDeletePost,
+    handleSharePost,
   };
 };
 

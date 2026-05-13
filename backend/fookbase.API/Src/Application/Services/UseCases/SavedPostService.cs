@@ -55,10 +55,16 @@ public class SavedPostService : ISavedPostService
             .Select(savedPost => savedPost.Post!)
             .ToList();
 
-        var profileLookup = await ResolveProfileLookupAsync(posts.Select(post => post.UserId), cancellationToken);
+        var userIds = posts
+            .Select(post => post.UserId)
+            .Concat(posts.Where(post => post.OriginalPost is not null).Select(post => post.OriginalPost!.UserId));
+        var profileLookup = await ResolveProfileLookupAsync(userIds, cancellationToken);
+        var shareCounts = await _postRepository.GetShareCountsAsync(
+            posts.Select(post => post.Id).ToList(),
+            cancellationToken);
 
         var mappedItems = posts
-            .Select(post => post.ToSavedPostResponseDto(userId, profileLookup, blockedUserIds))
+            .Select(post => post.ToSavedPostResponseDto(userId, profileLookup, blockedUserIds, shareCounts))
             .ToList();
 
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);

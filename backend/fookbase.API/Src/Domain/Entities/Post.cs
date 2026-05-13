@@ -6,6 +6,10 @@ public class Post
 
     public Guid UserId { get; set; }
 
+    public Guid? OriginalPostId { get; set; }
+
+    public Post? OriginalPost { get; set; }
+
     public string Content { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
@@ -25,6 +29,8 @@ public class Post
     public ICollection<SavedPost> SavedByUsers { get; set; } = new List<SavedPost>();
 
     public ICollection<PostMedia> MediaItems { get; set; } = new List<PostMedia>();
+
+    public ICollection<Post> SharedPosts { get; set; } = new List<Post>();
 }
 
 

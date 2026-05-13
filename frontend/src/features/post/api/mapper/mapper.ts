@@ -1,4 +1,4 @@
-import type { Post } from '@/features/post/types/contracts';
+import type { Post, SharedPostReference } from '@/features/post/types/contracts';
 import type { PostResponseDto } from '@/features/post/api/dtos/response.dto';
 import { ENV } from '@/shared/env/env';
 import { parseReactionType, parseReactionTypes } from '@/features/comment/utils/reaction.util';
@@ -47,6 +47,7 @@ export const mapPost = (payload: PostResponseDto): Post => {
         .filter((item) => item.length > 0)
         .map(resolvePostMediaUrl)
     : [];
+  const sharedOriginalPost = mapSharedOriginalPost(payload);
 
   return {
     id: payload.id,
@@ -65,7 +66,41 @@ export const mapPost = (payload: PostResponseDto): Post => {
     currentUserReactionType,
     topReactionTypes,
     commentCount: payload.commentCount,
+    shareCount: typeof payload.shareCount === 'number' ? Math.max(0, payload.shareCount) : 0,
+    originalPost: sharedOriginalPost,
     comments: [],
+  };
+};
+
+const mapSharedOriginalPost = (payload: PostResponseDto): SharedPostReference | null => {
+  if (!payload.originalPost) {
+    return null;
+  }
+
+  const original = payload.originalPost;
+  const authorName = original.author?.displayName?.trim() || original.author?.username?.trim() || 'user';
+  const authorId = original.author?.id || original.userId;
+  const username = original.author?.username?.trim() || 'user';
+  const originalImageUrls = Array.isArray(original.imageUrls)
+    ? original.imageUrls
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter((item) => item.length > 0)
+        .map(resolvePostMediaUrl)
+    : [];
+
+  return {
+    id: original.id,
+    author: {
+      id: authorId,
+      username,
+      fullName: authorName,
+      avatarUrl: original.author?.avatarUrl || 'https://res.cloudinary.com/drfhezlyn/image/upload/v1776615564/default_avatar_art0sv.jpg',
+    },
+    content: original.content,
+    imageUrls: originalImageUrls,
+    createdAt: original.createdAt,
+    reactionCount: typeof original.reactionCount === 'number' ? Math.max(0, original.reactionCount) : 0,
+    commentCount: typeof original.commentCount === 'number' ? Math.max(0, original.commentCount) : 0,
   };
 };
 

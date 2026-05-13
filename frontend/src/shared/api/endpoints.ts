@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
     LIST: '/api/posts',
     CREATE: '/api/posts',
     BY_ID: postById,
+    SHARE: (id: string) => `/api/posts/${id}/share`,
   },
   COMMENTS: {
     BY_POST_ID: (id: string) => `/api/comments/post/${id}`,

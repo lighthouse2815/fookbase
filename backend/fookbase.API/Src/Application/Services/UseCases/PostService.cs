@@ -65,8 +65,15 @@ public class PostService : IPostService
             cancellationToken,
             blockedUserIds);
 
-        var authors = await ResolveAuthorsAsync(items.Select(post => post.UserId), cancellationToken);
-        var mappedItems = items.ToResponseDtos(authors, currentUserId, blockedUserIds);
+        var authors = await ResolveAuthorsAsync(
+            items
+                .Select(post => post.UserId)
+                .Concat(items.Where(post => post.OriginalPost is not null).Select(post => post.OriginalPost!.UserId)),
+            cancellationToken);
+        var shareCounts = await _postRepository.GetShareCountsAsync(
+            items.Select(post => post.Id).ToList(),
+            cancellationToken);
+        var mappedItems = items.ToResponseDtos(authors, currentUserId, blockedUserIds, shareCounts);
 
         return PagedResult<PostResponseDto>.Create(mappedItems, query.Page, query.PageSize, totalCount);
     }
@@ -82,11 +89,21 @@ public class PostService : IPostService
             throw new BusinessException(ErrorCode.POST_NOT_FOUND);
         }
 
-        var author = (await ResolveAuthorsAsync([post.UserId], cancellationToken))[post.UserId];
+        var userIds = new List<Guid> { post.UserId };
+        if (post.OriginalPost is not null)
+        {
+            userIds.Add(post.OriginalPost.UserId);
+        }
+
+        var authorLookup = await ResolveAuthorsAsync(userIds, cancellationToken);
+        var shareCounts = await _postRepository.GetShareCountsAsync([post.Id], cancellationToken);
+        var author = authorLookup[post.UserId];
         return post.ToResponseDto(
             currentUserId,
             blockedUserIds,
-            author);
+            author,
+            shareCounts,
+            authorLookup);
     }
 
     public async Task<PostResponseDto> CreateAsync(
@@ -139,6 +156,84 @@ public class PostService : IPostService
 
         var author = (await ResolveAuthorsAsync([post.UserId], cancellationToken))[post.UserId];
         return post.ToResponseDto(userId, author: author);
+    }
+
+    public async Task<PostResponseDto> ShareAsync(
+        Guid postId,
+        Guid userId,
+        SharePostRequestDto? request,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = _accessTokenProvider.GetAccessTokenOrNull();
+
+        var sourcePost = await _postRepository.GetByIdAsync(postId, cancellationToken)
+            ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+
+        var blockedUserIds = await ResolveBlockedUserIdsAsync(userId, cancellationToken);
+        if (blockedUserIds.Contains(sourcePost.UserId))
+        {
+            throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        var originalPostId = sourcePost.OriginalPostId ?? sourcePost.Id;
+        var alreadyShared = await _postRepository.HasSharedOriginalPostAsync(userId, originalPostId, cancellationToken);
+        if (alreadyShared)
+        {
+            throw new BusinessException(
+                ErrorCode.BUSINESS_RULE_VIOLATION,
+                "You already shared this post.");
+        }
+
+        var normalizedContent = request?.Content?.Trim() ?? string.Empty;
+        var now = DateTime.UtcNow;
+
+        var sharedPost = new Post
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            OriginalPostId = originalPostId,
+            Content = normalizedContent,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        var hashtags = await GetOrCreateHashtagsAsync(sharedPost.Content, cancellationToken);
+        foreach (var hashtag in hashtags)
+        {
+            sharedPost.PostHashtags.Add(new PostHashtag
+            {
+                PostId = sharedPost.Id,
+                HashtagId = hashtag.Id,
+                Hashtag = hashtag,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
+        await _postRepository.AddAsync(sharedPost, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await TryCreateFriendPostNotificationsAsync(
+            authorUserId: userId,
+            postId: sharedPost.Id,
+            accessToken: accessToken,
+            cancellationToken: cancellationToken);
+
+        var created = await _postRepository.GetByIdAsync(sharedPost.Id, cancellationToken)
+            ?? throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+
+        var authorLookup = await ResolveAuthorsAsync(
+            new[] { created.UserId, created.OriginalPost?.UserId ?? Guid.Empty },
+            cancellationToken);
+        var shareCounts = await _postRepository.GetShareCountsAsync([created.Id], cancellationToken);
+        var author = authorLookup[created.UserId];
+
+        return created.ToResponseDto(
+            userId,
+            blockedUserIds,
+            author,
+            shareCounts,
+            authorLookup);
     }
 
     public async Task<PostResponseDto> UpdateAsync(

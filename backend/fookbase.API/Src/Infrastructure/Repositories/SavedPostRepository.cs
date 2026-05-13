@@ -44,6 +44,15 @@ public class SavedPostRepository : ISavedPostRepository
             .Include(savedPost => savedPost.Post!)
                 .ThenInclude(post => post.PostHashtags)
                     .ThenInclude(postHashtag => postHashtag.Hashtag)
+            .Include(savedPost => savedPost.Post!)
+                .ThenInclude(post => post.OriginalPost)
+                    .ThenInclude(post => post!.MediaItems)
+            .Include(savedPost => savedPost.Post!)
+                .ThenInclude(post => post.OriginalPost)
+                    .ThenInclude(post => post!.Likes)
+            .Include(savedPost => savedPost.Post!)
+                .ThenInclude(post => post.OriginalPost)
+                    .ThenInclude(post => post!.Comments)
             .OrderByDescending(savedPost => savedPost.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);

@@ -14,6 +14,7 @@ import {
   createPresenceRealtimeConnection,
   startPresenceRealtimeConnection,
 } from '@/features/user/api/realtime/presenceRealtime';
+import { createJavaPresenceSocketConnection } from '@/features/user/api/realtime/javaPresenceSocket';
 import type { PresenceChangedEventPayload } from '@/features/user/types/realtime';
 import { userService } from '@/features/user/api/service/userService';
 import type { User } from '@/features/user/types/contracts';
@@ -176,6 +177,15 @@ export const useMainLayoutData = (): MainLayoutData => {
 
     applyPresenceUsers(resolvedOnlineUsers, resolvedOfflineUsers);
   }, [applyPresenceUsers]);
+
+  useEffect(() => {
+    const connection = createJavaPresenceSocketConnection();
+    connection.connect();
+
+    return () => {
+      connection.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const loadSidebarData = async () => {

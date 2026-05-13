@@ -56,6 +56,21 @@ public class PostsController : ApiControllerBase
             ApiResponse<PostResponseDto>.Ok(created));
     }
 
+    [HttpPost("{postId:guid}/share")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<PostResponseDto>>> SharePost(
+        Guid postId,
+        [FromBody] SharePostRequestDto? request,
+        CancellationToken cancellationToken)
+    {
+        var created = await _postService.ShareAsync(postId, GetCurrentUserId(), request, cancellationToken);
+
+        return CreatedAtAction(
+            nameof(GetPostById),
+            new { postId = created.Id },
+            ApiResponse<PostResponseDto>.Ok(created));
+    }
+
     [HttpPut("{postId:guid}")]
     [Authorize]
     public async Task<ActionResult<ApiResponse<PostResponseDto>>> UpdatePost(

@@ -24,6 +24,12 @@ public interface IPostRepository
         IReadOnlyCollection<Guid> postIds,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyDictionary<Guid, int>> GetShareCountsAsync(
+        IReadOnlyCollection<Guid> originalPostIds,
+        CancellationToken cancellationToken);
+
+    Task<bool> HasSharedOriginalPostAsync(Guid userId, Guid originalPostId, CancellationToken cancellationToken);
+
     Task AddAsync(Post post, CancellationToken cancellationToken);
 }
 

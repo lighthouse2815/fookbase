@@ -32,6 +32,10 @@ public record PostResponseDto
     public int CommentCount { get; init; }
 
     public IReadOnlyList<string> Hashtags { get; init; } = Array.Empty<string>();
+
+    public int ShareCount { get; init; }
+
+    public SharedPostReferenceDto? OriginalPost { get; init; }
 }
 
 

@@ -45,7 +45,9 @@ public static class PostMapper
                 .Where(postHashtag => postHashtag.Hashtag is not null)
                 .Select(postHashtag => $"#{postHashtag.Hashtag!.Name}")
                 .Distinct()
-                .ToList()
+                .ToList(),
+            ShareCount = 0,
+            OriginalPost = null
         };
     }
 
@@ -53,19 +55,25 @@ public static class PostMapper
         this Post post,
         Guid? currentUserId,
         IReadOnlySet<Guid>? blockedUserIds = null,
-        AuthorSummaryDto? author = null)
+        AuthorSummaryDto? author = null,
+        IReadOnlyDictionary<Guid, int>? shareCountLookup = null,
+        IReadOnlyDictionary<Guid, AuthorSummaryDto>? authorsByUserId = null)
     {
         ArgumentNullException.ThrowIfNull(post);
 
         var effectiveBlockedUserIds = blockedUserIds ?? EmptyBlockedUserIds;
         var currentUserReactionType = GetCurrentUserReactionType(post, currentUserId);
+        var shareCount = ResolveShareCount(post.Id, shareCountLookup);
+        var originalPost = ResolveOriginalPostReference(post.OriginalPost, effectiveBlockedUserIds, authorsByUserId);
 
         return post.ToBaseResponseDto() with
         {
             Author = author ?? CreateFallbackAuthor(post.UserId),
             CurrentUserReactionType = currentUserReactionType,
             LikedByCurrentUser = currentUserReactionType is not null,
-            CommentCount = ResolveVisibleCommentCount(post, effectiveBlockedUserIds)
+            CommentCount = ResolveVisibleCommentCount(post, effectiveBlockedUserIds),
+            ShareCount = shareCount,
+            OriginalPost = originalPost
         };
     }
 
@@ -73,7 +81,8 @@ public static class PostMapper
         this IReadOnlyList<Post> posts,
         IReadOnlyDictionary<Guid, AuthorSummaryDto> authors,
         Guid? currentUserId,
-        IReadOnlySet<Guid>? blockedUserIds = null)
+        IReadOnlySet<Guid>? blockedUserIds = null,
+        IReadOnlyDictionary<Guid, int>? shareCountLookup = null)
     {
         ArgumentNullException.ThrowIfNull(posts);
         ArgumentNullException.ThrowIfNull(authors);
@@ -84,7 +93,9 @@ public static class PostMapper
             .Select(post => post.ToResponseDto(
                 currentUserId,
                 effectiveBlockedUserIds,
-                authors.TryGetValue(post.UserId, out var author) ? author : null))
+                authors.TryGetValue(post.UserId, out var author) ? author : null,
+                shareCountLookup,
+                authors))
             .ToList();
     }
 
@@ -132,6 +143,57 @@ public static class PostMapper
             .ToList();
 
         return PostMediaSerializer.Normalize(orderedMediaUrls);
+    }
+
+    private static SharedPostReferenceDto? ResolveOriginalPostReference(
+        Post? originalPost,
+        IReadOnlySet<Guid> blockedUserIds,
+        IReadOnlyDictionary<Guid, AuthorSummaryDto>? authorsByUserId)
+    {
+        if (originalPost is null)
+        {
+            return null;
+        }
+
+        if (blockedUserIds.Contains(originalPost.UserId))
+        {
+            return null;
+        }
+
+        var author = ResolveAuthorSummary(originalPost.UserId, authorsByUserId);
+        return new SharedPostReferenceDto
+        {
+            Id = originalPost.Id,
+            UserId = originalPost.UserId,
+            Author = author,
+            Content = originalPost.Content,
+            ImageUrls = ResolvePostMediaUrls(originalPost),
+            CreatedAt = originalPost.CreatedAt,
+            ReactionCount = originalPost.Likes.Count,
+            CommentCount = ResolveVisibleCommentCount(originalPost, blockedUserIds)
+        };
+    }
+
+    private static AuthorSummaryDto ResolveAuthorSummary(
+        Guid userId,
+        IReadOnlyDictionary<Guid, AuthorSummaryDto>? authorsByUserId)
+    {
+        if (authorsByUserId is not null && authorsByUserId.TryGetValue(userId, out var author))
+        {
+            return author;
+        }
+
+        return CreateFallbackAuthor(userId);
+    }
+
+    private static int ResolveShareCount(Guid postId, IReadOnlyDictionary<Guid, int>? shareCountLookup)
+    {
+        if (shareCountLookup is null)
+        {
+            return 0;
+        }
+
+        return shareCountLookup.TryGetValue(postId, out var count) ? Math.Max(0, count) : 0;
     }
 
     private static readonly IReadOnlySet<Guid> EmptyBlockedUserIds = new HashSet<Guid>();
